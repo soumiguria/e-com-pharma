@@ -1,46 +1,168 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, StyleProp, ViewStyle, ImageURISource } from 'react-native';
 
-interface ProductCardProps {
-  product: {
-    id: string;
-    name: string;
-    price: number;
-  };
-  onPress: () => void;
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  image?: string | ImageURISource;
+  rating?: number;
+  isNew?: boolean;
+  isOnSale?: boolean;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onPress }) => {
+interface ProductCardProps {
+  product: Product;
+  onPress: () => void;
+  style?: StyleProp<ViewStyle>;
+}
+
+const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style }) => {
+  const imageSource = typeof product.image === 'string' 
+    ? { uri: product.image } 
+    : product.image;
+
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress}>
-      <Text style={styles.name}>{product.name}</Text>
-      <Text style={styles.price}>${product.price}</Text>
+    <TouchableOpacity 
+      style={[styles.container, style]} 
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <View style={styles.imageContainer}>
+        {product.image && (
+          <Image source={imageSource} style={styles.image} resizeMode="cover" />
+        )}
+        
+        <View style={styles.badgeContainer}>
+          {product.isNew && (
+            <View style={[styles.badge, styles.newBadge]}>
+              <Text style={styles.badgeText}>New</Text>
+            </View>
+          )}
+          {product.isOnSale && (
+            <View style={[styles.badge, styles.saleBadge]}>
+              <Text style={styles.badgeText}>Sale</Text>
+            </View>
+          )}
+        </View>
+        
+        <TouchableOpacity style={styles.wishlistButton} onPress={() => {}}>
+          <Text style={styles.wishlistIcon}>♡</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.infoContainer}>
+        <Text style={styles.name} numberOfLines={2}>{product.name}</Text>
+        
+        {product.rating !== undefined && (
+          <View style={styles.ratingContainer}>
+            <Text style={styles.rating}>⭐ {product.rating.toFixed(1)}</Text>
+          </View>
+        )}
+        
+        <View style={styles.priceContainer}>
+          <Text style={styles.price}>${product.price.toFixed(2)}</Text>
+          {product.originalPrice && (
+            <Text style={styles.originalPrice}>${product.originalPrice.toFixed(2)}</Text>
+          )}
+        </View>
+      </View>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 15,
     backgroundColor: 'white',
-    borderRadius: 8,
-    marginVertical: 5,
-    width: '100%',
+    borderRadius: 12,
+    marginBottom: 16,
+    overflow: 'hidden',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    shadowRadius: 6,
+    elevation: 5,
+  },
+  imageContainer: {
+    position: 'relative',
+    aspectRatio: 1,
+    backgroundColor: '#f5f5f5',
+  },
+  image: {
+    width: '100%',
+    height: '100%',
+  },
+  badgeContainer: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    flexDirection: 'row',
+    gap: 4,
+  },
+  badge: {
+    borderRadius: 4,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+  },
+  newBadge: {
+    backgroundColor: '#4CAF50',
+  },
+  saleBadge: {
+    backgroundColor: '#F44336',
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  wishlistButton: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(255,255,255,0.8)',
+    borderRadius: 20,
+    width: 28,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  wishlistIcon: {
+    fontSize: 16,
+    color: '#333',
+  },
+  infoContainer: {
+    padding: 12,
   },
   name: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '500',
+    color: '#333',
+    marginBottom: 4,
+    height: 36,
+  },
+  ratingContainer: {
+    marginBottom: 6,
+  },
+  rating: {
+    fontSize: 12,
+    color: '#FFC107',
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   price: {
-    fontSize: 14,
-    color: '#666',
-    marginTop: 5,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  originalPrice: {
+    fontSize: 12,
+    color: '#999',
+    textDecorationLine: 'line-through',
   },
 });
 
-export default ProductCard; 
+export default ProductCard;
