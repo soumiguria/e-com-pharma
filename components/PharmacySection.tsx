@@ -1,5 +1,4 @@
-// PharmacySection.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -129,6 +128,7 @@ const PharmacySection = ({ scrollY }: { scrollY: Animated.Value }) => {
     },
     productContainer: {
       paddingLeft: 16,
+      paddingRight: 16,
       paddingBottom: 24,
     },
     sectionHeader: {
@@ -173,6 +173,10 @@ const PharmacySection = ({ scrollY }: { scrollY: Animated.Value }) => {
       color: '#fff',
       fontSize: 14,
     },
+    productCard: {
+      width: 160,
+      marginRight: 12,
+    },
   });
 
   return (
@@ -180,7 +184,7 @@ const PharmacySection = ({ scrollY }: { scrollY: Animated.Value }) => {
       style={styles.container}
       scrollEventThrottle={16}
       onScroll={Animated.event(
-        [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+        [{ nativeEvent: { contentOffset: { y: scrollY } }}],
         { useNativeDriver: false }
       )}
     >
@@ -250,7 +254,7 @@ const PharmacySection = ({ scrollY }: { scrollY: Animated.Value }) => {
                   <ProductCard 
                     product={item} 
                     onPress={() => {}} 
-                    style={{ width: 160 }}
+                    style={styles.productCard}
                   />
                 )}
                 keyExtractor={(item) => item.id}

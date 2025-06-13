@@ -128,10 +128,7 @@ const GrocerySection = ({ scrollY }: { scrollY: Animated.Value }) => {
       paddingLeft: 16,
       paddingBottom: 8,
     },
-    productContainer: {
-      paddingLeft: 16,
-      paddingBottom: 24,
-    },
+    
     sectionHeader: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -173,6 +170,15 @@ const GrocerySection = ({ scrollY }: { scrollY: Animated.Value }) => {
     featuredSubtext: {
       color: '#fff',
       fontSize: 14,
+    },
+    productContainer: {
+      paddingLeft: 16,
+      paddingRight: 16,
+      paddingBottom: 24,
+    },
+    productCard: {
+      width: 160,
+      marginRight: 12, // Space between cards
     },
   });
 
@@ -251,7 +257,7 @@ const GrocerySection = ({ scrollY }: { scrollY: Animated.Value }) => {
                   <ProductCard 
                     product={item} 
                     onPress={() => {}} 
-                    style={{ width: 160 }}
+                    style={styles.productCard}
                   />
                 )}
                 keyExtractor={(item) => item.id}
