@@ -1,4 +1,3 @@
-// HomeScreen.tsx
 import React, { useState } from 'react';
 import {
   View,
@@ -6,9 +5,11 @@ import {
   TouchableOpacity,
   Animated,
   StatusBar,
+  TextInput,
+  Platform,
 } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
 import GrocerySection from '../components/GrocerySection';
@@ -30,6 +31,39 @@ const Header = ({ onProfilePress }: { onProfilePress: () => void }) => {
           color={theme.colors.text} 
         />
       </TouchableOpacity>
+    </View>
+  );
+};
+
+const SearchBar = () => {
+  const { theme } = useTheme();
+  const [searchQuery, setSearchQuery] = useState('');
+
+  return (
+    <View style={[styles.searchContainer, { backgroundColor: theme.colors.surface }]}>
+      <Ionicons 
+        name="search" 
+        size={20} 
+        color={theme.colors.text + '80'} 
+        style={styles.searchIcon} 
+      />
+      <TextInput
+        style={[styles.searchInput, { color: theme.colors.text }]}
+        placeholder="Search products..."
+        placeholderTextColor={theme.colors.text + '80'}
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+        returnKeyType="search"
+      />
+      {searchQuery.length > 0 && (
+        <TouchableOpacity onPress={() => setSearchQuery('')}>
+          <Ionicons 
+            name="close-circle" 
+            size={20} 
+            color={theme.colors.text + '80'} 
+          />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -57,12 +91,13 @@ const HomeScreen = () => {
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} />
       <Header onProfilePress={toggleDrawer} />
+      <SearchBar />
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
           tabBarStyle,
           tabBarActiveTintColor: theme.colors.primary,
-          tabBarInactiveTintColor: theme.colors.text + '80', // Adds 50% opacity to text color
+          tabBarInactiveTintColor: theme.colors.text + '80',
           tabBarShowLabel: true,
           tabBarLabelStyle: styles.tabLabel,
         }}
@@ -76,12 +111,13 @@ const HomeScreen = () => {
           }}
           options={{
             tabBarIcon: ({ color, size }) => (
-              <MaterialCommunityIcons 
-                name="basket" 
-                size={size} 
-                color={color} 
-                style={styles.tabBarIcon} 
-              />
+              <View style={styles.tabIconContainer}>
+                <MaterialCommunityIcons 
+                  name="basket" 
+                  size={size} 
+                  color={color} 
+                />
+              </View>
             ),
           }}
         >
@@ -96,12 +132,13 @@ const HomeScreen = () => {
           }}
           options={{
             tabBarIcon: ({ color, size }) => (
-              <MaterialCommunityIcons 
-                name="medical-bag" 
-                size={size} 
-                color={color} 
-                style={styles.tabBarIcon} 
-              />
+              <View style={styles.tabIconContainer}>
+                <MaterialCommunityIcons 
+                  name="medical-bag" 
+                  size={size} 
+                  color={color} 
+                />
+              </View>
             ),
           }}
         >
@@ -130,21 +167,47 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
   },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginHorizontal: 16,
+    marginVertical: 12,
+    paddingHorizontal: 16,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 8,
+    borderRadius: 24,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+  },
+  searchIcon: {
+    marginRight: 8,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: Platform.OS === 'ios' ? 4 : 0,
+  },
   tabBar: {
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
-    height: 70,
-    paddingBottom: 10,
+    height: 80,
+    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
     borderTopWidth: 0,
     elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -3 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
   },
-  tabBarIcon: {
+  tabIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: 4,
   },
   tabLabel: {

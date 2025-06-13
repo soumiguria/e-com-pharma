@@ -1,17 +1,19 @@
 import { NavigatorScreenParams } from '@react-navigation/native';
 
+// navigation/types.ts
 export type RootStackParamList = {
   Splash: undefined;
   Pincode: undefined;
-  Home: { pincode: string }; // Add pincode parameter
+  StoreSelection: undefined;
+  Home: { pincode: string };
   StoreList: { pincode: string };
-  GroceryHome: { pincode: string };
-  ProductDetail: { id: string };
+  GroceryHome: { storeId: string }; // Updated
+  ProductDetail: { product: { id: string; name: string; price: number } };
   Cart: undefined;
   Checkout: undefined;
   OrderConfirmation: undefined;
-  PharmacyHome: { pincode: string };
-  MedicineDetail: { id: string };
+  PharmacyHome: { storeId: string }; // Updated
+  MedicineDetail: { medicine: { id: string; name: string; price: number } };
   Profile: undefined;
   Orders: undefined;
   PaymentMethods: undefined;
@@ -26,7 +28,7 @@ export type HomeTabParamList = {
 };
 
 export type GroceryStackParamList = {
-  GroceryHome: undefined;
+  GroceryHome: { storeId: string }; // or make it optional: { storeId?: string }
   ProductDetail: { product: { id: string; name: string; price: number } };
 };
 

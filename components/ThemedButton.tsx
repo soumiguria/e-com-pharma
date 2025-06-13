@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { TouchableOpacity, Text, StyleSheet, Animated, Easing, View } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { ViewStyle } from 'react-native';
 
 // Define valid icon names based on MaterialCommunityIcons
 type MaterialIconName = React.ComponentProps<typeof MaterialCommunityIcons>['name'];
@@ -13,6 +14,7 @@ interface ThemedButtonProps {
   icon?: MaterialIconName;
   disabled?: boolean;
   fullWidth?: boolean;
+  style?: ViewStyle;
 }
 
 const ThemedButton: React.FC<ThemedButtonProps> = ({ 
@@ -21,7 +23,8 @@ const ThemedButton: React.FC<ThemedButtonProps> = ({
   color, 
   icon, 
   disabled = false,
-  fullWidth = false
+  fullWidth = false,
+  style
 }) => {
   const { theme } = useTheme();
   const { colors, typography, spacing, borderRadius } = theme;
@@ -93,7 +96,7 @@ const ThemedButton: React.FC<ThemedButtonProps> = ({
   });
 
   return (
-    <Animated.View style={{ opacity: opacityValue }}>
+    <Animated.View style={[{ opacity: opacityValue }, style]}>
       <TouchableOpacity
         onPress={onPress}
         onPressIn={handlePressIn}

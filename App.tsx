@@ -5,13 +5,18 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './navigation/AppNavigator';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { StorageProvider } from './contexts/StorageContext';
+import { CartProvider } from './contexts/CartContext';
 
 const AppContent = () => {
   const { theme } = useTheme();
   return (
     <NavigationContainer theme={theme}>
       <PaperProvider theme={theme}>
-        <AppNavigator />
+      <StorageProvider>
+        <CartProvider>
+          <AppNavigator />
+        </CartProvider>
+      </StorageProvider>
       </PaperProvider>
     </NavigationContainer>
   );

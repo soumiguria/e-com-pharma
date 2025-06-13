@@ -27,12 +27,16 @@ const AppNavigator = () => {
       }}
     >
       <Stack.Screen name="Splash" component={SplashScreen} />
+      <Stack.Screen 
+          name="Cart" 
+          component={CartScreen} 
+          options={{ title: 'Your Cart' }}
+        />
       <Stack.Screen name="Pincode" component={PincodeScreen} />
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="StoreList" component={StoreListScreen} />
       <Stack.Screen name="GroceryHome" component={GroceryHomeScreen} />
       <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
-      <Stack.Screen name="Cart" component={CartScreen} />
       <Stack.Screen name="Checkout" component={CheckoutScreen} />
       <Stack.Screen name="OrderConfirmation" component={OrderConfirmationScreen} />
       <Stack.Screen name="PharmacyHome" component={PharmacyHomeScreen} />
