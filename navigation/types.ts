@@ -18,6 +18,16 @@ export type RootStackParamList = {
   Orders: undefined;
   PaymentMethods: undefined;
   HelpCenter: undefined;
+  AllProducts: {
+    title: string;
+    products: Array<{
+      id: string;
+      name: string;
+      price: number;
+      image: string;
+      description?: string;
+    }>;
+  };
 };
 
 export type HomeTabParamList = {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,17 +7,92 @@ import {
   StatusBar,
   TextInput,
   Platform,
+  FlatList,
+  Text,
 } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
-import GrocerySection from '../components/GrocerySection';
-import PharmacySection from '../components/PharmacySection';
 import Drawer from '../components/ProfileDrawer';
 import ThemeToggle from '../components/ThemeToggle';
+import ProductCard from '../components/ProductCard';
+import GrocerySection from '../components/GrocerySection';
+import PharmacySection from '../components/PharmacySection';
 
 const Tab = createBottomTabNavigator();
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image: string;
+}
+
+interface SubCategory {
+  id: string;
+  name: string;
+  products: Product[];
+}
+
+interface Category {
+  id: string;
+  name: string;
+  subCategories: SubCategory[];
+}
+
+// Mock data structure that matches your GrocerySection and PharmacySection
+const groceryData: Category[] = [
+  {
+    id: '1',
+    name: 'Fresh Produce',
+    subCategories: [
+      {
+        id: '1-1',
+        name: 'Fruits',
+        products: [
+          { id: '1-1-1', name: 'Organic Apples', price: 2.99, image: 'https://cdn.pixabay.com/photo/2016/01/05/13/58/apple-1122537_1280.jpg' },
+          { id: '1-1-2', name: 'Bananas', price: 1.99, image: 'https://cdn.pixabay.com/photo/2017/06/27/22/21/banana-2449019_1280.jpg' },
+        ],
+      },
+      {
+        id: '1-2',
+        name: 'Vegetables',
+        products: [
+          { id: '1-2-1', name: 'Carrots', price: 1.49, image: 'https://cdn.pixabay.com/photo/2014/12/21/23/39/carrots-575773_1280.jpg' },
+          { id: '1-2-2', name: 'Organic Broccoli', price: 2.49, image: 'https://cdn.pixabay.com/photo/2016/03/05/19/02/broccoli-1238250_1280.jpg' },
+        ],
+      },
+    ],
+  },
+  // Add more grocery categories as needed
+];
+
+const pharmacyData: Category[] = [
+  {
+    id: '1',
+    name: 'Medicines',
+    subCategories: [
+      {
+        id: '1-1',
+        name: 'Pain Relief',
+        products: [
+          { id: '1-1-1', name: 'Ibuprofen', price: 5.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg' },
+          { id: '1-1-2', name: 'Aspirin', price: 3.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg' },
+        ],
+      },
+      {
+        id: '1-2',
+        name: 'Cold & Flu',
+        products: [
+          { id: '1-2-1', name: 'Cold Syrup', price: 7.49, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg' },
+          { id: '1-2-2', name: 'Nasal Spray', price: 6.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg' },
+        ],
+      },
+    ],
+  },
+  // Add more pharmacy categories as needed
+];
 
 const Header = ({ onProfilePress }: { onProfilePress: () => void }) => {
   const { theme } = useTheme();
@@ -35,9 +110,16 @@ const Header = ({ onProfilePress }: { onProfilePress: () => void }) => {
   );
 };
 
-const SearchBar = () => {
+const SearchBar = ({ 
+  searchQuery, 
+  setSearchQuery,
+  onClear 
+}: { 
+  searchQuery: string, 
+  setSearchQuery: (text: string) => void,
+  onClear: () => void
+}) => {
   const { theme } = useTheme();
-  const [searchQuery, setSearchQuery] = useState('');
 
   return (
     <View style={[styles.searchContainer, { backgroundColor: theme.colors.surface }]}>
@@ -56,7 +138,7 @@ const SearchBar = () => {
         returnKeyType="search"
       />
       {searchQuery.length > 0 && (
-        <TouchableOpacity onPress={() => setSearchQuery('')}>
+        <TouchableOpacity onPress={onClear}>
           <Ionicons 
             name="close-circle" 
             size={20} 
@@ -68,10 +150,59 @@ const SearchBar = () => {
   );
 };
 
+const SearchResults = ({ 
+  results, 
+  onProductPress,
+  activeTab 
+}: { 
+  results: Product[], 
+  onProductPress: (product: Product) => void,
+  activeTab: string
+}) => {
+  const { theme } = useTheme();
+
+  if (results.length === 0) {
+    return (
+      <View style={styles.noResultsContainer}>
+        <Text style={[styles.noResultsText, { color: theme.colors.text }]}>
+          No products found in {activeTab}
+        </Text>
+      </View>
+    );
+  }
+
+  return (
+    <FlatList
+      data={results}
+      keyExtractor={(item) => item.id}
+      renderItem={({ item }) => (
+        <ProductCard 
+          product={item} 
+          onPress={() => onProductPress(item)}
+          style={styles.searchResultCard}
+        />
+      )}
+      contentContainerStyle={styles.searchResultsContainer}
+    />
+  );
+};
+
 const HomeScreen = () => {
   const { theme, setSection } = useTheme();
   const [scrollY] = useState(new Animated.Value(0));
   const [drawerVisible, setDrawerVisible] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeTab, setActiveTab] = useState('grocery');
+  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+
+  // Flatten all products from all categories in the active section
+  const getAllProducts = () => {
+    const data = activeTab === 'grocery' ? groceryData : pharmacyData;
+    return data.flatMap(category => 
+      category.subCategories.flatMap(subCategory => subCategory.products)
+    );
+  };
 
   const toggleDrawer = () => setDrawerVisible(!drawerVisible);
 
@@ -87,64 +218,114 @@ const HomeScreen = () => {
     }],
   };
 
+  const handleSearch = (text: string) => {
+    setSearchQuery(text);
+    if (text.length === 0) {
+      setShowSearchResults(false);
+      return;
+    }
+
+    const allProducts = getAllProducts();
+    const filtered = allProducts.filter(product =>
+      product.name.toLowerCase().includes(text.toLowerCase())
+    );
+    setSearchResults(filtered);
+    setShowSearchResults(true);
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setShowSearchResults(false);
+  };
+
+  const handleProductPress = (product: Product) => {
+    // Navigate to product detail or perform other actions
+    console.log('Product pressed:', product);
+    // navigation.navigate('ProductDetail', { product });
+  };
+
+  // Render the normal section view when not searching
+  const renderSection = () => {
+    if (activeTab === 'grocery') {
+      return <GrocerySection scrollY={scrollY} />;
+    } else {
+      return <PharmacySection scrollY={scrollY} />;
+    }
+  };
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} />
       <Header onProfilePress={toggleDrawer} />
-      <SearchBar />
-      <Tab.Navigator
-        screenOptions={{
-          headerShown: false,
-          tabBarStyle,
-          tabBarActiveTintColor: theme.colors.primary,
-          tabBarInactiveTintColor: theme.colors.text + '80',
-          tabBarShowLabel: true,
-          tabBarLabelStyle: styles.tabLabel,
-        }}
-      >
-        <Tab.Screen
-          name="Grocery"
-          listeners={{
-            focus: () => {
-              setSection('grocery');
-            },
-          }}
-          options={{
-            tabBarIcon: ({ color, size }) => (
-              <View style={styles.tabIconContainer}>
-                <MaterialCommunityIcons 
-                  name="basket" 
-                  size={size} 
-                  color={color} 
-                />
-              </View>
-            ),
+      <SearchBar 
+        searchQuery={searchQuery} 
+        setSearchQuery={handleSearch}
+        onClear={clearSearch}
+      />
+
+      {showSearchResults ? (
+        <SearchResults 
+          results={searchResults} 
+          onProductPress={handleProductPress}
+          activeTab={activeTab}
+        />
+      ) : (
+        <Tab.Navigator
+          screenOptions={{
+            headerShown: false,
+            tabBarStyle,
+            tabBarActiveTintColor: theme.colors.primary,
+            tabBarInactiveTintColor: theme.colors.text + '80',
+            tabBarShowLabel: true,
+            tabBarLabelStyle: styles.tabLabel,
           }}
         >
-          {() => <GrocerySection scrollY={scrollY} />}
-        </Tab.Screen>
-        <Tab.Screen
-          name="Pharmacy"
-          listeners={{
-            focus: () => {
-              setSection('pharmacy');
-            },
-          }}
-          options={{
-            tabBarIcon: ({ color, size }) => (
-              <View style={styles.tabIconContainer}>
-                <MaterialCommunityIcons 
-                  name="medical-bag" 
-                  size={size} 
-                  color={color} 
-                />
-              </View>
-            ),
-          }}
-        >
-          {() => <PharmacySection scrollY={scrollY} />}
-        </Tab.Screen>
-      </Tab.Navigator>
+          <Tab.Screen
+            name="Grocery"
+            listeners={{
+              tabPress: () => {
+                setActiveTab('grocery');
+                setSection('grocery');
+              },
+            }}
+            options={{
+              tabBarIcon: ({ color, size }) => (
+                <View style={styles.tabIconContainer}>
+                  <MaterialCommunityIcons 
+                    name="basket" 
+                    size={size} 
+                    color={color} 
+                  />
+                </View>
+              ),
+            }}
+          >
+            {() => renderSection()}
+          </Tab.Screen>
+          <Tab.Screen
+            name="Pharmacy"
+            listeners={{
+              tabPress: () => {
+                setActiveTab('pharmacy');
+                setSection('pharmacy');
+              },
+            }}
+            options={{
+              tabBarIcon: ({ color, size }) => (
+                <View style={styles.tabIconContainer}>
+                  <MaterialCommunityIcons 
+                    name="medical-bag" 
+                    size={size} 
+                    color={color} 
+                  />
+                </View>
+              ),
+            }}
+          >
+            {() => renderSection()}
+          </Tab.Screen>
+        </Tab.Navigator>
+      )}
 
       {drawerVisible && <Drawer onClose={toggleDrawer} />}
     </SafeAreaView>
@@ -214,6 +395,23 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
     marginBottom: 4,
+  },
+  searchResultsContainer: {
+    padding: 16,
+  },
+  searchResultCard: {
+    width: '100%',
+    marginBottom: 12,
+  },
+  noResultsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  noResultsText: {
+    fontSize: 16,
+    textAlign: 'center',
   },
 });
 

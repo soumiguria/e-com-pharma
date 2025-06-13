@@ -1,80 +1,84 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+// contexts/CartContext.tsx
+import React, { createContext, useContext, useState } from 'react';
 
-type CartItem = {
+interface CartItem {
   id: string;
   name: string;
   price: number;
+  image: string;
   quantity: number;
-  storeId: string;
-};
+}
 
-type CartContextType = {
-  groceryCart: CartItem[];
-  pharmacyCart: CartItem[];
-  addToGroceryCart: (item: Omit<CartItem, 'quantity'>) => void;
-  addToPharmacyCart: (item: Omit<CartItem, 'quantity'>) => void;
-  removeFromGroceryCart: (id: string) => void;
-  removeFromPharmacyCart: (id: string) => void;
-  clearGroceryCart: () => void;
-  clearPharmacyCart: () => void;
-};
+interface CartContextType {
+  cartItems: CartItem[];
+  addToCart: (product: any) => void;
+  removeFromCart: (productId: string) => void;
+  updateQuantity: (productId: string, newQuantity: number) => void;
+  cartTotal: number;
+  cartCount: number;
+}
 
-const CartContext = createContext<CartContextType | undefined>(undefined);
+const CartContext = createContext<CartContextType>({
+  cartItems: [],
+  addToCart: () => {},
+  removeFromCart: () => {},
+  updateQuantity: () => {},
+  cartTotal: 0,
+  cartCount: 0,
+});
 
-export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [groceryCart, setGroceryCart] = useState<CartItem[]>([]);
-  const [pharmacyCart, setPharmacyCart] = useState<CartItem[]>([]);
+export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
+  const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
-  const addToGroceryCart = (item: Omit<CartItem, 'quantity'>) => {
-    setGroceryCart(prev => {
-      const existingItem = prev.find(cartItem => cartItem.id === item.id);
+  const addToCart = (product: any) => {
+    setCartItems(prevItems => {
+      const existingItem = prevItems.find(item => item.id === product.id);
       if (existingItem) {
-        return prev.map(cartItem =>
-          cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
+        return prevItems.map(item =>
+          item.id === product.id 
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
         );
       }
-      return [...prev, { ...item, quantity: 1 }];
+      return [...prevItems, { ...product, quantity: 1 }];
     });
   };
 
-  const addToPharmacyCart = (item: Omit<CartItem, 'quantity'>) => {
-    setPharmacyCart(prev => {
-      const existingItem = prev.find(cartItem => cartItem.id === item.id);
-      if (existingItem) {
-        return prev.map(cartItem =>
-          cartItem.id === item.id
-            ? { ...cartItem, quantity: cartItem.quantity + 1 }
-            : cartItem
-        );
-      }
-      return [...prev, { ...item, quantity: 1 }];
-    });
+  const removeFromCart = (productId: string) => {
+    setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
   };
 
-  const removeFromGroceryCart = (id: string) => {
-    setGroceryCart(prev => prev.filter(item => item.id !== id));
+  const updateQuantity = (productId: string, newQuantity: number) => {
+    if (newQuantity < 1) {
+      removeFromCart(productId);
+      return;
+    }
+    setCartItems(prevItems =>
+      prevItems.map(item =>
+        item.id === productId ? { ...item, quantity: newQuantity } : item
+      )
+    );
   };
 
-  const removeFromPharmacyCart = (id: string) => {
-    setPharmacyCart(prev => prev.filter(item => item.id !== id));
-  };
+  const cartTotal = cartItems.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
+  );
 
-  const clearGroceryCart = () => setGroceryCart([]);
-  const clearPharmacyCart = () => setPharmacyCart([]);
+  const cartCount = cartItems.reduce(
+    (count, item) => count + item.quantity,
+    0
+  );
 
   return (
     <CartContext.Provider
       value={{
-        groceryCart,
-        pharmacyCart,
-        addToGroceryCart,
-        addToPharmacyCart,
-        removeFromGroceryCart,
-        removeFromPharmacyCart,
-        clearGroceryCart,
-        clearPharmacyCart,
+        cartItems,
+        addToCart,
+        removeFromCart,
+        updateQuantity,
+        cartTotal,
+        cartCount,
       }}
     >
       {children}
@@ -82,10 +86,4 @@ export const CartProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   );
 };
 
-export const useCart = () => {
-  const context = useContext(CartContext);
-  if (!context) {
-    throw new Error('useCart must be used within a CartProvider');
-  }
-  return context;
-};
+export const useCart = () => useContext(CartContext);

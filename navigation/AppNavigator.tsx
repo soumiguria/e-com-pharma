@@ -16,6 +16,7 @@ import ProfileScreen from '../screens/ProfileScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import PaymentMethodsScreen from '../screens/PaymentMethodsScreen';
 import HelpCenterScreen from '../screens/HelpCenterScreen';
+import AllProductsScreen from '../screens/AllProductsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -45,6 +46,7 @@ const AppNavigator = () => {
       <Stack.Screen name="Orders" component={OrdersScreen} />
       <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
       <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
+      <Stack.Screen name="AllProducts" component={AllProductsScreen} />
     </Stack.Navigator>
   );
 };

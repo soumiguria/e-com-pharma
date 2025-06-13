@@ -10,6 +10,7 @@ const OffersScreen = () => <View style={{ flex: 1, justifyContent: 'center', ali
 const SupportScreen = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Support Screen</Text></View>;
 const SettingsScreen = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Settings Screen</Text></View>;
 const LogoutScreen = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Logout Screen</Text></View>;
+const CartScreen = () => <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}><Text>Cart Screen</Text></View>;
 
 const DrawerNavigator = () => {
   return (
@@ -28,6 +29,8 @@ const DrawerNavigator = () => {
             iconName = focused ? 'settings' : 'settings-outline';
           } else if (route.name === 'Logout') {
             iconName = focused ? 'log-out' : 'log-out-outline';
+          } else if (route.name === 'Cart') {
+            iconName = focused ? 'cart' : 'cart-outline';
           }
 
           return <Ionicons name={iconName} size={size} color={color} />;
@@ -39,6 +42,7 @@ const DrawerNavigator = () => {
       <Drawer.Screen name="Support" component={SupportScreen} />
       <Drawer.Screen name="Settings" component={SettingsScreen} />
       <Drawer.Screen name="Logout" component={LogoutScreen} />
+      <Drawer.Screen name="Cart" component={CartScreen} />
     </Drawer.Navigator>
   );
 };
