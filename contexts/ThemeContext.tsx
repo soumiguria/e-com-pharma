@@ -7,6 +7,8 @@ type AppSection = 'grocery' | 'pharmacy';
 
 interface ThemeContextProps {
   theme: Theme;
+  themeMode: ThemeMode;
+  setThemeMode: (mode: ThemeMode) => void;
   toggleTheme: () => void;
   setSection: (section: AppSection) => void;
 }
@@ -16,12 +18,6 @@ const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
 export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { appSection, setAppSection } = useStorage();
   const [themeMode, setThemeMode] = useState<ThemeMode>('light');
-
-  useEffect(() => {
-    if (appSection) {
-      // You can add logic here to set the theme mode based on the section if needed
-    }
-  }, [appSection]);
 
   const toggleTheme = () => {
     setThemeMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
@@ -44,7 +40,13 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [themeMode, appSection]);
 
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme, setSection: setAppSection }}>
+    <ThemeContext.Provider value={{ 
+      theme, 
+      themeMode,
+      setThemeMode,
+      toggleTheme, 
+      setSection: setAppSection 
+    }}>
       {children}
     </ThemeContext.Provider>
   );

@@ -100,8 +100,8 @@ const StoreListScreen = () => {
   });
 
   const handleStoreSelect = (store: Store) => {
-    navigation.navigate('GroceryHome');
-  };
+  navigation.navigate('GroceryHome', { storeId: store.id });
+};
 
   return (
     <SafeAreaView style={styles.container}>

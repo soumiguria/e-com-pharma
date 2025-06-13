@@ -1,11 +1,11 @@
 import { useTheme } from '../contexts/ThemeContext';
 import { StyleSheet } from 'react-native';
-import { AppTheme } from '../theme';
+import { Theme } from '../theme/theme';  // Adjust path as needed
 
 export const useAppTheme = () => {
   const { theme, themeMode, setThemeMode } = useTheme();
 
-  const createStyles = (styleCallback: (theme: AppTheme) => any) => {
+  const createStyles = (styleCallback: (theme: Theme) => any) => {
     return StyleSheet.create(styleCallback(theme));
   };
 
@@ -14,11 +14,11 @@ export const useAppTheme = () => {
     themeMode,
     setThemeMode,
     createStyles,
-    colors: theme.paperTheme.colors,
-    typography: theme.paperTheme.typography,
-    spacing: theme.paperTheme.spacing,
-    borderRadius: theme.paperTheme.borderRadius,
-    shadows: theme.paperTheme.shadows,
+    colors: theme.colors, // Directly access colors
+    typography: theme.typography,
+    spacing: theme.spacing,
+    borderRadius: theme.borderRadius,
+    shadows: theme.shadows,
     isDark: themeMode === 'dark',
   };
 }; 
