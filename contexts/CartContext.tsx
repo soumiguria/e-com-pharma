@@ -1,4 +1,3 @@
-// contexts/CartContext.tsx
 import React, { createContext, useContext, useState } from 'react';
 
 interface CartItem {
@@ -12,6 +11,7 @@ interface CartItem {
 interface CartContextType {
   cartItems: CartItem[];
   addToCart: (product: any) => void;
+  addToGroceryCart: (product: any) => void; // ✅ Added
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, newQuantity: number) => void;
   cartTotal: number;
@@ -21,6 +21,7 @@ interface CartContextType {
 const CartContext = createContext<CartContextType>({
   cartItems: [],
   addToCart: () => {},
+  addToGroceryCart: () => {}, // ✅ Added
   removeFromCart: () => {},
   updateQuantity: () => {},
   cartTotal: 0,
@@ -29,6 +30,14 @@ const CartContext = createContext<CartContextType>({
 
 export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+
+/**
+ * Adds a product to the cart. If the product already exists in the cart, 
+ * it increments the product's quantity by 1. If the product does not exist, 
+ * it adds the product to the cart with a quantity of 1.
+ *
+ * @param product - The product to be added to the cart. It should have an id and other product details.
+ */
 
   const addToCart = (product: any) => {
     setCartItems(prevItems => {
@@ -42,6 +51,11 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
       }
       return [...prevItems, { ...product, quantity: 1 }];
     });
+  };
+
+  const addToGroceryCart = (product: any) => {
+    // You can add grocery-specific logic here
+    addToCart(product);
   };
 
   const removeFromCart = (productId: string) => {
@@ -75,6 +89,7 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
       value={{
         cartItems,
         addToCart,
+        addToGroceryCart, // ✅ Added here
         removeFromCart,
         updateQuantity,
         cartTotal,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -9,18 +9,27 @@ import {
   Platform,
   FlatList,
   Text,
+  Dimensions,
 } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../contexts/ThemeContext';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../navigation/types';
 import Drawer from '../components/ProfileDrawer';
 import ThemeToggle from '../components/ThemeToggle';
 import ProductCard from '../components/ProductCard';
 import GrocerySection from '../components/GrocerySection';
 import PharmacySection from '../components/PharmacySection';
+import FeaturedBanners from '../components/FeaturedBanners';
 
 const Tab = createBottomTabNavigator();
+const { width: screenWidth } = Dimensions.get('window');
+
+type HomeRouteProp = RouteProp<RootStackParamList, 'Home'>;
+type HomeNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
 
 interface Product {
   id: string;
@@ -41,105 +50,122 @@ interface Category {
   subCategories: SubCategory[];
 }
 
-// Mock data structure that matches your GrocerySection and PharmacySection
-const groceryData: Category[] = [
+const mockBanners = [
   {
     id: '1',
-    name: 'Fresh Produce',
-    subCategories: [
-      {
-        id: '1-1',
-        name: 'Fruits',
-        products: [
-          { id: '1-1-1', name: 'Organic Apples', price: 2.99, image: 'https://cdn.pixabay.com/photo/2016/01/05/13/58/apple-1122537_1280.jpg' },
-          { id: '1-1-2', name: 'Bananas', price: 1.99, image: 'https://cdn.pixabay.com/photo/2017/06/27/22/21/banana-2449019_1280.jpg' },
-        ],
-      },
-      {
-        id: '1-2',
-        name: 'Vegetables',
-        products: [
-          { id: '1-2-1', name: 'Carrots', price: 1.49, image: 'https://cdn.pixabay.com/photo/2014/12/21/23/39/carrots-575773_1280.jpg' },
-          { id: '1-2-2', name: 'Organic Broccoli', price: 2.49, image: 'https://cdn.pixabay.com/photo/2016/03/05/19/02/broccoli-1238250_1280.jpg' },
-        ],
-      },
-    ],
+    imageUrl: 'https://cdn.pixabay.com/photo/2015/04/23/22/00/tree-736885_1280.jpg',
+    link: '/promotion1',
   },
-  // Add more grocery categories as needed
+      {
+    id: '2',
+    imageUrl: 'https://cdn.pixabay.com/photo/2015/12/01/20/28/road-1072823_1280.jpg',
+    link: '/promotion2',
+      },
 ];
 
-const pharmacyData: Category[] = [
-  {
-    id: '1',
-    name: 'Medicines',
-    subCategories: [
-      {
-        id: '1-1',
-        name: 'Pain Relief',
-        products: [
-          { id: '1-1-1', name: 'Ibuprofen', price: 5.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg' },
-          { id: '1-1-2', name: 'Aspirin', price: 3.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg' },
-        ],
-      },
-      {
-        id: '1-2',
-        name: 'Cold & Flu',
-        products: [
-          { id: '1-2-1', name: 'Cold Syrup', price: 7.49, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg' },
-          { id: '1-2-2', name: 'Nasal Spray', price: 6.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg' },
-        ],
-      },
-    ],
-  },
-  // Add more pharmacy categories as needed
-];
-
-const Header = ({ onProfilePress }: { onProfilePress: () => void }) => {
-  const { theme } = useTheme();
-  return (
-    <View style={[styles.header, { backgroundColor: theme.colors.background }]}>
-      <ThemeToggle />
-      <TouchableOpacity onPress={onProfilePress}>
-        <MaterialCommunityIcons 
-          name="account-circle" 
-          size={32} 
-          color={theme.colors.text} 
-        />
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-const SearchBar = ({ 
+const Header = ({ 
+  storeName, 
   searchQuery, 
   setSearchQuery,
   onClear 
 }: { 
-  searchQuery: string, 
-  setSearchQuery: (text: string) => void,
-  onClear: () => void
+  storeName: string;
+  searchQuery: string;
+  setSearchQuery: (text: string) => void;
+  onClear: () => void;
 }) => {
   const { theme } = useTheme();
+  const navigation = useNavigation<HomeNavigationProp>();
+  const route = useRoute<HomeRouteProp>();
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(-20)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 500,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, []);
 
   return (
-    <View style={[styles.searchContainer, { backgroundColor: theme.colors.surface }]}>
-      <Ionicons 
-        name="search" 
-        size={20} 
-        color={theme.colors.text + '80'} 
+    <Animated.View 
+      style={[
+        styles.header, 
+        { 
+          backgroundColor: theme.colors.background,
+          opacity: fadeAnim,
+          transform: [{ translateY: slideAnim }]
+        }
+      ]}
+    >
+      <View style={styles.headerTop}>
+        <TouchableOpacity 
+          onPress={() => navigation.navigate('Profile')} 
+          style={styles.menuButton}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons name="account" size={28} color={theme.colors.text} />
+        </TouchableOpacity>
+        <View style={styles.storeInfo}>
+          <Text style={[styles.storeName, { color: theme.colors.text }]} numberOfLines={1}>
+            {storeName}
+          </Text>
+          <View style={styles.locationContainer}>
+            <MaterialCommunityIcons name="map-marker" size={16} color={theme.colors.primary} />
+            <Text style={[styles.locationText, { color: theme.colors.text }]}>
+              {route.params.pincode}
+            </Text>
+          </View>
+        </View>
+        <View style={styles.rightIcons}>
+          <ThemeToggle />
+          <TouchableOpacity 
+            style={styles.cartButton}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons name="cart-outline" size={28} color={theme.colors.text} />
+          </TouchableOpacity>
+        </View>
+      </View>
+      <Animated.View 
+        style={[
+          styles.searchContainer,
+          {
+            opacity: fadeAnim,
+            transform: [{ translateY: slideAnim }]
+          }
+        ]}
+      >
+        <View style={[styles.searchBar, { backgroundColor: theme.colors.surface }]}>
+          <MaterialCommunityIcons 
+            name="magnify" 
+            size={24} 
+            color={theme.colors.text} 
         style={styles.searchIcon} 
       />
       <TextInput
+            placeholder="Search products..."
+            placeholderTextColor={theme.colors.secondary}
         style={[styles.searchInput, { color: theme.colors.text }]}
-        placeholder="Search products..."
-        placeholderTextColor={theme.colors.text + '80'}
         value={searchQuery}
         onChangeText={setSearchQuery}
         returnKeyType="search"
       />
       {searchQuery.length > 0 && (
-        <TouchableOpacity onPress={onClear}>
-          <Ionicons 
+            <TouchableOpacity 
+              onPress={onClear}
+              activeOpacity={0.7}
+            >
+              <MaterialCommunityIcons 
             name="close-circle" 
             size={20} 
             color={theme.colors.text + '80'} 
@@ -147,6 +173,9 @@ const SearchBar = ({
         </TouchableOpacity>
       )}
     </View>
+      </Animated.View>
+      {isDrawerOpen && <Drawer onClose={() => setIsDrawerOpen(false)} />}
+    </Animated.View>
   );
 };
 
@@ -188,35 +217,26 @@ const SearchResults = ({
 };
 
 const HomeScreen = () => {
+  const route = useRoute<HomeRouteProp>();
   const { theme, setSection } = useTheme();
   const [scrollY] = useState(new Animated.Value(0));
   const [drawerVisible, setDrawerVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('grocery');
+  const [activeTab, setActiveTab] = useState(route.params.storeType);
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [storeName, setStoreName] = useState('');
 
-  // Flatten all products from all categories in the active section
-  const getAllProducts = () => {
-    const data = activeTab === 'grocery' ? groceryData : pharmacyData;
-    return data.flatMap(category => 
-      category.subCategories.flatMap(subCategory => subCategory.products)
-    );
+  const getAllProducts = (): Product[] => {
+    // Replace with your actual data fetching logic
+    return [];
   };
 
-  const toggleDrawer = () => setDrawerVisible(!drawerVisible);
-
-  const tabBarStyle = {
-    ...styles.tabBar,
-    backgroundColor: theme.colors.surface,
-    transform: [{
-      translateY: scrollY.interpolate({
-        inputRange: [0, 100],
-        outputRange: [0, 100],
-        extrapolate: 'clamp',
-      }),
-    }],
-  };
+  useEffect(() => {
+    setActiveTab(route.params.storeType);
+    setSection(route.params.storeType);
+    setStoreName(route.params.storeType === 'grocery' ? 'Fresh Grocery Store' : 'Quick Pharmacy');
+  }, [route.params.storeType]);
 
   const handleSearch = (text: string) => {
     setSearchQuery(text);
@@ -239,25 +259,41 @@ const HomeScreen = () => {
   };
 
   const handleProductPress = (product: Product) => {
-    // Navigate to product detail or perform other actions
     console.log('Product pressed:', product);
-    // navigation.navigate('ProductDetail', { product });
   };
 
-  // Render the normal section view when not searching
-  const renderSection = () => {
-    if (activeTab === 'grocery') {
-      return <GrocerySection scrollY={scrollY} />;
-    } else {
-      return <PharmacySection scrollY={scrollY} />;
+  const handleBannerPress = (link: string) => {
+    console.log('Banner pressed:', link);
+  };
+
+  const renderSection = (): JSX.Element => {
+    switch (activeTab) {
+      case 'grocery':
+        return <GrocerySection scrollY={scrollY} storeId={route.params.storeId} />;
+      case 'pharmacy':
+        return <PharmacySection scrollY={scrollY} storeId={route.params.storeId} />;
+      default:
+        return <GrocerySection scrollY={scrollY} storeId={route.params.storeId} />;
     }
+  };
+
+  const tabBarStyle = {
+    ...styles.tabBar,
+    backgroundColor: theme.colors.surface,
+    transform: [{
+      translateY: scrollY.interpolate({
+        inputRange: [0, 100],
+        outputRange: [0, 100],
+        extrapolate: 'clamp',
+      }),
+    }],
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} />
-      <Header onProfilePress={toggleDrawer} />
-      <SearchBar 
+      <Header 
+        storeName={storeName}
         searchQuery={searchQuery} 
         setSearchQuery={handleSearch}
         onClear={clearSearch}
@@ -279,6 +315,7 @@ const HomeScreen = () => {
             tabBarShowLabel: true,
             tabBarLabelStyle: styles.tabLabel,
           }}
+          initialRouteName={route.params.storeType === 'grocery' ? 'Grocery' : 'Pharmacy'}
         >
           <Tab.Screen
             name="Grocery"
@@ -300,7 +337,7 @@ const HomeScreen = () => {
               ),
             }}
           >
-            {() => renderSection()}
+            {renderSection}
           </Tab.Screen>
           <Tab.Screen
             name="Pharmacy"
@@ -322,12 +359,12 @@ const HomeScreen = () => {
               ),
             }}
           >
-            {() => renderSection()}
+            {renderSection}
           </Tab.Screen>
         </Tab.Navigator>
       )}
 
-      {drawerVisible && <Drawer onClose={toggleDrawer} />}
+      {drawerVisible && <Drawer onClose={() => setDrawerVisible(false)} />}
     </SafeAreaView>
   );
 };
@@ -339,20 +376,49 @@ const styles = StyleSheet.create({
   header: {
     paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    marginBottom: 12,
   },
-  searchContainer: {
+  menuButton: {
+    padding: 4,
+  },
+  storeInfo: {
+    flex: 1,
+    marginHorizontal: 12,
+  },
+  storeName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+  locationContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  locationText: {
+    fontSize: 14,
+    marginLeft: 4,
+  },
+  rightIcons: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  cartButton: {
+    padding: 4,
+    marginLeft: 12,
+  },
+  searchContainer: {
     marginHorizontal: 16,
-    marginVertical: 12,
+  },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: Platform.OS === 'ios' ? 12 : 8,
     borderRadius: 24,

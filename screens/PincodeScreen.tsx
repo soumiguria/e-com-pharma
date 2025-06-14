@@ -45,7 +45,7 @@ const PincodeScreen = () => {
       try {
         await checkLocationPermission();
         if (currentLocation) {
-          navigation.navigate('Home', { pincode: currentLocation });
+          navigation.navigate('StoreList', { pincode: currentLocation });
         }
       } catch (error) {
         Alert.alert('Error', 'Could not get your current location');
@@ -53,13 +53,13 @@ const PincodeScreen = () => {
         setIsLoading(false);
       }
     } else {
-      navigation.navigate('Home', { pincode: currentLocation });
+      navigation.navigate('StoreList', { pincode: currentLocation });
     }
   };
 
   const handleSubmit = () => {
     if (/^\d{6}$/.test(pincode)) {
-      navigation.navigate('Home', { pincode });
+      navigation.navigate('StoreList', { pincode });
     } else {
       Alert.alert('Invalid Pincode', 'Please enter a valid 6-digit pincode');
     }
