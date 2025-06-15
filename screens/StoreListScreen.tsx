@@ -69,11 +69,38 @@ const StoreListScreen = () => {
     navigation.navigate('Home', { 
       storeId: store.id,
       storeType: store.type,
-      pincode: pincode 
+      pincode: pincode,
+      initialTab: store.type
     });
   };
 
   const filteredStores = mockedStores.filter(store => store.type === activeTab);
+
+  const getGradientColors = () => {
+    if (activeTab === 'grocery') {
+      return [colors.grocery.primary, colors.grocery.secondary];
+    } else {
+      return [colors.pharmacy.primary, colors.pharmacy.secondary];
+    }
+  };
+
+  const getTabColors = () => {
+    if (activeTab === 'grocery') {
+      return {
+        activeTab: colors.grocery.primary,
+        activeText: colors.surface,
+        inactiveText: colors.text,
+      };
+    } else {
+      return {
+        activeTab: colors.pharmacy.primary,
+        activeText: colors.surface,
+        inactiveText: colors.text,
+      };
+    }
+  };
+
+  const tabColors = getTabColors();
 
   const styles = StyleSheet.create({
     container: {
@@ -87,16 +114,16 @@ const StoreListScreen = () => {
       padding: spacing.lg,
     },
     header: {
-      marginBottom: spacing.xl,
+      marginBottom: spacing.lg,
     },
     title: {
       ...typography.h1,
-      color: colors.text,
+      color: colors.surface,
       marginBottom: spacing.xs,
     },
     subtitle: {
       ...typography.body1,
-      color: colors.text,
+      color: colors.surface,
       opacity: 0.7,
     },
     tabContainer: {
@@ -124,15 +151,15 @@ const StoreListScreen = () => {
       borderRadius: borderRadius.md,
     },
     activeTab: {
-      backgroundColor: colors.primary,
+      backgroundColor: tabColors.activeTab,
     },
     tabText: {
       fontSize: 16,
       fontWeight: '600',
-      color: colors.text,
+      color: tabColors.inactiveText,
     },
     activeTabText: {
-      color: colors.surface,
+      color: tabColors.activeText,
     },
     card: {
       marginBottom: spacing.md,
@@ -180,7 +207,7 @@ const StoreListScreen = () => {
     },
     storeDistance: {
       ...typography.body2,
-      color: colors.primary,
+      color: activeTab === 'grocery' ? colors.grocery.primary : colors.pharmacy.primary,
       marginRight: spacing.md,
     },
     storeRating: {
@@ -195,7 +222,7 @@ const StoreListScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <LinearGradient
-        colors={[colors.primary, colors.secondary]}
+        colors={getGradientColors()}
         style={styles.gradient}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -261,7 +288,7 @@ const StoreListScreen = () => {
                     <MaterialCommunityIcons
                       name="star"
                       size={16}
-                      color={colors.accent}
+                      color={store.type === 'grocery' ? colors.grocery.primary : colors.pharmacy.primary}
                     />
                     <Text style={{ marginLeft: 4 }}>{store.rating}</Text>
                   </View>

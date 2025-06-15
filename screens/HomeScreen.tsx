@@ -20,14 +20,15 @@ import ProductCard from '../components/ProductCard';
 import GrocerySection from '../components/GrocerySection';
 import PharmacySection from '../components/PharmacySection';
 import { useCart } from '../contexts/CartContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import BannerSlider from '../components/BannerSlider';
 
 const Tab = createBottomTabNavigator();
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
+type HomeRouteProp = RouteProp<RootStackParamList, 'Home'>;
 
 interface Product {
   id: string;
@@ -224,6 +225,19 @@ const HomeScreen = () => {
   const [activeTab, setActiveTab] = useState('grocery');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const route = useRoute<HomeRouteProp>();
+  const navigation = useNavigation<NavigationProp>();
+
+  // Set initial tab based on navigation params
+  useEffect(() => {
+    const initialTab = route.params?.initialTab;
+    if (initialTab) {
+      setActiveTab(initialTab);
+      setSection(initialTab);
+      // Force the tab selection
+      navigation.setParams({ initialTab: undefined }); // Clear the param after using it
+    }
+  }, [route.params]);
 
   // Flatten all products from all categories in the active section
   const getAllProducts = () => {
@@ -308,6 +322,7 @@ const HomeScreen = () => {
             tabBarShowLabel: true,
             tabBarLabelStyle: styles.tabLabel,
           }}
+          initialRouteName={activeTab === 'grocery' ? 'Grocery' : 'Pharmacy'}
         >
           <Tab.Screen
             name="Grocery"
@@ -318,10 +333,10 @@ const HomeScreen = () => {
               },
             }}
             options={{
-              tabBarIcon: ({ color, size }) => (
+              tabBarIcon: ({ color, size, focused }) => (
                 <View style={styles.tabIconContainer}>
-                  <MaterialCommunityIcons 
-                    name="basket" 
+                  <Ionicons 
+                    name={activeTab === 'grocery' ? "basket" : "basket-outline"}
                     size={size} 
                     color={color} 
                   />
@@ -340,10 +355,10 @@ const HomeScreen = () => {
               },
             }}
             options={{
-              tabBarIcon: ({ color, size }) => (
+              tabBarIcon: ({ color, size, focused }) => (
                 <View style={styles.tabIconContainer}>
-                  <MaterialCommunityIcons 
-                    name="medical-bag" 
+                  <Ionicons 
+                    name={activeTab === 'pharmacy' ? "medkit" : "medkit-outline"}
                     size={size} 
                     color={color} 
                   />

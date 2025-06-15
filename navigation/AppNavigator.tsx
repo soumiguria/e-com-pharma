@@ -19,6 +19,8 @@ import HelpCenterScreen from '../screens/HelpCenterScreen';
 import AllProductsScreen from '../screens/AllProductsScreen';
 import BannerDetailScreen from '../screens/BannerDetailScreen';
 import CategoryDetailScreen from '../screens/CategoryDetailScreen';
+import PhoneAuthScreen from '../screens/PhoneAuthScreen';
+import OTPVerificationScreen from '../screens/OTPVerificationScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -51,6 +53,8 @@ const AppNavigator = () => {
       <Stack.Screen name="AllProducts" component={AllProductsScreen} />
       <Stack.Screen name="BannerDetail" component={BannerDetailScreen} />
       <Stack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
+      <Stack.Screen name="PhoneAuth" component={PhoneAuthScreen} />
+      <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
     </Stack.Navigator>
   );
 };

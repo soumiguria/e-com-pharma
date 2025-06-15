@@ -9,6 +9,7 @@ export type RootStackParamList = {
     pincode: string;
     storeId: string;
     storeType: 'grocery' | 'pharmacy';
+    initialTab?: 'grocery' | 'pharmacy';
   };
   StoreList: { pincode: string };
   GroceryHome: { storeId: string };
@@ -47,6 +48,11 @@ export type RootStackParamList = {
     };
   };
   BannerDetail: { bannerId: string };
+  PhoneAuth: { cartType: 'grocery' | 'pharmacy' };
+  OTPVerification: { 
+    phoneNumber: string;
+    cartType: 'grocery' | 'pharmacy';
+  };
 };
 
 export type HomeTabParamList = {

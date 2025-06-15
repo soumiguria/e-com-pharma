@@ -15,6 +15,11 @@ const CartScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const [activeTab, setActiveTab] = useState<'grocery' | 'pharmacy'>('grocery');
 
+  const handleCheckout = (type: 'grocery' | 'pharmacy') => {
+    // Navigate to phone authentication first
+    navigation.navigate('PhoneAuth', { cartType: type });
+  };
+
   const renderTabContent = (items: any[], category: 'grocery' | 'pharmacy') => {
     if (items.length === 0) {
       return (
@@ -105,7 +110,7 @@ const CartScreen = () => {
             <Text style={styles.totalText}>Total: ₹{groceryTotal}</Text>
             <Button
               mode="contained"
-              onPress={() => navigation.navigate('Checkout', { type: 'grocery' })}
+              onPress={() => handleCheckout('grocery')}
               disabled={groceryItems.length === 0}
             >
               Proceed to Checkout
@@ -119,7 +124,7 @@ const CartScreen = () => {
             <Text style={styles.totalText}>Total: ₹{pharmacyTotal}</Text>
             <Button
               mode="contained"
-              onPress={() => navigation.navigate('Checkout', { type: 'pharmacy' })}
+              onPress={() => handleCheckout('pharmacy')}
               disabled={pharmacyItems.length === 0}
             >
               Proceed to Checkout
