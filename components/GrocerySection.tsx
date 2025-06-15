@@ -19,6 +19,11 @@ import CategoryCard from './CategoryCard';
 
 type GroceryNavigationProp = StackNavigationProp<RootStackParamList, 'AllProducts'>;
 
+interface GrocerySectionProps {
+  scrollY: Animated.Value;
+  storeId?: string;
+}
+
 interface Product {
   id: string;
   name: string;
@@ -202,7 +207,7 @@ const groceryData: Category[] = [
   },
 ];
 
-const GrocerySection = ({ scrollY }: { scrollY: Animated.Value }) => {
+const GrocerySection: React.FC<GrocerySectionProps> = ({ scrollY, storeId }) => {
   const { theme } = useTheme();
   const navigation = useNavigation<GroceryNavigationProp>();
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(groceryData[0]);

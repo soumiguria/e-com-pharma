@@ -376,6 +376,30 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 3,
   },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cartButton: {
+    marginRight: 16,
+    position: 'relative',
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  cartBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -440,31 +464,7 @@ const styles = StyleSheet.create({
   noResultsText: {
     fontSize: 16,
     textAlign: 'center',
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  cartButton: {
-    marginRight: 16,
-    position: 'relative',
-  },
-  cartBadge: {
-    position: 'absolute',
-    top: -8,
-    right: -8,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 4,
-  },
-  cartBadgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
+  }
 });
 
 export default HomeScreen;

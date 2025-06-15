@@ -7,11 +7,17 @@ import {
   ScrollView, 
   Animated,
   TouchableOpacity,
-  Image
+  Image,
+  Modal
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import { useNavigation } from '@react-navigation/native';
+import { RootStackParamList } from '../navigation/types';
+import { StackNavigationProp } from '@react-navigation/stack';
 import ProductCard from './ProductCard';
 import CategoryCard from './CategoryCard';
+
+type PharmacyNavigationProp = StackNavigationProp<RootStackParamList, 'AllProducts'>;
 
 interface Product {
   id: string;
@@ -98,7 +104,12 @@ const pharmacyData: Category[] = [
   },
 ];
 
-const PharmacySection = ({ scrollY }: { scrollY: Animated.Value }) => {
+interface PharmacySectionProps {
+  scrollY: Animated.Value;
+  storeId?: string;
+}
+
+const PharmacySection: React.FC<PharmacySectionProps> = ({ scrollY, storeId }) => {
   const { theme } = useTheme();
   const [selectedCategory, setSelectedCategory] = useState<Category | null>(pharmacyData[0]);
 

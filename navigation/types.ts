@@ -5,7 +5,11 @@ export type RootStackParamList = {
   Splash: undefined;
   Pincode: undefined;
   StoreSelection: undefined;
-  Home: { pincode: string };
+  Home: { 
+    pincode: string;
+    storeId: string;
+    storeType: 'grocery' | 'pharmacy';
+  };
   StoreList: { pincode: string };
   GroceryHome: { storeId: string };
   ProductDetail: { product: { id: string; name: string; price: number; image?: string } };

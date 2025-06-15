@@ -13,6 +13,7 @@ interface CartItem {
 interface CartContextType {
   cartItems: CartItem[];
   addToCart: (product: Omit<CartItem, 'quantity'>) => void;
+  addToGroceryCart: (product: any) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, newQuantity: number) => void;
   cartTotal: number;
@@ -23,6 +24,7 @@ interface CartContextType {
 const CartContext = createContext<CartContextType>({
   cartItems: [],
   addToCart: () => {},
+  addToGroceryCart: () => {}, // ✅ Added
   removeFromCart: () => {},
   updateQuantity: () => {},
   cartTotal: 0,
@@ -74,6 +76,11 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
     });
   };
 
+  const addToGroceryCart = (product: any) => {
+    // You can add grocery-specific logic here
+    addToCart(product);
+  };
+
   const removeFromCart = (productId: string) => {
     setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
   };
@@ -109,6 +116,7 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
       value={{
         cartItems,
         addToCart,
+        addToGroceryCart, // ✅ Added here
         removeFromCart,
         updateQuantity,
         cartTotal,
