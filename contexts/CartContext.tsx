@@ -8,40 +8,54 @@ interface CartItem {
   price: number;
   image: string;
   quantity: number;
+  category: 'grocery' | 'pharmacy';
+  variant?: {
+    name: string;
+    unit: string;
+  };
 }
 
 interface CartContextType {
-  cartItems: CartItem[];
-  addToCart: (product: Omit<CartItem, 'quantity'>) => void;
-  addToGroceryCart: (product: any) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, newQuantity: number) => void;
-  cartTotal: number;
-  cartCount: number;
+  groceryItems: CartItem[];
+  pharmacyItems: CartItem[];
+  addToGroceryCart: (product: Omit<CartItem, 'quantity' | 'category'>) => void;
+  addToPharmacyCart: (product: Omit<CartItem, 'quantity' | 'category'>) => void;
+  removeFromCart: (productId: string, category: 'grocery' | 'pharmacy') => void;
+  updateQuantity: (productId: string, newQuantity: number, category: 'grocery' | 'pharmacy') => void;
+  groceryTotal: number;
+  pharmacyTotal: number;
+  totalItems: number;
   clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextType>({
-  cartItems: [],
-  addToCart: () => {},
-  addToGroceryCart: () => {}, // ✅ Added
+  groceryItems: [],
+  pharmacyItems: [],
+  addToGroceryCart: () => {},
+  addToPharmacyCart: () => {},
   removeFromCart: () => {},
   updateQuantity: () => {},
-  cartTotal: 0,
-  cartCount: 0,
+  groceryTotal: 0,
+  pharmacyTotal: 0,
+  totalItems: 0,
   clearCart: () => {},
 });
 
 export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
-  const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [groceryItems, setGroceryItems] = useState<CartItem[]>([]);
+  const [pharmacyItems, setPharmacyItems] = useState<CartItem[]>([]);
 
   // Load cart items from AsyncStorage on mount
   useEffect(() => {
     const loadCart = async () => {
       try {
-        const savedCart = await AsyncStorage.getItem('cart');
-        if (savedCart) {
-          setCartItems(JSON.parse(savedCart));
+        const savedGroceryCart = await AsyncStorage.getItem('groceryCart');
+        const savedPharmacyCart = await AsyncStorage.getItem('pharmacyCart');
+        if (savedGroceryCart) {
+          setGroceryItems(JSON.parse(savedGroceryCart));
+        }
+        if (savedPharmacyCart) {
+          setPharmacyItems(JSON.parse(savedPharmacyCart));
         }
       } catch (error) {
         console.error('Error loading cart:', error);
@@ -54,16 +68,17 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
   useEffect(() => {
     const saveCart = async () => {
       try {
-        await AsyncStorage.setItem('cart', JSON.stringify(cartItems));
+        await AsyncStorage.setItem('groceryCart', JSON.stringify(groceryItems));
+        await AsyncStorage.setItem('pharmacyCart', JSON.stringify(pharmacyItems));
       } catch (error) {
         console.error('Error saving cart:', error);
       }
     };
     saveCart();
-  }, [cartItems]);
+  }, [groceryItems, pharmacyItems]);
 
-  const addToCart = (product: Omit<CartItem, 'quantity'>) => {
-    setCartItems(prevItems => {
+  const addToGroceryCart = (product: Omit<CartItem, 'quantity' | 'category'>) => {
+    setGroceryItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id);
       if (existingItem) {
         return prevItems.map(item =>
@@ -72,41 +87,71 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
             : item
         );
       }
-      return [...prevItems, { ...product, quantity: 1 }];
+      return [...prevItems, { ...product, quantity: 1, category: 'grocery' }];
     });
   };
 
-  const addToGroceryCart = (product: any) => {
-    // You can add grocery-specific logic here
-    addToCart(product);
+  const addToPharmacyCart = (product: Omit<CartItem, 'quantity' | 'category'>) => {
+    setPharmacyItems(prevItems => {
+      const existingItem = prevItems.find(item => item.id === product.id);
+      if (existingItem) {
+        return prevItems.map(item =>
+          item.id === product.id 
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      return [...prevItems, { ...product, quantity: 1, category: 'pharmacy' }];
+    });
   };
 
-  const removeFromCart = (productId: string) => {
-    setCartItems(prevItems => prevItems.filter(item => item.id !== productId));
+  const removeFromCart = (productId: string, category: 'grocery' | 'pharmacy') => {
+    if (category === 'grocery') {
+      setGroceryItems(prevItems => prevItems.filter(item => item.id !== productId));
+    } else {
+      setPharmacyItems(prevItems => prevItems.filter(item => item.id !== productId));
+    }
   };
 
-  const updateQuantity = (productId: string, newQuantity: number) => {
+  const updateQuantity = (productId: string, newQuantity: number, category: 'grocery' | 'pharmacy') => {
     if (newQuantity < 1) {
-      removeFromCart(productId);
+      removeFromCart(productId, category);
       return;
     }
-    setCartItems(prevItems =>
-      prevItems.map(item =>
-        item.id === productId ? { ...item, quantity: newQuantity } : item
-      )
-    );
+    if (category === 'grocery') {
+      setGroceryItems(prevItems =>
+        prevItems.map(item =>
+          item.id === productId ? { ...item, quantity: newQuantity } : item
+        )
+      );
+    } else {
+      setPharmacyItems(prevItems =>
+        prevItems.map(item =>
+          item.id === productId ? { ...item, quantity: newQuantity } : item
+        )
+      );
+    }
   };
 
   const clearCart = () => {
-    setCartItems([]);
+    setGroceryItems([]);
+    setPharmacyItems([]);
   };
 
-  const cartTotal = cartItems.reduce(
+  const groceryTotal = groceryItems.reduce(
     (total, item) => total + item.price * item.quantity,
     0
   );
 
-  const cartCount = cartItems.reduce(
+  const pharmacyTotal = pharmacyItems.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
+  );
+
+  const totalItems = groceryItems.reduce(
+    (count, item) => count + item.quantity,
+    0
+  ) + pharmacyItems.reduce(
     (count, item) => count + item.quantity,
     0
   );
@@ -114,13 +159,15 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
   return (
     <CartContext.Provider
       value={{
-        cartItems,
-        addToCart,
-        addToGroceryCart, // ✅ Added here
+        groceryItems,
+        pharmacyItems,
+        addToGroceryCart,
+        addToPharmacyCart,
         removeFromCart,
         updateQuantity,
-        cartTotal,
-        cartCount,
+        groceryTotal,
+        pharmacyTotal,
+        totalItems,
         clearCart,
       }}
     >

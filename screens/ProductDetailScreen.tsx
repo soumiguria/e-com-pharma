@@ -21,7 +21,7 @@ const ProductDetailScreen = () => {
       id: product.id,
       name: product.name,
       price: product.price,
-      storeId: '1' // You would get this from your store context
+      image: product.image || ''
     });
   };
 

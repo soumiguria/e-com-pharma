@@ -14,7 +14,7 @@ export type RootStackParamList = {
   GroceryHome: { storeId: string };
   ProductDetail: { product: { id: string; name: string; price: number; image?: string } };
   Cart: undefined;
-  Checkout: undefined;
+  Checkout: { type: 'grocery' | 'pharmacy' };
   OrderConfirmation: undefined;
   PharmacyHome: { storeId: string };
   MedicineDetail: { medicine: { id: string; name: string; price: number; image?: string } };

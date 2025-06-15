@@ -13,6 +13,7 @@ interface Product {
   rating?: number;
   isNew?: boolean;
   isOnSale?: boolean;
+  category?: 'grocery' | 'pharmacy';
 }
 
 interface ProductCardProps {
@@ -22,7 +23,7 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style }) => {
-  const { addToCart } = useCart();
+  const { addToGroceryCart, addToPharmacyCart } = useCart();
   const { theme } = useTheme();
   const imageSource = typeof product.image === 'string' 
     ? { uri: product.image } 
@@ -30,12 +31,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style }) =>
 
   const handleAddToCart = (e: any) => {
     e.stopPropagation();
-    addToCart({
+    const cartItem = {
       id: product.id,
       name: product.name,
       price: product.price,
       image: typeof product.image === 'string' ? product.image : ''
-    });
+    };
+
+    if (product.category === 'pharmacy') {
+      addToPharmacyCart(cartItem);
+    } else {
+      addToGroceryCart(cartItem);
+    }
   };
 
   return (
@@ -80,9 +87,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style }) =>
         )}
         
         <View style={styles.priceContainer}>
-          <Text style={styles.price}>${product.price.toFixed(2)}</Text>
+          <Text style={styles.price}>₹{product.price.toFixed(2)}</Text>
           {product.originalPrice && (
-            <Text style={styles.originalPrice}>${product.originalPrice.toFixed(2)}</Text>
+            <Text style={styles.originalPrice}>₹{product.originalPrice.toFixed(2)}</Text>
           )}
         </View>
       </View>

@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, StyleSheet, ScrollView, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, ScrollView, Platform, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text, Button, Chip } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -47,6 +47,14 @@ const mockedStores: Store[] = [
     distance: '2.0 km',
     rating: 4.0,
   },
+  {
+    id: '4',
+    name: 'City Pharmacy',
+    type: 'pharmacy',
+    address: '321 Pine Street, Eastside',
+    distance: '1.8 km',
+    rating: 4.3,
+  },
 ];
 
 const StoreListScreen = () => {
@@ -55,6 +63,7 @@ const StoreListScreen = () => {
   const { theme } = useTheme();
   const { colors, typography, spacing, borderRadius, shadows } = theme;
   const { pincode } = route.params;
+  const [activeTab, setActiveTab] = useState<'grocery' | 'pharmacy'>('grocery');
 
   const handleStoreSelect = (store: Store) => {
     navigation.navigate('Home', { 
@@ -63,6 +72,8 @@ const StoreListScreen = () => {
       pincode: pincode 
     });
   };
+
+  const filteredStores = mockedStores.filter(store => store.type === activeTab);
 
   const styles = StyleSheet.create({
     container: {
@@ -87,6 +98,41 @@ const StoreListScreen = () => {
       ...typography.body1,
       color: colors.text,
       opacity: 0.7,
+    },
+    tabContainer: {
+      flexDirection: 'row',
+      marginBottom: spacing.lg,
+      backgroundColor: colors.surface,
+      borderRadius: borderRadius.lg,
+      padding: 4,
+      ...Platform.select({
+        ios: {
+          shadowColor: colors.text,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 8,
+        },
+        android: {
+          elevation: 4,
+        },
+      }),
+    },
+    tab: {
+      flex: 1,
+      paddingVertical: spacing.sm,
+      alignItems: 'center',
+      borderRadius: borderRadius.md,
+    },
+    activeTab: {
+      backgroundColor: colors.primary,
+    },
+    tabText: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: colors.text,
+    },
+    activeTabText: {
+      color: colors.surface,
     },
     card: {
       marginBottom: spacing.md,
@@ -159,8 +205,39 @@ const StoreListScreen = () => {
             <Text style={styles.title}>Stores Near You</Text>
             <Text style={styles.subtitle}>Pincode: {pincode}</Text>
           </View>
+
+          <View style={styles.tabContainer}>
+            <TouchableOpacity
+              style={[
+                styles.tab,
+                activeTab === 'grocery' && styles.activeTab
+              ]}
+              onPress={() => setActiveTab('grocery')}
+            >
+              <Text style={[
+                styles.tabText,
+                activeTab === 'grocery' && styles.activeTabText
+              ]}>
+                Grocery Stores
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.tab,
+                activeTab === 'pharmacy' && styles.activeTab
+              ]}
+              onPress={() => setActiveTab('pharmacy')}
+            >
+              <Text style={[
+                styles.tabText,
+                activeTab === 'pharmacy' && styles.activeTabText
+              ]}>
+                Pharmacy Stores
+              </Text>
+            </TouchableOpacity>
+          </View>
           
-          {mockedStores.map((store) => (
+          {filteredStores.map((store) => (
             <Card key={store.id} style={styles.card}>
               <Card.Content style={styles.cardContent}>
                 <View style={styles.storeHeader}>
