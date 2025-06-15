@@ -6,17 +6,19 @@ import AppNavigator from './navigation/AppNavigator';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { StorageProvider } from './contexts/StorageContext';
 import { CartProvider } from './contexts/CartContext';
+import Toast from 'react-native-toast-message';
 
 const AppContent = () => {
   const { theme } = useTheme();
   return (
     <NavigationContainer theme={theme}>
       <PaperProvider theme={theme}>
-      <StorageProvider>
-        <CartProvider>
-          <AppNavigator />
-        </CartProvider>
-      </StorageProvider>
+        <StorageProvider>
+          <CartProvider>
+            <AppNavigator />
+            <Toast />
+          </CartProvider>
+        </StorageProvider>
       </PaperProvider>
     </NavigationContainer>
   );

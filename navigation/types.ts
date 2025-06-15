@@ -12,7 +12,7 @@ export type RootStackParamList = {
   };
   StoreList: { pincode: string };
   GroceryHome: { storeId: string };
-  ProductDetail: { product: { id: string; name: string; price: number; image?: string } };
+  ProductDetail: { product: any };
   Cart: undefined;
   Checkout: { type: 'grocery' | 'pharmacy' };
   OrderConfirmation: undefined;
@@ -24,17 +24,29 @@ export type RootStackParamList = {
   HelpCenter: undefined;
   AllProducts: {
     title: string;
-    products: Array<{
+    products: any[];
+  };
+  CategoryDetail: {
+    category: {
       id: string;
       name: string;
-      price: number;
       image: string;
-      description?: string;
-    }>;
+      subCategories: Array<{
+        id: string;
+        name: string;
+        products: Array<{
+          id: string;
+          name: string;
+          price: number;
+          image: string;
+          description: string;
+          brand: string;
+        }>;
+        brands?: string[];
+      }>;
+    };
   };
-  BannerDetail: {
-    bannerId: string;
-  };
+  BannerDetail: { bannerId: string };
 };
 
 export type HomeTabParamList = {

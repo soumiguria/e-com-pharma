@@ -16,6 +16,8 @@ import { RootStackParamList } from '../navigation/types';
 import { StackNavigationProp } from '@react-navigation/stack';
 import ProductDetailModal from '../components/ProductDetailModal';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useCart } from '../contexts/CartContext';
+import Toast from 'react-native-toast-message';
 
 type AllProductsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'AllProducts'>;
 
@@ -27,12 +29,31 @@ const AllProductsScreen = () => {
   const navigation = useNavigation<AllProductsScreenNavigationProp>();
   const route = useRoute();
   const { title, products } = route.params as { title: string; products: any[] };
+  const { addToGroceryCart } = useCart();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
   const handleProductPress = (product: any) => {
     setSelectedProduct(product);
     setModalVisible(true);
+  };
+
+  const handleAddToCart = (e: any, product: any) => {
+    e.stopPropagation();
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image
+    };
+    addToGroceryCart(cartItem);
+    Toast.show({
+      type: 'success',
+      text1: 'Added to Cart',
+      text2: `${product.name} has been added to your cart`,
+      position: 'bottom',
+      visibilityTime: 2000,
+    });
   };
 
   const closeModal = () => {
@@ -155,7 +176,10 @@ const AllProductsScreen = () => {
           renderItem={({ item }) => (
             <TouchableOpacity 
               style={styles.itemContainer}
-              onPress={() => handleProductPress(item)}
+              onPress={() => {
+                setSelectedProduct(item);
+                setModalVisible(true);
+              }}
               activeOpacity={0.8}
             >
               <View style={styles.itemImageContainer}>
@@ -170,10 +194,7 @@ const AllProductsScreen = () => {
                   <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
                   <TouchableOpacity 
                     style={styles.addToCartButton}
-                    onPress={(e) => {
-                      e.stopPropagation();
-                      // Add to cart logic here
-                    }}
+                    onPress={(e) => handleAddToCart(e, item)}
                   >
                     <MaterialIcons 
                       name="add-shopping-cart" 

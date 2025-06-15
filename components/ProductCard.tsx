@@ -3,6 +3,7 @@ import { View, Text, Image, StyleSheet, TouchableOpacity, StyleProp, ViewStyle, 
 import { useCart } from '../contexts/CartContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import Toast from 'react-native-toast-message';
 
 interface Product {
   id: string;
@@ -40,8 +41,22 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style }) =>
 
     if (product.category === 'pharmacy') {
       addToPharmacyCart(cartItem);
+      Toast.show({
+        type: 'success',
+        text1: 'Added to Cart',
+        text2: `${product.name} has been added to your pharmacy cart`,
+        position: 'bottom',
+        visibilityTime: 2000,
+      });
     } else {
       addToGroceryCart(cartItem);
+      Toast.show({
+        type: 'success',
+        text1: 'Added to Cart',
+        text2: `${product.name} has been added to your grocery cart`,
+        position: 'bottom',
+        visibilityTime: 2000,
+      });
     }
   };
 

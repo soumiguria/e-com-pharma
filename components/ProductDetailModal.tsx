@@ -2,6 +2,8 @@
 import React from 'react';
 import { View, Text, Modal, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import { useCart } from '../contexts/CartContext';
+import Toast from 'react-native-toast-message';
 
 interface ProductDetailModalProps {
   visible: boolean;
@@ -17,6 +19,7 @@ interface ProductDetailModalProps {
 
 const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ visible, product, onClose }) => {
   const { theme } = useTheme();
+  const { addToGroceryCart } = useCart();
 
   const styles = StyleSheet.create({
     modalContainer: {
@@ -87,6 +90,26 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ visible, produc
     },
   });
 
+  const handleAddToCart = () => {
+    if (!product) return;
+    
+    const cartItem = {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: product.image
+    };
+    addToGroceryCart(cartItem);
+    Toast.show({
+      type: 'success',
+      text1: 'Added to Cart',
+      text2: `${product.name} has been added to your cart`,
+      position: 'bottom',
+      visibilityTime: 2000,
+    });
+    onClose();
+  };
+
   if (!product) return null;
 
   return (
@@ -108,10 +131,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ visible, produc
           <View style={styles.buttonContainer}>
             <TouchableOpacity 
               style={[styles.actionButton, styles.addToCartButton]}
-              onPress={() => {
-                // Handle add to cart
-                onClose();
-              }}
+              onPress={handleAddToCart}
             >
               <Text style={[styles.buttonText, styles.addToCartText]}>Add to Cart</Text>
             </TouchableOpacity>
