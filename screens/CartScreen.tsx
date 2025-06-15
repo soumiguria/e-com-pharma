@@ -12,9 +12,15 @@ import {
 import { useTheme } from '../contexts/ThemeContext';
 import { useCart } from '../contexts/CartContext';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Cart'>;
 
 const CartScreen = () => {
   const { theme } = useTheme();
+  const navigation = useNavigation<NavigationProp>();
   const {
     cartItems,
     removeFromCart,
@@ -167,14 +173,14 @@ const CartScreen = () => {
             style={styles.quantityButton}
             onPress={() => updateQuantity(item.id, item.quantity - 1)}
           >
-            <MaterialIcons name="remove" size={20} color={theme.colors.primary} />
+            <MaterialIcons name="remove" size={20} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.quantityText}>{item.quantity}</Text>
           <TouchableOpacity
             style={styles.quantityButton}
             onPress={() => updateQuantity(item.id, item.quantity + 1)}
           >
-            <MaterialIcons name="add" size={20} color={theme.colors.primary} />
+            <MaterialIcons name="add" size={20} color="#fff" />
           </TouchableOpacity>
         </View>
       </View>
@@ -186,6 +192,10 @@ const CartScreen = () => {
       </TouchableOpacity>
     </View>
   );
+
+  const handleCheckout = () => {
+    navigation.navigate('Checkout');
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -218,7 +228,10 @@ const CartScreen = () => {
                 <Text style={styles.totalText}>Total</Text>
                 <Text style={styles.totalAmount}>${cartTotal.toFixed(2)}</Text>
               </View>
-              <TouchableOpacity style={styles.checkoutButton}>
+              <TouchableOpacity 
+                style={styles.checkoutButton}
+                onPress={handleCheckout}
+              >
                 <Text style={styles.checkoutText}>Proceed to Checkout</Text>
               </TouchableOpacity>
             </View>

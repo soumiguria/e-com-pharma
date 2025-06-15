@@ -1,5 +1,6 @@
 // contexts/CartContext.tsx
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface CartItem {
   id: string;
@@ -11,11 +12,12 @@ interface CartItem {
 
 interface CartContextType {
   cartItems: CartItem[];
-  addToCart: (product: any) => void;
+  addToCart: (product: Omit<CartItem, 'quantity'>) => void;
   removeFromCart: (productId: string) => void;
   updateQuantity: (productId: string, newQuantity: number) => void;
   cartTotal: number;
   cartCount: number;
+  clearCart: () => void;
 }
 
 const CartContext = createContext<CartContextType>({
@@ -25,12 +27,40 @@ const CartContext = createContext<CartContextType>({
   updateQuantity: () => {},
   cartTotal: 0,
   cartCount: 0,
+  clearCart: () => {},
 });
 
 export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
 
-  const addToCart = (product: any) => {
+  // Load cart items from AsyncStorage on mount
+  useEffect(() => {
+    const loadCart = async () => {
+      try {
+        const savedCart = await AsyncStorage.getItem('cart');
+        if (savedCart) {
+          setCartItems(JSON.parse(savedCart));
+        }
+      } catch (error) {
+        console.error('Error loading cart:', error);
+      }
+    };
+    loadCart();
+  }, []);
+
+  // Save cart items to AsyncStorage whenever they change
+  useEffect(() => {
+    const saveCart = async () => {
+      try {
+        await AsyncStorage.setItem('cart', JSON.stringify(cartItems));
+      } catch (error) {
+        console.error('Error saving cart:', error);
+      }
+    };
+    saveCart();
+  }, [cartItems]);
+
+  const addToCart = (product: Omit<CartItem, 'quantity'>) => {
     setCartItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id);
       if (existingItem) {
@@ -60,6 +90,10 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
     );
   };
 
+  const clearCart = () => {
+    setCartItems([]);
+  };
+
   const cartTotal = cartItems.reduce(
     (total, item) => total + item.price * item.quantity,
     0
@@ -79,6 +113,7 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
         updateQuantity,
         cartTotal,
         cartCount,
+        clearCart,
       }}
     >
       {children}

@@ -7,13 +7,13 @@ export type RootStackParamList = {
   StoreSelection: undefined;
   Home: { pincode: string };
   StoreList: { pincode: string };
-  GroceryHome: { storeId: string }; // Updated
-  ProductDetail: { product: { id: string; name: string; price: number } };
+  GroceryHome: { storeId: string };
+  ProductDetail: { product: { id: string; name: string; price: number; image?: string } };
   Cart: undefined;
   Checkout: undefined;
   OrderConfirmation: undefined;
-  PharmacyHome: { storeId: string }; // Updated
-  MedicineDetail: { medicine: { id: string; name: string; price: number } };
+  PharmacyHome: { storeId: string };
+  MedicineDetail: { medicine: { id: string; name: string; price: number; image?: string } };
   Profile: undefined;
   Orders: undefined;
   PaymentMethods: undefined;
@@ -28,6 +28,9 @@ export type RootStackParamList = {
       description?: string;
     }>;
   };
+  BannerDetail: {
+    bannerId: string;
+  };
 };
 
 export type HomeTabParamList = {
@@ -38,11 +41,11 @@ export type HomeTabParamList = {
 };
 
 export type GroceryStackParamList = {
-  GroceryHome: { storeId: string }; // or make it optional: { storeId?: string }
-  ProductDetail: { product: { id: string; name: string; price: number } };
+  GroceryHome: { storeId: string };
+  ProductDetail: { product: { id: string; name: string; price: number; image?: string } };
 };
 
 export type PharmacyStackParamList = {
   PharmacyHome: undefined;
-  MedicineDetail: { medicine: { id: string; name: string; price: number } };
+  MedicineDetail: { medicine: { id: string; name: string; price: number; image?: string } };
 };

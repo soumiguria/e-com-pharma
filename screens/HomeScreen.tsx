@@ -19,8 +19,15 @@ import ThemeToggle from '../components/ThemeToggle';
 import ProductCard from '../components/ProductCard';
 import GrocerySection from '../components/GrocerySection';
 import PharmacySection from '../components/PharmacySection';
+import { useCart } from '../contexts/CartContext';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/types';
+import BannerSlider from '../components/BannerSlider';
 
 const Tab = createBottomTabNavigator();
+
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface Product {
   id: string;
@@ -96,16 +103,36 @@ const pharmacyData: Category[] = [
 
 const Header = ({ onProfilePress }: { onProfilePress: () => void }) => {
   const { theme } = useTheme();
+  const navigation = useNavigation<NavigationProp>();
+  const { cartCount } = useCart();
+
   return (
-    <View style={[styles.header, { backgroundColor: theme.colors.background }]}>
-      <ThemeToggle />
+    <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
       <TouchableOpacity onPress={onProfilePress}>
         <MaterialCommunityIcons 
           name="account-circle" 
-          size={32} 
+          size={28} 
           color={theme.colors.text} 
         />
       </TouchableOpacity>
+      <View style={styles.headerRight}>
+        <TouchableOpacity 
+          style={styles.cartButton}
+          onPress={() => navigation.navigate('Cart')}
+        >
+          <MaterialCommunityIcons 
+            name="cart" 
+            size={24} 
+            color={theme.colors.text} 
+          />
+          {cartCount > 0 && (
+            <View style={[styles.cartBadge, { backgroundColor: theme.colors.primary }]}>
+              <Text style={styles.cartBadgeText}>{cartCount}</Text>
+            </View>
+          )}
+        </TouchableOpacity>
+        <ThemeToggle />
+      </View>
     </View>
   );
 };
@@ -176,11 +203,12 @@ const SearchResults = ({
       data={results}
       keyExtractor={(item) => item.id}
       renderItem={({ item }) => (
-        <ProductCard 
-          product={item} 
-          onPress={() => onProductPress(item)}
-          style={styles.searchResultCard}
-        />
+        <View style={styles.searchResultCard}>
+          <ProductCard 
+            product={item} 
+            onPress={() => onProductPress(item)}
+          />
+        </View>
       )}
       contentContainerStyle={styles.searchResultsContainer}
     />
@@ -262,7 +290,7 @@ const HomeScreen = () => {
         setSearchQuery={handleSearch}
         onClear={clearSearch}
       />
-
+      <BannerSlider />
       {showSearchResults ? (
         <SearchResults 
           results={searchResults} 
@@ -412,6 +440,30 @@ const styles = StyleSheet.create({
   noResultsText: {
     fontSize: 16,
     textAlign: 'center',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cartButton: {
+    marginRight: 16,
+    position: 'relative',
+  },
+  cartBadge: {
+    position: 'absolute',
+    top: -8,
+    right: -8,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  cartBadgeText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: 'bold',
   },
 });
 

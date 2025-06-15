@@ -1,5 +1,8 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, StyleProp, ViewStyle, ImageURISource } from 'react-native';
+import { useCart } from '../contexts/CartContext';
+import { MaterialIcons } from '@expo/vector-icons';
+import { useTheme } from '../contexts/ThemeContext';
 
 interface Product {
   id: string;
@@ -19,9 +22,21 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style }) => {
+  const { addToCart } = useCart();
+  const { theme } = useTheme();
   const imageSource = typeof product.image === 'string' 
     ? { uri: product.image } 
     : product.image;
+
+  const handleAddToCart = (e: any) => {
+    e.stopPropagation();
+    addToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image: typeof product.image === 'string' ? product.image : ''
+    });
+  };
 
   return (
     <TouchableOpacity 
@@ -47,8 +62,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style }) =>
           )}
         </View>
         
-        <TouchableOpacity style={styles.wishlistButton} onPress={() => {}}>
-          <Text style={styles.wishlistIcon}>♡</Text>
+        <TouchableOpacity 
+          style={[styles.cartButton, { backgroundColor: theme.colors.primary }]} 
+          onPress={handleAddToCart}
+        >
+          <MaterialIcons name="add-shopping-cart" size={20} color="#fff" />
         </TouchableOpacity>
       </View>
 
@@ -116,20 +134,20 @@ const styles = StyleSheet.create({
     fontSize: 10,
     fontWeight: 'bold',
   },
-  wishlistButton: {
+  cartButton: {
     position: 'absolute',
-    top: 8,
+    bottom: 8,
     right: 8,
-    backgroundColor: 'rgba(255,255,255,0.8)',
-    borderRadius: 20,
-    width: 28,
-    height: 28,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  wishlistIcon: {
-    fontSize: 16,
-    color: '#333',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
   },
   infoContainer: {
     padding: 12,
