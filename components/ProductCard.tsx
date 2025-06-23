@@ -62,11 +62,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style }) =>
 
   return (
     <TouchableOpacity 
-      style={[styles.container, style]} 
+      style={[styles.container, { backgroundColor: theme.colors.surface }, style]} 
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <View style={styles.imageContainer}>
+      <View style={[styles.imageContainer, { backgroundColor: theme.colors.background }]}>
         {product.image && (
           <Image source={imageSource} style={styles.image} resizeMode="cover" />
         )}
@@ -93,18 +93,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style }) =>
       </View>
 
       <View style={styles.infoContainer}>
-        <Text style={styles.name} numberOfLines={2}>{product.name}</Text>
+        <Text style={[styles.name, { color: theme.colors.text }]} numberOfLines={2}>{product.name}</Text>
         
         {product.rating !== undefined && (
           <View style={styles.ratingContainer}>
-            <Text style={styles.rating}>⭐ {product.rating.toFixed(1)}</Text>
+            <Text style={[styles.rating, { color: theme.colors.accent }]}>{`⭐ ${product.rating.toFixed(1)}`}</Text>
           </View>
         )}
         
         <View style={styles.priceContainer}>
-          <Text style={styles.price}>₹{product.price.toFixed(2)}</Text>
+          <Text style={[styles.price, { color: theme.colors.text }]}>{`₹${product.price.toFixed(2)}`}</Text>
           {product.originalPrice && (
-            <Text style={styles.originalPrice}>₹{product.originalPrice.toFixed(2)}</Text>
+            <Text style={[styles.originalPrice, { color: theme.colors.secondary }]}>{`₹${product.originalPrice.toFixed(2)}`}</Text>
           )}
         </View>
       </View>

@@ -6,6 +6,8 @@ import { useCart } from '../contexts/CartContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/types';
 import { useNavigation } from '@react-navigation/native';
+import ProductCard from '../components/ProductCard';
+import { ScrollView as RNScrollView } from 'react-native';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Cart'>;
 
@@ -16,8 +18,8 @@ const CartScreen = () => {
   const [activeTab, setActiveTab] = useState<'grocery' | 'pharmacy'>('grocery');
 
   const handleCheckout = (type: 'grocery' | 'pharmacy') => {
-    // Navigate to phone authentication first
-    navigation.navigate('PhoneAuth', { cartType: type });
+    // Navigate to payment methods/checkout screen
+    navigation.navigate('PaymentMethods');
   };
 
   const renderTabContent = (items: any[], category: 'grocery' | 'pharmacy') => {
@@ -74,6 +76,31 @@ const CartScreen = () => {
     );
   };
 
+  // Mock recommended products
+  const recommendedProducts = [
+    { id: '101', name: 'Amul Milk 1L', price: 65, image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg' },
+    { id: '102', name: 'Britannia Cheese Slices', price: 120, image: 'https://blinkit.com/images/products/400/britannia-cheese-slices.jpg' },
+    { id: '103', name: 'Mother Dairy Curd', price: 30, image: 'https://blinkit.com/images/products/400/mother-dairy-dahi.jpg' },
+    { id: '104', name: 'Tropicana Juice', price: 90, image: 'https://blinkit.com/images/products/400/tropicana-orange-delight.jpg' },
+    { id: '105', name: 'Cadbury Dairy Milk', price: 45, image: 'https://blinkit.com/images/products/400/cadbury-dairy-milk-chocolate.jpg' },
+  ];
+
+  const renderRecommendations = (navigation: any) => (
+    <View style={{ marginTop: 12, marginBottom: 18 }}>
+      <Text style={{ fontSize: 18, fontWeight: 'bold', marginLeft: 16, marginBottom: 8 }}>You Might Also Like</Text>
+      <RNScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: 12, paddingRight: 8 }}>
+        {recommendedProducts.map(product => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            onPress={() => navigation.navigate('ProductDetail', { product })}
+            style={{ width: 140, marginRight: 12 }}
+          />
+        ))}
+      </RNScrollView>
+    </View>
+  );
+
   return (
     <View style={styles.container}>
       <View style={styles.tabContainer}>
@@ -106,6 +133,7 @@ const CartScreen = () => {
       {activeTab === 'grocery' ? (
         <>
           {renderTabContent(groceryItems, 'grocery')}
+          {renderRecommendations(navigation)}
           <View style={styles.totalContainer}>
             <Text style={styles.totalText}>Total: ₹{groceryTotal}</Text>
             <Button
@@ -120,6 +148,7 @@ const CartScreen = () => {
       ) : (
         <>
           {renderTabContent(pharmacyItems, 'pharmacy')}
+          {renderRecommendations(navigation)}
           <View style={styles.totalContainer}>
             <Text style={styles.totalText}>Total: ₹{pharmacyTotal}</Text>
             <Button

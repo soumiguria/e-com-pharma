@@ -22,17 +22,17 @@ interface Banner {
 const banners: Banner[] = [
   {
     id: '1',
-    image: 'https://cdn.pixabay.com/photo/2017/01/26/02/06/platter-2009590_1280.jpg',
+    image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
     link: 'banner1',
   },
   {
     id: '2',
-    image: 'https://cdn.pixabay.com/photo/2016/11/06/23/31/breakfast-1804457_1280.jpg',
+    image: 'https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
     link: 'banner2',
   },
   {
     id: '3',
-    image: 'https://cdn.pixabay.com/photo/2017/01/11/11/33/cake-1971552_1280.jpg',
+    image: 'https://images.pexels.com/photos/2983101/pexels-photo-2983101.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
     link: 'banner3',
   },
 ];
@@ -112,17 +112,18 @@ const BannerSlider = () => {
 
 const styles = StyleSheet.create({
   container: {
-    height: 200,
-    marginVertical: 10,
+    height: 220,
+    marginVertical: 16,
   },
   bannerContainer: {
     width: width,
-    height: 200,
+    height: 220,
+    paddingHorizontal: 16,
   },
   bannerImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
+    borderRadius: 12,
   },
   paginationContainer: {
     flexDirection: 'row',

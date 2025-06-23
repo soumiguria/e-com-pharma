@@ -7,6 +7,7 @@ import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { StorageProvider } from './contexts/StorageContext';
 import { CartProvider } from './contexts/CartContext';
 import Toast from 'react-native-toast-message';
+import { AppProvider } from './contexts/AppContext';
 
 const AppContent = () => {
   const { theme } = useTheme();
@@ -29,7 +30,9 @@ export default function App() {
     <SafeAreaProvider>
       <StorageProvider>
         <ThemeProvider>
-          <AppContent />
+          <AppProvider>
+            <AppContent />
+          </AppProvider>
         </ThemeProvider>
       </StorageProvider>
     </SafeAreaProvider>

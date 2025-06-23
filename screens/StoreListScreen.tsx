@@ -66,12 +66,16 @@ const StoreListScreen = () => {
   const [activeTab, setActiveTab] = useState<'grocery' | 'pharmacy'>('grocery');
 
   const handleStoreSelect = (store: Store) => {
-    navigation.navigate('Home', { 
-      storeId: store.id,
-      storeType: store.type,
-      pincode: pincode,
-      initialTab: store.type
-    });
+    navigation.navigate('Main', {
+      screen: 'Home',
+      params: {
+        screen: 'HomeRoot',
+        params: {
+          storeId: store.id,
+          pincode: pincode,
+        },
+      },
+    });    
   };
 
   const filteredStores = mockedStores.filter(store => store.type === activeTab);

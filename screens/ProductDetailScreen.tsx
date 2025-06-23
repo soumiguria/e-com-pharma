@@ -8,12 +8,13 @@ import {
   TouchableOpacity,
   Dimensions,
   Platform,
-  Animated
+  Animated,
+  FlatList
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import ThemedButton from '../components/ThemedButton';
-import { GroceryStackParamList } from '../navigation/types';
+import { HomeStackParamList } from '../navigation/types';
 import { useTheme } from '../contexts/ThemeContext';
 import { useCart } from '../contexts/CartContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -21,7 +22,7 @@ import Toast from 'react-native-toast-message';
 
 const { width } = Dimensions.get('window');
 
-type ProductDetailRouteProp = RouteProp<GroceryStackParamList, 'ProductDetail'>;
+type ProductDetailRouteProp = RouteProp<HomeStackParamList, 'ProductDetail'>;
 
 interface ProductVariant {
   id: string;
@@ -37,17 +38,25 @@ interface ExtendedProduct {
   image?: string;
   description?: string;
   brand?: string;
+  images?: string[];
+  availableQty?: number;
 }
 
 const ProductDetailScreen = () => {
   const route = useRoute<ProductDetailRouteProp>();
   const { product } = route.params;
-  const extendedProduct = product as ExtendedProduct;
+  const extendedProduct = product as ExtendedProduct & { images?: string[], availableQty?: number };
   const { theme } = useTheme();
   const { addToGroceryCart } = useCart();
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [quantity, setQuantity] = useState(1);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const fadeAnim = new Animated.Value(0);
+
+  // Use images array if present, else fallback to single image
+  const images = extendedProduct.images && extendedProduct.images.length > 0
+    ? extendedProduct.images
+    : extendedProduct.image ? [extendedProduct.image] : [];
 
   // Mock variants data - replace with actual data from your API
   const variants: ProductVariant[] = [
@@ -204,22 +213,115 @@ const ProductDetailScreen = () => {
         },
       }),
     },
+    imageSliderContainer: {
+      width: '100%',
+      height: width * 0.7,
+      backgroundColor: '#f7f7f7',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+    sliderImage: {
+      width: width,
+      height: width * 0.7,
+      resizeMode: 'contain',
+    },
+    paginationContainer: {
+      flexDirection: 'row',
+      position: 'absolute',
+      bottom: 10,
+      alignSelf: 'center',
+    },
+    paginationDot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: 'rgba(0,0,0,0.2)',
+      marginHorizontal: 4,
+    },
+    paginationDotActive: {
+      backgroundColor: theme.colors.primary,
+    },
+    infoRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingHorizontal: 18,
+      marginBottom: 6,
+    },
+    productName: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      flex: 1,
+      marginRight: 10,
+    },
+    productPrice: {
+      fontSize: 20,
+      fontWeight: 'bold',
+      color: theme.colors.primary,
+    },
+    metaRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 18,
+      marginBottom: 12,
+      gap: 16,
+    },
+    brandName: {
+      fontSize: 15,
+      color: theme.colors.secondary,
+      marginRight: 12,
+    },
+    availableQty: {
+      fontSize: 15,
+      color: theme.colors.text,
+    },
   });
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView 
-        style={styles.container}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.imageContainer}>
-          <Image 
-            source={{ uri: extendedProduct.image }} 
-            style={styles.image}
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* Image Slider */}
+        <View style={styles.imageSliderContainer}>
+          <FlatList
+            data={images}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            keyExtractor={(_, idx) => idx.toString()}
+            renderItem={({ item }) => (
+              <Image source={{ uri: item }} style={styles.sliderImage} resizeMode="contain" />
+            )}
+            onScroll={e => {
+              const index = Math.round(e.nativeEvent.contentOffset.x / width);
+              setCurrentImageIndex(index);
+            }}
+            scrollEventThrottle={16}
           />
+          {/* Pagination Dots */}
+          <View style={styles.paginationContainer}>
+            {images.map((_, idx) => (
+              <View
+                key={idx}
+                style={[styles.paginationDot, idx === currentImageIndex && styles.paginationDotActive]}
+              />
+            ))}
+          </View>
         </View>
-
+        {/* Product Info Row */}
+        <View style={styles.infoRow}>
+          <Text style={styles.productName}>{extendedProduct.name}</Text>
+          <Text style={styles.productPrice}>₹{selectedVariant ? selectedVariant.price : extendedProduct.price}</Text>
+        </View>
+        <View style={styles.metaRow}>
+          {extendedProduct.brand && (
+            <Text style={styles.brandName}>Brand: {extendedProduct.brand}</Text>
+          )}
+          {typeof extendedProduct.availableQty === 'number' && (
+            <Text style={styles.availableQty}>Available: {extendedProduct.availableQty}</Text>
+          )}
+        </View>
         <View style={styles.content}>
           <Text style={styles.title}>{extendedProduct.name}</Text>
           {extendedProduct.brand && (

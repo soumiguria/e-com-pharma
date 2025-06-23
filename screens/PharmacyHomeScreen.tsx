@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ProductCard from '../components/ProductCard';
-import { PharmacyStackParamList } from '../navigation/types';
+import { RootStackParamList } from '../navigation/types';
 import { useTheme } from '../contexts/ThemeContext';
 
-type NavigationProp = NativeStackNavigationProp<PharmacyStackParamList, 'PharmacyHome'>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const medicines = [
   { id: '1', name: 'Medicine 1', price: 15 },
@@ -17,7 +17,13 @@ const medicines = [
 
 const PharmacyHomeScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { theme } = useTheme();
+  const { theme, setSection } = useTheme();
+
+  useFocusEffect(
+    React.useCallback(() => {
+      setSection('pharmacy');
+    }, [])
+  );
 
   const handleMedicinePress = (medicine: { id: string; name: string; price: number }) => {
     navigation.navigate('MedicineDetail', { medicine });

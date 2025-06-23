@@ -9,6 +9,7 @@ import {
   Platform,
   FlatList,
   Text,
+  ScrollView,
 } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -20,15 +21,19 @@ import ProductCard from '../components/ProductCard';
 import GrocerySection from '../components/GrocerySection';
 import PharmacySection from '../components/PharmacySection';
 import { useCart } from '../contexts/CartContext';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/types';
+import { RootStackParamList, HomeStackParamList } from '../navigation/types';
 import BannerSlider from '../components/BannerSlider';
+import { useAppContext } from '../contexts/AppContext';
+import CategoryGrid from '../components/CategoriesGrid';
+import BrandsGrid from '../components/BrandsGrid';
+import HorizontallyScrollableSection from '../components/HorizontallyScrollableSection';
 
 const Tab = createBottomTabNavigator();
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Home'>;
-type HomeRouteProp = RouteProp<RootStackParamList, 'Home'>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+type HomeRouteProp = RouteProp<HomeStackParamList, 'HomeRoot'>;
 
 interface Product {
   id: string;
@@ -107,6 +112,7 @@ const Header = ({ onProfilePress }: { onProfilePress: () => void }) => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const { totalItems } = useCart();
+  const { selectedStore } = useAppContext();
 
   return (
     <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
@@ -117,9 +123,20 @@ const Header = ({ onProfilePress }: { onProfilePress: () => void }) => {
           color={theme.colors.text} 
         />
       </TouchableOpacity>
+      {selectedStore && <Text style={[styles.storeName, {color: theme.colors.text}]}>{selectedStore.name}</Text>}
       <View style={styles.headerRight}>
         <TouchableOpacity 
-          style={styles.cartButton}
+          style={styles.headerIcon}
+          onPress={() => navigation.navigate('GreatOffersScreen')}
+        >
+          <MaterialCommunityIcons 
+            name="tag-outline" 
+            size={24} 
+            color={theme.colors.text} 
+          />
+        </TouchableOpacity>
+        <TouchableOpacity 
+          style={styles.headerIcon}
           onPress={() => navigation.navigate('Cart')}
         >
           <MaterialCommunityIcons 
@@ -166,15 +183,25 @@ const SearchBar = ({
         onChangeText={setSearchQuery}
         returnKeyType="search"
       />
-      {searchQuery.length > 0 && (
-        <TouchableOpacity onPress={onClear}>
-          <Ionicons 
-            name="close-circle" 
-            size={20} 
-            color={theme.colors.text + '80'} 
-          />
+      <View style={styles.searchRight}>
+        {searchQuery.length > 0 && (
+          <TouchableOpacity onPress={onClear}>
+            <Ionicons 
+              name="close-circle" 
+              size={20} 
+              color={theme.colors.text + '80'} 
+              style={styles.searchActionIcon}
+            />
+          </TouchableOpacity>
+        )}
+        <TouchableOpacity>
+            <MaterialCommunityIcons
+                name="microphone"
+                size={24}
+                color={theme.colors.text + '80'}
+            />
         </TouchableOpacity>
-      )}
+      </View>
     </View>
   );
 };
@@ -219,24 +246,28 @@ const SearchResults = ({
 
 const HomeScreen = () => {
   const { theme, setSection } = useTheme();
-  const [scrollY] = useState(new Animated.Value(0));
-  const [drawerVisible, setDrawerVisible] = useState(false);
+  const [isDrawerVisible, setDrawerVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('grocery');
+  const [loading, setLoading] = useState(true);
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const scrollY = new Animated.Value(0);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      setSection('grocery');
+    }, [])
+  );
+
   const route = useRoute<HomeRouteProp>();
   const navigation = useNavigation<NavigationProp>();
 
+  const { pincode, storeId } = route.params;
+
   // Set initial tab based on navigation params
   useEffect(() => {
-    const initialTab = route.params?.initialTab;
-    if (initialTab) {
-      setActiveTab(initialTab);
-      setSection(initialTab);
-      // Force the tab selection
-      navigation.setParams({ initialTab: undefined }); // Clear the param after using it
-    }
+    // This logic is no longer needed with the new navigation structure
   }, [route.params]);
 
   // Flatten all products from all categories in the active section
@@ -247,7 +278,7 @@ const HomeScreen = () => {
     );
   };
 
-  const toggleDrawer = () => setDrawerVisible(!drawerVisible);
+  const toggleDrawer = () => setDrawerVisible(!isDrawerVisible);
 
   const tabBarStyle = {
     ...styles.tabBar,
@@ -282,96 +313,88 @@ const HomeScreen = () => {
   };
 
   const handleProductPress = (product: Product) => {
-    // Navigate to product detail or perform other actions
-    console.log('Product pressed:', product);
-    // navigation.navigate('ProductDetail', { product });
+    navigation.navigate('ProductDetail', { product });
   };
 
-  // Render the normal section view when not searching
-  const renderSection = () => {
-    if (activeTab === 'grocery') {
-      return <GrocerySection scrollY={scrollY} />;
-    } else {
-      return <PharmacySection scrollY={scrollY} />;
-    }
-  };
+  useEffect(() => {
+    // Here you would typically fetch data from an API
+    // For now, we'll just simulate a loading delay
+    setTimeout(() => {
+      setLoading(false);
+    }, 1000);
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Loading...</Text>
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
-      <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} />
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.surface} />
       <Header onProfilePress={toggleDrawer} />
       <SearchBar 
         searchQuery={searchQuery} 
-        setSearchQuery={handleSearch}
-        onClear={clearSearch}
+        setSearchQuery={handleSearch} 
+        onClear={clearSearch} 
       />
-      <BannerSlider />
-      {showSearchResults ? (
-        <SearchResults 
-          results={searchResults} 
-          onProductPress={handleProductPress}
-          activeTab={activeTab}
-        />
-      ) : (
-        <Tab.Navigator
-          screenOptions={{
-            headerShown: false,
-            tabBarStyle,
-            tabBarActiveTintColor: theme.colors.primary,
-            tabBarInactiveTintColor: theme.colors.text + '80',
-            tabBarShowLabel: true,
-            tabBarLabelStyle: styles.tabLabel,
-          }}
-          initialRouteName={activeTab === 'grocery' ? 'Grocery' : 'Pharmacy'}
-        >
-          <Tab.Screen
-            name="Grocery"
-            listeners={{
-              tabPress: () => {
-                setActiveTab('grocery');
-                setSection('grocery');
-              },
-            }}
-            options={{
-              tabBarIcon: ({ color, size, focused }) => (
-                <View style={styles.tabIconContainer}>
-                  <Ionicons 
-                    name={activeTab === 'grocery' ? "basket" : "basket-outline"}
-                    size={size} 
-                    color={color} 
-                  />
-                </View>
-              ),
-            }}
-          >
-            {() => renderSection()}
-          </Tab.Screen>
-          <Tab.Screen
-            name="Pharmacy"
-            listeners={{
-              tabPress: () => {
-                setActiveTab('pharmacy');
-                setSection('pharmacy');
-              },
-            }}
-            options={{
-              tabBarIcon: ({ color, size, focused }) => (
-                <View style={styles.tabIconContainer}>
-                  <Ionicons 
-                    name={activeTab === 'pharmacy' ? "medkit" : "medkit-outline"}
-                    size={size} 
-                    color={color} 
-                  />
-                </View>
-              ),
-            }}
-          >
-            {() => renderSection()}
-          </Tab.Screen>
-        </Tab.Navigator>
-      )}
+      
+      <View style={styles.contentContainer}>
+        {searchQuery.length > 0 ? (
+          <SearchResults 
+            results={searchResults} 
+            onProductPress={handleProductPress} 
+            activeTab={activeTab}
+          />
+        ) : (
+          <ScrollView>
+            <BannerSlider />
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, {color: theme.colors.text}]}>Categories</Text>
+              <CategoryGrid />
+              <TouchableOpacity onPress={() => navigation.navigate({ name: 'CategoriesScreen', params: undefined })}>
+                  <Text style={[styles.viewAll, {color: theme.colors.primary}]}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.section}>
+              <Text style={[styles.sectionTitle, {color: theme.colors.text}]}>Shop by Brands</Text>
+              <BrandsGrid />
+              <TouchableOpacity onPress={() => navigation.navigate({ name: 'BrandsScreen', params: undefined })}>
+                  <Text style={[styles.viewAll, {color: theme.colors.primary}]}>View All</Text>
+              </TouchableOpacity>
+            </View>
+            {/* Recently Bought Section */}
+            <View style={[styles.section, styles.cardSection]}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[styles.sectionTitle, {color: theme.colors.text}]}>Recently Bought</Text>
+                <TouchableOpacity onPress={() => navigation.navigate({ name: 'RecentlyBoughtScreen', params: undefined })}>
+                  <Text style={[styles.viewAll, {color: theme.colors.primary}]}>View All</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.scrollableCardBg}>
+                <HorizontallyScrollableSection title="Recently Bought" />
+              </View>
+            </View>
+            {/* Great Offers Section */}
+            <View style={[styles.section, styles.cardSection]}>
+              <View style={styles.sectionHeaderRow}>
+                <Text style={[styles.sectionTitle, {color: theme.colors.text}]}>Great Offers</Text>
+                <TouchableOpacity onPress={() => navigation.navigate({ name: 'GreatOffersScreen', params: undefined })}>
+                  <Text style={[styles.viewAll, {color: theme.colors.primary}]}>View All</Text>
+                </TouchableOpacity>
+              </View>
+              <View style={styles.scrollableCardBg}>
+                <HorizontallyScrollableSection title="Great Offers" />
+              </View>
+            </View>
+          </ScrollView>
+        )}
+      </View>
 
-      {drawerVisible && <Drawer onClose={toggleDrawer} />}
+      {isDrawerVisible && <Drawer onClose={toggleDrawer} />}
     </SafeAreaView>
   );
 };
@@ -381,35 +404,40 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 16,
-    paddingVertical: 12,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    paddingHorizontal: 15,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+    paddingBottom: 10,
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 3,
+    shadowRadius: 2,
+  },
+  storeName: {
+    marginLeft: 8,
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginLeft: 'auto',
   },
-  cartButton: {
-    marginRight: 16,
+  headerIcon: {
+    marginHorizontal: 8,
     position: 'relative',
   },
   cartBadge: {
     position: 'absolute',
-    top: -8,
     right: -8,
-    minWidth: 18,
-    height: 18,
-    borderRadius: 9,
-    justifyContent: 'center',
+    top: -8,
+    borderRadius: 12,
+    width: 22,
+    height: 22,
     alignItems: 'center',
-    paddingHorizontal: 4,
+    justifyContent: 'center',
   },
   cartBadgeText: {
     color: '#fff',
@@ -419,24 +447,74 @@ const styles = StyleSheet.create({
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginHorizontal: 16,
-    marginVertical: 12,
-    paddingHorizontal: 16,
-    paddingVertical: Platform.OS === 'ios' ? 12 : 8,
-    borderRadius: 24,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
+    paddingHorizontal: 15,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
   },
   searchIcon: {
-    marginRight: 8,
+    marginRight: 10,
   },
   searchInput: {
     flex: 1,
     fontSize: 16,
-    paddingVertical: Platform.OS === 'ios' ? 4 : 0,
+    height: 40,
+  },
+  searchRight:{
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  searchActionIcon: {
+    marginLeft: 10,
+  },
+  tabsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  tab: {
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+  },
+  tabText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  contentContainer: {
+    flex: 1,
+  },
+  searchResultsContainer: {
+    flex: 1,
+  },
+  noResultsContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noResultsText: {
+    fontSize: 16,
+    textAlign: 'center',
+  },
+  section: {
+    padding: 16,
+  },
+  sectionTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 10,
+  },
+  gridContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+  },
+  viewAll: {
+      textAlign: 'center',
+      marginTop: 10,
+      fontWeight: 'bold',
   },
   tabBar: {
     position: 'absolute',
@@ -464,23 +542,35 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 4,
   },
-  searchResultsContainer: {
-    padding: 16,
-  },
   searchResultCard: {
     width: '100%',
     marginBottom: 12,
   },
-  noResultsContainer: {
-    flex: 1,
-    justifyContent: 'center',
+  sectionHeaderRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    padding: 20,
+    justifyContent: 'space-between',
+    marginBottom: 6,
   },
-  noResultsText: {
-    fontSize: 16,
-    textAlign: 'center',
-  }
+  cardSection: {
+    backgroundColor: '#fff',
+    borderRadius: 14,
+    marginHorizontal: 10,
+    marginBottom: 18,
+    padding: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  scrollableCardBg: {
+    backgroundColor: '#f7f7f7',
+    borderRadius: 10,
+    paddingVertical: 6,
+    paddingLeft: 2,
+    paddingRight: 2,
+  },
 });
 
 export default HomeScreen;

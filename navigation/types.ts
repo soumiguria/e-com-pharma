@@ -5,20 +5,14 @@ export type RootStackParamList = {
   Splash: undefined;
   Pincode: undefined;
   StoreSelection: undefined;
-  Home: { 
-    pincode: string;
-    storeId: string;
-    storeType: 'grocery' | 'pharmacy';
-    initialTab?: 'grocery' | 'pharmacy';
-  };
   StoreList: { pincode: string };
-  GroceryHome: { storeId: string };
+  Main: NavigatorScreenParams<HomeTabParamList>;
   ProductDetail: { product: any };
+  CategoryDetail: { category: any };
+  MedicineDetail: { medicine: any };
   Cart: undefined;
   Checkout: { type: 'grocery' | 'pharmacy' };
   OrderConfirmation: undefined;
-  PharmacyHome: { storeId: string };
-  MedicineDetail: { medicine: { id: string; name: string; price: number; image?: string } };
   Profile: undefined;
   Orders: undefined;
   PaymentMethods: undefined;
@@ -27,47 +21,37 @@ export type RootStackParamList = {
     title: string;
     products: any[];
   };
-  CategoryDetail: {
-    category: {
-      id: string;
-      name: string;
-      image: string;
-      subCategories: Array<{
-        id: string;
-        name: string;
-        products: Array<{
-          id: string;
-          name: string;
-          price: number;
-          image: string;
-          description: string;
-          brand: string;
-        }>;
-        brands?: string[];
-      }>;
-    };
-  };
   BannerDetail: { bannerId: string };
   PhoneAuth: { cartType: 'grocery' | 'pharmacy' };
-  OTPVerification: { 
+  OTPVerification: {
     phoneNumber: string;
     cartType: 'grocery' | 'pharmacy';
   };
+  CategoriesScreen: undefined;
+  BrandsScreen: undefined;
+  RecentlyBoughtScreen: undefined;
+  GreatOffersScreen: undefined;
 };
 
 export type HomeTabParamList = {
-  Grocery: undefined;
+  Home: { screen: 'HomeRoot', params: { storeId: string, pincode: string }};
+  'Order Again': undefined;
+  Categories: undefined;
   Pharmacy: undefined;
-  Cart: undefined;
-  Profile: undefined;
+  Grocery: undefined;
 };
 
-export type GroceryStackParamList = {
-  GroceryHome: { storeId: string };
-  ProductDetail: { product: { id: string; name: string; price: number; image?: string } };
+export type HomeStackParamList = {
+  HomeRoot: { storeId: string, pincode: string };
+  ProductDetail: { product: any };
+};
+
+export type CategoriesStackParamList = {
+  CategoriesRoot: undefined;
+  CategoryDetail: { category: any };
 };
 
 export type PharmacyStackParamList = {
-  PharmacyHome: undefined;
-  MedicineDetail: { medicine: { id: string; name: string; price: number; image?: string } };
+  PharmacyRoot: undefined;
+  MedicineDetail: { medicine: any };
 };

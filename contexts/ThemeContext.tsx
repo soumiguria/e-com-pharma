@@ -8,6 +8,7 @@ type AppSection = 'grocery' | 'pharmacy';
 interface ThemeContextProps {
   theme: Theme;
   themeMode: ThemeMode;
+  section: AppSection;
   setThemeMode: (mode: ThemeMode) => void;
   toggleTheme: () => void;
   setSection: (section: AppSection) => void;
@@ -43,6 +44,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <ThemeContext.Provider value={{ 
       theme, 
       themeMode,
+      section: (appSection || 'grocery') as AppSection,
       setThemeMode,
       toggleTheme, 
       setSection: setAppSection 
