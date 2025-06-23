@@ -19,7 +19,7 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
 
   const handleChangeStore = () => {
     onClose();
-    navigation.navigate('StoreList', { pincode: '' }); // You might want to pass the current pincode
+    navigation.navigate('Pincode');
   };
 
   const handleProfilePress = () => {

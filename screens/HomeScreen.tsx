@@ -29,6 +29,7 @@ import { useAppContext } from '../contexts/AppContext';
 import CategoryGrid from '../components/CategoriesGrid';
 import BrandsGrid from '../components/BrandsGrid';
 import HorizontallyScrollableSection from '../components/HorizontallyScrollableSection';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const Tab = createBottomTabNavigator();
 
@@ -168,39 +169,41 @@ const SearchBar = ({
   const { theme } = useTheme();
 
   return (
-    <View style={[styles.searchContainer, { backgroundColor: theme.colors.surface }]}>
-      <Ionicons 
-        name="search" 
-        size={20} 
-        color={theme.colors.text + '80'} 
-        style={styles.searchIcon} 
-      />
-      <TextInput
-        style={[styles.searchInput, { color: theme.colors.text }]}
-        placeholder="Search products..."
-        placeholderTextColor={theme.colors.text + '80'}
-        value={searchQuery}
-        onChangeText={setSearchQuery}
-        returnKeyType="search"
-      />
-      <View style={styles.searchRight}>
-        {searchQuery.length > 0 && (
-          <TouchableOpacity onPress={onClear}>
-            <Ionicons 
-              name="close-circle" 
-              size={20} 
-              color={theme.colors.text + '80'} 
-              style={styles.searchActionIcon}
-            />
+    <View style={[styles.searchBarWrapper]}> 
+      <View style={[styles.searchContainer, { backgroundColor: theme.colors.surface }]}> 
+        <Ionicons 
+          name="search" 
+          size={22} 
+          color={theme.colors.text + '80'} 
+          style={styles.searchIcon} 
+        />
+        <TextInput
+          style={[styles.searchInput, { color: theme.colors.text }]}
+          placeholder="Search products..."
+          placeholderTextColor={theme.colors.text + '80'}
+          value={searchQuery}
+          onChangeText={setSearchQuery}
+          returnKeyType="search"
+        />
+        <View style={styles.searchRight}>
+          {searchQuery.length > 0 && (
+            <TouchableOpacity onPress={onClear}>
+              <Ionicons 
+                name="close-circle" 
+                size={22} 
+                color={theme.colors.text + '80'} 
+                style={styles.searchActionIcon}
+              />
+            </TouchableOpacity>
+          )}
+          <TouchableOpacity>
+              <MaterialCommunityIcons
+                  name="microphone"
+                  size={24}
+                  color={theme.colors.text + '80'}
+              />
           </TouchableOpacity>
-        )}
-        <TouchableOpacity>
-            <MaterialCommunityIcons
-                name="microphone"
-                size={24}
-                color={theme.colors.text + '80'}
-            />
-        </TouchableOpacity>
+        </View>
       </View>
     </View>
   );
@@ -216,31 +219,45 @@ const SearchResults = ({
   activeTab: string
 }) => {
   const { theme } = useTheme();
+  const fadeAnim = React.useRef(new Animated.Value(0)).current;
+
+  React.useEffect(() => {
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 400,
+      useNativeDriver: true,
+    }).start();
+  }, [results]);
 
   if (results.length === 0) {
     return (
       <View style={styles.noResultsContainer}>
-        <Text style={[styles.noResultsText, { color: theme.colors.text }]}>
-          No products found in {activeTab}
-        </Text>
+        <MaterialIcons name="search-off" size={64} color={theme.colors.secondary} style={{ marginBottom: 12 }} />
+        <Text style={[styles.noResultsText, { color: theme.colors.text }]}>No products found in {activeTab}</Text>
       </View>
     );
   }
 
   return (
-    <FlatList
-      data={results}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <View style={styles.searchResultCard}>
-          <ProductCard 
-            product={{...item, category: activeTab as 'grocery' | 'pharmacy'}} 
-            onPress={() => onProductPress(item)}
-          />
-        </View>
-      )}
-      contentContainerStyle={styles.searchResultsContainer}
-    />
+    <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+      <Text style={styles.searchResultsTitle}>Search Results</Text>
+      <FlatList
+        data={results}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={styles.searchResultCard}>
+            <ProductCard 
+              product={{...item, category: activeTab as 'grocery' | 'pharmacy'}} 
+              onPress={() => onProductPress(item)}
+              compact={true}
+              hideCartButton={true}
+            />
+          </View>
+        )}
+        contentContainerStyle={styles.searchResultsContainer}
+        showsVerticalScrollIndicator={false}
+      />
+    </Animated.View>
   );
 };
 
@@ -444,13 +461,25 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
   },
+  searchBarWrapper: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    backgroundColor: '#f7f7f7',
+  },
   searchContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 15,
     paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderRadius: 24,
+    backgroundColor: '#fff',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+    marginBottom: 8,
+    borderBottomWidth: 0,
   },
   searchIcon: {
     marginRight: 10,
@@ -459,6 +488,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     height: 40,
+    paddingHorizontal: 8,
   },
   searchRight:{
     flexDirection: 'row',
@@ -570,6 +600,27 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingLeft: 2,
     paddingRight: 2,
+  },
+  searchResultsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 8,
+    marginBottom: 8,
+    marginLeft: 16,
+    color: '#222',
+  },
+  searchResultsContainerGrid: {
+    paddingHorizontal: 8,
+    paddingBottom: 24,
+  },
+  searchResultCardGrid: {
+    flex: 1,
+    margin: 8,
+    minWidth: 160,
+    maxWidth: '48%',
+  },
+  searchGridRow: {
+    justifyContent: 'space-between',
   },
 });
 

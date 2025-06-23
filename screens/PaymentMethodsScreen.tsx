@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ThemedButton from '../components/ThemedButton';
 import { useTheme } from '../contexts/ThemeContext';
@@ -41,6 +41,9 @@ const PaymentMethodsScreen = () => {
   const [selectedAddress, setSelectedAddress] = React.useState(userAddresses[0].id);
   const [selectedSpeed, setSelectedSpeed] = React.useState('1');
   const [selectedTimeSlot, setSelectedTimeSlot] = React.useState(timeSlots[0]);
+  const [addressModalVisible, setAddressModalVisible] = React.useState(false);
+  const [manualAddress, setManualAddress] = React.useState('');
+  const [addresses, setAddresses] = React.useState(userAddresses);
 
   const styles = StyleSheet.create({
     container: {
@@ -87,7 +90,58 @@ const PaymentMethodsScreen = () => {
       marginBottom: 4,
       fontSize: 16,
     },
+    changeAddressBtn: {
+      backgroundColor: '#00b14f',
+      borderRadius: 16,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      alignSelf: 'flex-start',
+      marginBottom: 8,
+    },
+    changeAddressText: {
+      color: '#fff',
+      fontWeight: 'bold',
+    },
+    modalContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      backgroundColor: 'rgba(0,0,0,0.3)',
+    },
+    modalContent: {
+      backgroundColor: '#fff',
+      padding: 20,
+      borderRadius: 12,
+      width: '80%',
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: '#ccc',
+      borderRadius: 8,
+      padding: 10,
+      marginBottom: 12,
+    },
+    modalButton: {
+      backgroundColor: '#00b14f',
+      borderRadius: 8,
+      padding: 10,
+      alignItems: 'center',
+    },
+    modalButtonText: {
+      color: '#fff',
+      fontWeight: 'bold',
+    },
   });
+
+  const handleAddManualAddress = () => {
+    if (manualAddress.trim()) {
+      const newId = (addresses.length + 1).toString();
+      setAddresses([...addresses, { id: newId, address: manualAddress }]);
+      setSelectedAddress(newId);
+      setManualAddress('');
+      setAddressModalVisible(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -106,19 +160,47 @@ const PaymentMethodsScreen = () => {
           ))}
         </View>
 
-        {/* Delivery Address */}
-        <Text style={styles.sectionTitle}>Delivery Address</Text>
-        <View style={styles.row}>
-          {userAddresses.map(addr => (
-            <TouchableOpacity
-              key={addr.id}
-              style={[styles.chip, selectedAddress === addr.id && styles.chipSelected]}
-              onPress={() => setSelectedAddress(addr.id)}
-            >
-              <Text style={[styles.chipText, selectedAddress === addr.id && styles.chipTextSelected]}>{addr.address}</Text>
+        {/* Delivery Address - only for Home Delivery */}
+        {selectedDeliveryMethod === '2' && (
+          <>
+            <Text style={styles.sectionTitle}>Delivery Address</Text>
+            <View style={styles.row}>
+              {addresses.map(addr => (
+                <TouchableOpacity
+                  key={addr.id}
+                  style={[styles.chip, selectedAddress === addr.id && styles.chipSelected]}
+                  onPress={() => setSelectedAddress(addr.id)}
+                >
+                  <Text style={[styles.chipText, selectedAddress === addr.id && styles.chipTextSelected]}>{addr.address}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity style={styles.changeAddressBtn} onPress={() => setAddressModalVisible(true)}>
+              <Text style={styles.changeAddressText}>Change Address</Text>
             </TouchableOpacity>
-          ))}
-        </View>
+          </>
+        )}
+
+        {/* Address Modal */}
+        {addressModalVisible && (
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Enter New Address</Text>
+              <TextInput
+                style={styles.input}
+                value={manualAddress}
+                onChangeText={setManualAddress}
+                placeholder="Type your address"
+              />
+              <TouchableOpacity style={styles.modalButton} onPress={handleAddManualAddress}>
+                <Text style={styles.modalButtonText}>Save Address</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setAddressModalVisible(false)}>
+                <Text style={[styles.modalButtonText, { color: '#222' }]}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
 
         {/* Delivery Speed */}
         <Text style={styles.sectionTitle}>Delivery Speed</Text>
@@ -168,7 +250,7 @@ const PaymentMethodsScreen = () => {
         </View>
 
         {/* Place Order Button */}
-        <ThemedButton title="Place Order" onPress={() => navigation.navigate('OrderConfirmation')} style={{ marginTop: 24 }} />
+        <ThemedButton title="Place Order" onPress={() => navigation.navigate('Orders')} style={{ marginTop: 24 }} />
       </ScrollView>
     </SafeAreaView>
   );
