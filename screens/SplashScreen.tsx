@@ -2,24 +2,18 @@ import React, { useEffect } from 'react';
 import { View, Image, StyleSheet, Dimensions, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../contexts/ThemeContext';
+import { RootStackParamList } from '../navigation/types';
 
-type RootStackParamList = {
-  Splash: undefined;
-  Pincode: undefined;
-};
-
-type SplashScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Splash'>;
-
-interface SplashScreenProps {
-  navigation: SplashScreenNavigationProp;
-}
+type SplashScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
 
 const { width, height } = Dimensions.get('window');
 
-const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
+const SplashScreen = () => {
   const { theme } = useTheme();
+  const navigation = useNavigation<SplashScreenNavigationProp>();
   const { colors, typography, spacing } = theme;
   
   // Animation values
@@ -54,7 +48,13 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
 
     // Navigation timer
     const timer = setTimeout(() => {
-      navigation.replace('Pincode');
+      try {
+        navigation.replace('Pincode' as any);
+      } catch (error) {
+        console.error('Navigation error:', error);
+        // Fallback navigation
+        navigation.replace('Pincode' as any);
+      }
     }, 2500); // Slightly longer to allow animations to complete
     
     return () => clearTimeout(timer);
@@ -133,7 +133,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ navigation }) => {
             style={styles.logo}
           />
           <Animated.Text style={[styles.title, { opacity: opacityValue }]}>
-            Your App Name
+            E-Com Pharma
           </Animated.Text>
           <Animated.Text style={[styles.tagline, { opacity: opacityValue }]}>
             Secure. Simple. Smart.

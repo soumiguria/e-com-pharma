@@ -8,18 +8,23 @@ import { StorageProvider } from './contexts/StorageContext';
 import { CartProvider } from './contexts/CartContext';
 import Toast from 'react-native-toast-message';
 import { AppProvider } from './contexts/AppContext';
+import ErrorBoundary from './components/ErrorBoundary';
 
 const AppContent = () => {
   const { theme } = useTheme();
   return (
     <NavigationContainer theme={theme}>
       <PaperProvider theme={theme}>
-        <StorageProvider>
-          <CartProvider>
-            <AppNavigator />
-            <Toast />
-          </CartProvider>
-        </StorageProvider>
+        <AppProvider>
+          <StorageProvider>
+            <CartProvider>
+              <ErrorBoundary>
+                <AppNavigator />
+              </ErrorBoundary>
+              <Toast />
+            </CartProvider>
+          </StorageProvider>
+        </AppProvider>
       </PaperProvider>
     </NavigationContainer>
   );
@@ -28,11 +33,9 @@ const AppContent = () => {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <StorageProvider>
-        <ThemeProvider>
-          <AppProvider>
-            <AppContent />
-          </AppProvider>
+      <StorageProvider> 
+        <ThemeProvider> 
+          <AppContent />
         </ThemeProvider>
       </StorageProvider>
     </SafeAreaProvider>

@@ -13,13 +13,13 @@ import {
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { RootStackParamList } from '../navigation/types';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ProductDetailModal from '../components/ProductDetailModal';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useCart } from '../contexts/CartContext';
 import Toast from 'react-native-toast-message';
 
-type AllProductsScreenNavigationProp = StackNavigationProp<RootStackParamList, 'AllProducts'>;
+type AllProductsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AllProducts'>;
 
 const { width } = Dimensions.get('window');
 const itemWidth = (width - 48) / 2; // 48 = padding * 2 + margin * 2

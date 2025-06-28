@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { StackNavigationProp } from '@react-navigation/stack';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { RootStackParamList } from '../navigation/types';
 import ThemeToggle from './ThemeToggle';
 
-type NavigationProp = StackNavigationProp<RootStackParamList>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 interface DrawerProps {
   onClose: () => void;
@@ -19,22 +19,22 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
 
   const handleChangeStore = () => {
     onClose();
-    navigation.navigate('Pincode');
+    navigation.navigate('Pincode' as any);
   };
 
   const handleProfilePress = () => {
     onClose();
-    navigation.navigate('Profile');
+    navigation.navigate('Profile' as any);
   };
 
   const handleOrdersPress = () => {
     onClose();
-    navigation.navigate('Orders');
+    navigation.navigate('Orders' as any);
   };
 
   const handleHelpPress = () => {
     onClose();
-    navigation.navigate('HelpCenter');
+    navigation.navigate('HelpCenter' as any);
   };
 
   const menuItems = [

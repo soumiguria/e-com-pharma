@@ -277,15 +277,12 @@ const HomeScreen = () => {
     }, [])
   );
 
-  const route = useRoute<HomeRouteProp>();
   const navigation = useNavigation<NavigationProp>();
-
-  const { pincode, storeId } = route.params;
 
   // Set initial tab based on navigation params
   useEffect(() => {
     // This logic is no longer needed with the new navigation structure
-  }, [route.params]);
+  }, []);
 
   // Flatten all products from all categories in the active section
   const getAllProducts = () => {
@@ -372,14 +369,14 @@ const HomeScreen = () => {
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, {color: theme.colors.text}]}>Categories</Text>
               <CategoryGrid />
-              <TouchableOpacity onPress={() => navigation.navigate({ name: 'CategoriesScreen', params: undefined })}>
+              <TouchableOpacity onPress={() => navigation.navigate('CategoriesScreen' as any)}>
                   <Text style={[styles.viewAll, {color: theme.colors.primary}]}>View All</Text>
               </TouchableOpacity>
             </View>
             <View style={styles.section}>
               <Text style={[styles.sectionTitle, {color: theme.colors.text}]}>Shop by Brands</Text>
               <BrandsGrid />
-              <TouchableOpacity onPress={() => navigation.navigate({ name: 'BrandsScreen', params: undefined })}>
+              <TouchableOpacity onPress={() => navigation.navigate('BrandsScreen' as any)}>
                   <Text style={[styles.viewAll, {color: theme.colors.primary}]}>View All</Text>
               </TouchableOpacity>
             </View>
@@ -387,7 +384,7 @@ const HomeScreen = () => {
             <View style={[styles.section, styles.cardSection]}>
               <View style={styles.sectionHeaderRow}>
                 <Text style={[styles.sectionTitle, {color: theme.colors.text}]}>Recently Bought</Text>
-                <TouchableOpacity onPress={() => navigation.navigate({ name: 'RecentlyBoughtScreen', params: undefined })}>
+                <TouchableOpacity onPress={() => navigation.navigate('RecentlyBoughtScreen' as any)}>
                   <Text style={[styles.viewAll, {color: theme.colors.primary}]}>View All</Text>
                 </TouchableOpacity>
               </View>
@@ -399,7 +396,7 @@ const HomeScreen = () => {
             <View style={[styles.section, styles.cardSection]}>
               <View style={styles.sectionHeaderRow}>
                 <Text style={[styles.sectionTitle, {color: theme.colors.text}]}>Great Offers</Text>
-                <TouchableOpacity onPress={() => navigation.navigate({ name: 'GreatOffersScreen', params: undefined })}>
+                <TouchableOpacity onPress={() => navigation.navigate('GreatOffersScreen' as any)}>
                   <Text style={[styles.viewAll, {color: theme.colors.primary}]}>View All</Text>
                 </TouchableOpacity>
               </View>

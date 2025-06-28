@@ -23,6 +23,10 @@ import CategoriesScreen from '../screens/CategoriesScreen';
 import BrandsScreen from '../screens/BrandsScreen';
 import RecentlyBoughtScreen from '../screens/RecentlyBoughtScreen';
 import GreatOffersScreen from '../screens/GreatOffersScreen';
+import EditProfileScreen from '../screens/EditProfileScreen';
+import MyAddressesScreen from '../screens/MyAddressesScreen';
+import AddAddressScreen from '../screens/AddAddressScreen';
+import LocationPickerScreen from '../screens/LocationPickerScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -55,6 +59,10 @@ const AppNavigator = () => {
       <Stack.Screen name="BrandsScreen" component={BrandsScreen} options={{ headerShown: false }} />
       <Stack.Screen name="RecentlyBoughtScreen" component={RecentlyBoughtScreen} options={{ headerShown: false }} />
       <Stack.Screen name="GreatOffersScreen" component={GreatOffersScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="MyAddresses" component={MyAddressesScreen} />
+      <Stack.Screen name="AddAddress" component={AddAddressScreen} />
+      <Stack.Screen name="LocationPicker" component={LocationPickerScreen} />
     </Stack.Navigator>
   );
 };

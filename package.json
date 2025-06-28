@@ -10,11 +10,13 @@
   },
   "dependencies": {
     "@react-native-async-storage/async-storage": "1.23.1",
+    "@react-native-community/datetimepicker": "8.0.1",
     "@react-navigation/bottom-tabs": "^6.6.1",
     "@react-navigation/drawer": "^6.6.15",
     "@react-navigation/material-top-tabs": "^6.6.5",
     "@react-navigation/native": "^6.1.9",
     "@react-navigation/native-stack": "^6.11.0",
+    "@react-navigation/stack": "^6.4.1",
     "@types/react-native-snap-carousel": "^3.8.11",
     "expo": "~51.0.8",
     "expo-linear-gradient": "~13.0.2",
@@ -25,6 +27,7 @@
     "react": "^18.2.0",
     "react-native": "0.74.5",
     "react-native-gesture-handler": "~2.16.1",
+    "react-native-maps": "1.14.0",
     "react-native-pager-view": "6.3.0",
     "react-native-paper": "5.12.3",
     "react-native-reanimated": "~3.10.1",
@@ -38,6 +41,7 @@
   "devDependencies": {
     "@babel/core": "^7.24.0",
     "@types/react": "~18.2.45",
+    "@types/react-navigation": "^3.4.0",
     "cross-env": "^7.0.3",
     "typescript": "~5.3.3"
   },

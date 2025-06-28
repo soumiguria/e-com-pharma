@@ -31,6 +31,10 @@ export type RootStackParamList = {
   BrandsScreen: undefined;
   RecentlyBoughtScreen: undefined;
   GreatOffersScreen: undefined;
+  EditProfile: undefined;
+  MyAddresses: undefined;
+  AddAddress: { location?: { latitude: number; longitude: number; address: string } };
+  LocationPicker: undefined;
 };
 
 export type HomeTabParamList = {
@@ -44,6 +48,12 @@ export type HomeTabParamList = {
 export type HomeStackParamList = {
   HomeRoot: { storeId: string, pincode: string };
   ProductDetail: { product: any };
+  CategoryDetail: { category: any };
+  GreatOffersScreen: undefined;
+  Cart: undefined;
+  RecentlyBoughtScreen: undefined;
+  BrandsScreen: undefined;
+  CategoriesScreen: undefined;
 };
 
 export type CategoriesStackParamList = {
