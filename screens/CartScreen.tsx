@@ -48,7 +48,7 @@ const CartScreen = () => {
               <View style={styles.quantityContainer}>
                 <Button
                   mode="outlined"
-                  onPress={() => updateQuantity(item.id, Math.max(1, item.quantity - 1), category)}
+                  onPress={() => updateQuantity(item.id, item.quantity - 1, category)}
                   style={styles.quantityButton}
                 >
                   -

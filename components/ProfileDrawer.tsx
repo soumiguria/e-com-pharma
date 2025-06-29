@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
@@ -16,6 +16,25 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
+  const slideAnim = useRef(new Animated.Value(-320)).current;
+
+  useEffect(() => {
+    Animated.timing(slideAnim, {
+      toValue: 0,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
+  }, []);
+
+  const handleClose = () => {
+    Animated.timing(slideAnim, {
+      toValue: -320,
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      onClose();
+    });
+  };
 
   const handleMyOrdersPress = () => {
     onClose();
@@ -176,9 +195,17 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <Animated.View 
+      style={[
+        styles.container, 
+        { 
+          backgroundColor: theme.colors.background,
+          transform: [{ translateX: slideAnim }]
+        }
+      ]}
+    >
       <View style={styles.header}>
-        <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+        <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
           <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: theme.colors.text }]}>Menu</Text>
@@ -192,7 +219,7 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
       <ScrollView style={styles.menuContainer} showsVerticalScrollIndicator={false}>
         {menuItems.map((item, index) => renderMenuItem(item, index))}
       </ScrollView>
-    </View>
+    </Animated.View>
   );
 };
 

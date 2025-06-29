@@ -23,6 +23,21 @@ const OrderDetailScreen = () => {
   const route = useRoute();
   const { order } = route.params as { order: any };
 
+  // Add default values to prevent undefined errors
+  const orderData = {
+    id: order?.id || 'N/A',
+    items: order?.items || [],
+    itemTotal: order?.itemTotal || 0,
+    deliveryFee: order?.deliveryFee || 0,
+    discount: order?.discount || 0,
+    grandTotal: order?.grandTotal || order?.totalAmount || 0,
+    paymentMode: order?.paymentMode || 'Online',
+    orderType: order?.orderType || 'Home Delivery',
+    address: order?.address || order?.deliveryAddress || 'N/A',
+    orderDate: order?.orderDate || new Date().toLocaleDateString(),
+    status: order?.status || 'Processing',
+  };
+
   const handleDownloadInvoice = () => {
     Alert.alert('Download Invoice', 'Invoice download started...');
   };
@@ -281,19 +296,19 @@ const OrderDetailScreen = () => {
           {/* Order ID */}
           <View style={styles.orderIdRow}>
             <Text style={styles.orderIdText}>Item Details</Text>
-            <Text style={styles.orderId}>{order.id}</Text>
+            <Text style={styles.orderId}>{orderData.id}</Text>
           </View>
 
           {/* Items Section */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Items</Text>
-            {order.items.map((item: any) => (
-              <View key={item.id} style={styles.itemContainer}>
+            {orderData.items.map((item: any, index: number) => (
+              <View key={item.id || `item-${index}`} style={styles.itemContainer}>
                 <Image source={{ uri: item.image }} style={styles.itemImage} />
                 <View style={styles.itemDetails}>
                   <Text style={styles.itemName}>{item.name}</Text>
-                  <Text style={styles.itemPrice}>₹{item.price.toFixed(2)}</Text>
-                  <Text style={styles.itemQuantity}>Quantity: {item.quantity}</Text>
+                  <Text style={styles.itemPrice}>₹{(item.price || 0).toFixed(2)}</Text>
+                  <Text style={styles.itemQuantity}>Quantity: {item.quantity || 1}</Text>
                 </View>
               </View>
             ))}
@@ -304,23 +319,23 @@ const OrderDetailScreen = () => {
             <Text style={styles.sectionTitle}>Bill Details</Text>
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Item Bill</Text>
-              <Text style={styles.billValue}>₹{order.itemTotal.toFixed(2)}</Text>
+              <Text style={styles.billValue}>₹{orderData.itemTotal.toFixed(2)}</Text>
             </View>
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Delivery Fee</Text>
-              <Text style={styles.billValue}>₹{order.deliveryFee.toFixed(2)}</Text>
+              <Text style={styles.billValue}>₹{orderData.deliveryFee.toFixed(2)}</Text>
             </View>
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Discount</Text>
-              <Text style={styles.billValue}>-₹{order.discount.toFixed(2)}</Text>
+              <Text style={styles.billValue}>-₹{orderData.discount.toFixed(2)}</Text>
             </View>
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Payment Mode</Text>
-              <Text style={styles.billValue}>{order.paymentMode}</Text>
+              <Text style={styles.billValue}>{orderData.paymentMode}</Text>
             </View>
             <View style={styles.grandTotalRow}>
               <Text style={styles.grandTotalLabel}>Grand Total</Text>
-              <Text style={styles.grandTotalValue}>₹{order.grandTotal.toFixed(2)}</Text>
+              <Text style={styles.grandTotalValue}>₹{orderData.grandTotal.toFixed(2)}</Text>
             </View>
           </View>
 
@@ -329,32 +344,32 @@ const OrderDetailScreen = () => {
             <Text style={styles.sectionTitle}>Order Details</Text>
             <View style={styles.orderDetailRow}>
               <Text style={styles.orderDetailLabel}>Order Type</Text>
-              <Text style={styles.orderDetailValue}>{order.orderType}</Text>
+              <Text style={styles.orderDetailValue}>{orderData.orderType}</Text>
             </View>
             <View style={styles.orderDetailRow}>
               <Text style={styles.orderDetailLabel}>Address</Text>
               <Text style={styles.orderDetailValue} numberOfLines={2}>
-                {order.address}
+                {orderData.address}
               </Text>
             </View>
             <View style={styles.orderDetailRow}>
               <Text style={styles.orderDetailLabel}>Order Placed On</Text>
-              <Text style={styles.orderDetailValue}>{order.orderDate}</Text>
+              <Text style={styles.orderDetailValue}>{orderData.orderDate}</Text>
             </View>
             <View style={styles.statusContainer}>
               <View
                 style={[
                   styles.statusDot,
-                  { backgroundColor: getStatusColor(order.status) },
+                  { backgroundColor: getStatusColor(orderData.status) },
                 ]}
               />
               <Text
                 style={[
                   styles.statusText,
-                  { color: getStatusColor(order.status) },
+                  { color: getStatusColor(orderData.status) },
                 ]}
               >
-                {order.status}
+                {orderData.status}
               </Text>
             </View>
           </View>

@@ -250,7 +250,7 @@ const PaymentMethodsScreen = () => {
         </View>
 
         {/* Place Order Button */}
-        <ThemedButton title="Place Order" onPress={() => navigation.navigate('Orders')} style={{ marginTop: 24 }} />
+        <ThemedButton title="Place Order" onPress={() => navigation.navigate('OrderConfirmation')} style={{ marginTop: 24 }} />
       </ScrollView>
     </SafeAreaView>
   );

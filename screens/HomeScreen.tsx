@@ -10,6 +10,7 @@ import {
   FlatList,
   Text,
   ScrollView,
+  BackHandler,
 } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
@@ -254,11 +255,15 @@ const SearchResults = ({
 
 const HomeScreen = () => {
   const { theme, setSection } = useTheme();
-  const [isDrawerVisible, setDrawerVisible] = useState(false);
+  const navigation = useNavigation<NavigationProp>();
+  const route = useRoute<HomeRouteProp>();
+  const { addToGroceryCart } = useCart();
+  const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('grocery');
-  const [loading, setLoading] = useState(true);
   const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [activeTab, setActiveTab] = useState('all');
+  const [loading, setLoading] = useState(true);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const scrollY = new Animated.Value(0);
 
@@ -268,22 +273,36 @@ const HomeScreen = () => {
     }, [])
   );
 
-  const navigation = useNavigation<NavigationProp>();
-
-  // Set initial tab based on navigation params
+  // Handle back button press
   useEffect(() => {
-    // This logic is no longer needed with the new navigation structure
-  }, []);
+    const backAction = () => {
+      if (isDrawerVisible) {
+        setIsDrawerVisible(false);
+        return true; // Prevent default back action
+      }
+      return false; // Allow default back action
+    };
 
-  // Flatten all products from all categories in the active section
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
+
+    return () => backHandler.remove();
+  }, [isDrawerVisible]);
+
   const getAllProducts = () => {
-    const data = activeTab === 'grocery' ? groceryData : pharmacyData;
-    return data.flatMap(category => 
-      category.subCategories.flatMap(subCategory => subCategory.products)
-    );
+    const allProducts: Product[] = [];
+    groceryData.forEach(category => {
+      category.subCategories.forEach(subCategory => {
+        allProducts.push(...subCategory.products);
+      });
+    });
+    return allProducts;
   };
 
-  const toggleDrawer = () => setDrawerVisible(!isDrawerVisible);
+  const toggleDrawer = () => setIsDrawerVisible(!isDrawerVisible);
+
+  const handleOverlayPress = () => {
+    setIsDrawerVisible(false);
+  };
 
   const tabBarStyle = {
     ...styles.tabBar,
@@ -401,9 +420,10 @@ const HomeScreen = () => {
       </View>
 
       {isDrawerVisible && (
-        <View style={styles.drawerOverlay}>
+        <TouchableOpacity style={styles.drawerOverlay} onPress={handleOverlayPress} activeOpacity={1}>
+          <View style={{ flex: 1 }} />
           <Drawer onClose={toggleDrawer} />
-        </View>
+        </TouchableOpacity>
       )}
     </SafeAreaView>
   );

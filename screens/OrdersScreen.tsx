@@ -46,6 +46,20 @@ const mockOrders = [
         quantity: 1,
         image: 'https://images.pexels.com/photos/1721934/pexels-photo-1721934.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
       },
+      {
+        id: '4',
+        name: 'Bananas',
+        price: 1.49,
+        quantity: 3,
+        image: 'https://images.pexels.com/photos/47305/bananas-banana-bunch-yellow-47305.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+      },
+      {
+        id: '5',
+        name: 'Tomatoes',
+        price: 2.99,
+        quantity: 2,
+        image: 'https://images.pexels.com/photos/1327838/pexels-photo-1327838.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+      },
     ],
     itemTotal: 10.46,
     deliveryFee: 2.99,
@@ -93,6 +107,13 @@ const mockOrders = [
         name: 'Rice',
         price: 3.99,
         quantity: 2,
+        image: 'https://images.pexels.com/photos/4110225/pexels-photo-4110225.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+      },
+      {
+        id: '7',
+        name: 'Cooking Oil',
+        price: 4.99,
+        quantity: 1,
         image: 'https://images.pexels.com/photos/4110225/pexels-photo-4110225.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
       },
     ],
@@ -187,53 +208,90 @@ const OrdersScreen = () => {
       shadowRadius: 4,
       elevation: 2,
     },
-    orderHeader: {
+    itemsImagesContainer: {
       flexDirection: 'row',
       alignItems: 'center',
       marginBottom: 12,
     },
-    orderImage: {
+    itemImage: {
       width: 56,
       height: 56,
       borderRadius: 8,
       marginRight: 12,
     },
-    orderInfo: {
-      flex: 1,
+    remainingItemsContainer: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 4,
+      marginLeft: -15,
+      borderWidth: 2,
+      borderColor: theme.colors.background,
+    },
+    remainingItemsText: {
+      fontSize: 12,
+      color: theme.colors.secondary,
+      fontWeight: 'bold',
+    },
+    totalItemsContainer: {
+      marginLeft: 'auto',
+      backgroundColor: theme.colors.primary + '20',
+      borderRadius: 12,
+      paddingHorizontal: 8,
+      paddingVertical: 4,
+    },
+    totalItemsText: {
+      fontSize: 12,
+      color: theme.colors.primary,
+      fontWeight: '600',
+    },
+    statusContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: 12,
+    },
+    statusDot: {
+      width: 12,
+      height: 12,
+      borderRadius: 6,
+      marginRight: 8,
     },
     orderStatus: {
       fontSize: 15,
       fontWeight: 'bold',
       color: theme.colors.primary,
     },
-    orderId: {
-      fontSize: 13,
-      color: theme.colors.secondary,
-      marginTop: 2,
+    orderDetailsContainer: {
+      marginBottom: 12,
     },
-    orderType: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: theme.colors.text,
-    },
-    orderDetailsRow: {
+    orderDetailRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      marginBottom: 8,
+      marginBottom: 4,
     },
-    orderDetail: {
+    orderDetailLabel: {
+      fontSize: 14,
+      color: theme.colors.secondary,
+    },
+    orderDetailValue: {
       fontSize: 14,
       color: theme.colors.text,
     },
-    itemsPreview: {
-      marginTop: 8,
-      paddingTop: 8,
-      borderTopWidth: 1,
-      borderTopColor: theme.colors.border,
+    actionButtonsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
     },
-    itemsText: {
-      fontSize: 13,
-      color: theme.colors.secondary,
+    actionButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 8,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderRadius: 8,
+    },
+    actionButtonText: {
+      fontSize: 14,
+      color: theme.colors.primary,
+      marginLeft: 8,
     },
     emptyText: {
       textAlign: 'center',
@@ -243,38 +301,84 @@ const OrdersScreen = () => {
     },
   });
 
-  const renderOrder = ({ item }: { item: typeof mockOrders[0] }) => (
-    <TouchableOpacity
-      style={styles.orderCard}
-      onPress={() => handleOrderPress(item)}
-      activeOpacity={0.8}
-    >
-      <View style={styles.orderHeader}>
-        <Image 
-          source={{ uri: item.items[0].image }} 
-          style={styles.orderImage} 
-        />
-        <View style={styles.orderInfo}>
-          <Text style={styles.orderStatus}>{item.status}</Text>
-          <Text style={styles.orderId}>Order ID: {item.id}</Text>
-          <Text style={styles.orderType}>{item.orderType}</Text>
+  const renderOrder = ({ item }: { item: typeof mockOrders[0] }) => {
+    const totalItems = item.items.reduce((sum, item) => sum + item.quantity, 0);
+    const displayItems = item.items.slice(0, 3); // Show only first 3 items
+    const remainingItems = item.items.length - 3;
+
+    return (
+      <TouchableOpacity
+        style={styles.orderCard}
+        onPress={() => handleOrderPress(item)}
+        activeOpacity={0.8}
+      >
+        {/* Item Images Section */}
+        <View style={styles.itemsImagesContainer}>
+          {displayItems.map((orderItem, index) => (
+            <Image 
+              key={orderItem.id}
+              source={{ uri: orderItem.image }} 
+              style={[
+                styles.itemImage, 
+                { 
+                  marginLeft: index > 0 ? -15 : 0,
+                  zIndex: displayItems.length - index 
+                }
+              ]} 
+            />
+          ))}
+          {remainingItems > 0 && (
+            <View style={styles.remainingItemsContainer}>
+              <Text style={styles.remainingItemsText}>+{remainingItems}</Text>
+            </View>
+          )}
+          <View style={styles.totalItemsContainer}>
+            <Text style={styles.totalItemsText}>{totalItems} items</Text>
+          </View>
         </View>
-      </View>
-      <View style={styles.orderDetailsRow}>
-        <Text style={styles.orderDetail}>Total: ₹{item.grandTotal.toFixed(2)}</Text>
-        <Text style={styles.orderDetail}>Items: {item.items.length}</Text>
-      </View>
-      <View style={styles.orderDetailsRow}>
-        <Text style={styles.orderDetail}>Date: {item.orderDate}</Text>
-        <Text style={styles.orderDetail}>{item.paymentMode}</Text>
-      </View>
-      <View style={styles.itemsPreview}>
-        <Text style={styles.itemsText}>
-          {item.items.map(item => item.name).join(', ')}
-        </Text>
-      </View>
-    </TouchableOpacity>
-  );
+
+        {/* Order Status */}
+        <View style={styles.statusContainer}>
+          <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
+          <Text style={[styles.orderStatus, { color: getStatusColor(item.status) }]}>
+            {item.status}
+          </Text>
+        </View>
+
+        {/* Order Details */}
+        <View style={styles.orderDetailsContainer}>
+          <View style={styles.orderDetailRow}>
+            <Text style={styles.orderDetailLabel}>Order ID:</Text>
+            <Text style={styles.orderDetailValue}>{item.id}</Text>
+          </View>
+          <View style={styles.orderDetailRow}>
+            <Text style={styles.orderDetailLabel}>Total Amount:</Text>
+            <Text style={styles.orderDetailValue}>₹{item.grandTotal.toFixed(2)}</Text>
+          </View>
+          <View style={styles.orderDetailRow}>
+            <Text style={styles.orderDetailLabel}>Total Items:</Text>
+            <Text style={styles.orderDetailValue}>{totalItems}</Text>
+          </View>
+          <View style={styles.orderDetailRow}>
+            <Text style={styles.orderDetailLabel}>Store:</Text>
+            <Text style={styles.orderDetailValue}>Pass ki Dukaan</Text>
+          </View>
+        </View>
+
+        {/* Action Buttons */}
+        <View style={styles.actionButtonsContainer}>
+          <TouchableOpacity style={styles.actionButton}>
+            <MaterialIcons name="refresh" size={16} color={theme.colors.primary} />
+            <Text style={styles.actionButtonText}>Reorder</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.actionButton}>
+            <MaterialIcons name="star" size={16} color={theme.colors.primary} />
+            <Text style={styles.actionButtonText}>Rate Order</Text>
+          </TouchableOpacity>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>

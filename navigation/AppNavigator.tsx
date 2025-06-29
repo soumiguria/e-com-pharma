@@ -6,7 +6,7 @@ import PincodeScreen from '../screens/PincodeScreen';
 import StoreListScreen from '../screens/StoreListScreen';
 import CartScreen from '../screens/CartScreen';
 import CheckoutScreen from '../screens/PaymentMethodsScreen';
-import OrderConfirmationScreen from '../screens/OrdersScreen';
+import OrderConfirmationScreen from '../screens/OrderConfirmationScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import OrdersScreen from '../screens/OrdersScreen';
 import OrderDetailScreen from '../screens/OrderDetailScreen';
