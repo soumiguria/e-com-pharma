@@ -9,6 +9,7 @@ import CheckoutScreen from '../screens/PaymentMethodsScreen';
 import OrderConfirmationScreen from '../screens/OrdersScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 import OrdersScreen from '../screens/OrdersScreen';
+import OrderDetailScreen from '../screens/OrderDetailScreen';
 import PaymentMethodsScreen from '../screens/PaymentMethodsScreen';
 import HelpCenterScreen from '../screens/HelpCenterScreen';
 import AllProductsScreen from '../screens/AllProductsScreen';
@@ -27,6 +28,16 @@ import EditProfileScreen from '../screens/EditProfileScreen';
 import MyAddressesScreen from '../screens/MyAddressesScreen';
 import AddAddressScreen from '../screens/AddAddressScreen';
 import LocationPickerScreen from '../screens/LocationPickerScreen';
+import MyWishlistScreen from '../screens/MyWishlistScreen';
+import AboutStoreScreen from '../screens/AboutStoreScreen';
+import ContactStoreScreen from '../screens/ContactStoreScreen';
+import GroceryHomeScreen from '../screens/GroceryHomeScreen';
+import PharmacyHomeScreen from '../screens/PharmacyHomeScreen';
+import SearchScreen from '../screens/SearchScreen';
+import SavedProductsScreen from '../screens/SavedProductsScreen';
+import Under99ProductsScreen from '../screens/Under99ProductsScreen';
+import Under199ProductsScreen from '../screens/Under199ProductsScreen';
+import SearchResultsScreen from '../screens/SearchResultsScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -49,6 +60,7 @@ const AppNavigator = () => {
       <Stack.Screen name="OrderConfirmation" component={OrderConfirmationScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
       <Stack.Screen name="Orders" component={OrdersScreen} />
+      <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
       <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
       <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
       <Stack.Screen name="AllProducts" component={AllProductsScreen} />
@@ -63,6 +75,20 @@ const AppNavigator = () => {
       <Stack.Screen name="MyAddresses" component={MyAddressesScreen} />
       <Stack.Screen name="AddAddress" component={AddAddressScreen} />
       <Stack.Screen name="LocationPicker" component={LocationPickerScreen} />
+      <Stack.Screen name="MyWishlist" component={MyWishlistScreen} />
+      <Stack.Screen name="AboutStore" component={AboutStoreScreen} />
+      <Stack.Screen name="ContactStore" component={ContactStoreScreen} />
+      <Stack.Screen name="GroceryHome" component={GroceryHomeScreen} />
+      <Stack.Screen name="PharmacyHome" component={PharmacyHomeScreen} />
+      <Stack.Screen name="LocateStore" component={AboutStoreScreen} />
+      <Stack.Screen name="AboutPassKiDukaan" component={AboutStoreScreen} />
+      <Stack.Screen name="Settings" component={AboutStoreScreen} />
+      <Stack.Screen name="Notifications" component={AboutStoreScreen} />
+      <Stack.Screen name="SearchScreen" component={SearchScreen} />
+      <Stack.Screen name="SavedProducts" component={SavedProductsScreen} />
+      <Stack.Screen name="Under99Products" component={Under99ProductsScreen} />
+      <Stack.Screen name="Under199Products" component={Under199ProductsScreen} />
+      <Stack.Screen name="SearchResults" component={SearchResultsScreen} />
     </Stack.Navigator>
   );
 };

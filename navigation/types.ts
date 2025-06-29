@@ -15,6 +15,7 @@ export type RootStackParamList = {
   OrderConfirmation: undefined;
   Profile: undefined;
   Orders: undefined;
+  OrderDetail: { order: any };
   PaymentMethods: undefined;
   HelpCenter: undefined;
   AllProducts: {
@@ -35,6 +36,20 @@ export type RootStackParamList = {
   MyAddresses: undefined;
   AddAddress: { location?: { latitude: number; longitude: number; address: string } };
   LocationPicker: undefined;
+  MyWishlist: undefined;
+  AboutStore: undefined;
+  ContactStore: undefined;
+  LocateStore: undefined;
+  AboutPassKiDukaan: undefined;
+  Settings: undefined;
+  Notifications: undefined;
+  GroceryHome: { storeId: string };
+  PharmacyHome: { storeId: string };
+  SearchScreen: undefined;
+  SearchResults: { query: string };
+  SavedProducts: undefined;
+  Under99Products: undefined;
+  Under199Products: undefined;
 };
 
 export type HomeTabParamList = {

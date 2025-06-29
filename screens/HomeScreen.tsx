@@ -160,42 +160,33 @@ const Header = ({ onProfilePress }: { onProfilePress: () => void }) => {
 const SearchBar = ({ 
   searchQuery, 
   setSearchQuery,
-  onClear 
+  onClear,
+  onSearchPress
 }: { 
   searchQuery: string, 
   setSearchQuery: (text: string) => void,
-  onClear: () => void
+  onClear: () => void,
+  onSearchPress: () => void
 }) => {
   const { theme } = useTheme();
 
   return (
     <View style={[styles.searchBarWrapper]}> 
-      <View style={[styles.searchContainer, { backgroundColor: theme.colors.surface }]}> 
+      <TouchableOpacity 
+        style={[styles.searchContainer, { backgroundColor: theme.colors.surface }]}
+        onPress={onSearchPress}
+        activeOpacity={0.8}
+      > 
         <Ionicons 
           name="search" 
           size={22} 
           color={theme.colors.text + '80'} 
           style={styles.searchIcon} 
         />
-        <TextInput
-          style={[styles.searchInput, { color: theme.colors.text }]}
-          placeholder="Search products..."
-          placeholderTextColor={theme.colors.text + '80'}
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          returnKeyType="search"
-        />
+        <Text style={[styles.searchPlaceholder, { color: theme.colors.text + '80' }]}>
+          Search products...
+        </Text>
         <View style={styles.searchRight}>
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={onClear}>
-              <Ionicons 
-                name="close-circle" 
-                size={22} 
-                color={theme.colors.text + '80'} 
-                style={styles.searchActionIcon}
-              />
-            </TouchableOpacity>
-          )}
           <TouchableOpacity>
               <MaterialCommunityIcons
                   name="microphone"
@@ -204,7 +195,7 @@ const SearchBar = ({
               />
           </TouchableOpacity>
         </View>
-      </View>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -354,6 +345,7 @@ const HomeScreen = () => {
         searchQuery={searchQuery} 
         setSearchQuery={handleSearch} 
         onClear={clearSearch} 
+        onSearchPress={() => navigation.navigate('SearchScreen')}
       />
       
       <View style={styles.contentContainer}>
@@ -408,7 +400,11 @@ const HomeScreen = () => {
         )}
       </View>
 
-      {isDrawerVisible && <Drawer onClose={toggleDrawer} />}
+      {isDrawerVisible && (
+        <View style={styles.drawerOverlay}>
+          <Drawer onClose={toggleDrawer} />
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -618,6 +614,19 @@ const styles = StyleSheet.create({
   },
   searchGridRow: {
     justifyContent: 'space-between',
+  },
+  drawerOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  searchPlaceholder: {
+    flex: 1,
+    fontSize: 16,
+    paddingHorizontal: 8,
   },
 });
 

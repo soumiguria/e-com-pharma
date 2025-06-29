@@ -15,9 +15,8 @@ const ProfileScreen = () => {
   
   const options = [
     { id: '1', name: 'Edit Profile', icon: 'person' as const, screen: 'EditProfile' as keyof RootStackParamList },
-    { id: '2', name: 'My Addresses', icon: 'location' as const, screen: 'MyAddresses' as keyof RootStackParamList },
-    { id: '3', name: 'Payment Methods', icon: 'card' as const, screen: 'PaymentMethods' as keyof RootStackParamList },
-    { id: '4', name: 'Help Center', icon: 'help-circle' as const, screen: 'HelpCenter' as keyof RootStackParamList },
+    { id: '2', name: 'Payment Methods', icon: 'card' as const, screen: 'PaymentMethods' as keyof RootStackParamList },
+    { id: '3', name: 'Help Center', icon: 'help-circle' as const, screen: 'HelpCenter' as keyof RootStackParamList },
   ];
 
   const handleOptionPress = (screen: keyof RootStackParamList) => {

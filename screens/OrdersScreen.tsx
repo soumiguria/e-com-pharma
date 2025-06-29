@@ -1,47 +1,106 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  Image,
+  FlatList,
+  SafeAreaView,
+} from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
+import { useNavigation } from '@react-navigation/native';
+import { MaterialIcons } from '@expo/vector-icons';
+import { RootStackParamList } from '../navigation/types';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
+type OrdersScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Orders'>;
+
+// Mock order data
 const mockOrders = [
   {
-    id: '1',
+    id: 'ORD001',
+    orderDate: '2024-01-15',
     status: 'Delivered',
-    storeName: 'Fresh Grocery Store',
-    storeType: 'grocery',
-    image: 'https://cdn.pixabay.com/photo/2017/10/09/19/29/eat-2834549_1280.jpg',
-    totalAmount: 460,
-    totalItems: 3,
+    orderType: 'Home Delivery',
+    address: '123 Main Street, Apartment 4B, New York, NY 10001',
     items: [
-      { id: 'a', name: 'Organic Apples', qty: 1, price: 120 },
-      { id: 'b', name: 'Bananas', qty: 2, price: 80 },
-      { id: 'c', name: 'Milk 1L', qty: 1, price: 260 },
+      {
+        id: '1',
+        name: 'Fresh Apples',
+        price: 2.99,
+        quantity: 2,
+        image: 'https://images.pexels.com/photos/2093087/pexels-photo-2093087.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+      },
+      {
+        id: '2',
+        name: 'Organic Milk',
+        price: 3.49,
+        quantity: 1,
+        image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+      },
+      {
+        id: '3',
+        name: 'Whole Grain Bread',
+        price: 1.99,
+        quantity: 1,
+        image: 'https://images.pexels.com/photos/1721934/pexels-photo-1721934.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+      },
     ],
+    itemTotal: 10.46,
+    deliveryFee: 2.99,
+    discount: 1.50,
+    grandTotal: 11.95,
+    paymentMode: 'Credit Card',
   },
   {
-    id: '2',
+    id: 'ORD002',
+    orderDate: '2024-01-10',
+    status: 'In Transit',
+    orderType: 'Store Pickup',
+    address: '456 Oak Avenue, Suite 8, Brooklyn, NY 11201',
+    items: [
+      {
+        id: '4',
+        name: 'Fresh Vegetables',
+        price: 4.99,
+        quantity: 1,
+        image: 'https://images.pexels.com/photos/2518893/pexels-photo-2518893.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+      },
+    ],
+    itemTotal: 4.99,
+    deliveryFee: 0,
+    discount: 0,
+    grandTotal: 4.99,
+    paymentMode: 'Cash',
+  },
+  {
+    id: 'ORD003',
+    orderDate: '2024-01-08',
     status: 'Processing',
-    storeName: 'City Pharmacy',
-    storeType: 'pharmacy',
-    image: 'https://cdn.pixabay.com/photo/2016/03/05/19/02/broccoli-1238250_1280.jpg',
-    totalAmount: 320,
-    totalItems: 2,
+    orderType: 'Home Delivery',
+    address: '789 Pine Street, Unit 12, Queens, NY 11375',
     items: [
-      { id: 'd', name: 'Paracetamol', qty: 1, price: 120 },
-      { id: 'e', name: 'Cough Syrup', qty: 1, price: 200 },
+      {
+        id: '5',
+        name: 'Chicken Breast',
+        price: 8.99,
+        quantity: 1,
+        image: 'https://images.pexels.com/photos/3997388/pexels-photo-3997388.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+      },
+      {
+        id: '6',
+        name: 'Rice',
+        price: 3.99,
+        quantity: 2,
+        image: 'https://images.pexels.com/photos/4110225/pexels-photo-4110225.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
+      },
     ],
-  },
-  {
-    id: '3',
-    status: 'Delivered',
-    storeName: 'Super Grocery',
-    storeType: 'grocery',
-    image: 'https://cdn.pixabay.com/photo/2017/06/27/22/21/banana-2449019_1280.jpg',
-    totalAmount: 150,
-    totalItems: 1,
-    items: [
-      { id: 'f', name: 'Bread', qty: 2, price: 150 },
-    ],
+    itemTotal: 16.97,
+    deliveryFee: 2.99,
+    discount: 2.00,
+    grandTotal: 17.96,
+    paymentMode: 'Debit Card',
   },
 ];
 
@@ -53,14 +112,36 @@ const TABS = [
 
 const OrdersScreen = () => {
   const { theme } = useTheme();
+  const navigation = useNavigation<OrdersScreenNavigationProp>();
   const [activeTab, setActiveTab] = useState('all');
 
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Delivered':
+        return '#00b14f';
+      case 'In Transit':
+        return '#ff9500';
+      case 'Processing':
+        return '#007aff';
+      default:
+        return '#8e8e93';
+    }
+  };
+
+  const handleOrderPress = (order: typeof mockOrders[0]) => {
+    // Navigate to order detail screen
+    navigation.navigate('OrderDetail' as any, { order });
+  };
+
   const styles = StyleSheet.create({
-    container: {
+    safeArea: {
       flex: 1,
       backgroundColor: theme.colors.background,
     },
-    appBar: {
+    container: {
+      flex: 1,
+    },
+    header: {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
@@ -69,7 +150,7 @@ const OrdersScreen = () => {
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
     },
-    appBarTitle: {
+    headerTitle: {
       fontSize: 22,
       fontWeight: 'bold',
       color: theme.colors.text,
@@ -111,7 +192,7 @@ const OrdersScreen = () => {
       alignItems: 'center',
       marginBottom: 12,
     },
-    storeImage: {
+    orderImage: {
       width: 56,
       height: 56,
       borderRadius: 8,
@@ -130,53 +211,29 @@ const OrdersScreen = () => {
       color: theme.colors.secondary,
       marginTop: 2,
     },
-    storeName: {
-      fontSize: 16,
-      fontWeight: 'bold',
+    orderType: {
+      fontSize: 14,
+      fontWeight: '600',
       color: theme.colors.text,
     },
     orderDetailsRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      marginTop: 8,
+      marginBottom: 8,
     },
     orderDetail: {
       fontSize: 14,
       color: theme.colors.text,
     },
-    itemsList: {
-      marginTop: 10,
-      marginBottom: 10,
+    itemsPreview: {
+      marginTop: 8,
+      paddingTop: 8,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
     },
-    itemRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 4,
-    },
-    itemName: {
-      fontSize: 14,
-      color: theme.colors.text,
-    },
-    itemQty: {
-      fontSize: 14,
+    itemsText: {
+      fontSize: 13,
       color: theme.colors.secondary,
-    },
-    actionsRow: {
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
-      marginTop: 10,
-    },
-    actionBtn: {
-      backgroundColor: theme.colors.primary,
-      borderRadius: 8,
-      paddingHorizontal: 14,
-      paddingVertical: 8,
-      marginLeft: 10,
-    },
-    actionBtnText: {
-      color: '#fff',
-      fontWeight: 'bold',
-      fontSize: 14,
     },
     emptyText: {
       textAlign: 'center',
@@ -186,72 +243,70 @@ const OrdersScreen = () => {
     },
   });
 
-  const filteredOrders =
-    activeTab === 'all'
-      ? mockOrders
-      : mockOrders.filter((o) => o.storeType === activeTab);
-
   const renderOrder = ({ item }: { item: typeof mockOrders[0] }) => (
-    <View style={styles.orderCard}>
+    <TouchableOpacity
+      style={styles.orderCard}
+      onPress={() => handleOrderPress(item)}
+      activeOpacity={0.8}
+    >
       <View style={styles.orderHeader}>
-        <Image source={{ uri: item.image }} style={styles.storeImage} />
+        <Image 
+          source={{ uri: item.items[0].image }} 
+          style={styles.orderImage} 
+        />
         <View style={styles.orderInfo}>
-          <Text style={styles.storeName}>{item.storeName}</Text>
           <Text style={styles.orderStatus}>{item.status}</Text>
           <Text style={styles.orderId}>Order ID: {item.id}</Text>
+          <Text style={styles.orderType}>{item.orderType}</Text>
         </View>
       </View>
       <View style={styles.orderDetailsRow}>
-        <Text style={styles.orderDetail}>Total: ₹{item.totalAmount}</Text>
-        <Text style={styles.orderDetail}>Items: {item.totalItems}</Text>
+        <Text style={styles.orderDetail}>Total: ₹{item.grandTotal.toFixed(2)}</Text>
+        <Text style={styles.orderDetail}>Items: {item.items.length}</Text>
       </View>
-      <View style={styles.itemsList}>
-        {item.items.map((itm) => (
-          <View key={itm.id} style={styles.itemRow}>
-            <Text style={styles.itemName}>{itm.name}</Text>
-            <Text style={styles.itemQty}>x{itm.qty} - ₹{itm.price}</Text>
-          </View>
-        ))}
+      <View style={styles.orderDetailsRow}>
+        <Text style={styles.orderDetail}>Date: {item.orderDate}</Text>
+        <Text style={styles.orderDetail}>{item.paymentMode}</Text>
       </View>
-      <View style={styles.actionsRow}>
-        <TouchableOpacity style={styles.actionBtn}>
-          <Text style={styles.actionBtnText}>Rate Order</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.actionBtn}>
-          <Text style={styles.actionBtnText}>Reorder</Text>
-        </TouchableOpacity>
+      <View style={styles.itemsPreview}>
+        <Text style={styles.itemsText}>
+          {item.items.map(item => item.name).join(', ')}
+        </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.appBar}>
-        <Text style={styles.appBarTitle}>My Orders</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>My Orders</Text>
+        </View>
+        <View style={styles.tabsRow}>
+          {TABS.map((tab) => (
+            <TouchableOpacity
+              key={tab.key}
+              style={styles.tabBtn}
+              onPress={() => setActiveTab(tab.key)}
+            >
+              <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>
+                {tab.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+        {mockOrders.length === 0 ? (
+          <Text style={styles.emptyText}>No orders found.</Text>
+        ) : (
+          <FlatList
+            data={mockOrders}
+            keyExtractor={(item) => item.id}
+            renderItem={renderOrder}
+            contentContainerStyle={{ paddingBottom: 24 }}
+            showsVerticalScrollIndicator={false}
+          />
+        )}
       </View>
-      <View style={styles.tabsRow}>
-        {TABS.map((tab) => (
-          <TouchableOpacity
-            key={tab.key}
-            style={styles.tabBtn}
-            onPress={() => setActiveTab(tab.key)}
-          >
-            <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>
-              {tab.label}
-            </Text>
-          </TouchableOpacity>
-        ))}
-      </View>
-      {filteredOrders.length === 0 ? (
-        <Text style={styles.emptyText}>No orders found.</Text>
-      ) : (
-        <FlatList
-          data={filteredOrders}
-          keyExtractor={(item) => item.id}
-          renderItem={renderOrder}
-          contentContainerStyle={{ paddingBottom: 24 }}
-        />
-      )}
     </SafeAreaView>
   );
 };
