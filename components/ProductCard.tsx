@@ -3,7 +3,7 @@ import { View, Text, Image, StyleSheet, TouchableOpacity, StyleProp, ViewStyle, 
 import { useCart } from '../contexts/CartContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
-import Toast from 'react-native-toast-message';
+import { useToast } from '../contexts/ToastContext';
 
 interface Product {
   id: string;
@@ -28,6 +28,8 @@ interface ProductCardProps {
 const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, compact, hideCartButton }) => {
   const { addToGroceryCart, addToPharmacyCart } = useCart();
   const { theme } = useTheme();
+  const { showToast } = useToast();
+  
   const imageSource = typeof product.image === 'string' 
     ? { uri: product.image } 
     : product.image;
@@ -43,82 +45,70 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
 
     if (product.category === 'pharmacy') {
       addToPharmacyCart(cartItem);
-      Toast.show({
-        type: 'success',
-        text1: 'Added to Cart',
-        text2: `${product.name} has been added to your pharmacy cart`,
-        position: 'bottom',
-        visibilityTime: 2000,
-      });
     } else {
       addToGroceryCart(cartItem);
-      Toast.show({
-        type: 'success',
-        text1: 'Added to Cart',
-        text2: `${product.name} has been added to your grocery cart`,
-        position: 'bottom',
-        visibilityTime: 2000,
-      });
     }
+    showToast(`${product.name} has been added to your cart`);
   };
 
   return (
-    <TouchableOpacity 
-      style={[styles.container, compact && styles.compactContainer, { backgroundColor: theme.colors.surface }, style]} 
-      onPress={onPress}
-      activeOpacity={0.8}
-    >
-      <View style={[styles.imageContainer, compact && styles.compactImageContainer, { backgroundColor: theme.colors.background }]}>
-        {product.image && (
-          <Image source={imageSource} style={[styles.image, compact && styles.compactImage]} resizeMode="cover" />
-        )}
-        
-        <View style={styles.badgeContainer}>
-          {product.isNew && (
-            <View style={[styles.badge, styles.newBadge]}>
-              <Text style={styles.badgeText}>New</Text>
-            </View>
+    <>
+      <TouchableOpacity 
+        style={[styles.container, compact && styles.compactContainer, { backgroundColor: theme.colors.surface }, style]} 
+        onPress={onPress}
+        activeOpacity={0.8}
+      >
+        <View style={[styles.imageContainer, compact && styles.compactImageContainer, { backgroundColor: theme.colors.background }]}>
+          {product.image && (
+            <Image source={imageSource} style={[styles.image, compact && styles.compactImage]} resizeMode="cover" />
           )}
-          {product.isOnSale && (
-            <View style={[styles.badge, styles.saleBadge]}>
-              <Text style={styles.badgeText}>Sale</Text>
-            </View>
-          )}
-        </View>
-        
-        {!hideCartButton && (
-          <TouchableOpacity 
-            style={[styles.cartButton, { backgroundColor: theme.colors.primary }]} 
-            onPress={handleAddToCart}
-          >
-            <MaterialIcons name="add-shopping-cart" size={20} color="#fff" />
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <View style={[styles.infoContainer, compact && styles.compactInfoContainer]}>
-        <Text style={[styles.name, compact && styles.compactName, { color: theme.colors.text }]} numberOfLines={2}>{product.name}</Text>
-        
-        {product.rating !== undefined && (
-          <View style={styles.ratingContainer}>
-            <Text style={[styles.rating, { color: theme.colors.accent }]}>{`⭐ ${product.rating.toFixed(1)}`}</Text>
+          
+          <View style={styles.badgeContainer}>
+            {product.isNew && (
+              <View style={[styles.badge, styles.newBadge]}>
+                <Text style={styles.badgeText}>New</Text>
+              </View>
+            )}
+            {product.isOnSale && (
+              <View style={[styles.badge, styles.saleBadge]}>
+                <Text style={styles.badgeText}>Sale</Text>
+              </View>
+            )}
           </View>
-        )}
-        
-        <View style={styles.priceContainer}>
-          <Text style={[styles.price, compact && styles.compactPrice, { color: theme.colors.text }]}>{`₹${product.price.toFixed(2)}`}</Text>
-          {product.originalPrice && (
-            <Text style={[styles.originalPrice, { color: theme.colors.secondary }]}>{`₹${product.originalPrice.toFixed(2)}`}</Text>
+          
+          {!hideCartButton && (
+            <TouchableOpacity 
+              style={[styles.cartButton, { backgroundColor: theme.colors.primary }]} 
+              onPress={handleAddToCart}
+            >
+              <MaterialIcons name="add-shopping-cart" size={20} color="#fff" />
+            </TouchableOpacity>
           )}
         </View>
-      </View>
-    </TouchableOpacity>
+
+        <View style={[styles.infoContainer, compact && styles.compactInfoContainer]}>
+          <Text style={[styles.name, compact && styles.compactName, { color: theme.colors.text }]} numberOfLines={2}>{product.name}</Text>
+          
+          {product.rating !== undefined && (
+            <View style={styles.ratingContainer}>
+              <Text style={[styles.rating, { color: theme.colors.accent }]}>{`⭐ ${product.rating.toFixed(1)}`}</Text>
+            </View>
+          )}
+          
+          <View style={styles.priceContainer}>
+            <Text style={[styles.price, compact && styles.compactPrice, { color: theme.colors.text }]}>{`₹${product.price.toFixed(2)}`}</Text>
+            {product.originalPrice && (
+              <Text style={[styles.originalPrice, { color: theme.colors.secondary }]}>{`₹${product.originalPrice.toFixed(2)}`}</Text>
+            )}
+          </View>
+        </View>
+      </TouchableOpacity>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: 'white',
     borderRadius: 12,
     marginBottom: 16,
     overflow: 'hidden',
@@ -139,7 +129,6 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'relative',
     aspectRatio: 1,
-    backgroundColor: '#f5f5f5',
   },
   compactImageContainer: {
     width: 56,
@@ -210,7 +199,6 @@ const styles = StyleSheet.create({
   name: {
     fontSize: 14,
     fontWeight: '500',
-    color: '#333',
     marginBottom: 4,
     height: 36,
   },
@@ -224,7 +212,6 @@ const styles = StyleSheet.create({
   },
   rating: {
     fontSize: 12,
-    color: '#FFC107',
   },
   priceContainer: {
     flexDirection: 'row',
@@ -234,15 +221,16 @@ const styles = StyleSheet.create({
   price: {
     fontSize: 16,
     fontWeight: 'bold',
-    color: '#333',
   },
   compactPrice: {
     fontSize: 14,
   },
   originalPrice: {
-    fontSize: 12,
-    color: '#999',
+    fontSize: 14,
     textDecorationLine: 'line-through',
+  },
+  compactOriginalPrice: {
+    fontSize: 12,
   },
 });
 

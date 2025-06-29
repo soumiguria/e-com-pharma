@@ -1,6 +1,6 @@
 // screens/CartScreen.tsx
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Text, Button, Card, useTheme } from 'react-native-paper';
 import { useCart } from '../contexts/CartContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -12,68 +12,17 @@ import { ScrollView as RNScrollView } from 'react-native';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Cart'>;
 
 const CartScreen = () => {
-  const { groceryItems, pharmacyItems, removeFromCart, updateQuantity, groceryTotal, pharmacyTotal } = useCart();
+  const { groceryItems, pharmacyItems, removeFromCart, updateQuantity, groceryTotal, pharmacyTotal, addToGroceryCart, addToPharmacyCart } = useCart();
   const theme = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const [activeTab, setActiveTab] = useState<'grocery' | 'pharmacy'>('grocery');
+  
+  // Combine all items
+  const allItems = [...groceryItems, ...pharmacyItems];
+  const totalAmount = groceryTotal + pharmacyTotal;
 
-  const handleCheckout = (type: 'grocery' | 'pharmacy') => {
+  const handleCheckout = () => {
     // Navigate to payment methods/checkout screen
     navigation.navigate('PaymentMethods');
-  };
-
-  const renderTabContent = (items: any[], category: 'grocery' | 'pharmacy') => {
-    if (items.length === 0) {
-      return (
-        <View style={styles.emptyCart}>
-          <Text>Your cart is empty</Text>
-        </View>
-      );
-    }
-
-    return (
-      <ScrollView style={styles.cartList}>
-        {items.map((item) => (
-          <Card key={item.id} style={styles.cartItem}>
-            <Card.Content>
-              <View style={styles.itemHeader}>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemPrice}>₹{item.price}</Text>
-              </View>
-              {item.variant && (
-                <Text style={styles.variantText}>
-                  {item.variant.name}: {item.variant.value}
-                </Text>
-              )}
-              <View style={styles.quantityContainer}>
-                <Button
-                  mode="outlined"
-                  onPress={() => updateQuantity(item.id, item.quantity - 1, category)}
-                  style={styles.quantityButton}
-                >
-                  -
-                </Button>
-                <Text style={styles.quantityText}>{item.quantity}</Text>
-                <Button
-                  mode="outlined"
-                  onPress={() => updateQuantity(item.id, item.quantity + 1, category)}
-                  style={styles.quantityButton}
-                >
-                  +
-                </Button>
-                <Button
-                  mode="outlined"
-                  onPress={() => removeFromCart(item.id, category)}
-                  style={styles.removeButton}
-                >
-                  Remove
-                </Button>
-              </View>
-            </Card.Content>
-          </Card>
-        ))}
-      </ScrollView>
-    );
   };
 
   // Mock recommended products
@@ -83,6 +32,16 @@ const CartScreen = () => {
     { id: '103', name: 'Mother Dairy Curd', price: 30, image: 'https://blinkit.com/images/products/400/mother-dairy-dahi.jpg' },
     { id: '104', name: 'Tropicana Juice', price: 90, image: 'https://blinkit.com/images/products/400/tropicana-orange-delight.jpg' },
     { id: '105', name: 'Cadbury Dairy Milk', price: 45, image: 'https://blinkit.com/images/products/400/cadbury-dairy-milk-chocolate.jpg' },
+  ];
+
+  // Mock recommended products for empty cart
+  const emptyCartRecommendations = [
+    { id: '101', name: 'Amul Milk 1L', price: 65, image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
+    { id: '102', name: 'Britannia Cheese Slices', price: 120, image: 'https://images.pexels.com/photos/821365/pexels-photo-821365.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
+    { id: '103', name: 'Mother Dairy Curd', price: 30, image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
+    { id: '104', name: 'Tropicana Juice', price: 90, image: 'https://images.pexels.com/photos/2789328/pexels-photo-2789328.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
+    { id: '105', name: 'Cadbury Dairy Milk', price: 45, image: 'https://images.pexels.com/photos/5638597/pexels-photo-5638597.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
+    { id: '106', name: 'Fresh Apples', price: 120, image: 'https://images.pexels.com/photos/2093087/pexels-photo-2093087.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
   ];
 
   const renderRecommendations = (navigation: any) => (
@@ -103,58 +62,104 @@ const CartScreen = () => {
 
   return (
     <View style={styles.container}>
-      <View style={styles.tabContainer}>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === 'grocery' && styles.activeTab,
-          ]}
-          onPress={() => setActiveTab('grocery')}
-        >
-          <Text style={[
-            styles.tabText,
-            activeTab === 'grocery' && styles.activeTabText
-          ]}>Grocery</Text>
-        </TouchableOpacity>
-        <TouchableOpacity
-          style={[
-            styles.tab,
-            activeTab === 'pharmacy' && styles.activeTab,
-          ]}
-          onPress={() => setActiveTab('pharmacy')}
-        >
-          <Text style={[
-            styles.tabText,
-            activeTab === 'pharmacy' && styles.activeTabText
-          ]}>Pharmacy</Text>
-        </TouchableOpacity>
-      </View>
-
-      {activeTab === 'grocery' ? (
-        <>
-          {renderTabContent(groceryItems, 'grocery')}
-          {renderRecommendations(navigation)}
-          <View style={styles.totalContainer}>
-            <Text style={styles.totalText}>Total: ₹{groceryTotal}</Text>
-            <Button
-              mode="contained"
-              onPress={() => handleCheckout('grocery')}
-              disabled={groceryItems.length === 0}
-            >
-              Proceed to Checkout
-            </Button>
+      {allItems.length === 0 ? (
+        <View style={styles.emptyCart}>
+          <View style={styles.emptyCartContent}>
+            <Text style={[styles.emptyText, { color: theme.colors.onSurface }]}>Your cart is empty</Text>
+            <Text style={[styles.emptySubtext, { color: theme.colors.onSurfaceVariant }]}>
+              Add some items to get started
+            </Text>
           </View>
-        </>
+          
+          <View style={styles.recommendationsContainer}>
+            <Text style={[styles.recommendationsTitle, { color: theme.colors.onSurface }]}>
+              Recommended for you
+            </Text>
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.recommendationsScroll}
+            >
+              {emptyCartRecommendations.map(product => (
+                <View key={product.id} style={[styles.recommendationCard, { backgroundColor: theme.colors.surface }]}>
+                  <Image source={{ uri: product.image }} style={styles.recommendationImage} />
+                  <Text style={[styles.recommendationName, { color: theme.colors.onSurface }]} numberOfLines={2}>
+                    {product.name}
+                  </Text>
+                  <Text style={[styles.recommendationPrice, { color: theme.colors.primary }]}>
+                    ₹{product.price}
+                  </Text>
+                  <TouchableOpacity 
+                    style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
+                    onPress={() => {
+                      const cartItem = {
+                        id: product.id,
+                        name: product.name,
+                        price: product.price,
+                        image: product.image
+                      };
+                      addToGroceryCart(cartItem);
+                    }}
+                  >
+                    <Text style={styles.addButtonText}>Add</Text>
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </ScrollView>
+          </View>
+        </View>
       ) : (
         <>
-          {renderTabContent(pharmacyItems, 'pharmacy')}
+          <ScrollView style={styles.cartList}>
+            {allItems.map((item) => (
+              <Card key={item.id} style={styles.cartItem}>
+                <Card.Content>
+                  <View style={styles.itemHeader}>
+                    <Text style={styles.itemName}>{item.name}</Text>
+                    <Text style={styles.itemPrice}>₹{item.price}</Text>
+                  </View>
+                  {item.variant && (
+                    <Text style={styles.variantText}>
+                      {item.variant.name}: {item.variant.unit}
+                    </Text>
+                  )}
+                  <View style={styles.quantityContainer}>
+                    <Button
+                      mode="outlined"
+                      onPress={() => updateQuantity(item.id, item.quantity - 1, item.category)}
+                      style={styles.quantityButton}
+                    >
+                      -
+                    </Button>
+                    <Text style={styles.quantityText}>{item.quantity}</Text>
+                    <Button
+                      mode="outlined"
+                      onPress={() => updateQuantity(item.id, item.quantity + 1, item.category)}
+                      style={styles.quantityButton}
+                    >
+                      +
+                    </Button>
+                    <Button
+                      mode="outlined"
+                      onPress={() => removeFromCart(item.id, item.category)}
+                      style={styles.removeButton}
+                    >
+                      Remove
+                    </Button>
+                  </View>
+                </Card.Content>
+              </Card>
+            ))}
+          </ScrollView>
+          
           {renderRecommendations(navigation)}
+          
           <View style={styles.totalContainer}>
-            <Text style={styles.totalText}>Total: ₹{pharmacyTotal}</Text>
+            <Text style={styles.totalText}>Total: ₹{totalAmount}</Text>
             <Button
               mode="contained"
-              onPress={() => handleCheckout('pharmacy')}
-              disabled={pharmacyItems.length === 0}
+              onPress={handleCheckout}
+              disabled={allItems.length === 0}
             >
               Proceed to Checkout
             </Button>
@@ -168,31 +173,6 @@ const CartScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
-  },
-  tabContainer: {
-    flexDirection: 'row',
-    backgroundColor: '#fff',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  tab: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: 'center',
-  },
-  activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#6200ee',
-  },
-  tabText: {
-    fontSize: 16,
-    color: '#666',
-  },
-  activeTabText: {
-    color: '#6200ee',
-    fontWeight: 'bold',
   },
   cartList: {
     flex: 1,
@@ -214,11 +194,9 @@ const styles = StyleSheet.create({
   },
   itemPrice: {
     fontSize: 16,
-    color: '#6200ee',
   },
   variantText: {
     fontSize: 14,
-    color: '#666',
     marginBottom: 8,
   },
   quantityContainer: {
@@ -238,9 +216,7 @@ const styles = StyleSheet.create({
   },
   totalContainer: {
     padding: 16,
-    backgroundColor: '#fff',
     borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
   },
   totalText: {
     fontSize: 18,
@@ -249,9 +225,76 @@ const styles = StyleSheet.create({
   },
   emptyCart: {
     flex: 1,
-    justifyContent: 'center',
+    padding: 20,
+    justifyContent: 'flex-start',
     alignItems: 'center',
-    padding: 16,
+  },
+  emptyCartContent: {
+    alignItems: 'center',
+    marginBottom: 30,
+    marginTop: 50,
+  },
+  emptyText: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtext: {
+    fontSize: 16,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  recommendationsContainer: {
+    width: '100%',
+  },
+  recommendationsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  recommendationsScroll: {
+    paddingHorizontal: 16,
+  },
+  recommendationCard: {
+    width: 150,
+    marginRight: 16,
+    borderRadius: 12,
+    padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  recommendationImage: {
+    width: '100%',
+    height: 120,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
+  recommendationName: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+    lineHeight: 18,
+  },
+  recommendationPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 12,
+  },
+  addButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    alignItems: 'center',
+  },
+  addButtonText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#fff',
   },
 });
 

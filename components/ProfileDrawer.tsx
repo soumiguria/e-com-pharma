@@ -21,7 +21,7 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
   useEffect(() => {
     Animated.timing(slideAnim, {
       toValue: 0,
-      duration: 300,
+      duration: 200,
       useNativeDriver: true,
     }).start();
   }, []);
@@ -29,7 +29,7 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
   const handleClose = () => {
     Animated.timing(slideAnim, {
       toValue: -320,
-      duration: 250,
+      duration: 150,
       useNativeDriver: true,
     }).start(() => {
       onClose();
@@ -231,7 +231,6 @@ const styles = StyleSheet.create({
     bottom: 0,
     width: '80%',
     maxWidth: 320,
-    backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 2, height: 0 },
     shadowOpacity: 0.25,

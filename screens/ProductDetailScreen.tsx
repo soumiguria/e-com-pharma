@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -9,16 +9,16 @@ import {
   Dimensions,
   Platform,
   Animated,
-  FlatList
+  FlatList,
+  SafeAreaView
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, RouteProp } from '@react-navigation/native';
 import ThemedButton from '../components/ThemedButton';
 import { HomeStackParamList } from '../navigation/types';
 import { useTheme } from '../contexts/ThemeContext';
 import { useCart } from '../contexts/CartContext';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import Toast from 'react-native-toast-message';
+import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
+import { useToast } from '../contexts/ToastContext';
 
 const { width } = Dimensions.get('window');
 
@@ -48,6 +48,7 @@ const ProductDetailScreen = () => {
   const extendedProduct = product as ExtendedProduct & { images?: string[], availableQty?: number };
   const { theme } = useTheme();
   const { addToGroceryCart } = useCart();
+  const { showToast } = useToast();
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -79,13 +80,7 @@ const ProductDetailScreen = () => {
     };
 
     addToGroceryCart(itemToAdd);
-    Toast.show({
-      type: 'success',
-      text1: 'Added to Cart',
-      text2: `${extendedProduct.name}${selectedVariant ? ` (${selectedVariant.name})` : ''} has been added to your cart`,
-      position: 'bottom',
-      visibilityTime: 2000,
-    });
+    showToast(`${extendedProduct.name}${selectedVariant ? ` (${selectedVariant.name})` : ''} has been added to your cart`);
   };
 
   const styles = StyleSheet.create({

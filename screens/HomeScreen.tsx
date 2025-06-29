@@ -172,7 +172,7 @@ const SearchBar = ({
   const { theme } = useTheme();
 
   return (
-    <View style={[styles.searchBarWrapper]}> 
+    <View style={[styles.searchBarWrapper, { backgroundColor: theme.colors.surface }]}> 
       <TouchableOpacity 
         style={[styles.searchContainer, { backgroundColor: theme.colors.surface }]}
         onPress={onSearchPress}
@@ -477,7 +477,6 @@ const styles = StyleSheet.create({
   searchBarWrapper: {
     paddingHorizontal: 16,
     paddingTop: 10,
-    backgroundColor: '#f7f7f7',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -485,7 +484,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 24,
-    backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,

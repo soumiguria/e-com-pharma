@@ -53,10 +53,7 @@ const PincodeScreen = () => {
         setIsLoading(false);
       }
     } else {
-      navigation.navigate('Main' as any, {
-        screen: 'Home',
-        params: { screen: 'HomeRoot', params: { storeId: '123', pincode: currentLocation } },
-      });
+      navigation.navigate('StoreList' as any, { pincode: currentLocation });
     }
   };
 

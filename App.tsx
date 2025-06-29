@@ -6,8 +6,9 @@ import AppNavigator from './navigation/AppNavigator';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { StorageProvider } from './contexts/StorageContext';
 import { CartProvider } from './contexts/CartContext';
-import Toast from 'react-native-toast-message';
 import { AppProvider } from './contexts/AppContext';
+import { ToastProvider } from './contexts/ToastContext';
+import CustomToast from './components/CustomToast';
 import ErrorBoundary from './components/ErrorBoundary';
 
 const AppContent = () => {
@@ -18,10 +19,12 @@ const AppContent = () => {
         <AppProvider>
           <StorageProvider>
             <CartProvider>
-              <ErrorBoundary>
-                <AppNavigator />
-              </ErrorBoundary>
-              <Toast />
+              <ToastProvider>
+                <ErrorBoundary>
+                  <AppNavigator />
+                </ErrorBoundary>
+                <CustomToast />
+              </ToastProvider>
             </CartProvider>
           </StorageProvider>
         </AppProvider>

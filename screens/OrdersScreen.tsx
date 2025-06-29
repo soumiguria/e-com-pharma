@@ -7,6 +7,7 @@ import {
   Image,
   FlatList,
   SafeAreaView,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
@@ -154,6 +155,16 @@ const OrdersScreen = () => {
     navigation.navigate('OrderDetail' as any, { order });
   };
 
+  const handleReorder = (order: typeof mockOrders[0]) => {
+    // Add items to cart logic
+    Alert.alert('Reorder', 'Items added to cart successfully!');
+  };
+
+  const handleRateOrder = (order: typeof mockOrders[0]) => {
+    // Navigate to rating screen or show rating modal
+    Alert.alert('Rate Order', 'Rating feature coming soon!');
+  };
+
   const styles = StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -278,20 +289,32 @@ const OrdersScreen = () => {
     },
     actionButtonsContainer: {
       flexDirection: 'row',
-      justifyContent: 'space-around',
+      justifyContent: 'space-between',
+      marginTop: 12,
+      gap: 8,
     },
     actionButton: {
+      flex: 1,
       flexDirection: 'row',
       alignItems: 'center',
-      padding: 8,
+      justifyContent: 'center',
+      paddingVertical: 10,
+      paddingHorizontal: 12,
+      borderRadius: 6,
+      backgroundColor: '#4CAF50',
       borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderRadius: 8,
+      borderColor: '#4CAF50',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
+      elevation: 1,
     },
     actionButtonText: {
-      fontSize: 14,
-      color: theme.colors.primary,
-      marginLeft: 8,
+      fontSize: 13,
+      color: '#FFFFFF',
+      fontWeight: '600',
+      marginLeft: 4,
     },
     emptyText: {
       textAlign: 'center',
@@ -367,11 +390,11 @@ const OrdersScreen = () => {
 
         {/* Action Buttons */}
         <View style={styles.actionButtonsContainer}>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => handleReorder(item)}>
             <MaterialIcons name="refresh" size={16} color={theme.colors.primary} />
             <Text style={styles.actionButtonText}>Reorder</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton}>
+          <TouchableOpacity style={styles.actionButton} onPress={() => handleRateOrder(item)}>
             <MaterialIcons name="star" size={16} color={theme.colors.primary} />
             <Text style={styles.actionButtonText}>Rate Order</Text>
           </TouchableOpacity>
