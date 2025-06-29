@@ -8,8 +8,8 @@ import { StorageProvider } from './contexts/StorageContext';
 import { CartProvider } from './contexts/CartContext';
 import { AppProvider } from './contexts/AppContext';
 import { ToastProvider } from './contexts/ToastContext';
-import CustomToast from './components/CustomToast';
-import ErrorBoundary from './components/ErrorBoundary';
+import CustomToast from './components/ui/CustomToast';
+import ErrorBoundary from './components/ui/ErrorBoundary';
 
 const AppContent = () => {
   const { theme } = useTheme();
