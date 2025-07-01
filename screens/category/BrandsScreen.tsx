@@ -1,6 +1,9 @@
-import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, SafeAreaView, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, SafeAreaView, Alert, TextInput } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNavigation } from '@react-navigation/native';
+import { Appbar } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const brands = [
   { id: '1', name: 'Amul', image: 'https://seeklogo.com/images/A/amul-logo-7E6B2B7B2B-seeklogo.com.png' },
@@ -17,34 +20,89 @@ const brands = [
 
 const BrandsScreen = () => {
   const { theme } = useTheme();
+  const navigation = useNavigation();
+  const [search, setSearch] = useState('');
+  const filteredBrands = brands.filter(b => b.name.toLowerCase().includes(search.toLowerCase()));
   const renderItem = ({ item }: { item: typeof brands[0] }) => (
     <TouchableOpacity
-      style={[styles.card, {backgroundColor: theme.colors.surface, borderColor: theme.colors.border}]}
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.colors.card,
+          borderColor: theme.colors.border,
+          borderRadius: 16,
+          margin: 12,
+          padding: 16,
+          shadowColor: theme.colors.text,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          elevation: 3,
+        },
+      ]}
       onPress={() => Alert.alert('Brand', item.name)}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
     >
-      <Image source={{ uri: item.image }} style={styles.image} />
-      <Text style={[styles.name, { color: theme.colors.text }]} numberOfLines={2}>{item.name}</Text>
+      <Image source={{ uri: item.image }} style={[styles.image, { borderRadius: 12, marginBottom: 10 }]} />
+      <Text style={[styles.name, { color: theme.colors.text, fontWeight: 'bold', fontSize: 15, textAlign: 'center' }]} numberOfLines={2}>{item.name}</Text>
     </TouchableOpacity>
   );
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <View style={styles.headerRow}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>All Brands</Text>
+      <Appbar.Header style={{ backgroundColor: theme.colors.card, elevation: 0 }}>
+        <Appbar.BackAction onPress={() => navigation.goBack()} color={theme.colors.text} />
+        <Appbar.Content title="All Brands" titleStyle={{ color: theme.colors.text, fontWeight: 'bold', fontSize: 20 }} />
+      </Appbar.Header>
+      <View style={{ marginBottom: 16, marginTop: 12, padding: 12 }}>
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          backgroundColor: theme.colors.card,
+          borderRadius: 24,
+          borderWidth: 1,
+          borderColor: theme.colors.border,
+          elevation: 3,
+          shadowColor: theme.colors.text,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+        }}>
+          <TextInput
+            placeholder="Search brands..."
+            value={search}
+            onChangeText={setSearch}
+            style={{
+              flex: 1,
+              paddingHorizontal: 18,
+              paddingVertical: 10,
+              fontSize: 16,
+              color: theme.colors.text,
+              backgroundColor: 'transparent',
+            }}
+            placeholderTextColor={theme.colors.text + '80'}
+          />
+          <MaterialCommunityIcons
+            name="microphone"
+            size={24}
+            color={theme.colors.text + '80'}
+            style={{ marginRight: 12 }}
+          />
+        </View>
       </View>
       <FlatList
-        data={brands}
+        data={filteredBrands}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         numColumns={3}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.gridContent}
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        columnWrapperStyle={{ justifyContent: 'space-between', gap: 16 }}
         showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
   );
 };
 const styles = StyleSheet.create({
+  container: { flex: 1 },
   headerRow: { padding: 18, paddingBottom: 8, backgroundColor: 'transparent' },
   title: { fontSize: 22, fontWeight: 'bold', letterSpacing: 0.2 },
   row: { flex: 1, justifyContent: 'space-around', marginBottom: 18 },

@@ -52,63 +52,76 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
   };
 
   return (
-    <>
-      <TouchableOpacity 
-        style={[styles.container, compact && styles.compactContainer, { backgroundColor: theme.colors.surface }, style]} 
-        onPress={onPress}
-        activeOpacity={0.8}
-      >
-        <View style={[styles.imageContainer, compact && styles.compactImageContainer, { backgroundColor: theme.colors.background }]}>
-          {product.image && (
-            <Image source={imageSource} style={[styles.image, compact && styles.compactImage]} resizeMode="cover" />
-          )}
-          
-          <View style={styles.badgeContainer}>
-            {product.isNew && (
-              <View style={[styles.badge, styles.newBadge]}>
-                <Text style={styles.badgeText}>New</Text>
-              </View>
-            )}
-            {product.isOnSale && (
-              <View style={[styles.badge, styles.saleBadge]}>
-                <Text style={styles.badgeText}>Sale</Text>
-              </View>
-            )}
-          </View>
-          
-          {!hideCartButton && (
-            <TouchableOpacity 
-              style={[styles.cartButton, { backgroundColor: theme.colors.primary }]} 
-              onPress={handleAddToCart}
-            >
-              <MaterialIcons name="add-shopping-cart" size={20} color="#fff" />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        <View style={[styles.infoContainer, compact && styles.compactInfoContainer]}>
-          <Text style={[styles.name, compact && styles.compactName, { color: theme.colors.text }]} numberOfLines={2}>{product.name}</Text>
-          
-          {product.rating !== undefined && (
-            <View style={styles.ratingContainer}>
-              <Text style={[styles.rating, { color: theme.colors.accent }]}>{`⭐ ${product.rating.toFixed(1)}`}</Text>
+    <TouchableOpacity
+      style={[
+        styles.card,
+        style,
+        {
+          backgroundColor: theme.colors.surface,
+          borderColor: theme.colors.border,
+          margin: 8,
+          padding: 10,
+          borderRadius: 12,
+          shadowColor: theme.colors.text,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 4,
+          elevation: 2,
+        },
+      ]}
+      onPress={onPress}
+      activeOpacity={0.8}
+    >
+      <View style={[styles.imageContainer, compact && styles.compactImageContainer, { backgroundColor: theme.colors.background }]}>
+        {product.image && (
+          <Image source={imageSource} style={[styles.image, compact && styles.compactImage]} resizeMode="cover" />
+        )}
+        
+        <View style={styles.badgeContainer}>
+          {product.isNew && (
+            <View style={[styles.badge, styles.newBadge]}>
+              <Text style={styles.badgeText}>New</Text>
             </View>
           )}
-          
-          <View style={styles.priceContainer}>
-            <Text style={[styles.price, compact && styles.compactPrice, { color: theme.colors.text }]}>{`₹${product.price.toFixed(2)}`}</Text>
-            {product.originalPrice && (
-              <Text style={[styles.originalPrice, { color: theme.colors.secondary }]}>{`₹${product.originalPrice.toFixed(2)}`}</Text>
-            )}
-          </View>
+          {product.isOnSale && (
+            <View style={[styles.badge, styles.saleBadge]}>
+              <Text style={styles.badgeText}>Sale</Text>
+            </View>
+          )}
         </View>
-      </TouchableOpacity>
-    </>
+        
+        {!hideCartButton && (
+          <TouchableOpacity 
+            style={[styles.cartButton, { backgroundColor: theme.colors.primary }]} 
+            onPress={handleAddToCart}
+          >
+            <MaterialIcons name="add-shopping-cart" size={20} color="#fff" />
+          </TouchableOpacity>
+        )}
+      </View>
+
+      <View style={[styles.infoContainer, compact && styles.compactInfoContainer]}>
+        <Text style={[styles.name, compact && styles.compactName, { color: theme.colors.text }]} numberOfLines={2}>{product.name}</Text>
+        
+        {product.rating !== undefined && (
+          <View style={styles.ratingContainer}>
+            <Text style={[styles.rating, { color: theme.colors.accent }]}>{`⭐ ${product.rating.toFixed(1)}`}</Text>
+          </View>
+        )}
+        
+        <View style={styles.priceContainer}>
+          <Text style={[styles.price, compact && styles.compactPrice, { color: theme.colors.text }]}>{`₹${product.price.toFixed(2)}`}</Text>
+          {product.originalPrice && (
+            <Text style={[styles.originalPrice, { color: theme.colors.secondary }]}>{`₹${product.originalPrice.toFixed(2)}`}</Text>
+          )}
+        </View>
+      </View>
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  card: {
     borderRadius: 12,
     marginBottom: 16,
     overflow: 'hidden',
@@ -117,14 +130,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 5,
-  },
-  compactContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    minHeight: 72,
-    marginBottom: 8,
   },
   imageContainer: {
     position: 'relative',

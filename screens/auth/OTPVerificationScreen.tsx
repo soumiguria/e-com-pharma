@@ -56,8 +56,8 @@ const OTPVerificationScreen = () => {
     // Check if OTP is complete
     if (newOtp.every((digit) => digit !== '')) {
       // Here you would typically verify the OTP with your backend
-      // For now, we'll just navigate to the payment methods screen
-      navigation.navigate('PaymentMethods');
+      // For now, we'll just navigate to the order confirmation screen
+      navigation.replace('OrderConfirmation');
     }
   };
 

@@ -8,12 +8,14 @@ import {
   FlatList,
   SafeAreaView,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { Appbar } from 'react-native-paper';
 
 type OrdersScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Orders'>;
 
@@ -331,9 +333,23 @@ const OrdersScreen = () => {
 
     return (
       <TouchableOpacity
-        style={styles.orderCard}
+        style={[
+          styles.orderCard,
+          {
+            backgroundColor: theme.colors.card,
+            borderColor: theme.colors.border,
+            borderRadius: 16,
+            marginBottom: 16,
+            padding: 16,
+            shadowColor: theme.colors.text,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.08,
+            shadowRadius: 8,
+            elevation: 3,
+          },
+        ]}
         onPress={() => handleOrderPress(item)}
-        activeOpacity={0.8}
+        activeOpacity={0.85}
       >
         {/* Item Images Section */}
         <View style={styles.itemsImagesContainer}>
@@ -405,35 +421,30 @@ const OrdersScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Orders</Text>
-        </View>
-        <View style={styles.tabsRow}>
-          {TABS.map((tab) => (
-            <TouchableOpacity
-              key={tab.key}
-              style={styles.tabBtn}
-              onPress={() => setActiveTab(tab.key)}
-            >
-              <Text style={[styles.tabText, activeTab === tab.key && styles.tabTextActive]}>
-                {tab.label}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-        {mockOrders.length === 0 ? (
-          <Text style={styles.emptyText}>No orders found.</Text>
-        ) : (
-          <FlatList
-            data={mockOrders}
-            keyExtractor={(item) => item.id}
-            renderItem={renderOrder}
-            contentContainerStyle={{ paddingBottom: 24 }}
-            showsVerticalScrollIndicator={false}
-          />
-        )}
+      <Appbar.Header style={{ backgroundColor: theme.colors.card, elevation: 0 }}>
+        <Appbar.BackAction onPress={() => navigation.goBack()} color={theme.colors.text} />
+        <Appbar.Content title="My Orders" titleStyle={{ color: theme.colors.text, fontWeight: 'bold', fontSize: 20 }} />
+      </Appbar.Header>
+      <View style={[styles.tabsRow, { backgroundColor: theme.colors.surface, borderRadius: 0, marginHorizontal: 0, paddingHorizontal: 0, elevation: 2, shadowColor: theme.colors.text, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 4 }]}> 
+        {TABS.map(tab => (
+          <TouchableOpacity
+            key={tab.key}
+            style={[styles.tabBtn, activeTab === tab.key && { borderBottomWidth: 3, borderBottomColor: theme.colors.primary, backgroundColor: theme.colors.background }]} 
+            onPress={() => setActiveTab(tab.key)}
+            activeOpacity={0.8}
+          >
+            <Text style={[styles.tabText, { color: activeTab === tab.key ? theme.colors.primary : theme.colors.text }]}>{tab.label}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
+      <FlatList
+        data={mockOrders}
+        keyExtractor={(item) => item.id}
+        renderItem={renderOrder}
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+        showsVerticalScrollIndicator={false}
+        ListEmptyComponent={<Text style={styles.emptyText}>No orders found.</Text>}
+      />
     </SafeAreaView>
   );
 };

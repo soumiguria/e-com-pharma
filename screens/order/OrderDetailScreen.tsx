@@ -271,7 +271,7 @@ const OrderDetailScreen = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+      <View style={[styles.container, { padding: 16 }]}>
         {/* Header */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>

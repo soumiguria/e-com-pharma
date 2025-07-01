@@ -7,11 +7,13 @@ import {
   TouchableOpacity,
   Image,
   SafeAreaView,
+  ScrollView,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import { Appbar } from 'react-native-paper';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -142,14 +144,15 @@ const CategoriesScreen = () => {
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <View style={styles.headerRow}>
-        <Text style={[styles.title, { color: theme.colors.text }]}>All Categories</Text>
-      </View>
+      <Appbar.Header style={{ backgroundColor: theme.colors.card, elevation: 0 }}>
+        <Appbar.BackAction onPress={() => navigation.goBack()} color={theme.colors.text} />
+        <Appbar.Content title="All Categories" titleStyle={{ color: theme.colors.text, fontWeight: 'bold', fontSize: 20 }} />
+      </Appbar.Header>
       <FlatList
         data={categorySections}
         renderItem={renderSection}
-        keyExtractor={(item) => item.id}
-        contentContainerStyle={styles.container}
+        keyExtractor={(item) => item.title}
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
@@ -157,16 +160,6 @@ const CategoriesScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  headerRow: {
-    padding: 18,
-    paddingBottom: 8,
-    backgroundColor: 'transparent',
-  },
-  title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    letterSpacing: 0.2,
-  },
   container: {
     paddingBottom: 24,
   },

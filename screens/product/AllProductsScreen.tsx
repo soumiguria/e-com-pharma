@@ -151,8 +151,8 @@ const AllProductsScreen = () => {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <SafeAreaView style={[styles.safeArea, { padding: 16 }]}>
+      <View style={[styles.container, { paddingBottom: 16 }]}>
         <View style={styles.header}>
           <TouchableOpacity 
             onPress={() => navigation.goBack()} 
@@ -175,7 +175,7 @@ const AllProductsScreen = () => {
           data={products}
           renderItem={({ item }) => (
             <TouchableOpacity 
-              style={styles.itemContainer}
+              style={[styles.itemContainer, { margin: 8 }]}
               onPress={() => {
                 setSelectedProduct(item);
                 setModalVisible(true);
@@ -188,29 +188,27 @@ const AllProductsScreen = () => {
                   style={styles.itemImage} 
                 />
               </View>
-              <View style={styles.itemDetails}>
-                <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-                <View style={styles.itemPriceContainer}>
-                  <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
-                  <TouchableOpacity 
-                    style={styles.addToCartButton}
-                    onPress={(e) => handleAddToCart(e, item)}
-                  >
-                    <MaterialIcons 
-                      name="add-shopping-cart" 
-                      size={18} 
-                      color={theme.colors.primary} 
-                    />
-                  </TouchableOpacity>
-                </View>
-                <Text style={styles.productCount}>In stock: 10+</Text>
+              <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
+              <View style={styles.itemPriceContainer}>
+                <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
+                <TouchableOpacity 
+                  style={styles.addToCartButton}
+                  onPress={(e) => handleAddToCart(e, item)}
+                >
+                  <MaterialIcons 
+                    name="add-shopping-cart" 
+                    size={18} 
+                    color={theme.colors.primary} 
+                  />
+                </TouchableOpacity>
               </View>
+              <Text style={styles.productCount}>In stock: 10+</Text>
             </TouchableOpacity>
           )}
           keyExtractor={(item) => item.id}
           numColumns={2}
           columnWrapperStyle={{ justifyContent: 'space-between' }}
-          contentContainerStyle={styles.gridContainer}
+          contentContainerStyle={[styles.gridContainer, { paddingBottom: 32 }]}
           showsVerticalScrollIndicator={false}
         />
 

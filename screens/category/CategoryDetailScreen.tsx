@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   View, 
   Text, 
@@ -11,6 +11,7 @@ import {
   Platform,
   Modal,
   Pressable,
+  Animated,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -252,6 +253,26 @@ const DUMMY_SUBCATEGORIES: SubCategory[] = [
   },
 ];
 
+const priceOptions = [
+  { key: 'below_50', label: 'Below ₹50', min: 0, max: 50 },
+  { key: '50_100', label: '₹50 - ₹100', min: 50, max: 100 },
+  { key: '100_200', label: '₹100 - ₹200', min: 100, max: 200 },
+  { key: 'above_200', label: 'Above ₹200', min: 200, max: Infinity },
+];
+
+const packSizeOptions = [
+  { key: 'small', label: 'Small Pack' },
+  { key: 'medium', label: 'Medium Pack' },
+  { key: 'large', label: 'Large Pack' },
+];
+
+const discountOptions = [
+  { key: '10', label: '10% or more', min: 10 },
+  { key: '20', label: '20% or more', min: 20 },
+  { key: '30', label: '30% or more', min: 30 },
+  { key: '50', label: '50% or more', min: 50 },
+];
+
 const CategoryDetailScreen = () => {
   const route = useRoute<RouteProp<RootStackParamList, 'CategoryDetail'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
@@ -262,22 +283,72 @@ const CategoryDetailScreen = () => {
     ? category.subCategories
     : DUMMY_CATEGORY_DATA[category.id] || DUMMY_SUBCATEGORIES;
   const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(subCategories[0]?.id);
-  const [sortBy, setSortBy] = useState<'relevance' | 'price_low_high' | 'price_high_low'>('relevance');
+  const [sortBy, setSortBy] = useState<'relevance' | 'price_low_high' | 'price_high_low' | 'a_z' | 'z_a'>('relevance');
   const [filter, setFilter] = useState<string | null>(null);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
+  const [selectedPackSizes, setSelectedPackSizes] = useState<string[]>([]);
+  const [selectedDiscount, setSelectedDiscount] = useState<string | null>(null);
   const [favProducts, setFavProducts] = useState<string[]>([]);
-  const [modalVisible, setModalVisible] = useState(true);
   const [selectedVariants, setSelectedVariants] = useState<{ [productId: string]: { id: string; name: string; price: number; stock: number } | undefined }>({});
+  const [showFilterModal, setShowFilterModal] = useState(false);
+  const [showSortModal, setShowSortModal] = useState(false);
 
   const selectedSubCategory = subCategories.find((sc: SubCategory) => sc.id === selectedSubCategoryId);
-  let products = selectedSubCategory ? selectedSubCategory.products : [];
+  let products: Product[] = selectedSubCategory ? selectedSubCategory.products : [];
   if (sortBy === 'price_low_high') {
     products = [...products].sort((a: Product, b: Product) => a.price - b.price);
   } else if (sortBy === 'price_high_low') {
     products = [...products].sort((a: Product, b: Product) => b.price - a.price);
+  } else if (sortBy === 'a_z') {
+    products = [...products].sort((a: Product, b: Product) => a.name.localeCompare(b.name));
+  } else if (sortBy === 'z_a') {
+    products = [...products].sort((a: Product, b: Product) => b.name.localeCompare(a.name));
   }
-  if (filter) {
-    products = products.filter((p: Product) => p.brand === filter);
+  if (selectedBrands.length > 0) {
+    products = products.filter((p: Product) => p.brand && selectedBrands.includes(p.brand));
   }
+  if (selectedPrice) {
+    const priceObj = priceOptions.find(opt => opt.key === selectedPrice);
+    if (priceObj) {
+      products = products.filter((p: Product) => p.price >= priceObj.min && p.price < priceObj.max);
+    }
+  }
+  if (selectedPackSizes.length > 0) {
+    // For demo, filter by product name containing pack size label (mock logic)
+    products = products.filter((p: Product) => selectedPackSizes.some(size => p.name.toLowerCase().includes(size)));
+  }
+  if (selectedDiscount) {
+    const discountObj = discountOptions.find(opt => opt.key === selectedDiscount);
+    if (discountObj) {
+      // For demo, assume all products have 20% discount (mock logic)
+      products = products.filter(() => 20 >= discountObj.min);
+    }
+  }
+
+  // Collect all brands from products in the selected subcategory
+  const allBrands = useMemo(() => {
+    const brandsSet = new Set<string>();
+    subCategories.forEach((sc: SubCategory) => sc.products.forEach((p: Product) => p.brand && brandsSet.add(p.brand)));
+    return Array.from(brandsSet);
+  }, [subCategories]);
+
+  // Sort options
+  const sortOptions = [
+    { key: 'relevance', label: 'Relevance' },
+    { key: 'price_low_high', label: 'Price: Low to High' },
+    { key: 'price_high_low', label: 'Price: High to Low' },
+    { key: 'a_z', label: 'A-Z' },
+    { key: 'z_a', label: 'Z-A' },
+  ];
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setSelectedBrands([]);
+    setSelectedPrice(null);
+    setSelectedPackSizes([]);
+    setSelectedDiscount(null);
+  };
 
   const handleAddToCart = (product: Product, variant?: { id: string; name: string; price: number; stock: number }) => {
     addToGroceryCart({
@@ -296,155 +367,297 @@ const CategoryDetailScreen = () => {
   const SUBCATEGORY_PLACEHOLDER_IMAGE = 'https://cdn-icons-png.flaticon.com/512/3081/3081559.png';
 
   // --- UI ---
-    return (
-    <Modal
-      visible={modalVisible}
-      animationType="slide"
-      transparent
-      onRequestClose={() => {
-        setModalVisible(false);
-        navigation.goBack();
-      }}
-    >
-      <Pressable style={styles.modalBg} onPress={() => { setModalVisible(false); navigation.goBack(); }} />
-      <View style={styles.modalContent}>
-        {/* Top Bar */}
-        <View style={styles.topBar}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => { setModalVisible(false); navigation.goBack(); }}>
-            <MaterialCommunityIcons name="arrow-left" size={26} color="#222" />
-          </TouchableOpacity>
-          <Text style={styles.categoryTitle}>{category.name || 'Category'}</Text>
-          <View style={styles.filterSortRow}>
-            <TouchableOpacity style={styles.filterSortBtn} onPress={() => setFilter(null)}>
-              <MaterialCommunityIcons name="filter-variant" size={18} color={'#222'} />
-              <Text style={styles.filterSortText}>Filter</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.filterSortBtn} onPress={() => setSortBy('relevance')}>
-              <MaterialCommunityIcons name="sort" size={18} color={'#222'} />
-              <Text style={styles.filterSortText}>Sort By</Text>
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity style={styles.closeBtn} onPress={() => { setModalVisible(false); navigation.goBack(); }}>
-            <MaterialCommunityIcons name="close" size={26} color="#222" />
-        </TouchableOpacity>
-        </View>
-        <View style={styles.innerRow}>
-          {/* Left: Subcategories */}
-          <View style={styles.leftColumn}>
-            <FlatList
-              data={subCategories}
-        keyExtractor={item => item.id}
-        showsVerticalScrollIndicator={false}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={[
-                    styles.subCategoryButton,
-                    selectedSubCategoryId === item.id && styles.subCategoryButtonActive,
-                  ]}
-                  onPress={() => setSelectedSubCategoryId(item.id)}
-                >
-                  <Image
-                    source={{ uri: (item.products[0]?.image) || SUBCATEGORY_PLACEHOLDER_IMAGE }}
-                    style={styles.subCategoryImage}
-                  />
-                  <Text style={styles.subCategoryText}>{item.name}</Text>
-                </TouchableOpacity>
-              )}
-      />
-    </View>
-          {/* Right: Products List */}
-          <View style={styles.rightSection}>
-            <FlatList
-              data={products}
-              keyExtractor={item => item.id}
-              showsVerticalScrollIndicator={true}
-              contentContainerStyle={styles.productList}
-              ListEmptyComponent={<Text style={styles.noProducts}>No products available</Text>}
-              renderItem={({ item: product }: { item: Product }) => {
-                const selectedVariant = selectedVariants[product.id] ?? (product.variants ? product.variants[0] : undefined);
-                const isFav = favProducts.includes(product.id);
   return (
-                  <TouchableOpacity style={styles.productCardList} onPress={() => navigation.navigate('ProductDetail', { product })} activeOpacity={0.85}>
-                    <Image source={{ uri: product.image }} style={styles.productImageList} />
-                    <View style={styles.productInfoList}>
-                      <Text style={styles.productName}>{product.name}</Text>
-                      {product.brand && <Text style={styles.productBrand}>{product.brand}</Text>}
-                      <Text style={styles.productPrice}>₹{selectedVariant ? selectedVariant.price : product.price}</Text>
-                      {product.variants && (
-                        <View style={styles.productVariants}>
-                          {product.variants.map((variant: { id: string; name: string; price: number; stock: number }) => (
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      {/* Top Bar */}
+      <View style={[styles.topBar, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}> 
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <MaterialCommunityIcons name="arrow-left" size={26} color={theme.colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.categoryTitle, { color: theme.colors.text }]}>{category.name || 'Category'}</Text>
+      </View>
+      {/* Horizontal Scrollable Filter/Sort Bar */}
+      <View style={{ backgroundColor: theme.colors.background, borderBottomWidth: 1, borderBottomColor: theme.colors.border }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingVertical: 10, paddingHorizontal: 8, alignItems: 'center' }}>
           <TouchableOpacity
-                              key={variant.id}
-                              style={[
-                                styles.variantBtn,
-                                selectedVariant?.id === variant.id && styles.selectedVariantBtn,
-                              ]}
-                              onPress={() => setSelectedVariants((prev) => ({ ...prev, [product.id]: variant }))}
-                            >
-                              <Text style={{ color: '#222', fontSize: 13 }}>{variant.name}</Text>
-                            </TouchableOpacity>
-                          ))}
-                        </View>
-                      )}
-                      <Text style={styles.qtyText}>
-                        {product.availableQty ? `In stock: ${product.availableQty}` : 'Available'}
-            </Text>
-                      <View style={styles.addRowList}>
-          <TouchableOpacity
-                          style={styles.addBtn}
-                          onPress={() => handleAddToCart(product, selectedVariant)}
+            style={[styles.filterSortBtn, { backgroundColor: showFilterModal ? theme.colors.primary : theme.colors.surface, borderColor: theme.colors.border }]}
+            onPress={() => setShowFilterModal(true)}
           >
-                          <Text style={styles.addBtnText}>Add</Text>
+            <MaterialCommunityIcons name="filter-variant" size={18} color={showFilterModal ? '#fff' : theme.colors.text} />
+            <Text style={[styles.filterSortText, { color: showFilterModal ? '#fff' : theme.colors.text }]}>Filter</Text>
           </TouchableOpacity>
           <TouchableOpacity
-                          style={styles.favBtn}
-                          onPress={() => handleFavToggle(product.id)}
-                        >
-                          <MaterialCommunityIcons
-                            name={isFav ? 'heart' : 'heart-outline'}
-                            size={22}
-                            color={isFav ? theme.colors.primary : '#888'}
-                          />
+            style={[styles.filterSortBtn, { backgroundColor: showSortModal ? theme.colors.primary : theme.colors.surface, borderColor: theme.colors.border }]}
+            onPress={() => setShowSortModal(true)}
+          >
+            <MaterialCommunityIcons name="sort" size={18} color={showSortModal ? '#fff' : theme.colors.text} />
+            <Text style={[styles.filterSortText, { color: showSortModal ? '#fff' : theme.colors.text }]}>Sort By</Text>
           </TouchableOpacity>
+          {allBrands.map((brand) => (
+            <TouchableOpacity
+              key={brand}
+              style={[styles.filterSortBtn, {
+                backgroundColor: selectedBrands.includes(brand) ? theme.colors.primary : theme.colors.surface,
+                borderColor: selectedBrands.includes(brand) ? theme.colors.primary : theme.colors.border
+              }]}
+              onPress={() => setSelectedBrands((prev) =>
+                prev.includes(brand)
+                  ? prev.filter((b) => b !== brand)
+                  : [...prev, brand]
+              )}
+            >
+              <Text style={[styles.filterSortText, { color: selectedBrands.includes(brand) ? '#fff' : theme.colors.text }]}>{brand}</Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
+      </View>
+      <View style={[styles.innerRow, { backgroundColor: theme.colors.background }]}> 
+        {/* Left: Subcategories */}
+        <View style={[styles.leftColumn, { backgroundColor: theme.colors.surface, borderRightColor: theme.colors.border }]}> 
+          <FlatList
+            data={subCategories}
+            keyExtractor={item => item.id}
+            showsVerticalScrollIndicator={false}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={[
+                  styles.subCategoryButton,
+                  selectedSubCategoryId === item.id && { backgroundColor: theme.colors.primary + '11', borderLeftColor: theme.colors.primary },
+                ]}
+                onPress={() => setSelectedSubCategoryId(item.id)}
+              >
+                <Image
+                  source={{ uri: (item.products[0]?.image) || SUBCATEGORY_PLACEHOLDER_IMAGE }}
+                  style={styles.subCategoryImage}
+                />
+                <Text style={[styles.subCategoryText, { color: theme.colors.text }]}>{item.name}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        </View>
+        {/* Right: Products List */}
+        <View style={styles.rightSection}>
+          <FlatList
+            data={products}
+            keyExtractor={item => item.id}
+            showsVerticalScrollIndicator={true}
+            contentContainerStyle={styles.productList}
+            ListEmptyComponent={<Text style={[styles.noProducts, { color: theme.colors.secondary }]}>No products available</Text>}
+            renderItem={({ item: product }) => {
+              const selectedVariant = selectedVariants[product.id] ?? (product.variants ? product.variants[0] : undefined);
+              const isFav = favProducts.includes(product.id);
+              return (
+                <TouchableOpacity style={[styles.productCardList, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, shadowColor: theme.colors.text }]} onPress={() => navigation.navigate('ProductDetail', { product })} activeOpacity={0.85}>
+                  <Image source={{ uri: product.image }} style={styles.productImageList} />
+                  <View style={styles.productInfoList}>
+                    <Text style={[styles.productName, { color: theme.colors.text }]}>{product.name}</Text>
+                    {product.brand && <Text style={[styles.productBrand, { color: theme.colors.secondary }]}>{product.brand}</Text>}
+                    <Text style={[styles.productPrice, { color: theme.colors.primary }]}>{selectedVariant ? selectedVariant.price : product.price}</Text>
+                    {product.variants && (
+                      <View style={styles.productVariants}>
+                        {product.variants.map((variant: { id: string; name: string; price: number; stock: number }) => (
+                          <TouchableOpacity
+                            key={variant.id}
+                            style={[
+                              styles.variantBtn,
+                              {
+                                backgroundColor: selectedVariant?.id === variant.id ? theme.colors.primary : theme.colors.surface,
+                                borderColor: selectedVariant?.id === variant.id ? theme.colors.primary : theme.colors.border,
+                              },
+                            ]}
+                            onPress={() => setSelectedVariants((prev) => ({ ...prev, [product.id]: variant }))}
+                          >
+                            <Text style={{ color: selectedVariant?.id === variant.id ? '#fff' : theme.colors.text, fontSize: 13 }}>{variant.name}</Text>
+                          </TouchableOpacity>
+                        ))}
                       </View>
+                    )}
+                    <Text style={[styles.qtyText, { color: theme.colors.secondary }]}>
+                      {product.availableQty ? `In stock: ${product.availableQty}` : 'Available'}
+                    </Text>
+                    <View style={styles.addRowList}>
+                      <TouchableOpacity
+                        style={[styles.addBtn, { backgroundColor: theme.colors.primary, shadowColor: theme.colors.primary }]}
+                        onPress={() => handleAddToCart(product, selectedVariant)}
+                      >
+                        <Text style={styles.addBtnText}>Add</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.favBtn}
+                        onPress={() => handleFavToggle(product.id)}
+                      >
+                        <MaterialCommunityIcons
+                          name={isFav ? 'heart' : 'heart-outline'}
+                          size={22}
+                          color={isFav ? theme.colors.primary : theme.colors.secondary}
+                        />
+                      </TouchableOpacity>
                     </View>
-                  </TouchableOpacity>
-                );
-              }}
-            />
-          </View>
+                  </View>
+                </TouchableOpacity>
+              );
+            }}
+          />
         </View>
       </View>
-    </Modal>
+      {/* Filter Modal Sheet */}
+      <Modal
+        visible={showFilterModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowFilterModal(false)}
+      >
+        <Pressable style={{ flex: 1, backgroundColor: theme.colors.text + '55' }} onPress={() => setShowFilterModal(false)} />
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: theme.colors.surface, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 24, minHeight: 420 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.colors.text }}>Filters</Text>
+            <TouchableOpacity onPress={clearAllFilters}>
+              <Text style={{ color: theme.colors.primary, fontWeight: 'bold', fontSize: 16 }}>Clear All</Text>
+            </TouchableOpacity>
+          </View>
+          <ScrollView style={{ maxHeight: 320 }}>
+            {/* Brand Filter */}
+            <Text style={{ color: theme.colors.text, fontWeight: '600', fontSize: 16, marginBottom: 8 }}>Brand</Text>
+            {allBrands.map((brand) => (
+              <TouchableOpacity
+                key={brand}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}
+                onPress={() => {
+                  setSelectedBrands((prev) =>
+                    prev.includes(brand)
+                      ? prev.filter((b) => b !== brand)
+                      : [...prev, brand]
+                  );
+                }}
+              >
+                <MaterialCommunityIcons
+                  name={selectedBrands.includes(brand) ? 'checkbox-marked' : 'checkbox-blank-outline'}
+                  size={22}
+                  color={selectedBrands.includes(brand) ? theme.colors.primary : theme.colors.text}
+                  style={{ marginRight: 12 }}
+                />
+                <Text style={{ color: theme.colors.text, fontSize: 15 }}>{brand}</Text>
+              </TouchableOpacity>
+            ))}
+            {/* Price Filter */}
+            <Text style={{ color: theme.colors.text, fontWeight: '600', fontSize: 16, marginVertical: 12 }}>Price</Text>
+            {priceOptions.map((opt) => (
+              <TouchableOpacity
+                key={opt.key}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}
+                onPress={() => setSelectedPrice(opt.key)}
+              >
+                <MaterialCommunityIcons
+                  name={selectedPrice === opt.key ? 'radiobox-marked' : 'radiobox-blank'}
+                  size={22}
+                  color={selectedPrice === opt.key ? theme.colors.primary : theme.colors.text}
+                  style={{ marginRight: 12 }}
+                />
+                <Text style={{ color: theme.colors.text, fontSize: 15 }}>{opt.label}</Text>
+              </TouchableOpacity>
+            ))}
+            {/* Pack Size Filter */}
+            <Text style={{ color: theme.colors.text, fontWeight: '600', fontSize: 16, marginVertical: 12 }}>Pack Size</Text>
+            {packSizeOptions.map((opt) => (
+              <TouchableOpacity
+                key={opt.key}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}
+                onPress={() => {
+                  setSelectedPackSizes((prev) =>
+                    prev.includes(opt.key)
+                      ? prev.filter((b) => b !== opt.key)
+                      : [...prev, opt.key]
+                  );
+                }}
+              >
+                <MaterialCommunityIcons
+                  name={selectedPackSizes.includes(opt.key) ? 'checkbox-marked' : 'checkbox-blank-outline'}
+                  size={22}
+                  color={selectedPackSizes.includes(opt.key) ? theme.colors.primary : theme.colors.text}
+                  style={{ marginRight: 12 }}
+                />
+                <Text style={{ color: theme.colors.text, fontSize: 15 }}>{opt.label}</Text>
+              </TouchableOpacity>
+            ))}
+            {/* Discount Filter */}
+            <Text style={{ color: theme.colors.text, fontWeight: '600', fontSize: 16, marginVertical: 12 }}>Discount</Text>
+            {discountOptions.map((opt) => (
+              <TouchableOpacity
+                key={opt.key}
+                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}
+                onPress={() => setSelectedDiscount(opt.key)}
+              >
+                <MaterialCommunityIcons
+                  name={selectedDiscount === opt.key ? 'radiobox-marked' : 'radiobox-blank'}
+                  size={22}
+                  color={selectedDiscount === opt.key ? theme.colors.primary : theme.colors.text}
+                  style={{ marginRight: 12 }}
+                />
+                <Text style={{ color: theme.colors.text, fontSize: 15 }}>{opt.label}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+          <TouchableOpacity
+            style={{
+              marginTop: 24,
+              backgroundColor: theme.colors.primary,
+              borderRadius: 8,
+              paddingVertical: 14,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+            onPress={() => setShowFilterModal(false)}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Apply</Text>
+          </TouchableOpacity>
+        </View>
+      </Modal>
+      {/* Sort Modal Sheet */}
+      <Modal
+        visible={showSortModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowSortModal(false)}
+      >
+        <Pressable style={{ flex: 1, backgroundColor: theme.colors.text + '55' }} onPress={() => setShowSortModal(false)} />
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: theme.colors.surface, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 24, minHeight: 220 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.colors.text }}>Sort By</Text>
+            <TouchableOpacity onPress={() => setShowSortModal(false)}>
+              <MaterialCommunityIcons name="close" size={26} color={theme.colors.text} />
+            </TouchableOpacity>
+          </View>
+          {sortOptions.map((option) => (
+            <TouchableOpacity
+              key={option.key}
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingVertical: 14,
+                borderBottomWidth: 1,
+                borderBottomColor: theme.colors.border,
+              }}
+              onPress={() => {
+                setSortBy(option.key as any);
+                setShowSortModal(false);
+              }}
+            >
+              <MaterialCommunityIcons
+                name={sortBy === option.key ? 'check-circle' : 'circle-outline'}
+                size={22}
+                color={sortBy === option.key ? theme.colors.primary : theme.colors.text}
+                style={{ marginRight: 12 }}
+              />
+              <Text style={{ color: theme.colors.text, fontWeight: sortBy === option.key ? 'bold' : 'normal', fontSize: 16 }}>{option.label}</Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </Modal>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  modalBg: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    zIndex: 1,
-  },
-  modalContent: {
-    position: 'absolute',
-    top: height * 0.05,
-    left: width * 0.01,
-    right: width * 0.01,
-    bottom: height * 0.01,
-    backgroundColor: '#fff',
-    borderRadius: 18,
-    overflow: 'hidden',
-    zIndex: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.13,
-    shadowRadius: 16,
-    elevation: 8,
-  },
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -453,7 +666,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
-    zIndex: 3,
   },
   categoryTitle: {
     fontWeight: 'bold',
@@ -483,8 +695,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#222',
   },
-  closeBtn: {
-    marginLeft: 10,
+  backBtn: {
+    marginRight: 10,
     padding: 4,
   },
   innerRow: {
@@ -644,10 +856,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 15,
     letterSpacing: 0.5,
-  },
-  backBtn: {
-    marginRight: 10,
-    padding: 4,
   },
 });
 

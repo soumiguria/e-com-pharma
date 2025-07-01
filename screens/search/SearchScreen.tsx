@@ -16,6 +16,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ProductCard from '../../components/product/ProductCard';
+import SearchBar from '../../components/ui/SearchBar';
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SearchScreen'>;
 
@@ -257,25 +258,8 @@ const SearchScreen = () => {
           >
             <MaterialIcons name="arrow-back" size={24} color={theme.colors.text} />
           </TouchableOpacity>
-          <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color={theme.colors.text + '80'} />
-            <TextInput
-              style={styles.searchInput}
-              placeholder="Search products..."
-              placeholderTextColor={theme.colors.text + '80'}
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              onSubmitEditing={() => handleSearch(searchQuery)}
-              returnKeyType="search"
-            />
-            {searchQuery.length > 0 && (
-              <TouchableOpacity
-                onPress={() => setSearchQuery('')}
-                style={styles.searchButton}
-              >
-                <MaterialIcons name="search" size={16} color="#fff" />
-              </TouchableOpacity>
-            )}
+          <View style={{ flex: 1 }}>
+            <SearchBar onSearch={handleSearch} />
           </View>
         </View>
 

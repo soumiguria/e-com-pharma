@@ -92,7 +92,7 @@ const GridViewScreen: React.FC<GridViewScreenProps> = ({ route }) => {
   );
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { padding: 16 }]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={{ color: theme.colors.primary, fontSize: 16 }}>Back</Text>
@@ -104,7 +104,7 @@ const GridViewScreen: React.FC<GridViewScreenProps> = ({ route }) => {
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         numColumns={2}
-        contentContainerStyle={styles.gridContainer}
+        contentContainerStyle={[styles.gridContainer, { paddingBottom: 32 }]}
       />
     </View>
   );

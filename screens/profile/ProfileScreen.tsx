@@ -6,6 +6,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
 import { StackNavigationProp } from '@react-navigation/stack';
+import ThemeToggle from '../../components/ui/ThemeToggle';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Profile'>;
 
@@ -59,6 +60,10 @@ const ProfileScreen = () => {
           <Ionicons name="chevron-forward" size={24} color={theme.colors.primary} />
         </TouchableOpacity>
       ))}
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 32, padding: 16, borderTopWidth: 1, borderTopColor: theme.colors.border }}>
+        <Text style={{ fontSize: 16, fontWeight: '600', color: theme.colors.text }}>Theme</Text>
+        <ThemeToggle />
+      </View>
     </SafeAreaView>
   );
 };

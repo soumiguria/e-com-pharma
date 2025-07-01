@@ -35,7 +35,7 @@ const PhoneAuthScreen = () => {
 
     // Here you would typically make an API call to send OTP
     // For now, we'll just navigate to the OTP screen
-    navigation.navigate('OTPVerification', { 
+    navigation.replace('OTPVerification', { 
       phoneNumber,
       cartType
     });

@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, SafeAreaView, Alert } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, SafeAreaView, Alert, ScrollView } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { Appbar } from 'react-native-paper';
 
 const products = [
   { id: '1', name: 'Amul Milk 1L', image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg', price: 65 },
@@ -18,58 +19,49 @@ const RecentlyBoughtScreen = () => {
   const navigation = useNavigation();
   const renderItem = ({ item }: { item: typeof products[0] }) => (
     <TouchableOpacity
-      style={[styles.card, {backgroundColor: theme.colors.surface, borderColor: theme.colors.border}]}
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.colors.card,
+          borderColor: theme.colors.border,
+          borderRadius: 16,
+          margin: 12,
+          padding: 16,
+          shadowColor: theme.colors.text,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          elevation: 3,
+        },
+      ]}
       onPress={() => Alert.alert('Product', item.name)}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
     >
-      <Image source={{ uri: item.image }} style={styles.image} />
-      <Text style={[styles.name, { color: theme.colors.text }]} numberOfLines={2}>{item.name}</Text>
+      <Image source={{ uri: item.image }} style={[styles.image, { borderRadius: 12, marginBottom: 10 }]} />
+      <Text style={[styles.name, { color: theme.colors.text, fontWeight: 'bold', fontSize: 15, textAlign: 'center' }]} numberOfLines={2}>{item.name}</Text>
       <Text style={[styles.price, { color: theme.colors.primary }]}>₹{item.price}</Text>
     </TouchableOpacity>
   );
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <View style={[styles.appBar, { backgroundColor: theme.colors.surface }]}> 
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialCommunityIcons name="arrow-left" size={26} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.heading, { color: theme.colors.text }]}>Recently Bought</Text>
-      </View>
+      <Appbar.Header style={{ backgroundColor: theme.colors.card, elevation: 0 }}>
+        <Appbar.BackAction onPress={() => navigation.goBack()} color={theme.colors.text} />
+        <Appbar.Content title="Recently Bought" titleStyle={{ color: theme.colors.text, fontWeight: 'bold', fontSize: 20 }} />
+      </Appbar.Header>
       <FlatList
         data={products}
         renderItem={renderItem}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         numColumns={2}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.gridContent}
+        contentContainerStyle={{ padding: 20, paddingBottom: 40 }}
+        columnWrapperStyle={{ justifyContent: 'space-between', gap: 16 }}
         showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>
   );
 };
 const styles = StyleSheet.create({
-  appBar: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 14,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 2,
-    zIndex: 10,
-  },
-  backButton: {
-    marginRight: 10,
-    padding: 4,
-  },
-  heading: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    letterSpacing: 0.2,
-  },
+  container: { flex: 1 },
   row: { flex: 1, justifyContent: 'space-around', marginBottom: 18 },
   gridContent: { paddingHorizontal: 12, paddingBottom: 24 },
   card: { width: '46%', alignItems: 'center', padding: 14, borderRadius: 12, borderWidth: 1, marginBottom: 12, marginHorizontal: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 4, elevation: 1 },

@@ -4,6 +4,10 @@ import { Text, Card, Button, Divider } from 'react-native-paper';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/types';
+import SearchBar from '../ui/SearchBar';
 
 interface CartSectionProps {
   scrollY: Animated.Value;
@@ -17,6 +21,22 @@ const cartItems = [
 
 const CartSection: React.FC<CartSectionProps> = ({ scrollY }) => {
   const { colors, typography, spacing, borderRadius, createStyles } = useAppTheme();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const headerAnim = React.useRef(new Animated.Value(0)).current;
+  const [searchBarFocused, setSearchBarFocused] = React.useState(false);
+
+  const handleSearchBarFocus = () => {
+    setSearchBarFocused(true);
+    Animated.timing(headerAnim, {
+      toValue: -100, // Slide header up
+      duration: 250,
+      useNativeDriver: true,
+    }).start(() => {
+      setSearchBarFocused(false);
+      navigation.navigate('SearchScreen');
+      headerAnim.setValue(0); // Reset for next time
+    });
+  };
 
   const styles = createStyles(() => ({
     container: {
@@ -108,14 +128,23 @@ const CartSection: React.FC<CartSectionProps> = ({ scrollY }) => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Animated.View style={[styles.header, {
-        transform: [{
-          translateY: scrollY.interpolate({
-            inputRange: [0, 100],
-            outputRange: [0, -100],
-            extrapolate: 'clamp',
-          }),
-        }],
+        transform: [
+          {
+            translateY: scrollY.interpolate({
+              inputRange: [0, 100],
+              outputRange: [0, -100],
+              extrapolate: 'clamp',
+            })
+          },
+          { translateY: headerAnim },
+        ],
       }]}>
+        <SearchBar
+          onSearch={() => {}}
+          placeholder="Search in cart..."
+          autoFocus={false}
+          onInputFocus={handleSearchBarFocus}
+        />
         <Text style={styles.title}>Shopping Cart</Text>
       </Animated.View>
       <ScrollView style={styles.content}>

@@ -82,10 +82,10 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     list: {
-        paddingHorizontal: 16,
+        paddingHorizontal: 4,
     },
     card: {
-        marginRight: 12,
+        marginRight: 6,
     }
 });
 

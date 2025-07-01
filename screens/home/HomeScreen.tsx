@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -151,7 +151,6 @@ const Header = ({ onProfilePress }: { onProfilePress: () => void }) => {
             </View>
           )}
         </TouchableOpacity>
-        <ThemeToggle />
       </View>
     </View>
   );
@@ -173,7 +172,20 @@ const SearchBar = ({
   return (
     <View style={[styles.searchBarWrapper, { backgroundColor: theme.colors.surface }]}> 
       <TouchableOpacity 
-        style={[styles.searchContainer, { backgroundColor: theme.colors.surface }]}
+        style={[
+          styles.searchContainer,
+          {
+            backgroundColor: theme.colors.background,
+            borderColor: theme.colors.border,
+            borderWidth: 1,
+            borderRadius: 24,
+            shadowColor: theme.colors.text,
+            shadowOffset: { width: 0, height: 2 },
+            shadowOpacity: 0.08,
+            shadowRadius: 6,
+            elevation: 2,
+          }
+        ]}
         onPress={onSearchPress}
         activeOpacity={0.8}
       > 
@@ -183,9 +195,7 @@ const SearchBar = ({
           color={theme.colors.text + '80'} 
           style={styles.searchIcon} 
         />
-        <Text style={[styles.searchPlaceholder, { color: theme.colors.text + '80' }]}>
-          Search products...
-        </Text>
+        <Text style={[styles.searchPlaceholder, { color: theme.colors.text + '80' }]}>Search products...</Text>
         <View style={styles.searchRight}>
           <TouchableOpacity>
               <MaterialCommunityIcons
@@ -265,6 +275,28 @@ const HomeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const scrollY = new Animated.Value(0);
+
+  const themedStyles = useMemo(() => StyleSheet.create({
+    cardSection: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 14,
+      marginHorizontal: 10,
+      marginBottom: 18,
+      padding: 10,
+      shadowColor: theme.colors.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.06,
+      shadowRadius: 4,
+      elevation: 1,
+    },
+    scrollableCardBg: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 10,
+      paddingVertical: 6,
+      paddingLeft: 2,
+      paddingRight: 2,
+    },
+  }), [theme]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -391,28 +423,24 @@ const HomeScreen = () => {
               </TouchableOpacity>
             </View>
             {/* Recently Bought Section */}
-            <View style={[styles.section, styles.cardSection]}>
+            <View style={styles.section}>
               <View style={styles.sectionHeaderRow}>
                 <Text style={[styles.sectionTitle, {color: theme.colors.text}]}>Recently Bought</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('RecentlyBoughtScreen' as any)}>
                   <Text style={[styles.viewAll, {color: theme.colors.primary}]}>View All</Text>
                 </TouchableOpacity>
               </View>
-              <View style={styles.scrollableCardBg}>
-                <HorizontallyScrollableSection title="Recently Bought" />
-              </View>
+              <HorizontallyScrollableSection title="Recently Bought" />
             </View>
             {/* Great Offers Section */}
-            <View style={[styles.section, styles.cardSection]}>
+            <View style={styles.section}>
               <View style={styles.sectionHeaderRow}>
                 <Text style={[styles.sectionTitle, {color: theme.colors.text}]}>Great Offers</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('GreatOffersScreen' as any)}>
                   <Text style={[styles.viewAll, {color: theme.colors.primary}]}>View All</Text>
                 </TouchableOpacity>
               </View>
-              <View style={styles.scrollableCardBg}>
-                <HorizontallyScrollableSection title="Great Offers" />
-              </View>
+              <HorizontallyScrollableSection title="Great Offers" />
             </View>
           </ScrollView>
         )}
@@ -591,25 +619,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 6,
-  },
-  cardSection: {
-    backgroundColor: '#fff',
-    borderRadius: 14,
-    marginHorizontal: 10,
-    marginBottom: 18,
-    padding: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  scrollableCardBg: {
-    backgroundColor: '#f7f7f7',
-    borderRadius: 10,
-    paddingVertical: 6,
-    paddingLeft: 2,
-    paddingRight: 2,
   },
   searchResultsTitle: {
     fontSize: 18,

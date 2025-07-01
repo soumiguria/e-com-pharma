@@ -112,6 +112,14 @@ const CartScreen = () => {
               ))}
             </ScrollView>
           </View>
+          
+          <Button
+            mode="contained"
+            onPress={() => navigation.navigate('Main', { screen: 'Home', params: { screen: 'HomeRoot', params: { storeId: '', pincode: '' } } })}
+            style={{ marginTop: 32, borderRadius: 24, paddingHorizontal: 24 }}
+          >
+            Continue Shopping
+          </Button>
         </View>
       ) : (
         <>

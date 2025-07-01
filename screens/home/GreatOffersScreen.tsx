@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, SafeAreaView
 import { useTheme } from '../../contexts/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { Appbar } from 'react-native-paper';
 
 const offers = [
   { id: '1', name: 'Amul Milk 1L', image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg', price: 65, offer: '10% OFF' },
@@ -18,31 +19,43 @@ const GreatOffersScreen = () => {
   const navigation = useNavigation();
   const renderItem = ({ item }: { item: typeof offers[0] }) => (
     <TouchableOpacity
-      style={[styles.card, {backgroundColor: theme.colors.surface, borderColor: theme.colors.border}]}
+      style={[
+        styles.card,
+        {
+          backgroundColor: theme.colors.card,
+          borderColor: theme.colors.border,
+          borderRadius: 16,
+          margin: 10,
+          padding: 12,
+          shadowColor: theme.colors.text,
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 8,
+          elevation: 3,
+        },
+      ]}
       onPress={() => Alert.alert('Offer', item.name)}
-      activeOpacity={0.8}
+      activeOpacity={0.85}
     >
       <View style={styles.offerBadge}><Text style={styles.offerText}>{item.offer}</Text></View>
-      <Image source={{ uri: item.image }} style={styles.image} />
-      <Text style={[styles.name, { color: theme.colors.text }]} numberOfLines={2}>{item.name}</Text>
-      <Text style={[styles.price, { color: theme.colors.primary }]}>₹{item.price}</Text>
+      <Image source={{ uri: item.image }} style={[styles.image, { borderRadius: 12 }]} />
+      <Text style={[styles.name, { color: theme.colors.text, fontWeight: 'bold', fontSize: 16, marginTop: 8 }]} numberOfLines={2}>{item.name}</Text>
+      <Text style={[styles.price, { color: theme.colors.primary, fontWeight: 'bold', fontSize: 15 }]}>{`₹${item.price}`}</Text>
     </TouchableOpacity>
   );
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <View style={[styles.appBar, { backgroundColor: theme.colors.surface }]}> 
-        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <MaterialCommunityIcons name="arrow-left" size={26} color={theme.colors.text} />
-        </TouchableOpacity>
-        <Text style={[styles.heading, { color: theme.colors.text }]}>Great Offers</Text>
-      </View>
+      <Appbar.Header style={{ backgroundColor: theme.colors.card, elevation: 0 }}>
+        <Appbar.BackAction onPress={() => navigation.goBack()} color={theme.colors.text} />
+        <Appbar.Content title="Great Offers" titleStyle={{ color: theme.colors.text, fontWeight: 'bold', fontSize: 20 }} />
+      </Appbar.Header>
       <FlatList
         data={offers}
         renderItem={renderItem}
         keyExtractor={item => item.id}
         numColumns={2}
-        columnWrapperStyle={styles.row}
-        contentContainerStyle={styles.gridContent}
+        columnWrapperStyle={{ justifyContent: 'space-between' }}
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
       />
     </SafeAreaView>

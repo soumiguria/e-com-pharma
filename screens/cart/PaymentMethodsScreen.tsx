@@ -48,7 +48,7 @@ const PaymentMethodsScreen = () => {
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: '#fff',
+      backgroundColor: theme.colors.background,
       padding: 16,
     },
     sectionTitle: {
@@ -56,7 +56,7 @@ const PaymentMethodsScreen = () => {
       fontWeight: 'bold',
       marginTop: 18,
       marginBottom: 8,
-      color: '#222',
+      color: theme.colors.text,
     },
     row: {
       flexDirection: 'row',
@@ -64,24 +64,26 @@ const PaymentMethodsScreen = () => {
       marginBottom: 8,
     },
     chip: {
-      backgroundColor: '#f2f2f2',
+      backgroundColor: theme.colors.surface,
       borderRadius: 18,
       paddingHorizontal: 16,
       paddingVertical: 8,
       marginRight: 10,
       marginBottom: 8,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
     },
     chipSelected: {
-      backgroundColor: '#00b14f22',
-      borderColor: '#00b14f',
+      backgroundColor: theme.colors.primary + '22',
+      borderColor: theme.colors.primary,
       borderWidth: 1,
     },
     chipText: {
-      color: '#222',
+      color: theme.colors.text,
       fontSize: 15,
     },
     chipTextSelected: {
-      color: '#00b14f',
+      color: theme.colors.primary,
       fontWeight: 'bold',
     },
     billRow: {
@@ -89,9 +91,10 @@ const PaymentMethodsScreen = () => {
       justifyContent: 'space-between',
       marginBottom: 4,
       fontSize: 16,
+      color: theme.colors.text,
     },
     changeAddressBtn: {
-      backgroundColor: '#00b14f',
+      backgroundColor: theme.colors.primary,
       borderRadius: 16,
       paddingHorizontal: 12,
       paddingVertical: 6,
@@ -99,36 +102,38 @@ const PaymentMethodsScreen = () => {
       marginBottom: 8,
     },
     changeAddressText: {
-      color: '#fff',
+      color: theme.colors.surface,
       fontWeight: 'bold',
     },
     modalContainer: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: 'rgba(0,0,0,0.3)',
+      backgroundColor: theme.colors.text + '33',
     },
     modalContent: {
-      backgroundColor: '#fff',
+      backgroundColor: theme.colors.surface,
       padding: 20,
       borderRadius: 12,
       width: '80%',
     },
     input: {
       borderWidth: 1,
-      borderColor: '#ccc',
+      borderColor: theme.colors.border,
       borderRadius: 8,
       padding: 10,
       marginBottom: 12,
+      color: theme.colors.text,
+      backgroundColor: theme.colors.background,
     },
     modalButton: {
-      backgroundColor: '#00b14f',
+      backgroundColor: theme.colors.primary,
       borderRadius: 8,
       padding: 10,
       alignItems: 'center',
     },
     modalButtonText: {
-      color: '#fff',
+      color: theme.colors.surface,
       fontWeight: 'bold',
     },
   });
@@ -250,7 +255,7 @@ const PaymentMethodsScreen = () => {
         </View>
 
         {/* Place Order Button */}
-        <ThemedButton title="Place Order" onPress={() => navigation.navigate('OrderConfirmation')} style={{ marginTop: 24 }} />
+        <ThemedButton title="Place Order" onPress={() => navigation.navigate('PhoneAuth', { cartType: 'grocery' })} style={{ marginTop: 24 }} />
       </ScrollView>
     </SafeAreaView>
   );

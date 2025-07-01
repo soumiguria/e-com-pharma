@@ -211,14 +211,14 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
         <Text style={[styles.title, { color: theme.colors.text }]}>Menu</Text>
       </View>
 
-      <View style={styles.themeToggleContainer}>
-        <Text style={[styles.themeLabel, { color: theme.colors.text }]}>Theme</Text>
-        <ThemeToggle />
-      </View>
-
       <ScrollView style={styles.menuContainer} showsVerticalScrollIndicator={false}>
         {menuItems.map((item, index) => renderMenuItem(item, index))}
       </ScrollView>
+
+      <View style={[styles.themeToggleBottomContainer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border }]}>
+        <Text style={[styles.themeLabel, { color: theme.colors.text }]}>Theme</Text>
+        <ThemeToggle />
+      </View>
     </Animated.View>
   );
 };
@@ -253,18 +253,6 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
   },
-  themeToggleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  themeLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
   menuContainer: {
     flex: 1,
   },
@@ -283,6 +271,19 @@ const styles = StyleSheet.create({
     height: 1,
     marginVertical: 8,
     marginHorizontal: 16,
+  },
+  themeToggleBottomContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#eee',
+    backgroundColor: '#fff',
+  },
+  themeLabel: {
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
