@@ -80,6 +80,8 @@ const BrandsScreen = () => {
               backgroundColor: 'transparent',
             }}
             placeholderTextColor={theme.colors.text + '80'}
+            returnKeyType="search"
+            onSubmitEditing={() => setSearch(search)}
           />
           <MaterialCommunityIcons
             name="microphone"

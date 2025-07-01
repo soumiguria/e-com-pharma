@@ -74,7 +74,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
     >
       <View style={[styles.imageContainer, compact && styles.compactImageContainer, { backgroundColor: theme.colors.background }]}>
         {product.image && (
-          <Image source={imageSource} style={[styles.image, compact && styles.compactImage]} resizeMode="cover" />
+          <Image source={imageSource} style={[styles.image, compact && styles.compactImage, { borderRadius: 12 }]} resizeMode="cover" />
         )}
         
         <View style={styles.badgeContainer}>
@@ -148,6 +148,7 @@ const styles = StyleSheet.create({
   image: {
     width: '100%',
     height: '100%',
+    borderRadius: 12,
   },
   compactImage: {
     width: 48,

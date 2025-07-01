@@ -30,6 +30,7 @@ import BannerSlider from '../../components/common/BannerSlider';
 import CategoryGrid from '../../components/common/CategoriesGrid';
 import BrandsGrid from '../../components/common/BrandsGrid';
 import HorizontallyScrollableSection from '../../components/layout/HorizontallyScrollableSection';
+import SearchBar from '../../components/ui/SearchBar';
 
 const Tab = createBottomTabNavigator();
 
@@ -109,14 +110,14 @@ const pharmacyData: Category[] = [
   // Add more pharmacy categories as needed
 ];
 
-const Header = ({ onProfilePress }: { onProfilePress: () => void }) => {
+const Header = ({ onProfilePress, themedStyles }: { onProfilePress: () => void, themedStyles: any }) => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const { totalItems } = useCart();
   const { selectedStore } = useAppContext();
 
   return (
-    <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
+    <View style={[themedStyles.header, { backgroundColor: theme.colors.surface }]}>
       <TouchableOpacity onPress={onProfilePress}>
         <MaterialCommunityIcons 
           name="account-circle" 
@@ -124,10 +125,10 @@ const Header = ({ onProfilePress }: { onProfilePress: () => void }) => {
           color={theme.colors.text} 
         />
       </TouchableOpacity>
-      {selectedStore && <Text style={[styles.storeName, {color: theme.colors.text}]}>{selectedStore.name}</Text>}
-      <View style={styles.headerRight}>
+      {selectedStore && <Text style={[themedStyles.storeName, {color: theme.colors.text}]}>{selectedStore.name}</Text>}
+      <View style={themedStyles.headerRight}>
         <TouchableOpacity 
-          style={styles.headerIcon}
+          style={themedStyles.headerIcon}
           onPress={() => navigation.navigate('GreatOffersScreen')}
         >
           <MaterialCommunityIcons 
@@ -137,7 +138,7 @@ const Header = ({ onProfilePress }: { onProfilePress: () => void }) => {
           />
         </TouchableOpacity>
         <TouchableOpacity 
-          style={styles.headerIcon}
+          style={themedStyles.headerIcon}
           onPress={() => navigation.navigate('Cart')}
         >
           <MaterialCommunityIcons 
@@ -146,8 +147,8 @@ const Header = ({ onProfilePress }: { onProfilePress: () => void }) => {
             color={theme.colors.text} 
           />
           {totalItems > 0 && (
-            <View style={[styles.cartBadge, { backgroundColor: theme.colors.primary }]}>
-              <Text style={styles.cartBadgeText}>{totalItems}</Text>
+            <View style={[themedStyles.cartBadge, { backgroundColor: theme.colors.primary }]}>
+              <Text style={themedStyles.cartBadgeText}>{totalItems}</Text>
             </View>
           )}
         </TouchableOpacity>
@@ -156,69 +157,7 @@ const Header = ({ onProfilePress }: { onProfilePress: () => void }) => {
   );
 };
 
-const SearchBar = ({ 
-  searchQuery, 
-  setSearchQuery,
-  onClear,
-  onSearchPress
-}: { 
-  searchQuery: string, 
-  setSearchQuery: (text: string) => void,
-  onClear: () => void,
-  onSearchPress: () => void
-}) => {
-  const { theme } = useTheme();
-
-  return (
-    <View style={[styles.searchBarWrapper, { backgroundColor: theme.colors.surface }]}> 
-      <TouchableOpacity 
-        style={[
-          styles.searchContainer,
-          {
-            backgroundColor: theme.colors.background,
-            borderColor: theme.colors.border,
-            borderWidth: 1,
-            borderRadius: 24,
-            shadowColor: theme.colors.text,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.08,
-            shadowRadius: 6,
-            elevation: 2,
-          }
-        ]}
-        onPress={onSearchPress}
-        activeOpacity={0.8}
-      > 
-        <Ionicons 
-          name="search" 
-          size={22} 
-          color={theme.colors.text + '80'} 
-          style={styles.searchIcon} 
-        />
-        <Text style={[styles.searchPlaceholder, { color: theme.colors.text + '80' }]}>Search products...</Text>
-        <View style={styles.searchRight}>
-          <TouchableOpacity>
-              <MaterialCommunityIcons
-                  name="microphone"
-                  size={24}
-                  color={theme.colors.text + '80'}
-              />
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
-    </View>
-  );
-};
-
-const SearchResults = ({ 
-  results, 
-  onProductPress,
-  activeTab 
-}: { 
-  results: Product[], 
-  onProductPress: (product: Product) => void,
-  activeTab: string
-}) => {
+const SearchResults = ({ results, onProductPress, activeTab, themedStyles }: { results: Product[], onProductPress: (product: Product) => void, activeTab: string, themedStyles: any }) => {
   const { theme } = useTheme();
   const fadeAnim = React.useRef(new Animated.Value(0)).current;
 
@@ -232,21 +171,21 @@ const SearchResults = ({
 
   if (results.length === 0) {
     return (
-      <View style={styles.noResultsContainer}>
+      <View style={themedStyles.noResultsContainer}>
         <MaterialIcons name="search-off" size={64} color={theme.colors.secondary} style={{ marginBottom: 12 }} />
-        <Text style={[styles.noResultsText, { color: theme.colors.text }]}>No products found in {activeTab}</Text>
+        <Text style={[themedStyles.noResultsText, { color: theme.colors.text }]}>No products found in {activeTab}</Text>
       </View>
     );
   }
 
   return (
     <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-      <Text style={styles.searchResultsTitle}>Search Results</Text>
+      <Text style={themedStyles.searchResultsTitle}>Search Results</Text>
       <FlatList
         data={results}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.searchResultCard}>
+          <View style={themedStyles.searchResultCard}>
             <ProductCard 
               product={{...item, category: activeTab as 'grocery' | 'pharmacy'}} 
               onPress={() => onProductPress(item)}
@@ -255,7 +194,7 @@ const SearchResults = ({
             />
           </View>
         )}
-        contentContainerStyle={styles.searchResultsContainer}
+        contentContainerStyle={themedStyles.searchResultsContainer}
         showsVerticalScrollIndicator={false}
       />
     </Animated.View>
@@ -277,24 +216,237 @@ const HomeScreen = () => {
   const scrollY = new Animated.Value(0);
 
   const themedStyles = useMemo(() => StyleSheet.create({
-    cardSection: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: 14,
-      marginHorizontal: 10,
-      marginBottom: 18,
-      padding: 10,
+    container: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 18,
+      paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+      paddingBottom: 14,
+      elevation: 2,
       shadowColor: theme.colors.text,
       shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.border,
+      backgroundColor: theme.colors.surface,
+    },
+    storeName: {
+      marginLeft: 10,
+      fontWeight: 'bold',
+      fontSize: 17,
+      color: theme.colors.primary,
+    },
+    headerRight: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginLeft: 'auto',
+    },
+    headerIcon: {
+      marginHorizontal: 8,
+      position: 'relative',
+    },
+    cartBadge: {
+      position: 'absolute',
+      right: -8,
+      top: -8,
+      borderRadius: 12,
+      width: 22,
+      height: 22,
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: theme.colors.primary,
+    },
+    cartBadgeText: {
+      color: '#fff',
+      fontSize: 12,
+      fontWeight: 'bold',
+    },
+    searchBarWrapper: {
+      paddingHorizontal: 18,
+      paddingTop: 12,
+      paddingBottom: 8,
+      backgroundColor: theme.colors.background,
+    },
+    searchContainer: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 15,
+      paddingVertical: 8,
+      borderRadius: 24,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
       shadowOpacity: 0.06,
+      shadowRadius: 6,
+      elevation: 2,
+      marginBottom: 8,
+      borderBottomWidth: 0,
+    },
+    searchIcon: {
+      marginRight: 10,
+    },
+    searchInput: {
+      flex: 1,
+      fontSize: 16,
+      height: 40,
+      paddingHorizontal: 8,
+    },
+    searchRight:{
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    searchActionIcon: {
+      marginLeft: 10,
+    },
+    tabsContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-around',
+      paddingVertical: 10,
+      borderBottomWidth: 1,
+      borderBottomColor: '#eee',
+    },
+    tab: {
+      paddingVertical: 10,
+      paddingHorizontal: 20,
+      borderRadius: 20,
+    },
+    tabText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+    },
+    contentContainer: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    searchResultsContainer: {
+      flex: 1,
+      backgroundColor: theme.colors.background,
+    },
+    noResultsContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    noResultsText: {
+      fontSize: 16,
+      textAlign: 'center',
+      color: theme.colors.text,
+    },
+    section: {
+      marginHorizontal: 12,
+      marginTop: 18,
+      marginBottom: 10,
+      borderRadius: 18,
+      backgroundColor: theme.colors.surface,
+      padding: 16,
+      shadowColor: theme.colors.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
+      shadowRadius: 6,
+      elevation: 1,
+    },
+    sectionTitle: {
+      fontSize: 19,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 8,
+      letterSpacing: 0.2,
+    },
+    sectionHeaderRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 8,
+    },
+    viewAll: {
+      fontWeight: 'bold',
+      color: theme.colors.primary,
+      fontSize: 15,
+      paddingVertical: 4,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+      backgroundColor: theme.dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
+      overflow: 'hidden',
+    },
+    gridContainer: {
+      flexDirection: 'row',
+      flexWrap: 'wrap',
+      justifyContent: 'space-between',
+    },
+    tabBar: {
+      position: 'absolute',
+      bottom: 0,
+      left: 0,
+      right: 0,
+      height: 80,
+      paddingBottom: Platform.OS === 'ios' ? 20 : 10,
+      borderTopWidth: 0,
+      elevation: 8,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: -3 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      borderTopLeftRadius: 20,
+      borderTopRightRadius: 20,
+    },
+    tabIconContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 4,
+    },
+    tabLabel: {
+      fontSize: 12,
+      fontWeight: '600',
+      marginBottom: 4,
+    },
+    searchResultCard: {
+      width: '100%',
+      marginBottom: 12,
+      borderRadius: 14,
+      backgroundColor: theme.colors.surface,
+      shadowColor: theme.colors.text,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.04,
       shadowRadius: 4,
       elevation: 1,
     },
-    scrollableCardBg: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: 10,
-      paddingVertical: 6,
-      paddingLeft: 2,
-      paddingRight: 2,
+    searchResultsTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginTop: 8,
+      marginBottom: 8,
+      marginLeft: 16,
+      color: theme.colors.text,
+    },
+    searchResultsContainerGrid: {
+      paddingHorizontal: 8,
+      paddingBottom: 24,
+    },
+    searchResultCardGrid: {
+      flex: 1,
+      margin: 8,
+      minWidth: 160,
+      maxWidth: '48%',
+    },
+    searchGridRow: {
+      justifyContent: 'space-between',
+    },
+    drawerOverlay: {
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    },
+    searchPlaceholder: {
+      flex: 1,
+      fontSize: 16,
+      paddingHorizontal: 8,
     },
   }), [theme]);
 
@@ -336,7 +488,7 @@ const HomeScreen = () => {
   };
 
   const tabBarStyle = {
-    ...styles.tabBar,
+    ...themedStyles.tabBar,
     backgroundColor: theme.colors.surface,
     transform: [{
       translateY: scrollY.interpolate({
@@ -388,56 +540,66 @@ const HomeScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={themedStyles.container} edges={['top']}>
       <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.surface} />
-      <Header onProfilePress={toggleDrawer} />
-      <SearchBar 
-        searchQuery={searchQuery} 
-        setSearchQuery={handleSearch} 
-        onClear={clearSearch} 
-        onSearchPress={() => navigation.navigate('SearchScreen')}
-      />
+      <Header onProfilePress={toggleDrawer} themedStyles={themedStyles} />
+      <View>
+        <SearchBar
+          onSearch={() => {}}
+          placeholder="Search products..."
+        />
+        <TouchableOpacity
+          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+          activeOpacity={0.8}
+          onPress={() => navigation.navigate('SearchScreen')}
+        />
+      </View>
       
-      <View style={styles.contentContainer}>
+      <View style={themedStyles.contentContainer}>
         {searchQuery.length > 0 ? (
           <SearchResults 
             results={searchResults} 
             onProductPress={handleProductPress} 
             activeTab={activeTab}
+            themedStyles={themedStyles}
           />
         ) : (
           <ScrollView>
             <BannerSlider />
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, {color: theme.colors.text}]}>Categories</Text>
+            <View style={themedStyles.section}>
+              <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>Categories</Text>
               <CategoryGrid />
-              <TouchableOpacity onPress={() => navigation.navigate('CategoriesScreen' as any)}>
-                  <Text style={[styles.viewAll, {color: theme.colors.primary}]}>View All</Text>
-              </TouchableOpacity>
+              <View style={{ alignItems: 'center', marginTop: 8 }}>
+                <TouchableOpacity onPress={() => navigation.navigate('CategoriesScreen' as any)}>
+                  <Text style={[themedStyles.viewAll, {color: theme.colors.primary}]}>View All</Text>
+                </TouchableOpacity>
+              </View>
             </View>
-            <View style={styles.section}>
-              <Text style={[styles.sectionTitle, {color: theme.colors.text}]}>Shop by Brands</Text>
+            <View style={themedStyles.section}>
+              <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>Shop by Brands</Text>
               <BrandsGrid />
-              <TouchableOpacity onPress={() => navigation.navigate('BrandsScreen' as any)}>
-                  <Text style={[styles.viewAll, {color: theme.colors.primary}]}>View All</Text>
-              </TouchableOpacity>
+              <View style={{ alignItems: 'center', marginTop: 8 }}>
+                <TouchableOpacity onPress={() => navigation.navigate('BrandsScreen' as any)}>
+                  <Text style={[themedStyles.viewAll, {color: theme.colors.primary}]}>View All</Text>
+                </TouchableOpacity>
+              </View>
             </View>
             {/* Recently Bought Section */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeaderRow}>
-                <Text style={[styles.sectionTitle, {color: theme.colors.text}]}>Recently Bought</Text>
+            <View style={themedStyles.section}>
+              <View style={themedStyles.sectionHeaderRow}>
+                <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>Recently Bought</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('RecentlyBoughtScreen' as any)}>
-                  <Text style={[styles.viewAll, {color: theme.colors.primary}]}>View All</Text>
+                  <Text style={[themedStyles.viewAll, {color: theme.colors.primary}]}>View All</Text>
                 </TouchableOpacity>
               </View>
               <HorizontallyScrollableSection title="Recently Bought" />
             </View>
             {/* Great Offers Section */}
-            <View style={styles.section}>
-              <View style={styles.sectionHeaderRow}>
-                <Text style={[styles.sectionTitle, {color: theme.colors.text}]}>Great Offers</Text>
+            <View style={themedStyles.section}>
+              <View style={themedStyles.sectionHeaderRow}>
+                <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>Great Offers</Text>
                 <TouchableOpacity onPress={() => navigation.navigate('GreatOffersScreen' as any)}>
-                  <Text style={[styles.viewAll, {color: theme.colors.primary}]}>View All</Text>
+                  <Text style={[themedStyles.viewAll, {color: theme.colors.primary}]}>View All</Text>
                 </TouchableOpacity>
               </View>
               <HorizontallyScrollableSection title="Great Offers" />
@@ -447,7 +609,7 @@ const HomeScreen = () => {
       </View>
 
       {isDrawerVisible && (
-        <TouchableOpacity style={styles.drawerOverlay} onPress={handleOverlayPress} activeOpacity={1}>
+        <TouchableOpacity style={themedStyles.drawerOverlay} onPress={handleOverlayPress} activeOpacity={1}>
           <View style={{ flex: 1 }} />
           <Drawer onClose={toggleDrawer} />
         </TouchableOpacity>
@@ -455,205 +617,5 @@ const HomeScreen = () => {
     </SafeAreaView>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-    paddingBottom: 10,
-    elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-  },
-  storeName: {
-    marginLeft: 8,
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginLeft: 'auto',
-  },
-  headerIcon: {
-    marginHorizontal: 8,
-    position: 'relative',
-  },
-  cartBadge: {
-    position: 'absolute',
-    right: -8,
-    top: -8,
-    borderRadius: 12,
-    width: 22,
-    height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  cartBadgeText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  searchBarWrapper: {
-    paddingHorizontal: 16,
-    paddingTop: 10,
-  },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 24,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 6,
-    elevation: 2,
-    marginBottom: 8,
-    borderBottomWidth: 0,
-  },
-  searchIcon: {
-    marginRight: 10,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    height: 40,
-    paddingHorizontal: 8,
-  },
-  searchRight:{
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  searchActionIcon: {
-    marginLeft: 10,
-  },
-  tabsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingVertical: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#eee',
-  },
-  tab: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderRadius: 20,
-  },
-  tabText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  contentContainer: {
-    flex: 1,
-  },
-  searchResultsContainer: {
-    flex: 1,
-  },
-  noResultsContainer: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  noResultsText: {
-    fontSize: 16,
-    textAlign: 'center',
-  },
-  section: {
-    padding: 16,
-  },
-  sectionTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginBottom: 10,
-  },
-  gridContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
-  },
-  viewAll: {
-      textAlign: 'center',
-      marginTop: 10,
-      fontWeight: 'bold',
-  },
-  tabBar: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 80,
-    paddingBottom: Platform.OS === 'ios' ? 20 : 10,
-    borderTopWidth: 0,
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -3 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-  },
-  tabIconContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  tabLabel: {
-    fontSize: 12,
-    fontWeight: '600',
-    marginBottom: 4,
-  },
-  searchResultCard: {
-    width: '100%',
-    marginBottom: 12,
-  },
-  sectionHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 6,
-  },
-  searchResultsTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginTop: 8,
-    marginBottom: 8,
-    marginLeft: 16,
-    color: '#222',
-  },
-  searchResultsContainerGrid: {
-    paddingHorizontal: 8,
-    paddingBottom: 24,
-  },
-  searchResultCardGrid: {
-    flex: 1,
-    margin: 8,
-    minWidth: 160,
-    maxWidth: '48%',
-  },
-  searchGridRow: {
-    justifyContent: 'space-between',
-  },
-  drawerOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  searchPlaceholder: {
-    flex: 1,
-    fontSize: 16,
-    paddingHorizontal: 8,
-  },
-});
 
 export default HomeScreen;

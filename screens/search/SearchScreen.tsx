@@ -259,7 +259,10 @@ const SearchScreen = () => {
             <MaterialIcons name="arrow-back" size={24} color={theme.colors.text} />
           </TouchableOpacity>
           <View style={{ flex: 1 }}>
-            <SearchBar onSearch={handleSearch} />
+            <SearchBar 
+              onSearch={handleSearch} 
+              placeholder="Search for products, brands..."
+            />
           </View>
         </View>
 
