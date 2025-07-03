@@ -281,14 +281,14 @@ const OrderDetailScreen = () => {
             >
               <MaterialIcons name="arrow-back" size={24} color={theme.colors.text} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>Order Summary</Text>
+            <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">Order Summary</Text>
           </View>
           <TouchableOpacity
             onPress={handleDownloadInvoice}
             style={styles.downloadButton}
           >
             <MaterialIcons name="file-download" size={16} color="#fff" />
-            <Text style={styles.downloadButtonText}>Download Invoice</Text>
+            <Text style={styles.downloadButtonText} numberOfLines={1} ellipsizeMode="tail">Download Invoice</Text>
           </TouchableOpacity>
         </View>
 
@@ -347,9 +347,9 @@ const OrderDetailScreen = () => {
               <Text style={styles.orderDetailValue}>{orderData.orderType}</Text>
             </View>
             <View style={styles.orderDetailRow}>
-              <Text style={styles.orderDetailLabel}>Address</Text>
-              <Text style={styles.orderDetailValue} numberOfLines={2}>
-                {orderData.address}
+              <Text style={styles.orderDetailLabel}>
+                Address{'   '}
+                <Text style={styles.orderDetailValue} numberOfLines={2}>{orderData.address}</Text>
               </Text>
             </View>
             <View style={styles.orderDetailRow}>
