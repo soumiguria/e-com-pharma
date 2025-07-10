@@ -407,11 +407,11 @@ const OrdersScreen = () => {
         {/* Action Buttons */}
         <View style={styles.actionButtonsContainer}>
           <TouchableOpacity style={styles.actionButton} onPress={() => handleReorder(item)}>
-            <MaterialIcons name="refresh" size={16} color={theme.colors.primary} />
+            <MaterialIcons name="refresh" size={20} color="#fff" style={{ marginRight: 8 }} />
             <Text style={styles.actionButtonText}>Reorder</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.actionButton} onPress={() => handleRateOrder(item)}>
-            <MaterialIcons name="star" size={16} color={theme.colors.primary} />
+            <MaterialIcons name="star" size={20} color="#fff" style={{ marginRight: 8 }} />
             <Text style={styles.actionButtonText}>Rate Order</Text>
           </TouchableOpacity>
         </View>

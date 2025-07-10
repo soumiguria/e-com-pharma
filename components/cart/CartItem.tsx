@@ -9,14 +9,18 @@ const CartItem = ({ item, onRemove }: { item: any, onRemove: () => void }) => {
 
   const styles = StyleSheet.create({
     container: {
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.dark ? '#4B3F1D' : '#FFF9E5',
       borderRadius: theme.borderRadius.md,
       padding: theme.spacing.md,
       marginBottom: theme.spacing.sm,
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      ...theme.shadows.small,
+      shadowColor: theme.dark ? '#000' : '#FFD700',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 2,
     },
     name: {
       fontSize: 16,

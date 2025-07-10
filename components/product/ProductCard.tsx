@@ -57,14 +57,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
         styles.card,
         style,
         {
-          backgroundColor: theme.colors.surface,
+          backgroundColor: theme.dark ? '#4B3F1D' : '#FFF9E5',
           borderColor: theme.colors.border,
           margin: 8,
           padding: 10,
           borderRadius: 12,
-          shadowColor: theme.colors.text,
+          shadowColor: theme.dark ? '#000' : '#FFD700',
           shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.06,
+          shadowOpacity: 0.08,
           shadowRadius: 4,
           elevation: 2,
         },
@@ -92,10 +92,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
         
         {!hideCartButton && (
           <TouchableOpacity 
-            style={[styles.cartButton, { backgroundColor: theme.colors.primary }]} 
+            style={styles.addButton}
             onPress={handleAddToCart}
+            activeOpacity={0.85}
           >
-            <MaterialIcons name="add-shopping-cart" size={20} color="#fff" />
+            <Text style={styles.addButtonText}>ADD</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -192,6 +193,31 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
+  },
+  addButton: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    minWidth: 54,
+    height: 28,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#27ae60',
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    shadowColor: 'rgba(39, 174, 96, 0.08)',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  addButtonText: {
+    color: '#27ae60',
+    fontWeight: 'bold',
+    fontSize: 14,
+    letterSpacing: 0.5,
   },
   infoContainer: {
     padding: 12,

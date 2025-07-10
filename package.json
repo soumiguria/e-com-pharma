@@ -37,7 +37,8 @@
     "react-native-snap-carousel": "^3.9.1",
     "react-native-tab-view": "^3.5.2",
     "react-native-toast-message": "^2.3.0",
-    "react-native-vector-icons": "10.1.0"
+    "react-native-vector-icons": "10.1.0",
+    "expo-dev-client": "~4.0.29"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",

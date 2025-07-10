@@ -113,6 +113,31 @@ const SearchResultsScreen = () => {
       textAlign: 'center',
       marginTop: 16,
     },
+    addButton: {
+      position: 'absolute',
+      bottom: 8,
+      right: 8,
+      minWidth: 54,
+      height: 28,
+      borderRadius: 6,
+      borderWidth: 1.5,
+      borderColor: '#27ae60',
+      backgroundColor: '#fff',
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 12,
+      shadowColor: 'rgba(39, 174, 96, 0.08)',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.08,
+      shadowRadius: 2,
+      elevation: 1,
+    },
+    addButtonText: {
+      color: '#27ae60',
+      fontWeight: 'bold',
+      fontSize: 14,
+      letterSpacing: 0.5,
+    },
   });
 
   return (

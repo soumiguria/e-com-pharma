@@ -103,7 +103,7 @@ const AllProductsScreen = () => {
       width: itemWidth,
       marginBottom: 16,
       borderRadius: 12,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.dark ? '#4B3F1D' : '#FFF9E5',
       overflow: 'hidden',
       elevation: 2,
       shadowColor: '#000',

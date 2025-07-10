@@ -98,101 +98,68 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
     console.log('Logout pressed');
   };
 
-  const menuItems = [
-    // Main menu items
+  // Grouped menu sections
+  const menuSections = [
     {
-      icon: 'clipboard-list' as const,
-      label: 'My Orders',
-      onPress: handleMyOrdersPress,
+      key: 'main',
+      items: [
+        { icon: 'clipboard-list', label: 'My Orders', onPress: handleMyOrdersPress },
+        { icon: 'map-marker', label: 'Address List', onPress: handleAddressListPress },
+        { icon: 'account', label: 'My Profile', onPress: handleMyProfilePress },
+        { icon: 'heart', label: 'My Wishlist', onPress: handleMyWishlistPress },
+      ],
     },
     {
-      icon: 'map-marker' as const,
-      label: 'Address List',
-      onPress: handleAddressListPress,
+      key: 'store',
+      items: [
+        { icon: 'store', label: 'About Store', onPress: handleAboutStorePress },
+        { icon: 'phone', label: 'Contact Store', onPress: handleContactStorePress },
+        { icon: 'map-marker-radius', label: 'Locate this Store', onPress: handleLocateStorePress },
+      ],
     },
     {
-      icon: 'account' as const,
-      label: 'My Profile',
-      onPress: handleMyProfilePress,
+      key: 'app',
+      items: [
+        { icon: 'share-variant', label: 'Share this App', onPress: handleShareAppPress },
+        { icon: 'information', label: 'About Pass ki Dukaan', onPress: handleAboutPassKiDukaanPress },
+      ],
     },
     {
-      icon: 'heart' as const,
-      label: 'My Wishlist',
-      onPress: handleMyWishlistPress,
-    },
-    // Separator
-    { type: 'separator' as const },
-    // Store related items
-    {
-      icon: 'store' as const,
-      label: 'About Store',
-      onPress: handleAboutStorePress,
-    },
-    {
-      icon: 'phone' as const,
-      label: 'Contact Store',
-      onPress: handleContactStorePress,
-    },
-    {
-      icon: 'map-marker-radius' as const,
-      label: 'Locate this Store',
-      onPress: handleLocateStorePress,
-    },
-    // Separator
-    { type: 'separator' as const },
-    // App related items
-    {
-      icon: 'share-variant' as const,
-      label: 'Share this App',
-      onPress: handleShareAppPress,
-    },
-    {
-      icon: 'information' as const,
-      label: 'About Pass ki Dukaan',
-      onPress: handleAboutPassKiDukaanPress,
-    },
-    // Separator
-    { type: 'separator' as const },
-    // Settings and logout
-    {
-      icon: 'cog' as const,
-      label: 'Settings',
-      onPress: handleSettingsPress,
-    },
-    {
-      icon: 'bell' as const,
-      label: 'Notifications',
-      onPress: handleNotificationsPress,
-    },
-    {
-      icon: 'logout' as const,
-      label: 'Logout',
-      onPress: handleLogoutPress,
+      key: 'settings',
+      items: [
+        { icon: 'cog', label: 'Settings', onPress: handleSettingsPress },
+        { icon: 'bell', label: 'Notifications', onPress: handleNotificationsPress },
+        { icon: 'logout', label: 'Logout', onPress: handleLogoutPress },
+      ],
     },
   ];
 
-  const renderMenuItem = (item: any, index: number) => {
-    if (item.type === 'separator') {
-      return (
-        <View 
-          key={`separator-${index}`} 
-          style={[styles.separator, { backgroundColor: theme.colors.border }]} 
-        />
-      );
-    }
-
-    return (
-      <TouchableOpacity
-        key={index}
-        style={[styles.menuItem, { borderBottomColor: theme.colors.border }]}
-        onPress={item.onPress}
-      >
-        <MaterialCommunityIcons name={item.icon} size={24} color={theme.colors.primary} />
-        <Text style={[styles.menuText, { color: theme.colors.text }]}>{item.label}</Text>
-        <MaterialCommunityIcons name="chevron-right" size={24} color={theme.colors.text} />
-      </TouchableOpacity>
-    );
-  };
+  const renderMenuSection = (section: any, idx: number) => (
+    <View
+      key={section.key}
+      style={[
+        styles.sectionContainer,
+        { backgroundColor: theme.colors.surface },
+        idx > 0 && { marginTop: 18 },
+      ]}
+    >
+      {section.items.map((item: any, index: number) => (
+        <TouchableOpacity
+          key={item.label}
+          style={[
+            styles.menuItem,
+            // Remove borderBottom for a cleaner look
+            // index !== section.items.length - 1 && { borderBottomColor: '#F2F2F2', borderBottomWidth: 1 },
+          ]}
+          onPress={item.onPress}
+        >
+          <MaterialCommunityIcons name={item.icon} size={24} color={theme.colors.primary} />
+          <Text style={[styles.menuText, { color: theme.colors.text }]}>{item.label}</Text>
+          <MaterialCommunityIcons name="chevron-right" size={24} color={theme.colors.text} />
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
 
   return (
     <Animated.View 
@@ -212,10 +179,10 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
       </View>
 
       <ScrollView style={styles.menuContainer} showsVerticalScrollIndicator={false}>
-        {menuItems.map((item, index) => renderMenuItem(item, index))}
+        {menuSections.map(renderMenuSection)}
       </ScrollView>
 
-      <View style={[styles.themeToggleBottomContainer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border }]}>
+      <View style={[styles.themeToggleBottomContainer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border }]}> 
         <Text style={[styles.themeLabel, { color: theme.colors.text }]}>Theme</Text>
         <ThemeToggle />
       </View>
@@ -260,7 +227,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 16,
-    borderBottomWidth: 1,
+    // No borderBottom for a cleaner look
   },
   menuText: {
     flex: 1,
@@ -284,6 +251,18 @@ const styles = StyleSheet.create({
   themeLabel: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  sectionContainer: {
+    borderRadius: 12,
+    marginHorizontal: 12,
+    paddingVertical: 4,
+    overflow: 'hidden',
+    // backgroundColor set dynamically
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 2,
+    elevation: 1,
   },
 });
 

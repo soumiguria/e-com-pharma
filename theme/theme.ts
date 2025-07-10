@@ -2,6 +2,9 @@ import { DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
 
 export const palette = {
+  // Primary yellow and white for new look
+  primary_yellow: '#FBBC05', // Google yellow
+  primary_white: '#FFFFFF',
   // Primary green shades for grocery
   primary_green: '#34A853',
   secondary_green: '#81C784',
@@ -128,13 +131,14 @@ export const lightTheme = {
   colors: {
     ...DefaultTheme.colors,
     ...MD3LightTheme.colors,
-    primary: palette.primary_green,
-    secondary: palette.secondary_green,
-    tertiary: palette.tertiary_green,
-    background: palette.neutral_white,
+    primary: palette.primary_yellow,
+    secondary: palette.primary_green,
+    tertiary: palette.primary_blue,
+    background: palette.primary_white,
     surface: palette.neutral_grey_light,
     text: palette.neutral_black,
     accent: palette.accent_yellow,
+    highlight: palette.primary_yellow,
     error: palette.accent_red,
     // Grocery-specific colors
     grocery: {
@@ -148,6 +152,8 @@ export const lightTheme = {
       secondary: palette.secondary_blue,
       tertiary: palette.tertiary_blue,
     },
+    yellow: palette.primary_yellow,
+    white: palette.primary_white,
   },
   typography,
   spacing,
@@ -161,26 +167,27 @@ export const darkTheme = {
   colors: {
     ...DarkTheme.colors,
     ...MD3DarkTheme.colors,
-    primary: palette.primary_green,
-    secondary: palette.secondary_green,
-    tertiary: palette.tertiary_green,
+    primary: palette.primary_yellow,
+    secondary: palette.primary_green,
+    tertiary: palette.primary_blue,
     background: palette.neutral_black,
     surface: palette.neutral_grey_dark,
     text: palette.neutral_white,
     accent: palette.accent_yellow,
+    highlight: palette.primary_yellow,
     error: palette.accent_red,
-    // Grocery-specific colors
     grocery: {
       primary: palette.primary_green,
       secondary: palette.secondary_green,
       tertiary: palette.tertiary_green,
     },
-    // Pharmacy-specific colors
     pharmacy: {
       primary: palette.primary_blue,
       secondary: palette.secondary_blue,
       tertiary: palette.tertiary_blue,
     },
+    yellow: palette.primary_yellow,
+    white: palette.primary_white,
   },
   typography,
   spacing,

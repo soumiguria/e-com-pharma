@@ -1,6 +1,6 @@
 // screens/CartScreen.tsx
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
 import { Text, Button, Card, useTheme } from 'react-native-paper';
 import { useCart } from '../../contexts/CartContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -9,6 +9,7 @@ import { useNavigation } from '@react-navigation/native';
 import ProductCard from '../../components/product/ProductCard';
 import { ScrollView as RNScrollView } from 'react-native';
 import { Appbar } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Cart'>;
 
@@ -137,21 +138,21 @@ const CartScreen = () => {
                     </Text>
                   )}
                   <View style={styles.quantityContainer}>
-                    <Button
-                      mode="outlined"
+                    <TouchableOpacity
+                      style={[styles.quantityButton, { backgroundColor: theme.colors.surface }]}
                       onPress={() => updateQuantity(item.id, item.quantity - 1, item.category)}
-                      style={styles.quantityButton}
+                      activeOpacity={0.7}
                     >
-                      -
-                    </Button>
+                      <MaterialCommunityIcons name="minus" size={18} color={theme.colors.onSurface} />
+                    </TouchableOpacity>
                     <Text style={styles.quantityText}>{item.quantity}</Text>
-                    <Button
-                      mode="outlined"
+                    <TouchableOpacity
+                      style={[styles.quantityButton, { backgroundColor: theme.colors.surface }]}
                       onPress={() => updateQuantity(item.id, item.quantity + 1, item.category)}
-                      style={styles.quantityButton}
+                      activeOpacity={0.7}
                     >
-                      +
-                    </Button>
+                      <MaterialCommunityIcons name="plus" size={18} color={theme.colors.onSurface} />
+                    </TouchableOpacity>
                     <Button
                       mode="outlined"
                       onPress={() => removeFromCart(item.id, item.category)}
@@ -218,7 +219,23 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   quantityButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginHorizontal: 4,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   quantityText: {
     fontSize: 16,

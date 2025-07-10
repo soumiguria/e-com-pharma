@@ -14,6 +14,7 @@ import GreatOffersScreen from '../screens/home/GreatOffersScreen';
 import CartScreen from '../screens/cart/CartScreen';
 import RecentlyBoughtScreen from '../screens/profile/RecentlyBoughtScreen';
 import BrandsScreen from '../screens/category/BrandsScreen';
+import { useNavigation } from '@react-navigation/native';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -47,7 +48,8 @@ const PharmacyStackNavigator = () => (
 
 
 const BottomTabNavigator = () => {
-  const { section } = useTheme();
+  const { section, setSection } = useTheme();
+  const navigation = useNavigation();
 
   return (
     <Tab.Navigator
@@ -79,9 +81,29 @@ const BottomTabNavigator = () => {
       <Tab.Screen name="Order Again" component={OrdersStackNavigator} />
       <Tab.Screen name="Categories" component={CategoriesScreen} />
       {section === 'grocery' ? (
-        <Tab.Screen name="Pharmacy" component={PharmacyStackNavigator} />
+        <Tab.Screen
+          name="Pharmacy"
+          component={PharmacyStackNavigator}
+          listeners={{
+            tabPress: (e) => {
+              e.preventDefault();
+              setSection('pharmacy');
+              navigation.navigate('Pincode' as never);
+            },
+          }}
+        />
       ) : (
-        <Tab.Screen name="Grocery" component={HomeStackNavigator} />
+        <Tab.Screen
+          name="Grocery"
+          component={HomeStackNavigator}
+          listeners={{
+            tabPress: (e) => {
+              e.preventDefault();
+              setSection('grocery');
+              navigation.navigate('Pincode' as never);
+            },
+          }}
+        />
       )}
     </Tab.Navigator>
   );

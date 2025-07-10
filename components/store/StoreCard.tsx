@@ -9,11 +9,15 @@ const StoreCard = ({ store, onPress, style}: { store: any, onPress: () => void, 
 
   const styles = StyleSheet.create({
     card: {
-      backgroundColor: theme.colors.surface,
+      backgroundColor: theme.dark ? '#4B3F1D' : '#FFF9E5',
       borderRadius: theme.borderRadius.md,
       marginBottom: theme.spacing.md,
       overflow: 'hidden',
-      ...theme.shadows.medium,
+      shadowColor: theme.dark ? '#000' : '#FFD700',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 2,
     },
     image: {
       width: '100%',

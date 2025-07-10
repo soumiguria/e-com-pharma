@@ -44,8 +44,19 @@ const HorizontallyScrollableSection: React.FC<HorizontallyScrollableSectionProps
     };
 
     const renderItem = ({ item }: { item: Item }) => (
-        <View style={styles.card}>
-            <ProductCard product={item} onPress={() => handleProductPress(item)} style={{ width: Dimensions.get('window').width / 3.5, height: 200 }}/>
+        <View style={[
+            styles.card,
+            {
+                backgroundColor: theme.dark ? '#4B3F1D' : '#FFF9E5',
+                borderRadius: 10,
+                shadowColor: theme.dark ? '#000' : '#FFD700',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.08,
+                shadowRadius: 4,
+                elevation: 2,
+            }
+        ]}>
+            <ProductCard product={item} onPress={() => handleProductPress(item)} style={{ width: Dimensions.get('window').width / 3.5, height: 200, backgroundColor: 'transparent' }}/>
         </View>
     );
 

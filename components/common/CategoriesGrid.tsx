@@ -27,7 +27,18 @@ const CategoryGrid = () => {
     const navigation = useNavigation<NavigationProp>();
 
     const renderItem = ({ item }: { item: typeof categories[0] }) => (
-        <TouchableOpacity style={[styles.card, {backgroundColor: theme.colors.surface, borderColor: theme.colors.border}]} onPress={() => navigation.navigate('CategoryDetail', { category: item as any })}>
+        <TouchableOpacity style={[
+            styles.card,
+            {
+                backgroundColor: theme.dark ? '#4B3F1D' : '#FFF9E5',
+                borderColor: theme.colors.border,
+                shadowColor: theme.dark ? '#000' : '#FFD700',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.08,
+                shadowRadius: 4,
+                elevation: 2,
+            }
+        ]} onPress={() => navigation.navigate('CategoryDetail', { category: item as any })}>
             <Image source={{ uri: item.image }} style={styles.image} />
             <Text style={[styles.name, { color: theme.colors.text }]}>{item.name}</Text>
         </TouchableOpacity>

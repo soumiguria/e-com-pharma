@@ -17,7 +17,18 @@ const BrandsGrid = () => {
     const { theme } = useTheme();
 
     const renderItem = ({ item }: { item: typeof brands[0] }) => (
-        <TouchableOpacity style={[styles.card, {backgroundColor: theme.colors.surface, borderColor: theme.colors.border}]}>
+        <TouchableOpacity style={[
+            styles.card,
+            {
+                backgroundColor: theme.dark ? '#4B3F1D' : '#FFF9E5',
+                borderColor: theme.colors.border,
+                shadowColor: theme.dark ? '#000' : '#FFD700',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.08,
+                shadowRadius: 4,
+                elevation: 2,
+            }
+        ]}>
             <Image source={{ uri: item.image }} style={styles.image} resizeMode="contain" />
         </TouchableOpacity>
     );

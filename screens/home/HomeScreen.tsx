@@ -22,10 +22,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useCart } from '../../contexts/CartContext';
 import { useAppContext } from '../../contexts/AppContext';
 import Drawer from '../../components/profile/ProfileDrawer';
-import ThemeToggle from '../../components/ui/ThemeToggle';
-import ProductCard from '../../components/product/ProductCard';
-import GrocerySection from '../../components/common/GrocerySection';
-import PharmacySection from '../../components/common/PharmacySection';
+import ProductCard from '../../components/product/ProductCard'
 import BannerSlider from '../../components/common/BannerSlider';
 import CategoryGrid from '../../components/common/CategoriesGrid';
 import BrandsGrid from '../../components/common/BrandsGrid';
@@ -117,15 +114,19 @@ const Header = ({ onProfilePress, themedStyles }: { onProfilePress: () => void, 
   const { selectedStore } = useAppContext();
 
   return (
-    <View style={[themedStyles.header, { backgroundColor: theme.colors.surface }]}>
-      <TouchableOpacity onPress={onProfilePress}>
+    <View style={[themedStyles.header, { backgroundColor: theme.colors.surface }]}> 
+      <TouchableOpacity onPress={onProfilePress} style={{ flexDirection: 'row', alignItems: 'center' }}>
         <MaterialCommunityIcons 
           name="account-circle" 
           size={28} 
           color={theme.colors.text} 
         />
+        {selectedStore && (
+          <Text style={[themedStyles.storeName, {color: theme.colors.text, marginLeft: 10, fontWeight: 'bold', fontSize: 17}]} numberOfLines={1}>
+            {selectedStore.name}
+          </Text>
+        )}
       </TouchableOpacity>
-      {selectedStore && <Text style={[themedStyles.storeName, {color: theme.colors.text}]}>{selectedStore.name}</Text>}
       <View style={themedStyles.headerRight}>
         <TouchableOpacity 
           style={themedStyles.headerIcon}
@@ -147,7 +148,7 @@ const Header = ({ onProfilePress, themedStyles }: { onProfilePress: () => void, 
             color={theme.colors.text} 
           />
           {totalItems > 0 && (
-            <View style={[themedStyles.cartBadge, { backgroundColor: theme.colors.primary }]}>
+            <View style={[themedStyles.cartBadge, { backgroundColor: theme.colors.primary }]}> 
               <Text style={themedStyles.cartBadgeText}>{totalItems}</Text>
             </View>
           )}
