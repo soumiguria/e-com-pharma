@@ -49,10 +49,16 @@ const CartItem = ({ item, onRemove }: { item: any, onRemove: () => void }) => {
       <View>
         <Text style={styles.name}>{item.name}</Text>
         <View style={styles.details}>
-          <Text style={styles.price}>${item.price.toFixed(2)}</Text>
+          <Text style={styles.price}>₹{item.price.toFixed(2)}</Text>
+          {item.originalPrice && item.originalPrice > item.price && (
+            <Text style={[styles.price, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{item.originalPrice.toFixed(2)}</Text>
+          )}
+          {item.originalPrice && item.originalPrice > item.price && (
+            <Text style={[styles.price, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% off</Text>
+          )}
           <Text style={styles.quantity}>x {item.quantity}</Text>
           <Text style={styles.price}>
-            ${(item.price * item.quantity).toFixed(2)}
+            ₹{(item.price * item.quantity).toFixed(2)}
           </Text>
         </View>
       </View>

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, Platform, TouchableOpacity } from 'react-native';
+import { View, StyleSheet, ScrollView, Platform, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text, Button, Chip } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -8,6 +8,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { RootStackParamList } from '../../navigation/types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useAppContext } from '../../contexts/AppContext';
+import { MaterialIcons } from '@expo/vector-icons';
 
 type NavigationProp = StackNavigationProp<RootStackParamList, 'StoreList'>;
 type StoreListRouteProp = RouteProp<RootStackParamList, 'StoreList'>;
@@ -20,6 +22,7 @@ interface Store {
   distance: string;
   rating: number;
   image?: string;
+  totalItems?: number;
 }
 
 const mockedStores: Store[] = [
@@ -30,6 +33,8 @@ const mockedStores: Store[] = [
     address: '123 Main Street, City Center',
     distance: '0.5 km',
     rating: 4.5,
+    image: 'https://randomuser.me/api/portraits/men/1.jpg',
+    totalItems: 120,
   },
   {
     id: '2',
@@ -38,6 +43,8 @@ const mockedStores: Store[] = [
     address: '456 Park Avenue, Downtown',
     distance: '1.2 km',
     rating: 4.2,
+    image: 'https://randomuser.me/api/portraits/women/2.jpg',
+    totalItems: 80,
   },
   {
     id: '3',
@@ -46,6 +53,8 @@ const mockedStores: Store[] = [
     address: '789 Oak Road, Westside',
     distance: '2.0 km',
     rating: 4.0,
+    image: 'https://randomuser.me/api/portraits/men/3.jpg',
+    totalItems: 95,
   },
   {
     id: '4',
@@ -54,6 +63,8 @@ const mockedStores: Store[] = [
     address: '321 Pine Street, Eastside',
     distance: '1.8 km',
     rating: 4.3,
+    image: 'https://randomuser.me/api/portraits/women/4.jpg',
+    totalItems: 60,
   },
 ];
 
@@ -64,8 +75,10 @@ const StoreListScreen = () => {
   const { colors, typography, spacing, borderRadius, shadows } = theme;
   const { pincode } = route.params;
   const [activeTab, setActiveTab] = useState<'grocery' | 'pharmacy'>('grocery');
+  const { setSelectedStore } = useAppContext();
 
   const handleStoreSelect = (store: Store) => {
+    setSelectedStore(store);
     navigation.navigate('Main', {
       screen: 'Home',
       params: {
@@ -272,20 +285,20 @@ const StoreListScreen = () => {
             <Card key={store.id} style={styles.card}>
               <Card.Content style={styles.cardContent}>
                 <View style={styles.storeHeader}>
-                  <Text style={styles.storeName}>{store.name}</Text>
-                  <Chip
-                    style={styles.storeType}
-                    mode="outlined"
-                    textStyle={{
-                      color: store.type === 'grocery' ? colors.grocery.primary : colors.pharmacy.primary,
-                    }}
-                  >
-                    {store.type === 'grocery' ? 'Grocery' : 'Pharmacy'}
-                  </Chip>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <Image
+                      source={store.image ? { uri: store.image } : require('../../assets/icon.png')}
+                      style={{ width: 32, height: 32, borderRadius: 16, marginRight: 10 }}
+                    />
+                    <Text style={styles.storeName}>{store.name}</Text>
+                  </View>
+                  <MaterialIcons name="call" size={20} color={colors.primary} />
                 </View>
-                
                 <Text style={styles.storeAddress}>{store.address}</Text>
-                
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <Text style={{ color: colors.secondary, fontSize: 13, marginRight: 4 }}>Total items:</Text>
+                    <Text style={{ color: colors.secondary, fontSize: 13, marginRight: 12 }}>{store.totalItems || 0}</Text>
+                </View>
                 <View style={styles.storeInfo}>
                   <Text style={styles.storeDistance}>{store.distance}</Text>
                   <View style={styles.storeRating}>
@@ -297,7 +310,6 @@ const StoreListScreen = () => {
                     <Text style={{ marginLeft: 4 }}>{store.rating}</Text>
                   </View>
                 </View>
-
                 <Button
                   mode="contained"
                   onPress={() => handleStoreSelect(store)}

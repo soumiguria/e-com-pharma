@@ -29,21 +29,21 @@ const CartScreen = () => {
 
   // Mock recommended products
   const recommendedProducts = [
-    { id: '101', name: 'Amul Milk 1L', price: 65, image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg' },
-    { id: '102', name: 'Britannia Cheese Slices', price: 120, image: 'https://blinkit.com/images/products/400/britannia-cheese-slices.jpg' },
-    { id: '103', name: 'Mother Dairy Curd', price: 30, image: 'https://blinkit.com/images/products/400/mother-dairy-dahi.jpg' },
-    { id: '104', name: 'Tropicana Juice', price: 90, image: 'https://blinkit.com/images/products/400/tropicana-orange-delight.jpg' },
-    { id: '105', name: 'Cadbury Dairy Milk', price: 45, image: 'https://blinkit.com/images/products/400/cadbury-dairy-milk-chocolate.jpg' },
+    { id: '101', name: 'Amul Milk 1L', price: 65, originalPrice: 80, image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg' },
+    { id: '102', name: 'Britannia Cheese Slices', price: 120, originalPrice: 150, image: 'https://blinkit.com/images/products/400/britannia-cheese-slices.jpg' },
+    { id: '103', name: 'Mother Dairy Curd', price: 30, originalPrice: 40, image: 'https://blinkit.com/images/products/400/mother-dairy-dahi.jpg' },
+    { id: '104', name: 'Tropicana Juice', price: 90, originalPrice: 100, image: 'https://blinkit.com/images/products/400/tropicana-orange-delight.jpg' },
+    { id: '105', name: 'Cadbury Dairy Milk', price: 45, originalPrice: 50, image: 'https://blinkit.com/images/products/400/cadbury-dairy-milk-chocolate.jpg' },
   ];
 
   // Mock recommended products for empty cart
   const emptyCartRecommendations = [
-    { id: '101', name: 'Amul Milk 1L', price: 65, image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
-    { id: '102', name: 'Britannia Cheese Slices', price: 120, image: 'https://images.pexels.com/photos/821365/pexels-photo-821365.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
-    { id: '103', name: 'Mother Dairy Curd', price: 30, image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
-    { id: '104', name: 'Tropicana Juice', price: 90, image: 'https://images.pexels.com/photos/2789328/pexels-photo-2789328.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
-    { id: '105', name: 'Cadbury Dairy Milk', price: 45, image: 'https://images.pexels.com/photos/5638597/pexels-photo-5638597.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
-    { id: '106', name: 'Fresh Apples', price: 120, image: 'https://images.pexels.com/photos/2093087/pexels-photo-2093087.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
+    { id: '101', name: 'Amul Milk 1L', price: 65, originalPrice: 80, image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
+    { id: '102', name: 'Britannia Cheese Slices', price: 120, originalPrice: 150, image: 'https://images.pexels.com/photos/821365/pexels-photo-821365.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
+    { id: '103', name: 'Mother Dairy Curd', price: 30, originalPrice: 40, image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
+    { id: '104', name: 'Tropicana Juice', price: 90, originalPrice: 100, image: 'https://images.pexels.com/photos/2789328/pexels-photo-2789328.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
+    { id: '105', name: 'Cadbury Dairy Milk', price: 45, originalPrice: 50, image: 'https://images.pexels.com/photos/5638597/pexels-photo-5638597.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
+    { id: '106', name: 'Fresh Apples', price: 120, originalPrice: 150, image: 'https://images.pexels.com/photos/2093087/pexels-photo-2093087.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
   ];
 
   const renderRecommendations = (navigation: any) => (
@@ -95,6 +95,12 @@ const CartScreen = () => {
                   <Text style={[styles.recommendationPrice, { color: theme.colors.primary }]}>
                     ₹{product.price}
                   </Text>
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <Text style={[styles.recommendationPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{product.originalPrice.toFixed(2)}</Text>
+                  )}
+                  {product.originalPrice && product.originalPrice > product.price && (
+                    <Text style={[styles.recommendationPrice, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% off</Text>
+                  )}
                   <TouchableOpacity 
                     style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
                     onPress={() => {
@@ -132,6 +138,12 @@ const CartScreen = () => {
                     <Text style={styles.itemName}>{item.name}</Text>
                     <Text style={styles.itemPrice}>₹{item.price}</Text>
                   </View>
+                  {item.originalPrice && item.originalPrice > item.price && (
+                    <Text style={[styles.itemPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{item.originalPrice.toFixed(2)}</Text>
+                  )}
+                  {item.originalPrice && item.originalPrice > item.price && (
+                    <Text style={[styles.itemPrice, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% off</Text>
+                  )}
                   {item.variant && (
                     <Text style={styles.variantText}>
                       {item.variant.name}: {item.variant.unit}

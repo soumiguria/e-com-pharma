@@ -64,6 +64,8 @@ const MyAddressesScreen = React.memo(() => {
     }
   ]);
 
+  const [defaultAddressId, setDefaultAddressId] = useState(addresses[0]?.id);
+
   const getTypeIcon = useCallback((type: string) => {
     switch (type) {
       case 'home':
@@ -129,12 +131,14 @@ const MyAddressesScreen = React.memo(() => {
           <Text style={styles.addressName}>{item.name}</Text>
           <Text style={styles.addressText}>{item.location.address}</Text>
         </View>
-        <TouchableOpacity
-          style={styles.deleteButton}
-          onPress={() => handleDeleteAddress(item.id)}
-        >
-          <MaterialIcons name="delete" size={24} color={theme.colors.error} />
-        </TouchableOpacity>
+        <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+          <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteAddress(item.id)}>
+            <MaterialIcons name="delete" size={24} color={theme.colors.error} />
+          </TouchableOpacity>
+          <TouchableOpacity style={{ marginTop: 6 }} onPress={() => navigation.navigate('AddAddress', { location: item.location })}>
+            <MaterialIcons name="edit" size={22} color={theme.colors.primary} />
+          </TouchableOpacity>
+        </View>
       </View>
       <Text style={styles.addressText}>
         {item.houseNumber}, {item.apartment}
@@ -144,8 +148,14 @@ const MyAddressesScreen = React.memo(() => {
           Directions: {item.directions}
         </Text>
       )}
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+        <TouchableOpacity onPress={() => setDefaultAddressId(item.id)} style={{ marginRight: 12 }}>
+          <MaterialIcons name={defaultAddressId === item.id ? 'radio-button-checked' : 'radio-button-unchecked'} size={22} color={theme.colors.primary} />
+        </TouchableOpacity>
+        <Text style={{ color: theme.colors.primary, fontWeight: 'bold', marginRight: 16 }}>{defaultAddressId === item.id ? 'Default' : 'Set as default'}</Text>
+      </View>
     </View>
-  ), [getTypeColor, getTypeIcon, theme.colors.surface, theme.colors.error, handleDeleteAddress]);
+  ), [getTypeColor, getTypeIcon, theme.colors.surface, theme.colors.error, handleDeleteAddress, defaultAddressId, navigation]);
 
   const styles = StyleSheet.create({
     safeArea: {
@@ -261,7 +271,7 @@ const MyAddressesScreen = React.memo(() => {
 
         <View style={styles.content}>
           <TouchableOpacity style={styles.addButton} onPress={handleAddAddress}>
-            <MaterialIcons name="add-location" size={24} color={theme.colors.surface} />
+            <MaterialIcons name="add-location" size={22} color={theme.colors.surface} />
             <Text style={styles.addButtonText}>Add New Address</Text>
           </TouchableOpacity>
 

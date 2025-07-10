@@ -75,8 +75,8 @@ const OrderDetailScreen = () => {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
+      paddingHorizontal: 8,
+      paddingVertical: 10,
       backgroundColor: theme.colors.surface,
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
@@ -84,6 +84,8 @@ const OrderDetailScreen = () => {
     headerLeft: {
       flexDirection: 'row',
       alignItems: 'center',
+      minWidth: 0,
+      flex: 1,
     },
     backButton: {
       padding: 8,
@@ -98,9 +100,10 @@ const OrderDetailScreen = () => {
       flexDirection: 'row',
       alignItems: 'center',
       backgroundColor: theme.colors.primary,
-      paddingHorizontal: 12,
-      paddingVertical: 8,
+      paddingHorizontal: 8,
+      paddingVertical: 6,
       borderRadius: 8,
+      maxWidth: '60%',
     },
     downloadButtonText: {
       color: '#fff',
@@ -274,14 +277,14 @@ const OrderDetailScreen = () => {
       <View style={[styles.container, { padding: 16 }]}>
         {/* Header */}
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
+          <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', minWidth: 0 }}>
             <TouchableOpacity
               onPress={() => navigation.goBack()}
               style={styles.backButton}
             >
               <MaterialIcons name="arrow-back" size={24} color={theme.colors.text} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">Order Summary</Text>
+            <Text style={[styles.headerTitle, { flexShrink: 1 }]} numberOfLines={1} ellipsizeMode="tail">Order Summary</Text>
           </View>
           <TouchableOpacity
             onPress={handleDownloadInvoice}
@@ -308,6 +311,12 @@ const OrderDetailScreen = () => {
                 <View style={styles.itemDetails}>
                   <Text style={styles.itemName}>{item.name}</Text>
                   <Text style={styles.itemPrice}>₹{(item.price || 0).toFixed(2)}</Text>
+                  {item.originalPrice && item.originalPrice > item.price && (
+                    <Text style={[styles.itemPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{item.originalPrice.toFixed(2)}</Text>
+                  )}
+                  {item.originalPrice && item.originalPrice > item.price && (
+                    <Text style={[styles.itemPrice, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% off</Text>
+                  )}
                   <Text style={styles.itemQuantity}>Quantity: {item.quantity || 1}</Text>
                 </View>
               </View>

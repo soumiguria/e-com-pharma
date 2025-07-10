@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, StyleProp, ViewStyle, ImageURISource } from 'react-native';
 import { useCart } from '../../contexts/CartContext';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useToast } from '../../contexts/ToastContext';
+import PriceBlock from '../ui/PriceBlock';
 
 interface Product {
   id: string;
@@ -15,6 +16,7 @@ interface Product {
   isNew?: boolean;
   isOnSale?: boolean;
   category?: 'grocery' | 'pharmacy';
+  perUnit?: string;
 }
 
 interface ProductCardProps {
@@ -29,27 +31,50 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
   const { addToGroceryCart, addToPharmacyCart } = useCart();
   const { theme } = useTheme();
   const { showToast } = useToast();
-  
+  const [quantity, setQuantity] = useState(0);
+
   const imageSource = typeof product.image === 'string' 
     ? { uri: product.image } 
     : product.image;
 
   const handleAddToCart = (e: any) => {
     e.stopPropagation();
+    setQuantity(1);
     const cartItem = {
       id: product.id,
       name: product.name,
       price: product.price,
       image: typeof product.image === 'string' ? product.image : ''
     };
-
     if (product.category === 'pharmacy') {
       addToPharmacyCart(cartItem);
     } else {
       addToGroceryCart(cartItem);
     }
-    showToast(`${product.name} has been added to your cart`);
   };
+
+  const handleIncrement = (e: any) => {
+    e.stopPropagation();
+    setQuantity(q => q + 1);
+    // Optionally, add to cart again or update cart quantity here
+  };
+
+  const handleDecrement = (e: any) => {
+    e.stopPropagation();
+    setQuantity(q => {
+      if (q <= 1) return 0;
+      return q - 1;
+    });
+    // Optionally, remove from cart or update cart quantity here
+  };
+
+  const percentOff = product.originalPrice && product.originalPrice > product.price
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : null;
+
+  // In the ProductCard component, before rendering:
+  // For demonstration, if product.id === '1', set originalPrice to 199
+  const displayOriginalPrice = product.id === '1' ? 199 : product.originalPrice;
 
   return (
     <TouchableOpacity
@@ -72,11 +97,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <View style={[styles.imageContainer, compact && styles.compactImageContainer, { backgroundColor: theme.colors.background }]}>
+      <View style={[styles.imageContainer, compact && styles.compactImageContainer, { backgroundColor: theme.colors.background }]}> 
         {product.image && (
           <Image source={imageSource} style={[styles.image, compact && styles.compactImage, { borderRadius: 12 }]} resizeMode="cover" />
         )}
-        
         <View style={styles.badgeContainer}>
           {product.isNew && (
             <View style={[styles.badge, styles.newBadge]}>
@@ -88,34 +112,42 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
               <Text style={styles.badgeText}>Sale</Text>
             </View>
           )}
+          {percentOff && (
+            <View style={[styles.badge, { backgroundColor: '#FF9800', marginLeft: 4 }]}> 
+              <Text style={styles.badgeText}>{percentOff}% off</Text>
+            </View>
+          )}
         </View>
-        
         {!hideCartButton && (
-          <TouchableOpacity 
-            style={styles.addButton}
-            onPress={handleAddToCart}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.addButtonText}>ADD</Text>
-          </TouchableOpacity>
+          quantity === 0 ? (
+            <TouchableOpacity 
+              style={styles.addButton}
+              onPress={handleAddToCart}
+              activeOpacity={0.85}
+            >
+              <Text style={styles.addButtonText}>ADD</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={styles.counterContainer}>
+              <TouchableOpacity onPress={handleDecrement} style={styles.counterBtn}>
+                <Text style={styles.counterBtnText}>-</Text>
+              </TouchableOpacity>
+              <Text style={styles.counterValue}>{quantity}</Text>
+              <TouchableOpacity onPress={handleIncrement} style={styles.counterBtn}>
+                <Text style={styles.counterBtnText}>+</Text>
+              </TouchableOpacity>
+            </View>
+          )
         )}
       </View>
-
       <View style={[styles.infoContainer, compact && styles.compactInfoContainer]}>
         <Text style={[styles.name, compact && styles.compactName, { color: theme.colors.text }]} numberOfLines={2}>{product.name}</Text>
-        
         {product.rating !== undefined && (
           <View style={styles.ratingContainer}>
             <Text style={[styles.rating, { color: theme.colors.accent }]}>{`⭐ ${product.rating.toFixed(1)}`}</Text>
           </View>
         )}
-        
-        <View style={styles.priceContainer}>
-          <Text style={[styles.price, compact && styles.compactPrice, { color: theme.colors.text }]}>{`₹${product.price.toFixed(2)}`}</Text>
-          {product.originalPrice && (
-            <Text style={[styles.originalPrice, { color: theme.colors.secondary }]}>{`₹${product.originalPrice.toFixed(2)}`}</Text>
-          )}
-        </View>
+        <PriceBlock price={product.price} originalPrice={displayOriginalPrice} perUnit={product.perUnit || '₹33.4/100 g'} />
       </View>
     </TouchableOpacity>
   );
@@ -131,6 +163,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 5,
+    minHeight: 220, // Increased for better fit
   },
   imageContainer: {
     position: 'relative',
@@ -196,8 +229,8 @@ const styles = StyleSheet.create({
   },
   addButton: {
     position: 'absolute',
-    bottom: 8,
-    right: 8,
+    bottom: 0,
+    right: 0,
     minWidth: 54,
     height: 28,
     borderRadius: 6,
@@ -212,12 +245,46 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.08,
     shadowRadius: 2,
     elevation: 1,
+    margin: 0, // No spacing between image border and button
   },
   addButtonText: {
     color: '#27ae60',
     fontWeight: 'bold',
     fontSize: 14,
     letterSpacing: 0.5,
+  },
+  counterContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#27ae60',
+    height: 28,
+    minWidth: 70,
+    paddingHorizontal: 4,
+    margin: 0,
+  },
+  counterBtn: {
+    width: 28,
+    height: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  counterBtnText: {
+    color: '#27ae60',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  counterValue: {
+    width: 24,
+    textAlign: 'center',
+    color: '#27ae60',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   infoContainer: {
     padding: 12,

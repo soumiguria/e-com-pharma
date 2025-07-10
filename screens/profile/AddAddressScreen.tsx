@@ -23,6 +23,7 @@ type AddAddressScreenNavigationProp = StackNavigationProp<RootStackParamList, 'A
 const { width, height } = Dimensions.get('window');
 
 interface AddressFormData {
+  name: string;
   houseNumber: string;
   apartment: string;
   directions: string;
@@ -37,6 +38,7 @@ const AddAddressScreen = () => {
   const { location } = route.params as { location?: { latitude: number; longitude: number; address: string } };
   
   const [formData, setFormData] = useState<AddressFormData>({
+    name: '',
     houseNumber: '',
     apartment: '',
     directions: '',
@@ -325,6 +327,17 @@ const AddAddressScreen = () => {
           <Text style={styles.locationText}>
             {location?.address || 'Selected Location'}
           </Text>
+
+          {/* Name input at the top of the form */}
+          <View style={styles.inputContainer}>
+            <Text style={styles.inputLabel}>Name</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Name (e.g. John Doe)"
+              value={formData.name}
+              onChangeText={text => handleTextChange('name', text)}
+            />
+          </View>
 
           {/* Address Form */}
           <View style={styles.inputContainer}>

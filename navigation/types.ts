@@ -50,6 +50,7 @@ export type RootStackParamList = {
   SavedProducts: undefined;
   Under99Products: undefined;
   Under199Products: undefined;
+  BrandDetail: { brand: string };
 };
 
 export type HomeTabParamList = {

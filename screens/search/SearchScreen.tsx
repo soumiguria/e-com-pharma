@@ -228,7 +228,9 @@ const SearchScreen = () => {
     },
     productCard: {
       width: '48%',
-      marginBottom: 12,
+      marginBottom: 20, // Ensure add button is visible
+      minHeight: 180, // Ensure enough height for ProductCard
+      overflow: 'visible', // Prevent clipping
     },
     viewAllButton: {
       alignItems: 'center',
@@ -313,7 +315,6 @@ const SearchScreen = () => {
                   <ProductCard
                     product={product}
                     onPress={() => handleProductPress(product)}
-                    compact={true}
                   />
                 </View>
               ))}
@@ -336,7 +337,6 @@ const SearchScreen = () => {
                   <ProductCard
                     product={product}
                     onPress={() => handleProductPress(product)}
-                    compact={true}
                   />
                 </View>
               ))}
@@ -359,7 +359,6 @@ const SearchScreen = () => {
                   <ProductCard
                     product={product}
                     onPress={() => handleProductPress(product)}
-                    compact={true}
                   />
                 </View>
               ))}

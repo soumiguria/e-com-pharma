@@ -12,6 +12,7 @@ import {
   Modal,
   Pressable,
   Animated,
+  TextInput,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -277,7 +278,7 @@ const CategoryDetailScreen = () => {
   const route = useRoute<RouteProp<RootStackParamList, 'CategoryDetail'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { theme } = useTheme();
-  const { addToGroceryCart } = useCart();
+  const { addToGroceryCart, addToPharmacyCart, removeFromCart } = useCart();
   const { category } = route.params;
   const subCategories = Array.isArray(category.subCategories) && category.subCategories.length > 0
     ? category.subCategories
@@ -293,6 +294,18 @@ const CategoryDetailScreen = () => {
   const [selectedVariants, setSelectedVariants] = useState<{ [productId: string]: { id: string; name: string; price: number; stock: number } | undefined }>({});
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showSortModal, setShowSortModal] = useState(false);
+  // 1. Add state for selected filter tab and search
+  const [selectedFilterTab, setSelectedFilterTab] = useState('Brand');
+  const [brandSearch, setBrandSearch] = useState('');
+  const filterTabs = [
+    { key: 'Brand', label: 'Brand' },
+    { key: 'Type', label: 'Type' },
+    { key: 'Quantity', label: 'Quantity' },
+    { key: 'DietPref', label: 'Diet Prefe..' },
+  ];
+
+  // Add state for product quantities
+  const [productQuantities, setProductQuantities] = useState<{ [productId: string]: number }>({});
 
   const selectedSubCategory = subCategories.find((sc: SubCategory) => sc.id === selectedSubCategoryId);
   let products: Product[] = selectedSubCategory ? selectedSubCategory.products : [];
@@ -476,12 +489,44 @@ const CategoryDetailScreen = () => {
                       {product.availableQty ? `In stock: ${product.availableQty}` : 'Available'}
                     </Text>
                     <View style={styles.addRowList}>
-                      <TouchableOpacity
-                        style={[styles.addBtn, { backgroundColor: theme.colors.primary, shadowColor: theme.colors.primary }]}
-                        onPress={() => handleAddToCart(product, selectedVariant)}
-                      >
-                        <Text style={styles.addBtnText}>Add</Text>
-                      </TouchableOpacity>
+                      {productQuantities[product.id] > 0 ? (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 6, borderWidth: 1.5, borderColor: '#27ae60', height: 28, minWidth: 70, paddingHorizontal: 4, margin: 0 }}>
+                          <TouchableOpacity onPress={() => {
+                            setProductQuantities(q => {
+                              const newQty = Math.max(0, (q[product.id] || 1) - 1);
+                              if (newQty === 0) {
+                                removeFromCart(product.id, 'grocery');
+                                // Remove the product from state
+                                const { [product.id]: _, ...rest } = q;
+                                return rest;
+                              }
+                              return { ...q, [product.id]: newQty };
+                            });
+                          }} style={{ width: 28, height: 28, justifyContent: 'center', alignItems: 'center' }}>
+                            <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>-</Text>
+                          </TouchableOpacity>
+                          <Text style={{ width: 24, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 16 }}>{productQuantities[product.id]}</Text>
+                          <TouchableOpacity onPress={() => {
+                            setProductQuantities(q => {
+                              const newQty = (q[product.id] || 0) + 1;
+                              addToGroceryCart({ id: product.id, name: product.name, price: product.price, image: product.image });
+                              return { ...q, [product.id]: newQty };
+                            });
+                          }} style={{ width: 28, height: 28, justifyContent: 'center', alignItems: 'center' }}>
+                            <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>+</Text>
+                          </TouchableOpacity>
+                        </View>
+                      ) : (
+                        <TouchableOpacity
+                          style={[styles.addBtn, { backgroundColor: theme.colors.primary, shadowColor: theme.colors.primary }]}
+                          onPress={() => {
+                            setProductQuantities(q => ({ ...q, [product.id]: 1 }));
+                            addToGroceryCart({ id: product.id, name: product.name, price: product.price, image: product.image });
+                          }}
+                        >
+                          <Text style={styles.addBtnText}>Add</Text>
+                        </TouchableOpacity>
+                      )}
                       <TouchableOpacity
                         style={styles.favBtn}
                         onPress={() => handleFavToggle(product.id)}
@@ -508,108 +553,78 @@ const CategoryDetailScreen = () => {
         onRequestClose={() => setShowFilterModal(false)}
       >
         <Pressable style={{ flex: 1, backgroundColor: theme.colors.text + '55' }} onPress={() => setShowFilterModal(false)} />
-        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: theme.colors.surface, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 24, minHeight: 420 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.colors.text }}>Filters</Text>
-            <TouchableOpacity onPress={clearAllFilters}>
-              <Text style={{ color: theme.colors.primary, fontWeight: 'bold', fontSize: 16 }}>Clear All</Text>
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 18, borderTopRightRadius: 18, minHeight: 480, maxHeight: height * 0.85 }}>
+          {/* Top Bar */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: 1, borderBottomColor: '#eee' }}>
+            <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#222' }}>Filters</Text>
+            <TouchableOpacity onPress={() => setShowFilterModal(false)}>
+              <MaterialCommunityIcons name="close" size={24} color="#222" />
             </TouchableOpacity>
           </View>
-          <ScrollView style={{ maxHeight: 320 }}>
-            {/* Brand Filter */}
-            <Text style={{ color: theme.colors.text, fontWeight: '600', fontSize: 16, marginBottom: 8 }}>Brand</Text>
-            {allBrands.map((brand) => (
-              <TouchableOpacity
-                key={brand}
-                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}
-                onPress={() => {
-                  setSelectedBrands((prev) =>
-                    prev.includes(brand)
-                      ? prev.filter((b) => b !== brand)
-                      : [...prev, brand]
-                  );
-                }}
-              >
-                <MaterialCommunityIcons
-                  name={selectedBrands.includes(brand) ? 'checkbox-marked' : 'checkbox-blank-outline'}
-                  size={22}
-                  color={selectedBrands.includes(brand) ? theme.colors.primary : theme.colors.text}
-                  style={{ marginRight: 12 }}
-                />
-                <Text style={{ color: theme.colors.text, fontSize: 15 }}>{brand}</Text>
-              </TouchableOpacity>
-            ))}
-            {/* Price Filter */}
-            <Text style={{ color: theme.colors.text, fontWeight: '600', fontSize: 16, marginVertical: 12 }}>Price</Text>
-            {priceOptions.map((opt) => (
-              <TouchableOpacity
-                key={opt.key}
-                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}
-                onPress={() => setSelectedPrice(opt.key)}
-              >
-                <MaterialCommunityIcons
-                  name={selectedPrice === opt.key ? 'radiobox-marked' : 'radiobox-blank'}
-                  size={22}
-                  color={selectedPrice === opt.key ? theme.colors.primary : theme.colors.text}
-                  style={{ marginRight: 12 }}
-                />
-                <Text style={{ color: theme.colors.text, fontSize: 15 }}>{opt.label}</Text>
-              </TouchableOpacity>
-            ))}
-            {/* Pack Size Filter */}
-            <Text style={{ color: theme.colors.text, fontWeight: '600', fontSize: 16, marginVertical: 12 }}>Pack Size</Text>
-            {packSizeOptions.map((opt) => (
-              <TouchableOpacity
-                key={opt.key}
-                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}
-                onPress={() => {
-                  setSelectedPackSizes((prev) =>
-                    prev.includes(opt.key)
-                      ? prev.filter((b) => b !== opt.key)
-                      : [...prev, opt.key]
-                  );
-                }}
-              >
-                <MaterialCommunityIcons
-                  name={selectedPackSizes.includes(opt.key) ? 'checkbox-marked' : 'checkbox-blank-outline'}
-                  size={22}
-                  color={selectedPackSizes.includes(opt.key) ? theme.colors.primary : theme.colors.text}
-                  style={{ marginRight: 12 }}
-                />
-                <Text style={{ color: theme.colors.text, fontSize: 15 }}>{opt.label}</Text>
-              </TouchableOpacity>
-            ))}
-            {/* Discount Filter */}
-            <Text style={{ color: theme.colors.text, fontWeight: '600', fontSize: 16, marginVertical: 12 }}>Discount</Text>
-            {discountOptions.map((opt) => (
-              <TouchableOpacity
-                key={opt.key}
-                style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}
-                onPress={() => setSelectedDiscount(opt.key)}
-              >
-                <MaterialCommunityIcons
-                  name={selectedDiscount === opt.key ? 'radiobox-marked' : 'radiobox-blank'}
-                  size={22}
-                  color={selectedDiscount === opt.key ? theme.colors.primary : theme.colors.text}
-                  style={{ marginRight: 12 }}
-                />
-                <Text style={{ color: theme.colors.text, fontSize: 15 }}>{opt.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-          <TouchableOpacity
-            style={{
-              marginTop: 24,
-              backgroundColor: theme.colors.primary,
-              borderRadius: 8,
-              paddingVertical: 14,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-            onPress={() => setShowFilterModal(false)}
-          >
-            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Apply</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', flex: 1 }}>
+            {/* Left: Tabs */}
+            <View style={{ width: 110, backgroundColor: '#F8F8F8', borderRightWidth: 1, borderRightColor: '#eee', paddingVertical: 8 }}>
+              {filterTabs.map(tab => (
+                <TouchableOpacity
+                  key={tab.key}
+                  style={{ paddingVertical: 14, paddingHorizontal: 10, backgroundColor: selectedFilterTab === tab.key ? '#fff' : 'transparent', borderLeftWidth: 3, borderLeftColor: selectedFilterTab === tab.key ? '#1A7B50' : 'transparent' }}
+                  onPress={() => setSelectedFilterTab(tab.key)}
+                >
+                  <Text style={{ color: selectedFilterTab === tab.key ? '#1A7B50' : '#222', fontWeight: selectedFilterTab === tab.key ? 'bold' : 'normal', fontSize: 15 }}>{tab.label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            {/* Right: Filter Options */}
+            <View style={{ flex: 1, padding: 16 }}>
+              {selectedFilterTab === 'Brand' && (
+                <>
+                  <View style={{ backgroundColor: '#F4F4F4', borderRadius: 8, flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingHorizontal: 8 }}>
+                    <MaterialCommunityIcons name="magnify" size={18} color="#888" />
+                    <TextInput
+                      style={{ flex: 1, height: 36, fontSize: 15, marginLeft: 6 }}
+                      placeholder="Search"
+                      placeholderTextColor="#aaa"
+                      value={brandSearch}
+                      onChangeText={setBrandSearch}
+                    />
+                  </View>
+                  <ScrollView style={{ maxHeight: 260 }}>
+                    {allBrands.filter(b => b.toLowerCase().includes(brandSearch.toLowerCase())).map((brand) => (
+                      <TouchableOpacity
+                        key={brand}
+                        style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 10 }}
+                        onPress={() => {
+                          setSelectedBrands((prev) =>
+                            prev.includes(brand)
+                              ? prev.filter((b) => b !== brand)
+                              : [...prev, brand]
+                          );
+                        }}
+                      >
+                        <MaterialCommunityIcons
+                          name={selectedBrands.includes(brand) ? 'checkbox-marked' : 'checkbox-blank-outline'}
+                          size={22}
+                          color={selectedBrands.includes(brand) ? '#1A7B50' : '#888'}
+                          style={{ marginRight: 12 }}
+                        />
+                        <Text style={{ color: '#222', fontSize: 15 }}>{brand}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </ScrollView>
+                </>
+              )}
+              {/* Add similar blocks for other tabs (Type, AtteType, Quantity, DietPref) as needed */}
+            </View>
+          </View>
+          {/* Bottom Buttons */}
+          <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#eee', padding: 12, backgroundColor: '#fff' }}>
+            <TouchableOpacity style={{ flex: 1, backgroundColor: '#F4F4F4', borderRadius: 8, paddingVertical: 12, alignItems: 'center', marginRight: 8 }} onPress={clearAllFilters}>
+              <Text style={{ color: '#888', fontWeight: 'bold', fontSize: 15 }}>Clear filters</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={{ flex: 1, backgroundColor: '#1A7B50', borderRadius: 8, paddingVertical: 12, alignItems: 'center' }} onPress={() => setShowFilterModal(false)}>
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>Apply</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
       {/* Sort Modal Sheet */}

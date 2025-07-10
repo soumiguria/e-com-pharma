@@ -1,6 +1,9 @@
 import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/types';
 
 const brands = [
     { id: '1', name: 'Coca-Cola', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Coca-Cola_logo.svg/2560px-Coca-Cola_logo.svg.png' },
@@ -15,20 +18,25 @@ const brands = [
 
 const BrandsGrid = () => {
     const { theme } = useTheme();
+    const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
 
     const renderItem = ({ item }: { item: typeof brands[0] }) => (
-        <TouchableOpacity style={[
-            styles.card,
-            {
-                backgroundColor: theme.dark ? '#4B3F1D' : '#FFF9E5',
-                borderColor: theme.colors.border,
-                shadowColor: theme.dark ? '#000' : '#FFD700',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.08,
-                shadowRadius: 4,
-                elevation: 2,
-            }
-        ]}>
+        <TouchableOpacity
+            style={[
+                styles.card,
+                {
+                    backgroundColor: theme.dark ? '#4B3F1D' : '#FFF9E5',
+                    borderColor: theme.colors.border,
+                    shadowColor: theme.dark ? '#000' : '#FFD700',
+                    shadowOffset: { width: 0, height: 2 },
+                    shadowOpacity: 0.08,
+                    shadowRadius: 4,
+                    elevation: 2,
+                }
+            ]}
+            onPress={() => navigation.navigate('BrandDetail', { brand: item.name })}
+            activeOpacity={0.85}
+        >
             <Image source={{ uri: item.image }} style={styles.image} resizeMode="contain" />
         </TouchableOpacity>
     );

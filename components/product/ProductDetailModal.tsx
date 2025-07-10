@@ -100,13 +100,6 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ visible, produc
       image: product.image
     };
     addToGroceryCart(cartItem);
-    Toast.show({
-      type: 'success',
-      text1: 'Added to Cart',
-      text2: `${product.name} has been added to your cart`,
-      position: 'bottom',
-      visibilityTime: 2000,
-    });
     onClose();
   };
 

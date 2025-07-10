@@ -11,6 +11,7 @@ import {
   Text,
   ScrollView,
   BackHandler,
+  Image as RNImage,
 } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons, Ionicons, MaterialIcons } from '@expo/vector-icons';
@@ -132,10 +133,9 @@ const Header = ({ onProfilePress, themedStyles }: { onProfilePress: () => void, 
           style={themedStyles.headerIcon}
           onPress={() => navigation.navigate('GreatOffersScreen')}
         >
-          <MaterialCommunityIcons 
-            name="tag-outline" 
-            size={24} 
-            color={theme.colors.text} 
+          <RNImage
+            source={require('../../assets/discount.png')}
+            style={{ width: 26, height: 26, resizeMode: 'contain', marginTop: 1 }}
           />
         </TouchableOpacity>
         <TouchableOpacity 

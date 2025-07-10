@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, SafeAreaView, Alert, TextInput } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../../navigation/types';
 import { Appbar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
@@ -20,7 +22,7 @@ const brands = [
 
 const BrandsScreen = () => {
   const { theme } = useTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [search, setSearch] = useState('');
   const filteredBrands = brands.filter(b => b.name.toLowerCase().includes(search.toLowerCase()));
   const renderItem = ({ item }: { item: typeof brands[0] }) => (
@@ -40,7 +42,7 @@ const BrandsScreen = () => {
           elevation: 3,
         },
       ]}
-      onPress={() => Alert.alert('Brand', item.name)}
+      onPress={() => navigation.navigate('BrandDetail', { brand: item.name })}
       activeOpacity={0.85}
     >
       <Image source={{ uri: item.image }} style={[styles.image, { borderRadius: 12, marginBottom: 10 }]} />

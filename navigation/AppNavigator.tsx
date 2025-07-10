@@ -38,6 +38,7 @@ import SavedProductsScreen from '../screens/profile/SavedProductsScreen';
 import Under99ProductsScreen from '../screens/product/Under99ProductsScreen';
 import Under199ProductsScreen from '../screens/product/Under199ProductsScreen';
 import SearchResultsScreen from '../screens/search/SearchResultsScreen';
+import BrandDetailScreen from '../screens/category/BrandDetailScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -69,6 +70,7 @@ const AppNavigator = () => {
       <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
       <Stack.Screen name="CategoriesScreen" component={CategoriesScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BrandsScreen" component={BrandsScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="BrandDetail" component={BrandDetailScreen} />
       <Stack.Screen name="RecentlyBoughtScreen" component={RecentlyBoughtScreen} options={{ headerShown: false }} />
       <Stack.Screen name="GreatOffersScreen" component={GreatOffersScreen} options={{ headerShown: false }} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />

@@ -6,6 +6,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import { useCart } from '../../contexts/CartContext';
 
 const deliveryMethods = [
   { id: '1', label: 'Store Pickup' },
@@ -37,12 +38,11 @@ const userAddresses = [
 const PaymentMethodsScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { clearCart } = useCart();
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = React.useState('1');
   const [selectedAddress, setSelectedAddress] = React.useState(userAddresses[0].id);
   const [selectedSpeed, setSelectedSpeed] = React.useState('1');
   const [selectedTimeSlot, setSelectedTimeSlot] = React.useState(timeSlots[0]);
-  const [addressModalVisible, setAddressModalVisible] = React.useState(false);
-  const [manualAddress, setManualAddress] = React.useState('');
   const [addresses, setAddresses] = React.useState(userAddresses);
 
   const styles = StyleSheet.create({
@@ -138,15 +138,8 @@ const PaymentMethodsScreen = () => {
     },
   });
 
-  const handleAddManualAddress = () => {
-    if (manualAddress.trim()) {
-      const newId = (addresses.length + 1).toString();
-      setAddresses([...addresses, { id: newId, address: manualAddress }]);
-      setSelectedAddress(newId);
-      setManualAddress('');
-      setAddressModalVisible(false);
-    }
-  };
+  // Assume defaultAddress is passed as a prop or imported from a shared context/state
+  const defaultAddress = addresses.find(addr => addr.id === selectedAddress);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -166,45 +159,18 @@ const PaymentMethodsScreen = () => {
         </View>
 
         {/* Delivery Address - only for Home Delivery */}
-        {selectedDeliveryMethod === '2' && (
+        {selectedDeliveryMethod === '2' && defaultAddress && (
           <>
             <Text style={styles.sectionTitle}>Delivery Address</Text>
             <View style={styles.row}>
-              {addresses.map(addr => (
-                <TouchableOpacity
-                  key={addr.id}
-                  style={[styles.chip, selectedAddress === addr.id && styles.chipSelected]}
-                  onPress={() => setSelectedAddress(addr.id)}
-                >
-                  <Text style={[styles.chipText, selectedAddress === addr.id && styles.chipTextSelected]}>{addr.address}</Text>
-                </TouchableOpacity>
-              ))}
+              <View style={[styles.chip, styles.chipSelected]}>
+                <Text style={[styles.chipText, styles.chipTextSelected]}>{defaultAddress.address}</Text>
+              </View>
             </View>
-            <TouchableOpacity style={styles.changeAddressBtn} onPress={() => setAddressModalVisible(true)}>
+            <TouchableOpacity style={styles.changeAddressBtn} onPress={() => navigation.navigate('MyAddresses')}>
               <Text style={styles.changeAddressText}>Change Address</Text>
             </TouchableOpacity>
           </>
-        )}
-
-        {/* Address Modal */}
-        {addressModalVisible && (
-          <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-              <Text style={{ fontWeight: 'bold', marginBottom: 8 }}>Enter New Address</Text>
-              <TextInput
-                style={styles.input}
-                value={manualAddress}
-                onChangeText={setManualAddress}
-                placeholder="Type your address"
-              />
-              <TouchableOpacity style={styles.modalButton} onPress={handleAddManualAddress}>
-                <Text style={styles.modalButtonText}>Save Address</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalButton, { backgroundColor: '#ccc', marginTop: 8 }]} onPress={() => setAddressModalVisible(false)}>
-                <Text style={[styles.modalButtonText, { color: '#222' }]}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
         )}
 
         {/* Delivery Speed */}
@@ -255,7 +221,10 @@ const PaymentMethodsScreen = () => {
         </View>
 
         {/* Place Order Button */}
-        <ThemedButton title="Place Order" onPress={() => navigation.navigate('PhoneAuth', { cartType: 'grocery' })} style={{ marginTop: 24 }} />
+        <ThemedButton title="Place Order" onPress={() => {
+          clearCart();
+          navigation.navigate('PhoneAuth', { cartType: 'grocery' });
+        }} style={{ marginTop: 24 }} />
       </ScrollView>
     </SafeAreaView>
   );

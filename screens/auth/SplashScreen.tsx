@@ -109,43 +109,12 @@ const SplashScreen = () => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={[colors.primary, colors.secondary, colors.primary]} // Removed primaryDark
-        style={styles.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        locations={[0, 0.5, 1]}
-      >
-        {/* Animated logo */}
-        <Animated.View style={[
-          styles.logoContainer,
-          {
-            opacity: opacityValue,
-            transform: [
-              { scale: scaleValue },
-              { rotate: rotateInterpolate },
-            ],
-          }
-        ]}>
-          <Image
-            source={require('../../assets/logo.png')}
-            style={styles.logo}
-          />
-          <Animated.Text style={[styles.title, { opacity: opacityValue }]}>
-            E-Com Pharma
-          </Animated.Text>
-          <Animated.Text style={[styles.tagline, { opacity: opacityValue }]}>
-            Secure. Simple. Smart.
-          </Animated.Text>
-        </Animated.View>
-        
-        {/* Optional: Add some decorative elements */}
-        <View style={styles.particles}>
-          {/* You could add small decorative elements here */}
-        </View>
-      </LinearGradient>
-    </SafeAreaView>
+    <View style={{ flex: 1 }}>
+      <Image
+        source={require('../../assets/splash.png')}
+        style={{ width: '100%', height: '100%', resizeMode: 'cover' }}
+      />
+    </View>
   );
 };
 

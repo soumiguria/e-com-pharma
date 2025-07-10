@@ -6,8 +6,8 @@ import { useNavigation } from '@react-navigation/native';
 import { Appbar } from 'react-native-paper';
 
 const offers = [
-  { id: '1', name: 'Amul Milk 1L', image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg', price: 65, offer: '10% OFF' },
-  { id: '2', name: 'Britannia Cheese Slices', image: 'https://blinkit.com/images/products/400/britannia-cheese-slices.jpg', price: 120, offer: 'Buy 1 Get 1' },
+  { id: '1', name: 'Amul Milk 1L', image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg', price: 65, originalPrice: 80, offer: '10% OFF' },
+  { id: '2', name: 'Britannia Cheese Slices', image: 'https://blinkit.com/images/products/400/britannia-cheese-slices.jpg', price: 120, originalPrice: 150, offer: 'Buy 1 Get 1' },
   { id: '3', name: 'Mother Dairy Curd', image: 'https://blinkit.com/images/products/400/mother-dairy-dahi.jpg', price: 30, offer: '5% OFF' },
   { id: '4', name: 'Tropicana Juice', image: 'https://blinkit.com/images/products/400/tropicana-orange-delight.jpg', price: 90, offer: '15% OFF' },
   { id: '5', name: 'Cadbury Dairy Milk', image: 'https://blinkit.com/images/products/400/cadbury-dairy-milk-chocolate.jpg', price: 45, offer: '20% OFF' },
@@ -41,6 +41,12 @@ const GreatOffersScreen = () => {
       <Image source={{ uri: item.image }} style={[styles.image, { borderRadius: 12 }]} />
       <Text style={[styles.name, { color: theme.colors.text, fontWeight: 'bold', fontSize: 16, marginTop: 8 }]} numberOfLines={2}>{item.name}</Text>
       <Text style={[styles.price, { color: theme.colors.primary, fontWeight: 'bold', fontSize: 15 }]}>{`₹${item.price}`}</Text>
+      {item.originalPrice && item.originalPrice > item.price && (
+        <Text style={[styles.price, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>{`₹${item.originalPrice.toFixed(2)}`}</Text>
+      )}
+      {item.originalPrice && item.originalPrice > item.price && (
+        <Text style={[styles.price, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% off</Text>
+      )}
     </TouchableOpacity>
   );
   return (

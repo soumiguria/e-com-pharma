@@ -6,6 +6,7 @@ interface CartItem {
   id: string;
   name: string;
   price: number;
+  originalPrice?: number; // Optional original price for MRP/discount
   image: string;
   quantity: number;
   category: 'grocery' | 'pharmacy';

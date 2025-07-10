@@ -35,7 +35,7 @@ interface AppContextType {
   setUser: (user: User | null) => void;
 }
 
-const AppContext = createContext<AppContextType | undefined>(undefined);
+export const AppContext = createContext<any>(null);
 
 export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
@@ -44,27 +44,10 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [user, setUser] = useState<User | null>(null);
 
   return (
-    <AppContext.Provider
-      value={{
-        selectedStore,
-        setSelectedStore,
-        userLocation,
-        setUserLocation,
-        cart,
-        setCart,
-        user,
-        setUser,
-      }}
-    >
+    <AppContext.Provider value={{ selectedStore, setSelectedStore }}>
       {children}
     </AppContext.Provider>
   );
 };
 
-export const useAppContext = () => {
-  const context = useContext(AppContext);
-  if (context === undefined) {
-    throw new Error('useAppContext must be used within an AppProvider');
-  }
-  return context;
-}; 
+export const useAppContext = () => useContext(AppContext); 

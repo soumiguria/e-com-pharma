@@ -175,7 +175,7 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
         <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
           <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Menu</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>Hi, Username</Text>
       </View>
 
       <ScrollView style={styles.menuContainer} showsVerticalScrollIndicator={false}>
