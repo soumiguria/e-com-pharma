@@ -14,6 +14,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import SvgUri from 'react-native-svg-uri';
 
 type OrderConfirmationNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderConfirmation'>;
 
@@ -241,10 +242,11 @@ const OrderConfirmationScreen = () => {
                 opacity: logoOpacity,
               }}
             >
-              <Image
-                source={require('../../assets/logo.png')}
+              <SvgUri
+                width={80}
+                height={80}
+                source={require('../../assets/logo.svg')}
                 style={styles.logo}
-                resizeMode="contain"
               />
             </Animated.View>
           </View>

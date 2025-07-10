@@ -6,6 +6,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { RootStackParamList } from '../../navigation/types';
+import SvgUri from 'react-native-svg-uri';
 
 type SplashScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
 
@@ -70,13 +71,7 @@ const SplashScreen = () => {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: colors.background, // Fallback background
-    },
-    gradient: {
-      width,
-      height,
-      justifyContent: 'center',
-      alignItems: 'center',
+      backgroundColor: '#FFF8EC', // Light cream background
     },
     logoContainer: {
       alignItems: 'center',
@@ -85,66 +80,44 @@ const SplashScreen = () => {
     logo: {
       width: width * 0.5,
       height: width * 0.5,
-      resizeMode: 'contain',
     },
     title: {
-      ...typography.h1,
-      color: colors.text, // Using standard text color instead of inverted
-      marginTop: spacing.lg,
-      textShadowColor: 'rgba(0, 0, 0, 0.2)',
-      textShadowOffset: { width: 1, height: 1 },
-      textShadowRadius: 3,
+      fontSize: 36,
+      fontWeight: 'bold',
+      color: '#18404A',
+      marginTop: 32,
+      textAlign: 'center',
     },
     tagline: {
-      ...typography.body1, // Changed from body to body1
-      color: colors.text, // Using standard text color
-      marginTop: spacing.sm,
+      fontSize: 22,
+      color: '#18404A',
+      marginTop: 12,
+      textAlign: 'center',
       opacity: 0.8,
-    },
-    particles: {
-      position: 'absolute',
-      width: '100%',
-      height: '100%',
     },
   });
 
   return (
     <SafeAreaView style={styles.container}>
-      <LinearGradient
-        colors={[colors.primary, colors.secondary, colors.primary]} // Removed primaryDark
-        style={styles.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        locations={[0, 0.5, 1]}
-      >
-        {/* Animated logo */}
-        <Animated.View style={[
-          styles.logoContainer,
-          {
-            opacity: opacityValue,
-            transform: [
-              { scale: scaleValue },
-              { rotate: rotateInterpolate },
-            ],
-          }
-        ]}>
-          <Image
-            source={require('../../assets/logo.png')}
-            style={styles.logo}
-          />
-          <Animated.Text style={[styles.title, { opacity: opacityValue }]}>
-            E-Com Pharma
-          </Animated.Text>
-          <Animated.Text style={[styles.tagline, { opacity: opacityValue }]}>
-            Secure. Simple. Smart.
-          </Animated.Text>
-        </Animated.View>
-        
-        {/* Optional: Add some decorative elements */}
-        <View style={styles.particles}>
-          {/* You could add small decorative elements here */}
-        </View>
-      </LinearGradient>
+      <Animated.View style={[
+        styles.logoContainer,
+        {
+          opacity: opacityValue,
+          transform: [
+            { scale: scaleValue },
+            { rotate: rotateInterpolate },
+          ],
+        }
+      ]}>
+        <SvgUri
+          width={width * 0.5}
+          height={width * 0.5}
+          source={require('../../assets/logo.svg')}
+          style={styles.logo}
+        />
+        <Animated.Text style={[styles.title, { opacity: opacityValue }]}>Paas Ki Dukaan</Animated.Text>
+        <Animated.Text style={[styles.tagline, { opacity: opacityValue }]}>Aapki Apni Dukaan</Animated.Text>
+      </Animated.View>
     </SafeAreaView>
   );
 };

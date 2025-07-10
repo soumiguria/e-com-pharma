@@ -92,11 +92,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
         
         {!hideCartButton && (
           <TouchableOpacity 
-            style={styles.addButton}
+            style={styles.fabAddButton}
             onPress={handleAddToCart}
             activeOpacity={0.85}
           >
-            <Text style={styles.addButtonText}>ADD</Text>
+            <MaterialIcons name="add" size={20} color="#fff" />
           </TouchableOpacity>
         )}
       </View>
@@ -263,6 +263,22 @@ const styles = StyleSheet.create({
   },
   compactOriginalPrice: {
     fontSize: 12,
+  },
+  fabAddButton: {
+    position: 'absolute',
+    bottom: 8,
+    right: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#27ae60',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 3,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.18,
+    shadowRadius: 2,
   },
 });
 

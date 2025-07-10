@@ -45,13 +45,35 @@ const StoreCard = ({ store, onPress, style}: { store: any, onPress: () => void, 
       flexDirection: 'row',
       alignItems: 'center',
     },
+    avatar: {
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      marginRight: theme.spacing.md,
+      backgroundColor: '#fff',
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      overflow: 'hidden',
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    nameRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      marginBottom: theme.spacing.xs,
+    },
   });
 
   return (
     <TouchableOpacity style={[styles.card, style]} onPress={onPress}>
       <Image source={store.image} style={styles.image} resizeMode="cover" />
       <View style={styles.content}>
-        <Text style={styles.name}>{store.name}</Text>
+        <View style={styles.nameRow}>
+          <View style={styles.avatar}>
+            <Image source={store.image} style={{ width: 44, height: 44, borderRadius: 22 }} resizeMode="cover" />
+          </View>
+          <Text style={styles.name}>{store.name.replace(/Grocery|Pharmacy/gi, '').trim()}</Text>
+        </View>
         <View style={styles.details}>
           <Text style={styles.detailText}>{store.distance}</Text>
           <View style={styles.rating}>
@@ -60,9 +82,7 @@ const StoreCard = ({ store, onPress, style}: { store: any, onPress: () => void, 
               size={16} 
               color={theme.colors.primary} 
             />
-            <Text style={[styles.detailText, { marginLeft: 4 }]}>
-              {store.rating}
-            </Text>
+            <Text style={[styles.detailText, { marginLeft: 4 }]}> {store.rating}</Text>
           </View>
         </View>
       </View>

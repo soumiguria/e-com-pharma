@@ -121,11 +121,6 @@ const Header = ({ onProfilePress, themedStyles }: { onProfilePress: () => void, 
           size={28} 
           color={theme.colors.text} 
         />
-        {selectedStore && (
-          <Text style={[themedStyles.storeName, {color: theme.colors.text, marginLeft: 10, fontWeight: 'bold', fontSize: 17}]} numberOfLines={1}>
-            {selectedStore.name}
-          </Text>
-        )}
       </TouchableOpacity>
       <View style={themedStyles.headerRight}>
         <TouchableOpacity 
@@ -138,6 +133,11 @@ const Header = ({ onProfilePress, themedStyles }: { onProfilePress: () => void, 
             color={theme.colors.text} 
           />
         </TouchableOpacity>
+        {selectedStore && (
+          <Text style={[themedStyles.storeName, {color: theme.colors.text, marginLeft: 10, fontWeight: 'bold', fontSize: 17}]} numberOfLines={1}>
+            {selectedStore.name}
+          </Text>
+        )}
         <TouchableOpacity 
           style={themedStyles.headerIcon}
           onPress={() => navigation.navigate('Cart')}
