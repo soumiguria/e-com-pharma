@@ -465,7 +465,7 @@ const CategoryDetailScreen = () => {
                   <View style={styles.productInfoList}>
                     <Text style={[styles.productName, { color: theme.colors.text }]}>{product.name}</Text>
                     {product.brand && <Text style={[styles.productBrand, { color: theme.colors.secondary }]}>{product.brand}</Text>}
-                    <Text style={[styles.productPrice, { color: theme.colors.primary }]}>{selectedVariant ? selectedVariant.price : product.price}</Text>
+                    <Text style={[styles.productPrice, { color: theme.colors.primary }]}>{selectedVariant ? selectedVariant.price.toFixed(2) : product.price.toFixed(2)}</Text>
                     {product.variants && (
                       <View style={styles.productVariants}>
                         {product.variants.map((variant: { id: string; name: string; price: number; stock: number }) => (

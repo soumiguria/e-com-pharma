@@ -22,9 +22,9 @@ const PriceBlock: React.FC<PriceBlockProps> = ({ price, originalPrice, perUnit }
         </View>
       )}
       <View style={styles.row}>
-        <Text style={styles.price}>₹{price}</Text>
+        <Text style={styles.price}>₹{price.toFixed(2)}</Text>
         {hasDiscount && (
-          <Text style={styles.mrp}>₹{originalPrice}</Text>
+          <Text style={styles.mrp}>₹{originalPrice?.toFixed(2)}</Text>
         )}
       </View>
       {perUnit && (

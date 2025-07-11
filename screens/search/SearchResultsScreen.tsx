@@ -6,6 +6,7 @@ import {
   FlatList,
   SafeAreaView,
   TouchableOpacity,
+  Image,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -53,6 +54,11 @@ const SearchResultsScreen = () => {
   const navigation = useNavigation<SearchResultsScreenNavigationProp>();
   const route = useRoute();
   const { query } = route.params as { query: string };
+
+  // Filter results based on query
+  const filteredResults = mockSearchResults.filter(product =>
+    product.name.toLowerCase().includes(query.toLowerCase())
+  );
 
   const handleProductPress = (product: any) => {
     navigation.navigate('ProductDetail', { product });
@@ -155,24 +161,42 @@ const SearchResultsScreen = () => {
 
         <View style={styles.content}>
           <Text style={styles.resultsCount}>
-            {mockSearchResults.length} results for "{query}"
+            {filteredResults.length} results for "{query}"
           </Text>
           
-          {mockSearchResults.length === 0 ? (
+          {filteredResults.length === 0 ? (
             <View style={styles.noResultsContainer}>
               <MaterialIcons name="search-off" size={64} color={theme.colors.secondary} />
               <Text style={styles.noResultsText}>No products found for "{query}"</Text>
             </View>
           ) : (
             <View style={styles.productsGrid}>
-              {mockSearchResults.map((product) => (
-                <View key={product.id} style={styles.productCard}>
-                  <ProductCard
-                    product={product}
-                    onPress={() => handleProductPress(product)}
-                    compact={true}
-                  />
-                </View>
+              {filteredResults.map((product) => (
+                <TouchableOpacity
+                  key={product.id}
+                  style={{
+                    width: '48%',
+                    minHeight: 220,
+                    backgroundColor: '#fff',
+                    borderRadius: 18,
+                    padding: 14,
+                    borderWidth: 1,
+                    borderColor: '#f0f0f0',
+                    elevation: 2,
+                    shadowColor: '#000',
+                    shadowOpacity: 0.08,
+                    shadowRadius: 6,
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                    marginBottom: 16,
+                  }}
+                  onPress={() => handleProductPress(product)}
+                  activeOpacity={0.88}
+                >
+                  <Image source={{ uri: product.image }} style={{ width: 90, height: 90, borderRadius: 12, marginBottom: 10, backgroundColor: '#f7f7f7' }} />
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, marginBottom: 6, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>{product.name}</Text>
+                  <Text style={{ fontSize: 16, color: theme.colors.primary, fontWeight: 'bold', textAlign: 'center', marginBottom: 4 }}>₹{product.price.toFixed(2)}</Text>
+                </TouchableOpacity>
               ))}
             </View>
           )}

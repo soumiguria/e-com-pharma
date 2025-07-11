@@ -40,7 +40,7 @@ const GreatOffersScreen = () => {
       <View style={styles.offerBadge}><Text style={styles.offerText}>{item.offer}</Text></View>
       <Image source={{ uri: item.image }} style={[styles.image, { borderRadius: 12 }]} />
       <Text style={[styles.name, { color: theme.colors.text, fontWeight: 'bold', fontSize: 16, marginTop: 8 }]} numberOfLines={2}>{item.name}</Text>
-      <Text style={[styles.price, { color: theme.colors.primary, fontWeight: 'bold', fontSize: 15 }]}>{`₹${item.price}`}</Text>
+      <Text style={[styles.price, { color: theme.colors.primary, fontWeight: 'bold', fontSize: 15 }]}>{`₹${item.price.toFixed(2)}`}</Text>
       {item.originalPrice && item.originalPrice > item.price && (
         <Text style={[styles.price, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>{`₹${item.originalPrice.toFixed(2)}`}</Text>
       )}

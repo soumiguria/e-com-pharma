@@ -80,6 +80,15 @@ const ProductDetailScreen = () => {
     { id: '3', name: 'Large (1kg)', price: extendedProduct.price * 3.2, stock: 8 },
   ];
 
+  // 1. Add state for similar products (mock data for now)
+  const similarProducts = [
+    { id: '101', name: 'Amul Milk 1L', price: 65, originalPrice: 80, image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg' },
+    { id: '102', name: 'Britannia Cheese Slices', price: 120, originalPrice: 150, image: 'https://blinkit.com/images/products/400/britannia-cheese-slices.jpg' },
+    { id: '103', name: 'Mother Dairy Curd', price: 30, originalPrice: 40, image: 'https://blinkit.com/images/products/400/mother-dairy-dahi.jpg' },
+    { id: '104', name: 'Tropicana Juice', price: 90, originalPrice: 100, image: 'https://blinkit.com/images/products/400/tropicana-orange-delight.jpg' },
+    { id: '105', name: 'Cadbury Dairy Milk', price: 45, originalPrice: 50, image: 'https://blinkit.com/images/products/400/cadbury-dairy-milk-chocolate.jpg' },
+  ];
+
   const handleAddToCart = () => {
     const itemToAdd = {
       id: selectedVariant ? `${extendedProduct.id}-${selectedVariant.id}` : extendedProduct.id,
@@ -291,7 +300,7 @@ const ProductDetailScreen = () => {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Large Product Image */}
-        <View style={{ width: '100%', height: width * 0.7, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', marginBottom: 8, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, borderBottomLeftRadius: 18, borderBottomRightRadius: 18 }}>
+        <View style={{ width: '100%', height: width * 0.7, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', marginBottom: 24, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, borderBottomLeftRadius: 18, borderBottomRightRadius: 18, overflow: 'hidden' }}>
           <FlatList
             data={images}
             horizontal
@@ -299,7 +308,9 @@ const ProductDetailScreen = () => {
             showsHorizontalScrollIndicator={false}
             keyExtractor={(_, idx) => idx.toString()}
             renderItem={({ item }) => (
-              <Image source={{ uri: item }} style={{ width, height: width * 0.7, resizeMode: 'contain' }} />
+              <View style={{ width, height: width * 0.7, alignItems: 'center', justifyContent: 'center' }}>
+                <Image source={{ uri: item }} style={{ width: width * 0.8, height: width * 0.6, resizeMode: 'contain', borderRadius: 16, backgroundColor: '#f7f7f7' }} />
+              </View>
             )}
             onScroll={e => {
               const index = Math.round(e.nativeEvent.contentOffset.x / width);
@@ -318,13 +329,14 @@ const ProductDetailScreen = () => {
           </View>
         </View>
         {/* Product Info Card */}
-        <View style={{ backgroundColor: '#fff', borderRadius: 18, marginHorizontal: 12, marginTop: -24, padding: 18, elevation: 2, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8 }}>
+        <View style={{ backgroundColor: '#fff', borderRadius: 18, marginHorizontal: 12, marginTop: 0, marginBottom: 18, padding: 18, elevation: 2, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, zIndex: 2 }}>
           <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.colors.text, marginBottom: 2 }}>{extendedProduct.name}</Text>
-          <Text style={{ fontSize: 15, color: theme.colors.secondary, marginBottom: 8 }}>{selectedVariant ? selectedVariant.name : '5 kg'}</Text>
+          {/* Show selected variant name dynamically */}
+          <Text style={{ fontSize: 15, color: theme.colors.secondary, marginBottom: 8 }}>{selectedVariant ? selectedVariant.name : (variants[0]?.name || '5 kg')}</Text>
           {/* Price Block */}
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, backgroundColor: '#F7F7F7', borderRadius: 8, padding: 8, alignSelf: 'flex-start' }}>
-            <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.colors.primary }}>₹{selectedVariant ? selectedVariant.price : extendedProduct.price}</Text>
-            <Text style={{ fontSize: 15, color: '#888', textDecorationLine: 'line-through', marginLeft: 10 }}>₹{(selectedVariant ? selectedVariant.price * 1.15 : extendedProduct.price * 1.15).toFixed(0)}</Text>
+            <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.colors.primary }}>₹{(selectedVariant ? selectedVariant.price : extendedProduct.price).toFixed(2)}</Text>
+            <Text style={{ fontSize: 15, color: '#888', textDecorationLine: 'line-through', marginLeft: 10 }}>₹{((selectedVariant ? selectedVariant.price : extendedProduct.price) * 1.15).toFixed(2)}</Text>
             <Text style={{ fontSize: 14, color: '#27ae60', fontWeight: 'bold', marginLeft: 10 }}>15% OFF</Text>
           </View>
           {/* Brand Section */}
@@ -336,47 +348,6 @@ const ProductDetailScreen = () => {
             </View>
           </TouchableOpacity>
           <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 10 }} />
-          {/* Add to Cart Button (with +1/-1 counter for selected variant) */}
-          {selectedVariant ? (
-            variantQuantities[selectedVariant.id] > 0 ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'center', backgroundColor: '#fff', borderRadius: 8, borderWidth: 1.5, borderColor: '#27ae60', height: 40, minWidth: 100, paddingHorizontal: 8, marginBottom: 16 }}>
-                <TouchableOpacity onPress={() => {
-                  setVariantQuantities(q => {
-                    if (!selectedVariant) return q;
-                    const newQty = Math.max(0, (q[selectedVariant.id] || 1) - 1);
-                    if (newQty === 0) {
-                      removeFromCart(`${extendedProduct.id}-${selectedVariant.id}`, 'grocery');
-                      const { [selectedVariant.id]: _, ...rest } = q;
-                      return rest;
-                    }
-                    removeFromCart(`${extendedProduct.id}-${selectedVariant.id}`, 'grocery');
-                    return { ...q, [selectedVariant.id]: newQty };
-                  });
-                }} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
-                  <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>-</Text>
-                </TouchableOpacity>
-                <Text style={{ width: 32, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 20 }}>{variantQuantities[selectedVariant.id]}</Text>
-                <TouchableOpacity onPress={() => {
-                  setVariantQuantities(q => {
-                    addToGroceryCart({ id: `${extendedProduct.id}-${selectedVariant.id}`, name: extendedProduct.name, price: selectedVariant.price, image: extendedProduct.image || '', variant: { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1].replace(/[()]/g, '') } });
-                    return { ...q, [selectedVariant.id]: (q[selectedVariant.id] || 0) + 1 };
-                  });
-                }} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
-                  <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>+</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity
-                style={{ backgroundColor: theme.colors.primary, borderRadius: 8, paddingHorizontal: 40, paddingVertical: 12, marginBottom: 16, alignSelf: 'center' }}
-                onPress={() => setVariantQuantities(q => {
-                  addToGroceryCart({ id: `${extendedProduct.id}-${selectedVariant.id}`, name: extendedProduct.name, price: selectedVariant.price, image: extendedProduct.image || '', variant: { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1].replace(/[()]/g, '') } });
-                  return { ...q, [selectedVariant.id]: 1 };
-                })}
-              >
-                <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>Add</Text>
-              </TouchableOpacity>
-            )
-          ) : null}
           {/* View Product Details (Expandable) */}
           <TouchableOpacity onPress={() => setDetailsExpanded(e => !e)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, marginBottom: 2 }}>
             <Text style={{ fontSize: 16, color: theme.colors.primary, fontWeight: 'bold', marginRight: 6 }}>View product details</Text>
@@ -389,7 +360,7 @@ const ProductDetailScreen = () => {
           )}
         </View>
         {/* Available Variants */}
-        <View style={{ marginBottom: 18, backgroundColor: '#fff', borderRadius: 14, padding: 14, elevation: 2, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8 }}>
+        <View style={{ marginBottom: 18, backgroundColor: '#fff', borderRadius: 14, padding: 14, marginHorizontal: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, zIndex: 1 }}>
           <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.colors.text, marginBottom: 10 }}>Available Variants</Text>
           {variants.map((variant, idx) => (
             <TouchableOpacity
@@ -420,7 +391,7 @@ const ProductDetailScreen = () => {
                     </View>
                   )}
                 </View>
-                <Text style={{ fontSize: 15, color: theme.colors.primary, fontWeight: 'bold' }}>₹{variant.price}</Text>
+                <Text style={{ fontSize: 15, color: theme.colors.primary, fontWeight: 'bold' }}>₹{variant.price.toFixed(2)}</Text>
               </View>
               {variantQuantities[variant.id] > 0 ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, borderWidth: 1.5, borderColor: '#27ae60', height: 34, minWidth: 80, paddingHorizontal: 6, margin: 0, shadowColor: '#27ae60', shadowOpacity: 0.08, shadowRadius: 4 }}>
@@ -449,50 +420,102 @@ const ProductDetailScreen = () => {
                   </TouchableOpacity>
                 </View>
               ) : (
-                <TouchableOpacity
-                  style={{ backgroundColor: theme.colors.primary, borderRadius: 8, paddingHorizontal: 22, paddingVertical: 8, elevation: 2 }}
-                  onPress={() => setVariantQuantities(q => {
-                    addToGroceryCart({ id: `${extendedProduct.id}-${variant.id}`, name: extendedProduct.name, price: variant.price, image: extendedProduct.image || '', variant: { name: variant.name, unit: variant.name.split(' ')[1].replace(/[()]/g, '') } });
-                    return { ...q, [variant.id]: 1 };
-                  })}
-                >
-                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>Add</Text>
-                </TouchableOpacity>
+                // Remove the 'Add' button from here (should only be in the fixed bottom bar)
+                null
               )}
             </TouchableOpacity>
           ))}
         </View>
+        {/* Similar Products Section */}
+        <View style={{ marginTop: 8, marginBottom: 24 }}>
+          <Text style={{ fontSize: 18, fontWeight: 'bold', marginLeft: 16, marginBottom: 8 }}>Similar Products</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: 16, paddingRight: 16, paddingVertical: 4 }}>
+            {similarProducts.map(product => (
+              <TouchableOpacity
+                key={product.id}
+                style={{
+                  width: 135,
+                  height: 260,
+                  marginRight: 18,
+                  backgroundColor: '#fff',
+                  borderRadius: 18,
+                  padding: 14,
+                  borderWidth: 1,
+                  borderColor: '#f0f0f0',
+                  elevation: 3,
+                  shadowColor: '#000',
+                  shadowOpacity: 0.10,
+                  shadowRadius: 8,
+                  alignItems: 'center',
+                  justifyContent: 'flex-start',
+                  marginBottom: 10,
+                }}
+                onPress={() => navigation.push('ProductDetail', { product })}
+                activeOpacity={0.88}
+              >
+                <Image source={{ uri: product.image }} style={{ width: 95, height: 110, borderRadius: 12, marginBottom: 12, backgroundColor: '#f7f7f7' }} />
+                <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, marginBottom: 6, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>{product.name}</Text>
+                <Text style={{ fontSize: 16, color: theme.colors.primary, fontWeight: 'bold', textAlign: 'center', marginBottom: 4 }}>₹{product.price.toFixed(2)}</Text>
+                {product.originalPrice && product.originalPrice > product.price && (
+                  <Text style={{ fontSize: 13, color: theme.colors.secondary, textDecorationLine: 'line-through', textAlign: 'center', marginBottom: 3 }}>₹{product.originalPrice.toFixed(2)}</Text>
+                )}
+                {product.originalPrice && product.originalPrice > product.price && (
+                  <Text style={{ fontSize: 12, color: '#FF9800', textAlign: 'center', fontWeight: 'bold' }}>{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% off</Text>
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
       </ScrollView>
       {/* Fixed Bottom Bar with Add to Cart +1/-1 counter for selected variant */}
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', elevation: 12, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12 }}>
-        {selectedVariant && variantQuantities[selectedVariant.id] > 0 ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 6, borderWidth: 1.5, borderColor: '#27ae60', height: 40, minWidth: 100, paddingHorizontal: 8 }}>
-            <TouchableOpacity onPress={() => {
-              setVariantQuantities(q => {
-                if (!selectedVariant) return q;
-                const newQty = Math.max(0, (q[selectedVariant.id] || 1) - 1);
-                if (newQty === 0) {
+        {selectedVariant ? (
+          variantQuantities[selectedVariant.id] > 0 ? (
+            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 6, borderWidth: 1.5, borderColor: '#27ae60', height: 40, minWidth: 100, paddingHorizontal: 8 }}>
+              <TouchableOpacity onPress={() => {
+                setVariantQuantities(q => {
+                  if (!selectedVariant) return q;
+                  const newQty = Math.max(0, (q[selectedVariant.id] || 1) - 1);
+                  if (newQty === 0) {
+                    removeFromCart(`${extendedProduct.id}-${selectedVariant.id}`, 'grocery');
+                    const { [selectedVariant.id]: _, ...rest } = q;
+                    return rest;
+                  }
                   removeFromCart(`${extendedProduct.id}-${selectedVariant.id}`, 'grocery');
-                  const { [selectedVariant.id]: _, ...rest } = q;
-                  return rest;
-                }
-                removeFromCart(`${extendedProduct.id}-${selectedVariant.id}`, 'grocery');
-                return { ...q, [selectedVariant.id]: newQty };
-              });
-            }} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>-</Text>
-            </TouchableOpacity>
-            <Text style={{ width: 32, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 20 }}>{variantQuantities[selectedVariant.id]}</Text>
-            <TouchableOpacity onPress={() => {
-              setVariantQuantities(q => {
+                  return { ...q, [selectedVariant.id]: newQty };
+                });
+              }} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>-</Text>
+              </TouchableOpacity>
+              <Text style={{ width: 32, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 20 }}>{variantQuantities[selectedVariant.id]}</Text>
+              <TouchableOpacity onPress={() => {
+                setVariantQuantities(q => {
+                  addToGroceryCart({ id: `${extendedProduct.id}-${selectedVariant.id}`, name: extendedProduct.name, price: selectedVariant.price, image: extendedProduct.image || '', variant: { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1].replace(/[()]/g, '') } });
+                  return { ...q, [selectedVariant.id]: (q[selectedVariant.id] || 0) + 1 };
+                });
+              }} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
+                <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>+</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={{ backgroundColor: theme.colors.primary, borderRadius: 8, paddingHorizontal: 40, paddingVertical: 12, alignSelf: 'center' }}
+              onPress={() => setVariantQuantities(q => {
                 addToGroceryCart({ id: `${extendedProduct.id}-${selectedVariant.id}`, name: extendedProduct.name, price: selectedVariant.price, image: extendedProduct.image || '', variant: { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1].replace(/[()]/g, '') } });
-                return { ...q, [selectedVariant.id]: (q[selectedVariant.id] || 0) + 1 };
-              });
-            }} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
-              <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>+</Text>
+                return { ...q, [selectedVariant.id]: 1 };
+              })}
+            >
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>Add</Text>
             </TouchableOpacity>
-          </View>
-        ) : null}
+          )
+        ) : (
+          <TouchableOpacity
+            style={{ backgroundColor: '#ccc', borderRadius: 8, paddingHorizontal: 40, paddingVertical: 12, alignSelf: 'center', opacity: 0.7 }}
+            disabled={true}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>Select a variant to add</Text>
+          </TouchableOpacity>
+        )}
       </View>
     </SafeAreaView>
   );

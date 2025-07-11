@@ -92,9 +92,7 @@ const CartScreen = () => {
                   <Text style={[styles.recommendationName, { color: theme.colors.onSurface }]} numberOfLines={2}>
                     {product.name}
                   </Text>
-                  <Text style={[styles.recommendationPrice, { color: theme.colors.primary }]}>
-                    ₹{product.price}
-                  </Text>
+                  <Text style={[styles.recommendationPrice, { color: theme.colors.primary }]}>₹{product.price.toFixed(2)}</Text>
                   {product.originalPrice && product.originalPrice > product.price && (
                     <Text style={[styles.recommendationPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{product.originalPrice.toFixed(2)}</Text>
                   )}
@@ -134,44 +132,52 @@ const CartScreen = () => {
             {allItems.map((item) => (
               <Card key={item.id} style={styles.cartItem}>
                 <Card.Content>
-                  <View style={styles.itemHeader}>
-                    <Text style={styles.itemName}>{item.name}</Text>
-                    <Text style={styles.itemPrice}>₹{item.price}</Text>
-                  </View>
-                  {item.originalPrice && item.originalPrice > item.price && (
-                    <Text style={[styles.itemPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{item.originalPrice.toFixed(2)}</Text>
-                  )}
-                  {item.originalPrice && item.originalPrice > item.price && (
-                    <Text style={[styles.itemPrice, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% off</Text>
-                  )}
-                  {item.variant && (
-                    <Text style={styles.variantText}>
-                      {item.variant.name}: {item.variant.unit}
-                    </Text>
-                  )}
-                  <View style={styles.quantityContainer}>
-                    <TouchableOpacity
-                      style={[styles.quantityButton, { backgroundColor: theme.colors.surface }]}
-                      onPress={() => updateQuantity(item.id, item.quantity - 1, item.category)}
-                      activeOpacity={0.7}
-                    >
-                      <MaterialCommunityIcons name="minus" size={18} color={theme.colors.onSurface} />
-                    </TouchableOpacity>
-                    <Text style={styles.quantityText}>{item.quantity}</Text>
-                    <TouchableOpacity
-                      style={[styles.quantityButton, { backgroundColor: theme.colors.surface }]}
-                      onPress={() => updateQuantity(item.id, item.quantity + 1, item.category)}
-                      activeOpacity={0.7}
-                    >
-                      <MaterialCommunityIcons name="plus" size={18} color={theme.colors.onSurface} />
-                    </TouchableOpacity>
-                    <Button
-                      mode="outlined"
-                      onPress={() => removeFromCart(item.id, item.category)}
-                      style={styles.removeButton}
-                    >
-                      Remove
-                    </Button>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {/* Product Image */}
+                    {item.image && (
+                      <Image source={{ uri: item.image }} style={{ width: 48, height: 48, borderRadius: 8, marginRight: 12, backgroundColor: '#f0f0f0' }} />
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <View style={styles.itemHeader}>
+                        <Text style={styles.itemName}>{item.name}</Text>
+                        <Text style={styles.itemPrice}>₹{item.price.toFixed(2)}</Text>
+                      </View>
+                      {item.originalPrice && item.originalPrice > item.price && (
+                        <Text style={[styles.itemPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{item.originalPrice.toFixed(2)}</Text>
+                      )}
+                      {item.originalPrice && item.originalPrice > item.price && (
+                        <Text style={[styles.itemPrice, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% off</Text>
+                      )}
+                      {item.variant && (
+                        <Text style={styles.variantText}>
+                          {item.variant.name}: {item.variant.unit}
+                        </Text>
+                      )}
+                      <View style={styles.quantityContainer}>
+                        <TouchableOpacity
+                          style={[styles.quantityButton, { backgroundColor: theme.colors.surface }]}
+                          onPress={() => updateQuantity(item.id, item.quantity - 1, item.category)}
+                          activeOpacity={0.7}
+                        >
+                          <MaterialCommunityIcons name="minus" size={18} color={theme.colors.onSurface} />
+                        </TouchableOpacity>
+                        <Text style={styles.quantityText}>{item.quantity}</Text>
+                        <TouchableOpacity
+                          style={[styles.quantityButton, { backgroundColor: theme.colors.surface }]}
+                          onPress={() => updateQuantity(item.id, item.quantity + 1, item.category)}
+                          activeOpacity={0.7}
+                        >
+                          <MaterialCommunityIcons name="plus" size={18} color={theme.colors.onSurface} />
+                        </TouchableOpacity>
+                        <Button
+                          mode="outlined"
+                          onPress={() => removeFromCart(item.id, item.category)}
+                          style={styles.removeButton}
+                        >
+                          Remove
+                        </Button>
+                      </View>
+                    </View>
                   </View>
                 </Card.Content>
               </Card>
@@ -181,7 +187,7 @@ const CartScreen = () => {
           {renderRecommendations(navigation)}
           
           <View style={styles.totalContainer}>
-            <Text style={styles.totalText}>Total: ₹{totalAmount}</Text>
+            <Text style={styles.totalText}>Total: ₹{totalAmount.toFixed(2)}</Text>
             <Button
               mode="contained"
               onPress={handleCheckout}

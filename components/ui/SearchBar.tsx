@@ -122,7 +122,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           value={searchQuery}
           onChangeText={(text) => {
             setSearchQuery(text);
-            onSearch(text);
           }}
           autoFocus={autoFocus}
           returnKeyType="search"

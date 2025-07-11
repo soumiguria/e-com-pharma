@@ -132,7 +132,7 @@ const BrandDetailScreen = () => {
             <Image source={{ uri: product.image }} style={{ width: 80, height: 80, borderRadius: 10, marginRight: 12, backgroundColor: '#f0f0f0' }} />
             <View style={{ flex: 1, justifyContent: 'center' }}>
               <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, marginBottom: 2 }}>{product.name}</Text>
-              <Text style={{ fontSize: 15, color: theme.colors.primary, fontWeight: 'bold', marginBottom: 4 }}>₹{product.price}</Text>
+              <Text style={{ fontSize: 15, color: theme.colors.primary, fontWeight: 'bold', marginBottom: 4 }}>₹{product.price.toFixed(2)}</Text>
               <Text style={{ fontSize: 13, color: theme.colors.secondary, marginBottom: 4 }}>{product.availableQty ? `In stock: ${product.availableQty}` : 'Available'}</Text>
               {/* +1/-1 Counter */}
               {productQuantities[product.id] > 0 ? (
