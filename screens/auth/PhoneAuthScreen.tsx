@@ -14,7 +14,9 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
+import LoadingOverlay from '../../components/ui/LoadingOverlay';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'PhoneAuth'>;
 type PhoneAuthRouteProp = RouteProp<RootStackParamList, 'PhoneAuth'>;
@@ -24,21 +26,62 @@ const PhoneAuthScreen = () => {
   const route = useRoute<PhoneAuthRouteProp>();
   const { cartType } = route.params;
   const { theme } = useTheme();
-  const [phoneNumber, setPhoneNumber] = useState('');
+  const { sendOTP } = useAuth();
+  const [mobileNumber, setMobileNumber] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
-  const handleContinue = () => {
-    // Validate phone number
-    if (phoneNumber.length < 10) {
-      Alert.alert('Invalid Phone Number', 'Please enter a valid 10-digit phone number');
+  const handleContinue = async () => {
+    // Validate mobile number
+    if (mobileNumber.length < 10) {
+      Alert.alert('Invalid Mobile Number', 'Please enter a valid 10-digit mobile number');
       return;
     }
 
-    // Here you would typically make an API call to send OTP
-    // For now, we'll just navigate to the OTP screen
-    navigation.replace('OTPVerification', { 
-      phoneNumber,
-      cartType
-    });
+    setIsLoading(true);
+
+    try {
+      // First, try to send OTP to check if user exists
+      const response = await sendOTP(mobileNumber);
+      
+      if (response.success) {
+        // User exists, navigate to OTP verification screen
+        console.log('User exists, navigating to OTP verification');
+        // Extract otpKey from response
+        const otpKey = response.data?.otpKey || '';
+        console.log('OTP Key received:', otpKey);
+        navigation.replace('OTPVerification', { 
+          phoneNumber: mobileNumber,
+          cartType,
+          isRegistration: false,
+          otpKey: otpKey // Pass otpKey to OTP verification screen
+        });
+      } else {
+        // Check if error indicates customer not found
+        if (response.error && (
+          response.error.toLowerCase().includes('customer not found') ||
+          response.error.toLowerCase().includes('user not found') ||
+          response.error.toLowerCase().includes('not registered')
+        )) {
+          console.log('Customer not found, redirecting to registration');
+          // Customer not found, redirect to registration
+          navigation.replace('Register', { 
+            phoneNumber: mobileNumber,
+            cartType
+          });
+        } else {
+          Alert.alert('Error', response.error || 'Failed to send OTP. Please try again.');
+        }
+      }
+    } catch (error) {
+      console.error('Error sending OTP:', error);
+      // On any error, assume user doesn't exist and go to registration
+      navigation.replace('Register', { 
+        phoneNumber: mobileNumber,
+        cartType
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const styles = StyleSheet.create({
@@ -72,26 +115,26 @@ const PhoneAuthScreen = () => {
       borderColor: theme.colors.border,
       borderRadius: theme.borderRadius.md,
       paddingHorizontal: theme.spacing.md,
-      height: 56,
+      backgroundColor: theme.colors.surface,
     },
     countryCode: {
       fontSize: 16,
       color: theme.colors.text,
       marginRight: theme.spacing.sm,
+      fontWeight: '500',
     },
     input: {
       flex: 1,
       fontSize: 16,
       color: theme.colors.text,
-      paddingVertical: theme.spacing.sm,
+      paddingVertical: theme.spacing.md,
     },
     continueButton: {
       backgroundColor: theme.colors.primary,
+      paddingVertical: theme.spacing.md,
       borderRadius: theme.borderRadius.md,
-      height: 56,
-      justifyContent: 'center',
       alignItems: 'center',
-      marginTop: theme.spacing.xl,
+      marginBottom: theme.spacing.lg,
     },
     continueButtonText: {
       color: '#fff',
@@ -106,7 +149,7 @@ const PhoneAuthScreen = () => {
       fontSize: 14,
       color: theme.colors.text + '80',
       textAlign: 'center',
-      marginTop: 20,
+      lineHeight: 20,
     },
   });
 
@@ -117,7 +160,7 @@ const PhoneAuthScreen = () => {
         style={{ flex: 1 }}
       >
         <View style={styles.header}>
-          <Text style={styles.title}>Enter your phone number</Text>
+          <Text style={styles.title}>Enter your mobile number</Text>
           <Text style={styles.subtitle}>
             We'll send you a verification code to verify your number
           </Text>
@@ -128,11 +171,11 @@ const PhoneAuthScreen = () => {
             <Text style={styles.countryCode}>+91</Text>
             <TextInput
               style={styles.input}
-              placeholder="Phone Number"
+              placeholder="Mobile Number"
               keyboardType="phone-pad"
               maxLength={10}
-              value={phoneNumber}
-              onChangeText={setPhoneNumber}
+              value={mobileNumber}
+              onChangeText={setMobileNumber}
               placeholderTextColor={theme.colors.secondary}
             />
           </View>
@@ -141,10 +184,10 @@ const PhoneAuthScreen = () => {
         <TouchableOpacity
           style={[
             styles.continueButton,
-            phoneNumber.length !== 10 && styles.disabledButton,
+            mobileNumber.length !== 10 && styles.disabledButton,
           ]}
           onPress={handleContinue}
-          disabled={phoneNumber.length !== 10}
+          disabled={mobileNumber.length !== 10 || isLoading}
         >
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>
@@ -153,6 +196,11 @@ const PhoneAuthScreen = () => {
           By continuing, you agree to our Terms of Service and Privacy Policy
         </Text>
       </KeyboardAvoidingView>
+
+      <LoadingOverlay 
+        visible={isLoading} 
+        message="Sending OTP..." 
+      />
     </SafeAreaView>
   );
 };

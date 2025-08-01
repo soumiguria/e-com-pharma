@@ -4,7 +4,7 @@ import { ApiResponse, ApiError } from './types';
 
 // API Configuration
 const API_CONFIG = {
-  baseURL: process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.passkidukaan.com',
+  baseURL: process.env.EXPO_PUBLIC_API_BASE_URL || 'https://marg-api.thelocalsandbox.dev',
   timeout: 30000,
   retryAttempts: 3,
   retryDelay: 1000,
@@ -97,7 +97,9 @@ class ApiClient {
     };
 
     if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
+      // API expects marg-customer-token header instead of Authorization
+      headers['marg-customer-token'] = token;
+      console.log('🔑 Adding token to headers:', token);
     }
 
     return headers;
@@ -174,68 +176,83 @@ class ApiClient {
       retry = true,
     } = options;
 
-          const requestFn = async (): Promise<ApiClientResponse<T>> => {
-        const fullURL = this.buildURL(url, params);
-        const defaultHeaders = await this.getDefaultHeaders();
-        const requestHeaders = { ...defaultHeaders, ...customHeaders };
+    const requestFn = async (): Promise<ApiClientResponse<T>> => {
+      const fullURL = this.buildURL(url, params);
+      const defaultHeaders = await this.getDefaultHeaders();
+      const requestHeaders = { ...defaultHeaders, ...customHeaders };
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
+      console.log('🌐 API Request:', {
+        method,
+        url: fullURL,
+        headers: requestHeaders,
+        data: data
+      });
 
-        try {
-          const response = await fetch(fullURL, {
-            method,
-            headers: requestHeaders,
-            body: data ? JSON.stringify(data) : undefined,
-            signal: controller.signal,
-          });
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-          clearTimeout(timeoutId);
+      try {
+        const response = await fetch(fullURL, {
+          method,
+          headers: requestHeaders,
+          body: data ? JSON.stringify(data) : undefined,
+          signal: controller.signal,
+        });
 
-          // Handle HTTP errors
-          if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw {
-              response: {
-                status: response.status,
-                data: errorData,
-              },
-            };
-          }
+        clearTimeout(timeoutId);
 
-          // Handle successful response
-          const responseData = await response.json();
-          
-          // Handle token refresh if needed
-          if (response.headers.get('x-new-token')) {
-            await this.setAuthToken(response.headers.get('x-new-token')!);
-          }
+        console.log('📡 API Response:', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers
+        });
 
-          const responseHeaders: Record<string, string> = {};
-          response.headers.forEach((value: string, key: string) => {
-            responseHeaders[key] = value;
-          });
-
-          return {
-            data: responseData,
-            status: response.status,
-            headers: responseHeaders,
+        // Handle HTTP errors
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          console.log('❌ API Error Response:', errorData);
+          throw {
+            response: {
+              status: response.status,
+              data: errorData,
+            },
           };
-        } catch (error: any) {
-          clearTimeout(timeoutId);
-          
-          // Handle abort error (timeout)
-          if (error.name === 'AbortError') {
-            throw {
-              code: 'TIMEOUT_ERROR',
-              message: 'Request timeout',
-              details: { timeout },
-            };
-          }
-          
-          throw error;
         }
-      };
+
+        // Handle successful response
+        const responseData = await response.json();
+        console.log('✅ API Success Response:', responseData);
+        
+        // Handle token refresh if needed
+        if (response.headers.get('x-new-token')) {
+          await this.setAuthToken(response.headers.get('x-new-token')!);
+        }
+
+        const responseHeaders: Record<string, string> = {};
+        response.headers.forEach((value: string, key: string) => {
+          responseHeaders[key] = value;
+        });
+
+        return {
+          data: responseData,
+          status: response.status,
+          headers: responseHeaders,
+        };
+      } catch (error: any) {
+        clearTimeout(timeoutId);
+        
+        // Handle abort error (timeout)
+        if (error.name === 'AbortError') {
+          throw {
+            code: 'TIMEOUT_ERROR',
+            message: 'Request timeout',
+            details: { timeout },
+          };
+        }
+        
+        throw error;
+      }
+    };
 
     try {
       const response = retry 

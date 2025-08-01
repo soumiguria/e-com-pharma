@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -16,7 +17,20 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
+  const { user, isAuthenticated, logout, refreshUser } = useAuth();
   const slideAnim = useRef(new Animated.Value(-320)).current;
+
+  // Debug logging
+  console.log('🔍 ProfileDrawer Debug:', {
+    isAuthenticated,
+    user: user ? {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      mobile: user.mobile
+    } : 'null',
+    hasUser: !!user
+  });
 
   useEffect(() => {
     Animated.timing(slideAnim, {
@@ -24,7 +38,13 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
       duration: 200,
       useNativeDriver: true,
     }).start();
-  }, []);
+    
+    // Refresh user data when drawer opens
+    if (isAuthenticated && !user) {
+      console.log('🔄 Refreshing user data in drawer...');
+      refreshUser();
+    }
+  }, [isAuthenticated, user, refreshUser]);
 
   const handleClose = () => {
     Animated.timing(slideAnim, {
@@ -34,6 +54,16 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
     }).start(() => {
       onClose();
     });
+  };
+
+  const handleLoginPress = () => {
+    onClose();
+    navigation.navigate('PhoneAuth', { cartType: 'grocery' });
+  };
+
+  const handleRegisterPress = () => {
+    onClose();
+    navigation.navigate('PhoneAuth', { cartType: 'grocery' });
   };
 
   const handleMyOrdersPress = () => {
@@ -92,14 +122,13 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
     navigation.navigate('Notifications' as any);
   };
 
-  const handleLogoutPress = () => {
+  const handleLogoutPress = async () => {
     onClose();
-    // Logout functionality - can be implemented later
-    console.log('Logout pressed');
+    await logout();
   };
 
-  // Grouped menu sections
-  const menuSections = [
+  // Menu sections for authenticated users
+  const authenticatedMenuSections = [
     {
       key: 'main',
       items: [
@@ -133,6 +162,33 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
       ],
     },
   ];
+
+  // Menu sections for non-authenticated users
+  const nonAuthenticatedMenuSections = [
+    {
+      key: 'auth',
+      items: [
+        { icon: 'login', label: 'Login / Sign Up', onPress: handleLoginPress },
+      ],
+    },
+    {
+      key: 'store',
+      items: [
+        { icon: 'store', label: 'About Store', onPress: handleAboutStorePress },
+        { icon: 'phone', label: 'Contact Store', onPress: handleContactStorePress },
+        { icon: 'map-marker-radius', label: 'Locate this Store', onPress: handleLocateStorePress },
+      ],
+    },
+    {
+      key: 'app',
+      items: [
+        { icon: 'share-variant', label: 'Share this App', onPress: handleShareAppPress },
+        { icon: 'information', label: 'About Pass ki Dukaan', onPress: handleAboutPassKiDukaanPress },
+      ],
+    },
+  ];
+
+  const menuSections = isAuthenticated ? authenticatedMenuSections : nonAuthenticatedMenuSections;
 
   const renderMenuSection = (section: any, idx: number) => (
     <View
@@ -175,8 +231,36 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
         <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
           <MaterialCommunityIcons name="close" size={24} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.title, { color: theme.colors.text }]}>Hi, Username</Text>
+        <Text style={[styles.title, { color: theme.colors.text }]}>
+          {isAuthenticated && user?.firstName
+            ? `Hello, ${user.firstName}`
+            : 'Welcome'}
+        </Text>
       </View>
+
+      {/* User Profile Section for authenticated users */}
+      {isAuthenticated && user && (
+        <View style={[styles.userProfileSection, { backgroundColor: theme.colors.surface }]}>
+          <View style={styles.userInfo}>
+            <View style={[styles.avatar, { backgroundColor: theme.colors.primary }]}>
+              <Text style={styles.avatarText}>
+                {user.firstName?.charAt(0)?.toUpperCase() || 'U'}
+              </Text>
+            </View>
+            <View style={styles.userDetails}>
+              <Text style={[styles.userName, { color: theme.colors.text }]}>
+                {user.firstName} {user.lastName}
+              </Text>
+              <Text style={[styles.userEmail, { color: theme.colors.secondary }]}>
+                {user.email}
+              </Text>
+              <Text style={[styles.userMobile, { color: theme.colors.secondary }]}>
+                +91 {user.mobile}
+              </Text>
+            </View>
+          </View>
+        </View>
+      )}
 
       <ScrollView style={styles.menuContainer} showsVerticalScrollIndicator={false}>
         {menuSections.map(renderMenuSection)}
@@ -263,6 +347,43 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.04,
     shadowRadius: 2,
     elevation: 1,
+  },
+  userProfileSection: {
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+  },
+  userInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  avatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 15,
+  },
+  avatarText: {
+    color: '#fff',
+    fontSize: 24,
+    fontWeight: 'bold',
+  },
+  userDetails: {
+    flex: 1,
+  },
+  userName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  userEmail: {
+    fontSize: 14,
+    marginTop: 2,
+  },
+  userMobile: {
+    fontSize: 14,
+    marginTop: 2,
   },
 });
 

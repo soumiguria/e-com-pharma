@@ -16,13 +16,13 @@ import {
 } from './types';
 
 // Mock delay to simulate API calls
-const mockDelay = (ms: number = 500) => new Promise(resolve => setTimeout(resolve, ms));
+const mockDelay = (ms: number = 800) => new Promise(resolve => setTimeout(resolve, ms));
 
 // Mock success response helper
 const mockSuccess = <T>(data: T): ApiResponse<T> => ({
   success: true,
   data,
-  message: 'Success'
+  // message: 'Success'
 });
 
 // Mock error response helper
@@ -414,13 +414,20 @@ export class MockDataService {
   // Mock user profile data
   private mockUserProfile: UserProfile = {
     id: 'user1',
-    name: 'John Doe',
+    customerId: 'cust-001',
+    firstName: 'John',
+    lastName: 'Doe',
     email: 'john.doe@example.com',
-    phone: '+91-9876543210',
-    profileImage: 'https://randomuser.me/api/portraits/men/1.jpg',
-    isVerified: true,
+    mobile: '+91-9876543210',
+    image: 'https://randomuser.me/api/portraits/men/1.jpg',
+    mobileVerified: true,
+    emailVerified: true,
+    // isVerified: true,
     createdAt: '2024-01-01T00:00:00Z',
     updatedAt: '2024-01-15T10:30:00Z',
+    lastLoginAt: '2024-01-15T09:00:00Z',
+    iat: 1710000000,
+    exp: 1712592000,
     addresses: [
       {
         id: '1',
@@ -633,6 +640,83 @@ export class MockDataService {
   async simulateTimeout(): Promise<ApiResponse<any>> {
     await mockDelay(5000);
     return mockError('Request timeout');
+  }
+
+  // Mock authentication methods
+  async sendOTP(mobile: string): Promise<ApiResponse<{ message: string; otpKey?: string }>> {
+    await mockDelay(1500);
+    
+    // Mock successful OTP send
+    return mockSuccess({
+      message: 'OTP sent successfully',
+      otpKey: `mock-otp-key-${mobile}`
+    });
+  }
+
+  async verifyOTP(mobile: string, otp: string, otpKey: string): Promise<ApiResponse<{ status: string; data: { token: string; user: any } }>> {
+    await mockDelay(2000);
+    
+    // Mock OTP verification - accept any 6-digit OTP
+    if (otp.length === 6 && /^\d{6}$/.test(otp)) {
+      return mockSuccess({
+        status: 'success',
+        data: {
+          token: 'mock-jwt-token',
+          user: {
+            id: '1',
+            firstName: 'John',
+            lastName: 'Doe',
+            email: 'john@example.com',
+            mobile: mobile,
+            mobileVerified: true,
+            emailVerified: true,
+            image: null,
+            customerId: 'mock-customer-id',
+            lastLoginAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          }
+        }
+      });
+    } else {
+      return mockError('Invalid OTP');
+    }
+  }
+
+  async checkPhoneExists(phone: string): Promise<ApiResponse<{ exists: boolean }>> {
+    await mockDelay(800);
+    
+    // Mock phone check - assume phone numbers ending with 0 are registered
+    const exists = phone.endsWith('0');
+    return mockSuccess({ exists });
+  }
+
+  async registerUser(userData: {
+    mobile: string; // Changed from 'phone'
+    firstName: string;
+    lastName: string;
+    email: string;
+    otp?: string;
+  }): Promise<ApiResponse<{ message: string; otpKey?: string }>> {
+    await mockDelay(2000);
+    
+    // For registration without OTP, just return success with otpKey
+    if (!userData.otp) {
+      return mockSuccess({
+        message: 'User registered successfully',
+        otpKey: `mock-otp-key-${userData.mobile}`
+      });
+    }
+    
+    // For registration with OTP, validate it
+    if (userData.otp.length === 6 && /^\d{6}$/.test(userData.otp)) {
+      return mockSuccess({
+        message: 'User registered successfully',
+        otpKey: `mock-otp-key-${userData.mobile}`
+      });
+    } else {
+      return mockError('Invalid OTP');
+    }
   }
 }
 

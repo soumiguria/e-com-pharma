@@ -5,9 +5,9 @@
 export interface ApiResponse<T> {
   success: boolean;
   data: T;
-  message?: string;
   error?: string;
 }
+
 
 // Pagination
 export interface PaginationParams {
@@ -28,14 +28,29 @@ export interface PaginatedResponse<T> {
 // User related types
 export interface User {
   id: string;
-  name: string;
+  firstName: string;
+  lastName: string;
+  mobile: string;
   email: string;
-  phone: string;
-  profileImage?: string;
-  isVerified: boolean;
+  mobileVerified: boolean;
+  emailVerified: boolean;
+  image: string | null;
+  customerId: string;
+  lastLoginAt: string;
   createdAt: string;
   updatedAt: string;
+  iat: number;
+  exp: number;
 }
+
+export interface AuthResponse {
+  success: boolean;
+  data: {
+    status: string;
+      token: string; 
+  } & User;
+}
+
 
 export interface UserProfile extends User {
   addresses: Address[];
@@ -409,11 +424,14 @@ export interface StoreSelectionParams {
 }
 
 // Auth types
-export interface AuthResponse {
-  user: User;
-  token: string;
-  refreshToken: string;
-}
+// export interface AuthResponse {
+//   data: any;
+//   // data: any;
+//   user: User;
+//   token: string;
+//   refreshToken: string;
+//   otpKey?: string; // Add otpKey for OTP verification
+// }
 
 export interface LoginRequest {
   phone: string;

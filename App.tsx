@@ -8,6 +8,7 @@ import { StorageProvider } from './contexts/StorageContext';
 import { CartProvider, useCart } from './contexts/CartContext';
 import { AppProvider } from './contexts/AppContext';
 import { ToastProvider } from './contexts/ToastContext';
+import { AuthProvider } from './contexts/AuthContext';
 import CustomToast from './components/ui/CustomToast';
 import ErrorBoundary from './components/ui/ErrorBoundary';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
@@ -105,11 +106,13 @@ const AppContent = () => {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <StorageProvider> 
-        <ThemeProvider> 
-          <AppContent />
-        </ThemeProvider>
-      </StorageProvider>
+      <AuthProvider>
+        <StorageProvider> 
+          <ThemeProvider> 
+            <AppContent />
+          </ThemeProvider>
+        </StorageProvider>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

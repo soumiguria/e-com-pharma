@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ThemedButton from '../../components/ui/ThemedButton';
@@ -7,6 +7,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useCart } from '../../contexts/CartContext';
+import LoadingOverlay from '../../components/ui/LoadingOverlay';
 
 const deliveryMethods = [
   { id: '1', label: 'Store Pickup' },
@@ -39,6 +40,7 @@ const PaymentMethodsScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { clearCart } = useCart();
+  const [isLoading, setIsLoading] = useState(false);
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = React.useState('1');
   const [selectedAddress, setSelectedAddress] = React.useState(userAddresses[0].id);
   const [selectedSpeed, setSelectedSpeed] = React.useState('1');
@@ -142,8 +144,9 @@ const PaymentMethodsScreen = () => {
   const defaultAddress = addresses.find(addr => addr.id === selectedAddress);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+    <>
+      <SafeAreaView style={styles.container}>
+        <ScrollView showsVerticalScrollIndicator={false}>
         {/* Delivery Method */}
         <Text style={styles.sectionTitle}>Delivery Method</Text>
         <View style={styles.row}>
@@ -222,11 +225,21 @@ const PaymentMethodsScreen = () => {
 
         {/* Place Order Button */}
         <ThemedButton title="Place Order" onPress={() => {
-          clearCart();
-          navigation.navigate('PhoneAuth', { cartType: 'grocery' });
+          setIsLoading(true);
+          // Simulate a small delay for better UX
+          setTimeout(() => {
+            navigation.navigate('PhoneAuth', { cartType: 'grocery' });
+            setIsLoading(false);
+          }, 500);
         }} style={{ marginTop: 24 }} />
-      </ScrollView>
-    </SafeAreaView>
+              </ScrollView>
+      </SafeAreaView>
+
+      <LoadingOverlay 
+        visible={isLoading} 
+        message="Processing order..." 
+      />
+    </>
   );
 };
 

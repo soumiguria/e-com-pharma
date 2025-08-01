@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,100 +7,129 @@ import {
   FlatList,
   SafeAreaView,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
+import { useAuth } from '../../contexts/AuthContext';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
+import { addressService, Address } from '../../services/api/addressService';
 
 type MyAddressesScreenNavigationProp = StackNavigationProp<RootStackParamList, 'MyAddresses'>;
 
-interface Address {
-  id: string;
-  type: 'home' | 'work' | 'friends' | 'other';
-  name: string;
-  houseNumber: string;
-  apartment: string;
-  directions: string;
-  voiceDirections?: string;
-  location: {
-    latitude: number;
-    longitude: number;
-    address: string;
-  };
-}
-
 const MyAddressesScreen = React.memo(() => {
   const { theme } = useTheme();
+  const { user, isAuthenticated } = useAuth();
   const navigation = useNavigation<MyAddressesScreenNavigationProp>();
   
-  const [addresses, setAddresses] = useState<Address[]>([
-    {
-      id: '1',
-      type: 'home',
-      name: 'Home',
-      houseNumber: '123',
-      apartment: 'Apartment 4B, Green Park Colony',
-      directions: 'Near the red gate, ring the bell',
-      location: {
-        latitude: 28.6139,
-        longitude: 77.2090,
-        address: 'Green Park Colony, New Delhi, Delhi 110016'
-      }
-    },
-    {
-      id: '2',
-      type: 'work',
-      name: 'Work',
-      houseNumber: '456',
-      apartment: 'Office Building, Connaught Place',
-      directions: '3rd floor, elevator on the right',
-      location: {
-        latitude: 28.6289,
-        longitude: 77.2065,
-        address: 'Connaught Place, New Delhi, Delhi 110001'
-      }
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [defaultAddressId, setDefaultAddressId] = useState<string | null>(null);
+
+  // Debug logging
+  console.log('🔍 MyAddressesScreen Debug:', {
+    isAuthenticated,
+    hasUser: !!user,
+    addressesCount: addresses.length,
+    isLoading,
+  });
+
+  // Load addresses when component mounts
+  useEffect(() => {
+    if (isAuthenticated) {
+      loadAddresses();
     }
-  ]);
+  }, [isAuthenticated]);
 
-  const [defaultAddressId, setDefaultAddressId] = useState(addresses[0]?.id);
+  // Refresh addresses when screen comes into focus (e.g., after adding new address)
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) {
+        console.log('🔄 Screen focused - refreshing addresses...');
+        loadAddresses();
+      }
+    }, [isAuthenticated])
+  );
 
-  const getTypeIcon = useCallback((type: string) => {
-    switch (type) {
+  const loadAddresses = async () => {
+    try {
+      console.log('🔄 Loading addresses...');
+      const response = await addressService.getAddresses();
+      
+      if (response.success && response.data) {
+        console.log('✅ Addresses loaded successfully:', response.data);
+        
+        // Handle nested response structure: { status: "success", data: [] }
+        const responseData = response.data as any;
+        const actualAddresses = responseData.data || responseData || [];
+        console.log('✅ Actual addresses array:', actualAddresses);
+        
+        setAddresses(actualAddresses);
+        
+        // Set default address
+        const defaultAddress = actualAddresses.find((addr: Address) => addr.isDefault);
+        if (defaultAddress) {
+          setDefaultAddressId(defaultAddress._id || null);
+        }
+      } else {
+        console.log('❌ Failed to load addresses:', response.error);
+        setAddresses([]);
+      }
+    } catch (error) {
+      console.error('💥 Error loading addresses:', error);
+      setAddresses([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onRefresh = useCallback(async () => {
+    console.log('🔄 Pull to refresh triggered...');
+    setRefreshing(true);
+    try {
+      await loadAddresses();
+      console.log('✅ Pull to refresh completed');
+    } catch (error) {
+      console.error('❌ Pull to refresh failed:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
+  const getTypeIcon = useCallback((label: string) => {
+    switch (label.toLowerCase()) {
       case 'home':
         return 'home';
       case 'work':
         return 'work';
-      case 'friends':
+      case 'friends & family':
         return 'people';
-      case 'other':
-        return 'location-on';
       default:
         return 'location-on';
     }
   }, []);
 
-  const getTypeColor = useCallback((type: string) => {
-    switch (type) {
+  const getTypeColor = useCallback((label: string) => {
+    switch (label.toLowerCase()) {
       case 'home':
         return '#4CAF50';
       case 'work':
         return '#2196F3';
-      case 'friends':
+      case 'friends & family':
         return '#FF9800';
-      case 'other':
-        return '#9C27B0';
       default:
-        return theme.colors.primary;
+        return '#9C27B0';
     }
-  }, [theme.colors.primary]);
+  }, []);
 
   const handleAddAddress = useCallback(() => {
     navigation.navigate('LocationPicker');
   }, [navigation]);
 
-  const handleDeleteAddress = useCallback((id: string) => {
+  const handleDeleteAddress = useCallback(async (addressId: string) => {
     Alert.alert(
       'Delete Address',
       'Are you sure you want to delete this address?',
@@ -109,53 +138,108 @@ const MyAddressesScreen = React.memo(() => {
         {
           text: 'Delete',
           style: 'destructive',
-          onPress: () => {
-            setAddresses(prev => prev.filter(addr => addr.id !== id));
+          onPress: async () => {
+            try {
+              const response = await addressService.deleteAddress(addressId);
+              if (response.success) {
+                console.log('✅ Address deleted successfully');
+                // Refresh addresses list
+                await loadAddresses();
+              } else {
+                console.log('❌ Failed to delete address:', response.error);
+                Alert.alert('Error', response.error || 'Failed to delete address');
+              }
+            } catch (error) {
+              console.error('💥 Error deleting address:', error);
+              Alert.alert('Error', 'Failed to delete address');
+            }
           }
         }
       ]
     );
   }, []);
 
+  const handleSetDefaultAddress = useCallback(async (addressId: string) => {
+    try {
+      const response = await addressService.setDefaultAddress(addressId);
+      if (response.success) {
+        console.log('✅ Default address set successfully');
+        setDefaultAddressId(addressId);
+        // Refresh addresses list
+        await loadAddresses();
+      } else {
+        console.log('❌ Failed to set default address:', response.error);
+        Alert.alert('Error', response.error || 'Failed to set default address');
+      }
+    } catch (error) {
+      console.error('💥 Error setting default address:', error);
+      Alert.alert('Error', 'Failed to set default address');
+    }
+  }, []);
+
   const renderAddressItem = useCallback(({ item }: { item: Address }) => (
     <View style={styles.addressItem}>
       <View style={styles.addressHeader}>
-        <View style={[styles.typeIcon, { backgroundColor: getTypeColor(item.type) }]}>
+        <View style={[styles.typeIcon, { backgroundColor: getTypeColor(item.label) }]}>
           <MaterialIcons 
-            name={getTypeIcon(item.type) as any} 
+            name={getTypeIcon(item.label) as any} 
             size={20} 
             color={theme.colors.surface} 
           />
         </View>
         <View style={styles.addressInfo}>
-          <Text style={styles.addressName}>{item.name}</Text>
-          <Text style={styles.addressText}>{item.location.address}</Text>
+          <Text style={styles.addressName}>{item.label}</Text>
+          <Text style={styles.addressText}>
+            {item.firstName} {item.lastName}
+          </Text>
+          <Text style={styles.addressText}>
+            {item.line1}, {item.line2 && `${item.line2}, `}{item.city}, {item.state} {item.pincode}
+          </Text>
+          <Text style={styles.addressText}>
+            {item.country}
+          </Text>
+          <Text style={styles.addressText}>
+            Mobile: {item.mobile} | Email: {item.email}
+          </Text>
         </View>
         <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-          <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteAddress(item.id)}>
+          <TouchableOpacity style={styles.deleteButton} onPress={() => handleDeleteAddress(item.customerAddressId || '')}>
             <MaterialIcons name="delete" size={24} color={theme.colors.error} />
           </TouchableOpacity>
-          <TouchableOpacity style={{ marginTop: 6 }} onPress={() => navigation.navigate('AddAddress', { location: item.location })}>
+          <TouchableOpacity style={{ marginTop: 6 }} onPress={() => navigation.navigate('AddAddress', { 
+            addressId: item.customerAddressId,
+            location: { 
+              latitude: 28.6139, 
+              longitude: 77.2090, 
+              address: `${item.line1}, ${item.city}` 
+            } 
+          })}>
             <MaterialIcons name="edit" size={22} color={theme.colors.primary} />
           </TouchableOpacity>
         </View>
       </View>
-      <Text style={styles.addressText}>
-        {item.houseNumber}, {item.apartment}
-      </Text>
-      {item.directions && (
-        <Text style={styles.addressText}>
-          Directions: {item.directions}
-        </Text>
-      )}
+      
       <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-        <TouchableOpacity onPress={() => setDefaultAddressId(item.id)} style={{ marginRight: 12 }}>
-          <MaterialIcons name={defaultAddressId === item.id ? 'radio-button-checked' : 'radio-button-unchecked'} size={22} color={theme.colors.primary} />
+        <TouchableOpacity 
+          onPress={() => handleSetDefaultAddress(item.customerAddressId || '')} 
+          style={{ marginRight: 12 }}
+        >
+          <MaterialIcons 
+            name={defaultAddressId === item.customerAddressId ? 'radio-button-checked' : 'radio-button-unchecked'} 
+            size={22} 
+            color={theme.colors.primary} 
+          />
         </TouchableOpacity>
-        <Text style={{ color: theme.colors.primary, fontWeight: 'bold', marginRight: 16 }}>{defaultAddressId === item.id ? 'Default' : 'Set as default'}</Text>
+        <Text style={{ 
+          color: theme.colors.primary, 
+          fontWeight: 'bold', 
+          marginRight: 16 
+        }}>
+          {defaultAddressId === item.customerAddressId ? 'Default' : 'Set as default'}
+        </Text>
       </View>
     </View>
-  ), [getTypeColor, getTypeIcon, theme.colors.surface, theme.colors.error, handleDeleteAddress, defaultAddressId, navigation]);
+  ), [getTypeColor, getTypeIcon, theme.colors.surface, theme.colors.error, theme.colors.primary, handleDeleteAddress, handleSetDefaultAddress, defaultAddressId, navigation]);
 
   const styles = StyleSheet.create({
     safeArea: {
@@ -214,7 +298,7 @@ const MyAddressesScreen = React.memo(() => {
     },
     addressHeader: {
       flexDirection: 'row',
-      alignItems: 'center',
+      alignItems: 'flex-start',
       marginBottom: 12,
     },
     typeIcon: {
@@ -238,6 +322,7 @@ const MyAddressesScreen = React.memo(() => {
       fontSize: 14,
       color: theme.colors.secondary,
       lineHeight: 20,
+      marginBottom: 2,
     },
     deleteButton: {
       padding: 8,
@@ -254,7 +339,65 @@ const MyAddressesScreen = React.memo(() => {
       textAlign: 'center',
       marginTop: 16,
     },
+    loadingContainer: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    loadingText: {
+      fontSize: 16,
+      color: theme.colors.secondary,
+      marginTop: 16,
+    },
   });
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+            >
+              <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>My Addresses</Text>
+          </View>
+          <View style={styles.loadingContainer}>
+            <MaterialIcons name="hourglass-empty" size={64} color={theme.colors.secondary} />
+            <Text style={styles.loadingText}>Loading addresses...</Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Show login prompt if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+            >
+              <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>My Addresses</Text>
+          </View>
+          <View style={styles.emptyState}>
+            <MaterialIcons name="person" size={64} color={theme.colors.secondary} />
+            <Text style={styles.emptyStateText}>
+              Please login to view your addresses.
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -285,9 +428,17 @@ const MyAddressesScreen = React.memo(() => {
           ) : (
             <FlatList
               data={addresses}
-              keyExtractor={(item) => item.id}
+              keyExtractor={(item) => item._id || item.label}
               renderItem={renderAddressItem}
               showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={[theme.colors.primary]}
+                  tintColor={theme.colors.primary}
+                />
+              }
             />
           )}
         </View>

@@ -15,6 +15,7 @@ import HelpCenterScreen from '../screens/help/HelpCenterScreen';
 import AllProductsScreen from '../screens/product/AllProductsScreen';
 import BannerDetailScreen from '../screens/home/BannerDetailScreen';
 import PhoneAuthScreen from '../screens/auth/PhoneAuthScreen';
+import RegisterScreen from '../screens/auth/RegisterScreen';
 import OTPVerificationScreen from '../screens/auth/OTPVerificationScreen';
 import BottomTabNavigator from './BottomTabNavigator';
 import ProductDetailScreen from '../screens/product/ProductDetailScreen';
@@ -67,6 +68,7 @@ const AppNavigator = () => {
       <Stack.Screen name="AllProducts" component={AllProductsScreen} />
       <Stack.Screen name="BannerDetail" component={BannerDetailScreen} />
       <Stack.Screen name="PhoneAuth" component={PhoneAuthScreen} />
+      <Stack.Screen name="Register" component={RegisterScreen} />
       <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
       <Stack.Screen name="CategoriesScreen" component={CategoriesScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BrandsScreen" component={BrandsScreen} options={{ headerShown: false }} />

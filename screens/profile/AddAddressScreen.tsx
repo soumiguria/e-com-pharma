@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,131 +11,258 @@ import {
   Alert,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import MapView, { Marker } from 'react-native-maps';
-import * as Speech from 'expo-speech-recognition';
+import { addressService, CreateAddressRequest, Address } from '../../services/api/addressService';
 
 type AddAddressScreenNavigationProp = StackNavigationProp<RootStackParamList, 'AddAddress'>;
 
 const { width, height } = Dimensions.get('window');
 
 interface AddressFormData {
-  name: string;
-  houseNumber: string;
-  apartment: string;
-  directions: string;
-  voiceDirections: string;
-  saveAs: 'home' | 'work' | 'friends' | 'other';
+  label: string;
+  firstName: string;
+  lastName: string;
+  mobile: string;
+  email: string;
+  line1: string;
+  line2: string;
+  city: string;
+  state: string;
+  pincode: string;
+  country: string;
 }
 
 const AddAddressScreen = () => {
   const { theme } = useTheme();
+  const { user } = useAuth();
   const navigation = useNavigation<AddAddressScreenNavigationProp>();
   const route = useRoute();
-  const { location } = route.params as { location?: { latitude: number; longitude: number; address: string } };
+  const { location, addressId } = route.params as { 
+    location?: { latitude: number; longitude: number; address: string };
+    addressId?: string;
+  };
   
   const [formData, setFormData] = useState<AddressFormData>({
-    name: '',
-    houseNumber: '',
-    apartment: '',
-    directions: '',
-    voiceDirections: '',
-    saveAs: 'home',
+    label: 'Home',
+    firstName: '',
+    lastName: '',
+    mobile: '',
+    email: '',
+    line1: '',
+    line2: '',
+    city: '',
+    state: '',
+    pincode: '',
+    country: 'India',
   });
 
-  const [isRecording, setIsRecording] = useState(false);
-  const [wordCount, setWordCount] = useState(0);
-  const [hasPermission, setHasPermission] = useState(false);
-  const maxWords = 200;
+  const [isLoading, setIsLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [isLoadingAddress, setIsLoadingAddress] = useState(false);
 
-  const saveAsOptions = [
-    { key: 'home', label: 'Home', icon: 'home' },
-    { key: 'work', label: 'Work', icon: 'work' },
-    { key: 'friends', label: 'Friends & Family', icon: 'people' },
-    { key: 'other', label: 'Other', icon: 'location-on' },
+  // Debug logging
+  console.log('🔍 AddAddressScreen Debug:', {
+    addressId,
+    isEditMode,
+    hasUser: !!user,
+    location: location?.address
+  });
+
+  // Load user data when component mounts
+  useEffect(() => {
+    if (user) {
+      setFormData(prev => ({
+        ...prev,
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        mobile: user.mobile || '',
+        email: user.email || '',
+      }));
+    }
+  }, [user]);
+
+  // Load address data if in edit mode
+  useEffect(() => {
+    if (addressId) {
+      setIsEditMode(true);
+      loadAddressData(addressId);
+    }
+  }, [addressId]);
+
+  const loadAddressData = async (id: string) => {
+    setIsLoadingAddress(true);
+    try {
+      console.log('🔄 Loading address data for editing...');
+      const response = await addressService.getAddressById(id);
+      
+      if (response.success && response.data) {
+        console.log('✅ Address data loaded for editing:', response.data);
+        
+        // Handle nested response structure
+        const addressData = response.data as any;
+        const actualAddress = addressData.data || addressData;
+        
+        setFormData({
+          label: actualAddress.label || 'Home',
+          firstName: actualAddress.firstName || '',
+          lastName: actualAddress.lastName || '',
+          mobile: actualAddress.mobile || '',
+          email: actualAddress.email || '',
+          line1: actualAddress.line1 || '',
+          line2: actualAddress.line2 || '',
+          city: actualAddress.city || '',
+          state: actualAddress.state || '',
+          pincode: actualAddress.pincode || '',
+          country: actualAddress.country || 'India',
+        });
+      } else {
+        console.log('❌ Failed to load address data:', response.error);
+        Alert.alert('Error', response.error || 'Failed to load address data');
+      }
+    } catch (error) {
+      console.error('💥 Error loading address data:', error);
+      Alert.alert('Error', 'Failed to load address data');
+    } finally {
+      setIsLoadingAddress(false);
+    }
+  };
+
+  const labelOptions = [
+    { key: 'Home', label: 'Home', icon: 'home' },
+    { key: 'Work', label: 'Work', icon: 'work' },
+    { key: 'Friends & Family', label: 'Friends & Family', icon: 'people' },
+    { key: 'Other', label: 'Other', icon: 'location-on' },
   ];
 
-  React.useEffect(() => {
-    // For now, we'll assume permission is granted
-    // In a real app, you would implement proper permission handling
-    setHasPermission(true);
-  }, []);
-
   const handleTextChange = (field: keyof AddressFormData, value: string) => {
-    if (field === 'directions') {
-      const words = value.trim().split(/\s+/).filter(word => word.length > 0);
-      setWordCount(words.length);
-      if (words.length <= maxWords) {
         setFormData({ ...formData, [field]: value });
-      }
-    } else {
-      setFormData({ ...formData, [field]: value });
-    }
   };
 
-  const handleVoiceRecord = async () => {
-    if (!hasPermission) {
-      Alert.alert('Permission Required', 'Please grant microphone permission to record voice directions.');
+  const validateForm = (): boolean => {
+    if (!formData.label.trim()) {
+      Alert.alert('Error', 'Please select an address label');
+      return false;
+    }
+    if (!formData.firstName.trim()) {
+      Alert.alert('Error', 'First Name is required');
+      return false;
+    }
+    if (!formData.lastName.trim()) {
+      Alert.alert('Error', 'Last Name is required');
+      return false;
+    }
+    if (!formData.mobile.trim()) {
+      Alert.alert('Error', 'Mobile number is required');
+      return false;
+    }
+    if (!formData.email.trim()) {
+      Alert.alert('Error', 'Email is required');
+      return false;
+    }
+    if (!formData.email.includes('@')) {
+      Alert.alert('Error', 'Please enter a valid email address');
+      return false;
+    }
+    if (!formData.line1.trim()) {
+      Alert.alert('Error', 'Address Line 1 is required');
+      return false;
+    }
+    if (!formData.city.trim()) {
+      Alert.alert('Error', 'City is required');
+      return false;
+    }
+    if (!formData.state.trim()) {
+      Alert.alert('Error', 'State is required');
+      return false;
+    }
+    if (!formData.pincode.trim()) {
+      Alert.alert('Error', 'Pincode is required');
+      return false;
+    }
+    if (!formData.country.trim()) {
+      Alert.alert('Error', 'Country is required');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSaveAddress = async () => {
+    if (!validateForm()) {
       return;
     }
 
-    if (isRecording) {
-      // Stop recording
-      setIsRecording(false);
-      // Note: expo-speech-recognition doesn't have stopListeningAsync in current version
-      // We'll simulate stopping
-    } else {
-      // Start recording
-      setIsRecording(true);
-      try {
-        // Simulate voice recording since expo-speech-recognition API is limited
-        setTimeout(() => {
-          setFormData({ ...formData, voiceDirections: 'Voice directions recorded successfully' });
-          setIsRecording(false);
-          Alert.alert('Recording Complete', 'Voice directions have been recorded.');
-        }, 3000);
-      } catch (error) {
-        Alert.alert('Recording Error', 'Failed to start recording. Please try again.');
-        setIsRecording(false);
-      }
-    }
-  };
+    setIsLoading(true);
+    try {
+      const addressData: CreateAddressRequest = {
+        label: formData.label,
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        mobile: formData.mobile.trim(),
+        email: formData.email.trim(),
+        line1: formData.line1.trim(),
+        line2: formData.line2.trim(),
+        city: formData.city.trim(),
+        state: formData.state.trim(),
+        pincode: formData.pincode.trim(),
+        country: formData.country.trim(),
+      };
 
-  const handleSaveAddress = () => {
-    if (!formData.houseNumber.trim()) {
-      Alert.alert('Error', 'House/Flat/Block No. is required');
-      return;
-    }
-
-    // In a real app, you would save this to your backend/storage
-    const newAddress = {
-      id: Date.now().toString(),
-      type: formData.saveAs,
-      name: saveAsOptions.find(option => option.key === formData.saveAs)?.label || 'Address',
-      houseNumber: formData.houseNumber,
-      apartment: formData.apartment,
-      directions: formData.directions,
-      voiceDirections: formData.voiceDirections,
-      location: location || {
-        latitude: 28.6139,
-        longitude: 77.2090,
-        address: 'Default Location',
-      },
-    };
-
+      console.log('💾 Saving address data:', addressData);
+      
+      if (isEditMode) {
+        const response = await addressService.updateAddress(addressId!, addressData);
+        if (response.success && response.data) {
+          console.log('✅ Address updated successfully:', response.data);
+          Alert.alert(
+            'Success',
+            'Address updated successfully!',
+            [
+              {
+                text: 'OK',
+                onPress: () => {
+                  // Navigate back to MyAddresses which will automatically refresh
+                  navigation.navigate('MyAddresses');
+                }
+              },
+            ]
+          );
+        } else {
+          console.log('❌ Failed to update address:', response.error);
+          Alert.alert('Error', response.error || 'Failed to update address. Please try again.');
+        }
+      } else {
+        const response = await addressService.createAddress(addressData);
+        if (response.success && response.data) {
+          console.log('✅ Address saved successfully:', response.data);
     Alert.alert(
       'Success',
       'Address saved successfully!',
       [
         {
           text: 'OK',
-          onPress: () => navigation.navigate('MyAddresses'),
+                onPress: () => {
+                  // Navigate back to MyAddresses which will automatically refresh
+                  navigation.navigate('MyAddresses');
+                }
         },
       ]
     );
+        } else {
+          console.log('❌ Failed to save address:', response.error);
+          Alert.alert('Error', response.error || 'Failed to save address. Please try again.');
+        }
+      }
+    } catch (error) {
+      console.error('💥 Error saving address:', error);
+      Alert.alert('Error', 'Failed to save address. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const styles = StyleSheet.create({
@@ -185,8 +312,17 @@ const AddAddressScreen = () => {
       marginBottom: 16,
       paddingHorizontal: 4,
     },
+    section: {
+      marginBottom: 24,
+    },
+    sectionTitle: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 16,
+    },
     inputContainer: {
-      marginBottom: 20,
+      marginBottom: 16,
     },
     inputLabel: {
       fontSize: 14,
@@ -207,50 +343,21 @@ const AddAddressScreen = () => {
       color: theme.colors.text,
       backgroundColor: theme.colors.surface,
     },
-    textArea: {
-      height: 100,
-      textAlignVertical: 'top',
-    },
-    voiceRecordContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 16,
-    },
-    voiceRecordButton: {
-      width: 50,
-      height: 50,
-      borderRadius: 25,
-      backgroundColor: isRecording ? theme.colors.error : theme.colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-      marginRight: 12,
-    },
-    voiceRecordText: {
-      flex: 1,
-      fontSize: 14,
-      color: theme.colors.secondary,
-    },
-    wordCount: {
-      fontSize: 12,
-      color: wordCount > maxWords ? theme.colors.error : theme.colors.secondary,
-      textAlign: 'right',
-      marginTop: 4,
-    },
-    saveAsContainer: {
+    labelContainer: {
       marginBottom: 24,
     },
-    saveAsLabel: {
+    labelLabel: {
       fontSize: 14,
       color: theme.colors.secondary,
       marginBottom: 12,
       fontWeight: '500',
     },
-    saveAsButtons: {
+    labelButtons: {
       flexDirection: 'row',
       flexWrap: 'wrap',
       gap: 8,
     },
-    saveAsButton: {
+    labelButton: {
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: 16,
@@ -260,19 +367,19 @@ const AddAddressScreen = () => {
       borderColor: theme.colors.border,
       minWidth: (width - 48) / 2 - 4,
     },
-    saveAsButtonSelected: {
+    labelButtonSelected: {
       backgroundColor: theme.colors.primary,
       borderColor: theme.colors.primary,
     },
-    saveAsButtonText: {
+    labelButtonText: {
       marginLeft: 8,
       fontSize: 14,
       fontWeight: '500',
     },
-    saveAsButtonTextSelected: {
+    labelButtonTextSelected: {
       color: theme.colors.surface,
     },
-    saveAsButtonTextUnselected: {
+    labelButtonTextUnselected: {
       color: theme.colors.text,
     },
     saveButton: {
@@ -281,6 +388,7 @@ const AddAddressScreen = () => {
       borderRadius: 12,
       alignItems: 'center',
       marginTop: 16,
+      opacity: isLoading ? 0.6 : 1,
     },
     saveButtonText: {
       color: theme.colors.surface,
@@ -299,7 +407,9 @@ const AddAddressScreen = () => {
           >
             <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>Add New Address</Text>
+          <Text style={styles.headerTitle}>
+            {isEditMode ? 'Edit Address' : 'Add New Address'}
+          </Text>
         </View>
 
         <ScrollView style={styles.scrollContent}>
@@ -328,103 +438,34 @@ const AddAddressScreen = () => {
             {location?.address || 'Selected Location'}
           </Text>
 
-          {/* Name input at the top of the form */}
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Name</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Name (e.g. John Doe)"
-              value={formData.name}
-              onChangeText={text => handleTextChange('name', text)}
-            />
-          </View>
-
-          {/* Address Form */}
-          <View style={styles.inputContainer}>
-            <Text style={[styles.inputLabel, styles.requiredLabel]}>
-              House/Flat/Block No. *
-            </Text>
-            <TextInput
-              style={styles.input}
-              value={formData.houseNumber}
-              onChangeText={(text) => handleTextChange('houseNumber', text)}
-              placeholder="Enter house/flat/block number"
-              placeholderTextColor={theme.colors.secondary}
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Apartment/Road/Area</Text>
-            <TextInput
-              style={styles.input}
-              value={formData.apartment}
-              onChangeText={(text) => handleTextChange('apartment', text)}
-              placeholder="Enter apartment/road/area (optional)"
-              placeholderTextColor={theme.colors.secondary}
-            />
-          </View>
-
-          <View style={styles.inputContainer}>
-            <Text style={styles.inputLabel}>Directions to Reach</Text>
-            
-            <View style={styles.voiceRecordContainer}>
-              <TouchableOpacity
-                style={styles.voiceRecordButton}
-                onPress={handleVoiceRecord}
-              >
-                <MaterialIcons
-                  name={isRecording ? 'stop' : 'mic'}
-                  size={24}
-                  color={theme.colors.surface}
-                />
-              </TouchableOpacity>
-              <Text style={styles.voiceRecordText}>
-                TAP TO RECORD VOICE DIRECTIONS
-              </Text>
-            </View>
-
-            <TextInput
-              style={[styles.input, styles.textArea]}
-              value={formData.directions}
-              onChangeText={(text) => handleTextChange('directions', text)}
-              placeholder="e.g. Ring the bell on the red gate"
-              placeholderTextColor={theme.colors.secondary}
-              multiline
-              numberOfLines={4}
-            />
-            <Text style={styles.wordCount}>
-              {wordCount}/{maxWords} words
-            </Text>
-          </View>
-
-          {/* Save As Section */}
-          <View style={styles.saveAsContainer}>
-            <Text style={styles.saveAsLabel}>Save as</Text>
-            <View style={styles.saveAsButtons}>
-              {saveAsOptions.map((option) => (
+          {/* Address Label Section */}
+          <View style={styles.labelContainer}>
+            <Text style={styles.labelLabel}>Address Label</Text>
+            <View style={styles.labelButtons}>
+              {labelOptions.map((option) => (
                 <TouchableOpacity
                   key={option.key}
                   style={[
-                    styles.saveAsButton,
-                    formData.saveAs === option.key && styles.saveAsButtonSelected,
+                    styles.labelButton,
+                    formData.label === option.key && styles.labelButtonSelected,
                   ]}
-                  onPress={() => setFormData({ ...formData, saveAs: option.key as any })}
+                  onPress={() => setFormData({ ...formData, label: option.key })}
                 >
                   <MaterialIcons
                     name={option.icon as any}
                     size={20}
                     color={
-                      formData.saveAs === option.key
+                      formData.label === option.key
                         ? theme.colors.surface
                         : theme.colors.primary
                     }
                   />
                   <Text
                     style={[
-                      styles.saveAsButtonText,
-                      formData.saveAs === option.key
-                        ? styles.saveAsButtonTextSelected
-                        : styles.saveAsButtonTextUnselected,
+                      styles.labelButtonText,
+                      formData.label === option.key
+                        ? styles.labelButtonTextSelected
+                        : styles.labelButtonTextUnselected,
                     ]}
                   >
                     {option.label}
@@ -434,8 +475,139 @@ const AddAddressScreen = () => {
             </View>
           </View>
 
-          <TouchableOpacity style={styles.saveButton} onPress={handleSaveAddress}>
-            <Text style={styles.saveButtonText}>Save Address</Text>
+          {/* Personal Information Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Personal Information</Text>
+            
+            <View style={styles.inputContainer}>
+              <Text style={[styles.inputLabel, styles.requiredLabel]}>First Name *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.firstName}
+                onChangeText={(text) => handleTextChange('firstName', text)}
+                placeholder="Enter first name"
+                placeholderTextColor={theme.colors.secondary}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={[styles.inputLabel, styles.requiredLabel]}>Last Name *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.lastName}
+                onChangeText={(text) => handleTextChange('lastName', text)}
+                placeholder="Enter last name"
+                placeholderTextColor={theme.colors.secondary}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={[styles.inputLabel, styles.requiredLabel]}>Mobile Number *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.mobile}
+                onChangeText={(text) => handleTextChange('mobile', text)}
+                placeholder="Enter mobile number"
+                placeholderTextColor={theme.colors.secondary}
+                keyboardType="phone-pad"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={[styles.inputLabel, styles.requiredLabel]}>Email *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.email}
+                onChangeText={(text) => handleTextChange('email', text)}
+                placeholder="Enter email"
+                placeholderTextColor={theme.colors.secondary}
+                keyboardType="email-address"
+              />
+            </View>
+          </View>
+
+          {/* Address Information Section */}
+          <View style={styles.section}>
+            <Text style={styles.sectionTitle}>Address Information</Text>
+            
+            <View style={styles.inputContainer}>
+              <Text style={[styles.inputLabel, styles.requiredLabel]}>Address Line 1 *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.line1}
+                onChangeText={(text) => handleTextChange('line1', text)}
+                placeholder="House/Flat/Block No., Street"
+                placeholderTextColor={theme.colors.secondary}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={styles.inputLabel}>Address Line 2</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.line2}
+                onChangeText={(text) => handleTextChange('line2', text)}
+                placeholder="Apartment/Road/Area (optional)"
+                placeholderTextColor={theme.colors.secondary}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={[styles.inputLabel, styles.requiredLabel]}>City *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.city}
+                onChangeText={(text) => handleTextChange('city', text)}
+                placeholder="Enter city"
+                placeholderTextColor={theme.colors.secondary}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={[styles.inputLabel, styles.requiredLabel]}>State *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.state}
+                onChangeText={(text) => handleTextChange('state', text)}
+                placeholder="Enter state"
+                placeholderTextColor={theme.colors.secondary}
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={[styles.inputLabel, styles.requiredLabel]}>Pincode *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.pincode}
+                onChangeText={(text) => handleTextChange('pincode', text)}
+                placeholder="Enter pincode"
+                placeholderTextColor={theme.colors.secondary}
+                keyboardType="numeric"
+              />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <Text style={[styles.inputLabel, styles.requiredLabel]}>Country *</Text>
+              <TextInput
+                style={styles.input}
+                value={formData.country}
+                onChangeText={(text) => handleTextChange('country', text)}
+                placeholder="Enter country"
+                placeholderTextColor={theme.colors.secondary}
+              />
+            </View>
+          </View>
+
+          <TouchableOpacity 
+            style={styles.saveButton} 
+            onPress={handleSaveAddress}
+            disabled={isLoading || isLoadingAddress}
+          >
+            <Text style={styles.saveButtonText}>
+              {isLoading ? (isEditMode ? 'Updating...' : 'Saving...') : 
+               isLoadingAddress ? 'Loading...' : 
+               (isEditMode ? 'Update Address' : 'Save Address')}
+            </Text>
           </TouchableOpacity>
         </ScrollView>
       </View>

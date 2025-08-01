@@ -1,71 +1,212 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
-  TextInput,
+  Text,
   TouchableOpacity,
+  Alert,
+  SafeAreaView,
   KeyboardAvoidingView,
   Platform,
-  SafeAreaView,
+  TextInput,
 } from 'react-native';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import authService from '../../services/api/authService'; // Make sure this path is correct
+import LoadingOverlay from '../../components/ui/LoadingOverlay';
+import { useAuth } from '../../contexts/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'OTPVerification'>;
 type OTPVerificationRouteProp = RouteProp<RootStackParamList, 'OTPVerification'>;
 
 const OTPVerificationScreen = () => {
-  const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [timer, setTimer] = useState(30);
-  const [canResend, setCanResend] = useState(false);
-  const inputRefs = useRef<Array<TextInput | null>>([]);
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<OTPVerificationRouteProp>();
-  const { phoneNumber, cartType } = route.params;
+  const { phoneNumber, cartType, isRegistration = false, userData, otpKey: routeOtpKey } = route.params;
   const { theme } = useTheme();
+  const { login } = useAuth();
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimer((prevTimer) => {
-        if (prevTimer <= 1) {
-          clearInterval(interval);
-          setCanResend(true);
-          return 0;
-        }
-        return prevTimer - 1;
-      });
-    }, 1000);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
+  const [isLoading, setIsLoading] = useState(false);
+  const [otpKey, setOtpKey] = useState<string>(routeOtpKey || '');
+  const inputRefs = useRef<Array<any>>([]);
 
-    return () => clearInterval(interval);
-  }, []);
-
-  const handleOtpChange = (text: string, index: number) => {
+  // Handle OTP input change
+  const handleOtpChange = (value: string, index: number) => {
     const newOtp = [...otp];
-    newOtp[index] = text;
+    newOtp[index] = value;
     setOtp(newOtp);
-
-    // Auto-focus next input
-    if (text && index < 5) {
+    if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
-    }
-
-    // Check if OTP is complete
-    if (newOtp.every((digit) => digit !== '')) {
-      // Here you would typically verify the OTP with your backend
-      // For now, we'll just navigate to the order confirmation screen
-      navigation.replace('OrderConfirmation');
     }
   };
 
-  const handleResendOtp = () => {
-    if (canResend) {
-      // Here you would typically make an API call to resend OTP
-      setTimer(30);
-      setCanResend(false);
+  // Handle backspace
+  const handleKeyPress = (e: any, index: number) => {
+    if (e.nativeEvent.key === 'Backspace' && !otp[index] && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // Main OTP verification logic
+  const handleVerifyOTP = async () => {
+    const otpString = otp.join('');
+    if (otpString.length !== 6) {
+      Alert.alert('Error', 'Please enter a valid 6-digit OTP');
+      return;
+    }
+    setIsLoading(true);
+
+    try {
+      console.log('🔐 Starting OTP verification...');
+      console.log('📱 Phone Number:', phoneNumber);
+      console.log('🔑 OTP Key:', otpKey);
+      console.log('🔢 OTP Entered:', otpString);
+      console.log('📝 Is Registration:', isRegistration);
+      console.log('👤 User Data:', userData);
+      console.log('🔑 Route OTP Key:', routeOtpKey);
+      
+      // Check if otpKey looks like it's from login or registration
+      if (otpKey && otpKey.includes('-login')) {
+        console.log('⚠️  WARNING: OTP Key appears to be from login flow but isRegistration is:', isRegistration);
+      }
+      
+      let verifyRes;
+      
+      if (isRegistration) {
+        // Registration flow - user is already registered, just verify OTP
+        console.log('🔄 Registration flow - verifying OTP...');
+        if (!otpKey) {
+          Alert.alert('Error', 'OTP key not found. Please try again.');
+          setIsLoading(false);
+          return;
+        }
+        verifyRes = await authService.verifyOTP(phoneNumber, otpString, otpKey);
+      } else {
+        // Login flow
+        console.log('🔑 Login flow - verifying OTP...');
+        if (!otpKey) {
+          Alert.alert('Error', 'OTP key not found. Please try again.');
+          setIsLoading(false);
+          return;
+        }
+        verifyRes = await authService.verifyOTP(phoneNumber, otpString, otpKey);
+      }
+
+      console.log('📡 Verify OTP Response:', JSON.stringify(verifyRes, null, 2));
+      
+      // Simple token extraction - API returns { status: "success", data: { token: "..." } }
+      let token;
+      
+      if (verifyRes.success && verifyRes.data) {
+        const responseData = verifyRes.data as any;
+        
+        // Direct path: response.data.data.token
+        if (responseData.data && responseData.data.token) {
+          token = responseData.data.token;
+        }
+      }
+
+      console.log('🎫 Extracted Token:', token);
+
+      if (!token) {
+        console.log('❌ No token found in response');
+        Alert.alert('Error', 'Failed to get authentication token. Please try again.');
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('✅ Token extracted successfully, storing token...');
+      
+      // Store token directly
+      try {
+        await AsyncStorage.setItem('auth_token', token);
+        console.log('✅ Token stored successfully');
+        
+        // Fetch user data from /v1/customer/self API
+        console.log('👤 Fetching user data from /v1/customer/self...');
+        const userResponse = await authService.getProfile();
+        
+        if (userResponse.success && userResponse.data) {
+          console.log('✅ User data fetched successfully:', userResponse.data);
+          
+          // Store user data
+          await AsyncStorage.setItem('user_data', JSON.stringify(userResponse.data));
+          console.log('✅ User data stored successfully');
+        } else {
+          console.log('⚠️ Failed to fetch user data:', userResponse.error);
+        }
+        
+        // Navigate to main app
+        navigation.replace('Main', {
+          screen: 'Home',
+          params: {
+            screen: 'HomeRoot',
+            params: { storeId: 'default', pincode: '123456' }
+          }
+        });
+      } catch (error) {
+        console.error('❌ Error storing token or fetching user data:', error);
+        Alert.alert('Error', 'Failed to complete authentication. Please try again.');
+      }
+    } catch (error) {
+      console.error('💥 Error verifying OTP:', error);
+      Alert.alert('Error', 'Failed to verify OTP. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Handle resend OTP
+  const handleResendOTP = async () => {
+    setIsLoading(true);
+    try {
+      console.log('🔄 Resending OTP...');
+      console.log('📱 Phone Number:', phoneNumber);
+      console.log('📝 Is Registration:', isRegistration);
+      
+      let response;
+      
+      if (isRegistration) {
+        // For registration, call register API again to get new otpKey
+        console.log('🔄 Registration flow - calling register API for new otpKey...');
+        if (!userData) {
+          Alert.alert('Error', 'User data not found. Please go back and try again.');
+          setIsLoading(false);
+          return;
+        }
+        
+        response = await authService.registerUser({
+          mobile: phoneNumber,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          email: userData.email,
+        });
+      } else {
+        // For login, call sendOTP API
+        console.log('🔄 Login flow - calling sendOTP API...');
+        response = await authService.sendOTP(phoneNumber);
+      }
+
+      console.log('📡 Resend OTP Response:', JSON.stringify(response, null, 2));
+
+      if (response.success && response.data?.otpKey) {
+        const newOtpKey = response.data.otpKey;
+        console.log('✅ New OTP Key received:', newOtpKey);
+        setOtpKey(newOtpKey);
+        Alert.alert('Success', 'OTP has been resent successfully!');
+      } else {
+        console.log('❌ Resend OTP failed:', response.error);
+        Alert.alert('Error', response.error || 'Failed to resend OTP. Please try again.');
+      }
+    } catch (error) {
+      console.error('💥 Error resending OTP:', error);
+      Alert.alert('Error', 'Failed to resend OTP. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -73,14 +214,18 @@ const OTPVerificationScreen = () => {
     container: {
       flex: 1,
       backgroundColor: theme.colors.background,
+    },
+    content: {
+      flex: 1,
       padding: theme.spacing.lg,
+      justifyContent: 'center',
     },
     header: {
-      marginTop: theme.spacing.xl,
+      alignItems: 'center',
       marginBottom: theme.spacing.xl,
     },
     title: {
-      fontSize: 28,
+      fontSize: 24,
       fontWeight: 'bold',
       color: theme.colors.text,
       marginBottom: theme.spacing.sm,
@@ -88,7 +233,13 @@ const OTPVerificationScreen = () => {
     subtitle: {
       fontSize: 16,
       color: theme.colors.secondary,
+      textAlign: 'center',
       marginBottom: theme.spacing.lg,
+    },
+    phoneText: {
+      fontSize: 16,
+      color: theme.colors.primary,
+      fontWeight: '500',
     },
     otpContainer: {
       flexDirection: 'row',
@@ -97,35 +248,43 @@ const OTPVerificationScreen = () => {
     },
     otpInput: {
       width: 45,
-      height: 45,
-      borderWidth: 1,
+      height: 55,
+      borderWidth: 2,
       borderColor: theme.colors.border,
       borderRadius: theme.borderRadius.md,
       textAlign: 'center',
       fontSize: 20,
+      fontWeight: 'bold',
       color: theme.colors.text,
       backgroundColor: theme.colors.surface,
     },
-    resendContainer: {
-      flexDirection: 'row',
-      justifyContent: 'center',
+    verifyButton: {
+      backgroundColor: theme.colors.primary,
+      paddingVertical: theme.spacing.md,
+      borderRadius: theme.borderRadius.md,
       alignItems: 'center',
-      marginTop: theme.spacing.xl,
+      marginBottom: theme.spacing.lg,
     },
-    resendText: {
-      color: theme.colors.secondary,
-      fontSize: 16,
-    },
-    resendButton: {
-      marginLeft: theme.spacing.sm,
-    },
-    resendButtonText: {
-      color: theme.colors.primary,
+    verifyButtonText: {
+      color: '#fff',
       fontSize: 16,
       fontWeight: 'bold',
     },
-    disabledResend: {
-      opacity: 0.5,
+    resendContainer: {
+      alignItems: 'center',
+    },
+    resendText: {
+      fontSize: 14,
+      color: theme.colors.secondary,
+      marginBottom: theme.spacing.sm,
+    },
+    resendButton: {
+      paddingVertical: theme.spacing.sm,
+    },
+    resendButtonText: {
+      color: theme.colors.primary,
+      fontSize: 14,
+      fontWeight: '500',
     },
   });
 
@@ -135,42 +294,56 @@ const OTPVerificationScreen = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Enter verification code</Text>
-          <Text style={styles.subtitle}>
-            We've sent a verification code to {phoneNumber}
-          </Text>
-        </View>
+        <View style={styles.content}>
+          <View style={styles.header}>
+            <Text style={styles.title}>Verify OTP</Text>
+            <Text style={styles.subtitle}>
+              Enter the 6-digit code sent to your mobile number
+            </Text>
+            <Text style={styles.phoneText}>+91 {phoneNumber}</Text>
+          </View>
 
-        <View style={styles.otpContainer}>
-          {otp.map((digit, index) => (
-            <TextInput
-              key={index}
-              ref={(ref) => (inputRefs.current[index] = ref)}
-              style={styles.otpInput}
-              maxLength={1}
-              keyboardType="number-pad"
-              value={digit}
-              onChangeText={(text) => handleOtpChange(text, index)}
-            />
-          ))}
-        </View>
+          <View style={styles.otpContainer}>
+            {otp.map((digit, index) => (
+              <TextInput
+                key={index}
+                ref={(ref) => (inputRefs.current[index] = ref)}
+                style={styles.otpInput}
+                value={digit}
+                onChangeText={(value) => handleOtpChange(value, index)}
+                onKeyPress={(e) => handleKeyPress(e, index)}
+                keyboardType="default"
+                maxLength={1}
+                selectTextOnFocus
+              />
+            ))}
+          </View>
 
-        <View style={styles.resendContainer}>
-          <Text style={styles.resendText}>Didn't receive the code?</Text>
           <TouchableOpacity
-            style={[styles.resendButton, !canResend && styles.disabledResend]}
-            onPress={handleResendOtp}
-            disabled={!canResend}
+            style={styles.verifyButton}
+            onPress={handleVerifyOTP}
+            disabled={isLoading || otp.join('').length !== 6}
           >
-            <Text style={styles.resendButtonText}>
-              {canResend ? 'Resend' : `Resend in ${timer}s`}
+            <Text style={styles.verifyButtonText}>
+              {isRegistration ? 'Complete Registration' : 'Verify & Login'}
             </Text>
           </TouchableOpacity>
+
+          <View style={styles.resendContainer}>
+            <Text style={styles.resendText}>Didn't receive the code?</Text>
+            <TouchableOpacity style={styles.resendButton} onPress={handleResendOTP}>
+              <Text style={styles.resendButtonText}>Resend OTP</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </KeyboardAvoidingView>
+
+      <LoadingOverlay 
+        visible={isLoading} 
+        message={isRegistration ? "Completing registration..." : "Verifying OTP..."} 
+      />
     </SafeAreaView>
   );
 };
 
-export default OTPVerificationScreen; 
+export default OTPVerificationScreen;

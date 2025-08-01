@@ -1,11 +1,12 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { View, Image, StyleSheet, Dimensions, Animated, Easing } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useNavigation } from '@react-navigation/native';
-import { useTheme } from '../../contexts/ThemeContext';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 
 type SplashScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
 
@@ -13,13 +14,14 @@ const { width, height } = Dimensions.get('window');
 
 const SplashScreen = () => {
   const { theme } = useTheme();
+  const { isAuthenticated, isLoading } = useAuth();
   const navigation = useNavigation<SplashScreenNavigationProp>();
   const { colors, typography, spacing } = theme;
   
   // Animation values
-  const scaleValue = new Animated.Value(0.8);
-  const opacityValue = new Animated.Value(0);
-  const rotateValue = new Animated.Value(0);
+  const scaleValue = useRef(new Animated.Value(0.8)).current;
+  const opacityValue = useRef(new Animated.Value(0)).current;
+  const rotateValue = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     // Start animations
@@ -46,19 +48,33 @@ const SplashScreen = () => {
       }),
     ]).start();
 
-    // Navigation timer
+    // Navigation timer - wait for auth to load
     const timer = setTimeout(() => {
       try {
-        navigation.replace('Pincode' as any);
+        if (!isLoading) {
+          if (isAuthenticated) {
+            // User is logged in, navigate to main app
+            navigation.replace('Main', { 
+              screen: 'Home', 
+              params: { 
+                screen: 'HomeRoot', 
+                params: { storeId: 'default', pincode: '110001' } 
+              } 
+            });
+          } else {
+            // User is not logged in, navigate to pincode screen
+            navigation.replace('Pincode');
+          }
+        }
       } catch (error) {
         console.error('Navigation error:', error);
         // Fallback navigation
-        navigation.replace('Pincode' as any);
+        navigation.replace('Pincode');
       }
     }, 2500); // Slightly longer to allow animations to complete
     
     return () => clearTimeout(timer);
-  }, [navigation]);
+  }, [navigation, isAuthenticated, isLoading]);
 
   const rotateInterpolate = rotateValue.interpolate({
     inputRange: [0, 1],

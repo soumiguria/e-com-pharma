@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,8 +8,10 @@ import {
   ScrollView,
   SafeAreaView,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
 import { StackNavigationProp } from '@react-navigation/stack';
@@ -21,16 +23,17 @@ const { width } = Dimensions.get('window');
 
 const EditProfileScreen = () => {
   const { theme } = useTheme();
+  const { user, isAuthenticated, refreshUser } = useAuth();
   const navigation = useNavigation<EditProfileScreenNavigationProp>();
   
   const [profileData, setProfileData] = useState({
-    firstName: 'John',
-    lastName: 'Doe',
-    mobileNumber: '+91 98765 43210',
-    email: 'john.doe@example.com',
-    alternateNumber: '+91 98765 43211',
-    birthday: '15/03/1990',
-    anniversary: '20/06/2015',
+    firstName: '',
+    lastName: '',
+    mobileNumber: '',
+    email: '',
+    alternateNumber: '',
+    birthday: '',
+    anniversary: '',
   });
 
   const [specialDates, setSpecialDates] = useState([
@@ -38,9 +41,74 @@ const EditProfileScreen = () => {
     { id: '2', name: 'Son Birthday', date: '25/12/2010' },
   ]);
 
-  const handleSave = () => {
-    // Save profile data logic here
-    navigation.goBack();
+  // Debug logging
+  console.log('🔍 EditProfileScreen Debug:', {
+    isAuthenticated,
+    user: user ? {
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      mobile: user.mobile
+    } : 'null',
+    hasUser: !!user
+  });
+
+  // Load user data when component mounts
+  useEffect(() => {
+    if (user) {
+      setProfileData({
+        firstName: user.firstName || '',
+        lastName: user.lastName || '',
+        mobileNumber: `+91 ${user.mobile || ''}`,
+        email: user.email || '',
+        alternateNumber: '',
+        birthday: '',
+        anniversary: '',
+      });
+      console.log('✅ User data loaded into form:', {
+        firstName: user.firstName,
+        lastName: user.lastName,
+        email: user.email,
+        mobile: user.mobile
+      });
+    } else if (isAuthenticated) {
+      // If authenticated but no user data, refresh it
+      console.log('🔄 Refreshing user data in EditProfileScreen...');
+      refreshUser();
+    }
+  }, [user, isAuthenticated, refreshUser]);
+
+  const handleSave = async () => {
+    try {
+      // Validate required fields
+      if (!profileData.firstName.trim() || !profileData.lastName.trim() || !profileData.email.trim()) {
+        Alert.alert('Error', 'Please fill in all required fields (First Name, Last Name, Email)');
+        return;
+      }
+
+      if (!profileData.email.includes('@')) {
+        Alert.alert('Error', 'Please enter a valid email address');
+        return;
+      }
+
+      // TODO: Implement API call to update user profile
+      console.log('💾 Saving profile data:', profileData);
+      
+      // For now, just show success and go back
+      Alert.alert(
+        'Success',
+        'Profile updated successfully!',
+        [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack()
+          }
+        ]
+      );
+    } catch (error) {
+      console.error('❌ Error saving profile:', error);
+      Alert.alert('Error', 'Failed to save profile. Please try again.');
+    }
   };
 
   const addSpecialDate = () => {
@@ -147,7 +215,43 @@ const EditProfileScreen = () => {
       marginLeft: 8,
       fontWeight: '600',
     },
+    centerContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      padding: 20,
+    },
+    noUserText: {
+      marginTop: 16,
+      textAlign: 'center',
+      fontSize: 16,
+    },
   });
+
+  // Show loading or error state if not authenticated
+  if (!isAuthenticated || !user) {
+    return (
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+            >
+              <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>My Profile</Text>
+          </View>
+          <View style={styles.centerContainer}>
+            <MaterialIcons name="person" size={80} color={theme.colors.secondary} />
+            <Text style={[styles.noUserText, { color: theme.colors.text }]}>
+              {!isAuthenticated ? 'Please login to edit your profile' : 'Loading user data...'}
+            </Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>

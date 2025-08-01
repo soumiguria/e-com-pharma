@@ -20,10 +20,12 @@
     "@react-navigation/stack": "^6.4.1",
     "@types/react-native-snap-carousel": "^3.8.11",
     "expo": "~51.0.8",
+    "expo-dev-client": "~4.0.29",
     "expo-linear-gradient": "~13.0.2",
     "expo-location": "~17.0.1",
     "expo-speech-recognition": "^2.1.1",
     "expo-status-bar": "~1.12.1",
+    "jwt-decode": "^4.0.0",
     "lottie-react-native": "^7.2.2",
     "react": "^18.2.0",
     "react-native": "0.74.5",
@@ -37,8 +39,7 @@
     "react-native-snap-carousel": "^3.9.1",
     "react-native-tab-view": "^3.5.2",
     "react-native-toast-message": "^2.3.0",
-    "react-native-vector-icons": "10.1.0",
-    "expo-dev-client": "~4.0.29"
+    "react-native-vector-icons": "10.1.0"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",

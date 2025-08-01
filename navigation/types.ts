@@ -24,9 +24,20 @@ export type RootStackParamList = {
   };
   BannerDetail: { bannerId: string };
   PhoneAuth: { cartType: 'grocery' | 'pharmacy' };
+  Register: { 
+    phoneNumber: string; 
+    cartType: 'grocery' | 'pharmacy'; 
+  };
   OTPVerification: {
     phoneNumber: string;
     cartType: 'grocery' | 'pharmacy';
+    isRegistration?: boolean;
+    userData?: {
+      firstName: string;
+      lastName: string;
+      email: string;
+    };
+    otpKey?: string;
   };
   CategoriesScreen: undefined;
   BrandsScreen: undefined;
@@ -34,7 +45,10 @@ export type RootStackParamList = {
   GreatOffersScreen: undefined;
   EditProfile: undefined;
   MyAddresses: undefined;
-  AddAddress: { location?: { latitude: number; longitude: number; address: string } };
+  AddAddress: { 
+    location?: { latitude: number; longitude: number; address: string };
+    addressId?: string;
+  };
   LocationPicker: undefined;
   MyWishlist: undefined;
   AboutStore: undefined;
