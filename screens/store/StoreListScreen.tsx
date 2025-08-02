@@ -30,7 +30,7 @@ const mockedStores: Store[] = [
     id: '1',
     name: 'Fresh Grocery Store',
     type: 'grocery',
-    address: '123 Main Street, City Center',
+    address: '123 Main Street, Downtown',
     distance: '0.5 km',
     rating: 4.5,
     image: 'https://randomuser.me/api/portraits/men/1.jpg',
@@ -66,15 +66,55 @@ const mockedStores: Store[] = [
     image: 'https://randomuser.me/api/portraits/women/4.jpg',
     totalItems: 60,
   },
+  {
+    id: '5',
+    name: 'Health First Pharmacy',
+    type: 'pharmacy',
+    address: '567 Elm Street, Northside',
+    distance: '0.8 km',
+    rating: 4.7,
+    image: 'https://randomuser.me/api/portraits/men/5.jpg',
+    totalItems: 150,
+  },
+  {
+    id: '6',
+    name: 'MediCare Pharmacy',
+    type: 'pharmacy',
+    address: '890 Maple Drive, Southside',
+    distance: '1.5 km',
+    rating: 4.4,
+    image: 'https://randomuser.me/api/portraits/women/6.jpg',
+    totalItems: 90,
+  },
+  {
+    id: '7',
+    name: 'Organic Foods Market',
+    type: 'grocery',
+    address: '234 Green Street, Central',
+    distance: '1.0 km',
+    rating: 4.6,
+    image: 'https://randomuser.me/api/portraits/men/7.jpg',
+    totalItems: 85,
+  },
+  {
+    id: '8',
+    name: 'Wellness Pharmacy',
+    type: 'pharmacy',
+    address: '456 Wellness Blvd, Westside',
+    distance: '2.2 km',
+    rating: 4.1,
+    image: 'https://randomuser.me/api/portraits/women/8.jpg',
+    totalItems: 75,
+  },
 ];
 
 const StoreListScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<StoreListRouteProp>();
-  const { theme } = useTheme();
+  const { theme, section } = useTheme();
   const { colors, typography, spacing, borderRadius, shadows } = theme;
   const { pincode } = route.params;
-  const [activeTab, setActiveTab] = useState<'grocery' | 'pharmacy'>('grocery');
+  const [activeTab, setActiveTab] = useState<'grocery' | 'pharmacy'>(section === 'pharmacy' ? 'pharmacy' : 'grocery');
   const { setSelectedStore } = useAppContext();
 
   const handleStoreSelect = (store: Store) => {
@@ -244,7 +284,11 @@ const StoreListScreen = () => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <ScrollView style={styles.content}>
+        <ScrollView 
+          style={styles.content}
+          contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.header}>
             <Text style={styles.title}>Stores Near You</Text>
             <Text style={styles.subtitle}>Pincode: {pincode}</Text>

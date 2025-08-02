@@ -92,6 +92,13 @@ export type CategoriesStackParamList = {
 };
 
 export type PharmacyStackParamList = {
-  PharmacyRoot: undefined;
+  PharmacyRoot: { storeId: string, pincode: string };
+  ProductDetail: { product: any };
+  CategoryDetail: { category: any };
+  GreatOffersScreen: undefined;
+  Cart: undefined;
+  RecentlyBoughtScreen: undefined;
+  BrandsScreen: undefined;
+  CategoriesScreen: undefined;
   MedicineDetail: { medicine: any };
 };

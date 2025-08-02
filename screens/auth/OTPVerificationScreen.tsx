@@ -27,12 +27,15 @@ const OTPVerificationScreen = () => {
   const route = useRoute<OTPVerificationRouteProp>();
   const { phoneNumber, cartType, isRegistration = false, userData, otpKey: routeOtpKey } = route.params;
   const { theme } = useTheme();
-  const { login } = useAuth();
+  const { login, user } = useAuth();
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [otpKey, setOtpKey] = useState<string>(routeOtpKey || '');
   const inputRefs = useRef<Array<any>>([]);
+
+  // Get the actual phone number - use user's mobile if coming from cart (logged in user)
+  const actualPhoneNumber = phoneNumber || user?.mobile || '';
 
   // Handle OTP input change
   const handleOtpChange = (value: string, index: number) => {
@@ -62,7 +65,7 @@ const OTPVerificationScreen = () => {
 
     try {
       console.log('🔐 Starting OTP verification...');
-      console.log('📱 Phone Number:', phoneNumber);
+      console.log('📱 Phone Number:', actualPhoneNumber);
       console.log('🔑 OTP Key:', otpKey);
       console.log('🔢 OTP Entered:', otpString);
       console.log('📝 Is Registration:', isRegistration);
@@ -82,7 +85,7 @@ const OTPVerificationScreen = () => {
 
       // Use AuthContext login method which handles everything automatically
       console.log('🔐 Using AuthContext login method...');
-      const loginResult = await login(phoneNumber, otpString, otpKey);
+      const loginResult = await login(actualPhoneNumber, otpString, otpKey);
       
       if (loginResult.success) {
         console.log('✅ Login successful, navigating to main app...');
@@ -111,7 +114,7 @@ const OTPVerificationScreen = () => {
     setIsLoading(true);
     try {
       console.log('🔄 Resending OTP...');
-      console.log('📱 Phone Number:', phoneNumber);
+      console.log('📱 Phone Number:', actualPhoneNumber);
       console.log('📝 Is Registration:', isRegistration);
       
       let response;
@@ -126,7 +129,7 @@ const OTPVerificationScreen = () => {
         }
         
         response = await authService.registerUser({
-          mobile: phoneNumber,
+          mobile: actualPhoneNumber,
           firstName: userData.firstName,
           lastName: userData.lastName,
           email: userData.email,
@@ -134,7 +137,7 @@ const OTPVerificationScreen = () => {
       } else {
         // For login, call sendOTP API
         console.log('🔄 Login flow - calling sendOTP API...');
-        response = await authService.sendOTP(phoneNumber);
+        response = await authService.sendOTP(actualPhoneNumber);
       }
 
       console.log('📡 Resend OTP Response:', JSON.stringify(response, null, 2));
@@ -246,7 +249,7 @@ const OTPVerificationScreen = () => {
             <Text style={styles.subtitle}>
               Enter the 6-digit code sent to your mobile number
             </Text>
-            <Text style={styles.phoneText}>+91 {phoneNumber}</Text>
+            <Text style={styles.phoneText}>+91 {actualPhoneNumber}</Text>
           </View>
 
           <View style={styles.otpContainer}>

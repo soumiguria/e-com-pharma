@@ -111,11 +111,11 @@ const pharmacyData: Category[] = [
 const Header = ({ onProfilePress, themedStyles }: { onProfilePress: () => void, themedStyles: any }) => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const { totalItems } = useCart();
   const { selectedStore } = useAppContext();
+  const { groceryItems } = useCart();
 
   return (
-    <View style={[themedStyles.header, { backgroundColor: theme.colors.surface }]}> 
+    <Animated.View style={[themedStyles.header]}>
       <TouchableOpacity onPress={onProfilePress} style={{ flexDirection: 'row', alignItems: 'center' }}>
         <MaterialCommunityIcons 
           name="account-circle" 
@@ -147,14 +147,14 @@ const Header = ({ onProfilePress, themedStyles }: { onProfilePress: () => void, 
             size={24} 
             color={theme.colors.text} 
           />
-          {totalItems > 0 && (
+          {groceryItems.length > 0 && (
             <View style={[themedStyles.cartBadge, { backgroundColor: theme.colors.primary }]}> 
-              <Text style={themedStyles.cartBadgeText}>{totalItems}</Text>
+              <Text style={themedStyles.cartBadgeText}>{groceryItems.length}</Text>
             </View>
           )}
         </TouchableOpacity>
       </View>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -207,6 +207,7 @@ const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<HomeRouteProp>();
   const { addToGroceryCart } = useCart();
+  const { selectedStore } = useAppContext();
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
@@ -215,6 +216,17 @@ const HomeScreen = () => {
   const [loading, setLoading] = useState(true);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const scrollY = new Animated.Value(0);
+
+  // Determine if current store is pharmacy or grocery
+  const isPharmacyStore = selectedStore?.type === 'pharmacy';
+  const currentSection = isPharmacyStore ? 'pharmacy' : 'grocery';
+
+  // Set section based on store type
+  useEffect(() => {
+    if (selectedStore) {
+      setSection(currentSection);
+    }
+  }, [selectedStore, currentSection, setSection]);
 
   const themedStyles = useMemo(() => StyleSheet.create({
     container: {
@@ -300,103 +312,60 @@ const HomeScreen = () => {
       flexDirection: 'row',
       alignItems: 'center',
     },
-    searchActionIcon: {
-      marginLeft: 10,
+    searchButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+      backgroundColor: theme.colors.primary,
+      marginLeft: 8,
     },
-    tabsContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      paddingVertical: 10,
-      borderBottomWidth: 1,
-      borderBottomColor: '#eee',
-    },
-    tab: {
-      paddingVertical: 10,
-      paddingHorizontal: 20,
-      borderRadius: 20,
-    },
-    tabText: {
-      fontSize: 16,
-      fontWeight: 'bold',
+    searchButtonText: {
+      color: theme.colors.surface,
+      fontSize: 14,
+      fontWeight: '600',
     },
     contentContainer: {
       flex: 1,
-      backgroundColor: theme.colors.background,
-    },
-    searchResultsContainer: {
-      flex: 1,
-      backgroundColor: theme.colors.background,
-    },
-    noResultsContainer: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    noResultsText: {
-      fontSize: 16,
-      textAlign: 'center',
-      color: theme.colors.text,
     },
     section: {
-      marginHorizontal: 12,
-      marginTop: 18,
-      marginBottom: 10,
-      borderRadius: 18,
-      backgroundColor: theme.colors.surface,
-      padding: 16,
-      shadowColor: theme.colors.text,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 6,
-      elevation: 1,
+      marginBottom: 24,
+      paddingHorizontal: 16,
     },
     sectionTitle: {
-      fontSize: 19,
+      fontSize: 20,
       fontWeight: 'bold',
-      color: theme.colors.text,
-      marginBottom: 8,
-      letterSpacing: 0.2,
+      marginBottom: 16,
     },
     sectionHeaderRow: {
       flexDirection: 'row',
-      alignItems: 'center',
       justifyContent: 'space-between',
-      marginBottom: 8,
+      alignItems: 'center',
+      marginBottom: 16,
     },
     viewAll: {
-      fontWeight: 'bold',
-      color: theme.colors.primary,
-      fontSize: 15,
-      paddingVertical: 4,
-      paddingHorizontal: 12,
-      borderRadius: 8,
-      backgroundColor: theme.dark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.04)',
-      overflow: 'hidden',
-    },
-    gridContainer: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
+      fontSize: 14,
+      fontWeight: '600',
     },
     tabBar: {
       position: 'absolute',
       bottom: 0,
       left: 0,
       right: 0,
-      height: 80,
-      paddingBottom: Platform.OS === 'ios' ? 20 : 10,
-      borderTopWidth: 0,
-      elevation: 8,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: -3 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      borderTopLeftRadius: 20,
-      borderTopRightRadius: 20,
+      height: 60,
+      borderTopWidth: 1,
+      borderTopColor: theme.colors.border,
     },
-    tabIconContainer: {
+    tab: {
+      flex: 1,
       alignItems: 'center',
       justifyContent: 'center',
+      paddingVertical: 8,
+    },
+    activeTab: {
+      borderBottomWidth: 2,
+      borderBottomColor: theme.colors.primary,
+    },
+    tabIcon: {
       marginBottom: 4,
     },
     tabLabel: {
@@ -453,7 +422,7 @@ const HomeScreen = () => {
 
   useFocusEffect(
     React.useCallback(() => {
-      setSection('grocery');
+      // Don't set section here anymore, it's handled by the useEffect above
     }, [])
   );
 
@@ -547,7 +516,7 @@ const HomeScreen = () => {
       <View>
         <SearchBar
           onSearch={() => {}}
-          placeholder="Search products..."
+          placeholder={isPharmacyStore ? "Search medicines..." : "Search products..."}
         />
         <TouchableOpacity
           style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
@@ -568,7 +537,9 @@ const HomeScreen = () => {
           <ScrollView>
             <BannerSlider />
             <View style={themedStyles.section}>
-              <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>Categories</Text>
+              <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>
+                {isPharmacyStore ? 'Medicine Categories' : 'Categories'}
+              </Text>
               <CategoryGrid />
               <View style={{ alignItems: 'center', marginTop: 8 }}>
                 <TouchableOpacity onPress={() => navigation.navigate('CategoriesScreen' as any)}>
@@ -577,7 +548,9 @@ const HomeScreen = () => {
               </View>
             </View>
             <View style={themedStyles.section}>
-              <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>Shop by Brands</Text>
+              <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>
+                {isPharmacyStore ? 'Pharmacy Brands' : 'Shop by Brands'}
+              </Text>
               <BrandsGrid />
               <View style={{ alignItems: 'center', marginTop: 8 }}>
                 <TouchableOpacity onPress={() => navigation.navigate('BrandsScreen' as any)}>
@@ -588,22 +561,26 @@ const HomeScreen = () => {
             {/* Recently Bought Section */}
             <View style={themedStyles.section}>
               <View style={themedStyles.sectionHeaderRow}>
-                <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>Recently Bought</Text>
+                <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>
+                  {isPharmacyStore ? 'Recently Bought Medicines' : 'Recently Bought'}
+                </Text>
                 <TouchableOpacity onPress={() => navigation.navigate('RecentlyBoughtScreen' as any)}>
                   <Text style={[themedStyles.viewAll, {color: theme.colors.primary}]}>View All</Text>
                 </TouchableOpacity>
               </View>
-              <HorizontallyScrollableSection title="Recently Bought" />
+              <HorizontallyScrollableSection title={isPharmacyStore ? "Recently Bought Medicines" : "Recently Bought"} />
             </View>
             {/* Great Offers Section */}
             <View style={themedStyles.section}>
               <View style={themedStyles.sectionHeaderRow}>
-                <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>Great Offers</Text>
+                <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>
+                  {isPharmacyStore ? 'Medicine Offers' : 'Great Offers'}
+                </Text>
                 <TouchableOpacity onPress={() => navigation.navigate('GreatOffersScreen' as any)}>
                   <Text style={[themedStyles.viewAll, {color: theme.colors.primary}]}>View All</Text>
                 </TouchableOpacity>
               </View>
-              <HorizontallyScrollableSection title="Great Offers" />
+              <HorizontallyScrollableSection title={isPharmacyStore ? "Medicine Offers" : "Great Offers"} />
             </View>
           </ScrollView>
         )}

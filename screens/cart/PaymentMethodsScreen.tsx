@@ -3,6 +3,7 @@ import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, TextInp
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ThemedButton from '../../components/ui/ThemedButton';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -38,14 +39,36 @@ const userAddresses = [
 
 const PaymentMethodsScreen = () => {
   const { theme } = useTheme();
+  const { isAuthenticated } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { clearCart } = useCart();
+  const { clearCart, groceryItems, pharmacyItems } = useCart();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = React.useState('1');
   const [selectedAddress, setSelectedAddress] = React.useState(userAddresses[0].id);
   const [selectedSpeed, setSelectedSpeed] = React.useState('1');
   const [selectedTimeSlot, setSelectedTimeSlot] = React.useState(timeSlots[0]);
   const [addresses, setAddresses] = React.useState(userAddresses);
+
+  // Determine cart type based on items
+  const hasPharmacyItems = pharmacyItems.length > 0;
+  const cartType = hasPharmacyItems ? 'pharmacy' : 'grocery';
+
+  const handlePlaceOrder = () => {
+    setIsLoading(true);
+    
+    // Simulate a small delay for better UX
+    setTimeout(() => {
+      if (isAuthenticated) {
+        // User is logged in, skip phone/OTP and go directly to order confirmation
+        clearCart();
+        navigation.navigate('OrderConfirmation');
+      } else {
+        // User is not logged in, go to phone auth
+        navigation.navigate('PhoneAuth', { cartType });
+      }
+      setIsLoading(false);
+    }, 500);
+  };
 
   const styles = StyleSheet.create({
     container: {
@@ -224,14 +247,7 @@ const PaymentMethodsScreen = () => {
         </View>
 
         {/* Place Order Button */}
-        <ThemedButton title="Place Order" onPress={() => {
-          setIsLoading(true);
-          // Simulate a small delay for better UX
-          setTimeout(() => {
-            navigation.navigate('PhoneAuth', { cartType: 'grocery' });
-            setIsLoading(false);
-          }, 500);
-        }} style={{ marginTop: 24 }} />
+        <ThemedButton title="Place Order" onPress={handlePlaceOrder} style={{ marginTop: 24 }} />
               </ScrollView>
       </SafeAreaView>
 

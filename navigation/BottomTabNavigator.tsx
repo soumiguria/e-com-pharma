@@ -15,11 +15,15 @@ import CartScreen from '../screens/cart/CartScreen';
 import RecentlyBoughtScreen from '../screens/profile/RecentlyBoughtScreen';
 import BrandsScreen from '../screens/category/BrandsScreen';
 import { useNavigation } from '@react-navigation/native';
+import { RootStackParamList } from './types';
+import { StackNavigationProp } from '@react-navigation/stack';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
 const OrdersStack = createNativeStackNavigator();
 const PharmacyStack = createNativeStackNavigator();
+
+type NavigationProp = StackNavigationProp<RootStackParamList>;
 
 const HomeStackNavigator = () => (
   <HomeStack.Navigator screenOptions={{ headerShown: false }}>
@@ -43,13 +47,20 @@ const OrdersStackNavigator = () => (
 const PharmacyStackNavigator = () => (
     <PharmacyStack.Navigator screenOptions={{ headerShown: false }}>
         <PharmacyStack.Screen name="PharmacyRoot" component={PharmacyHomeScreen} />
+        <PharmacyStack.Screen name="ProductDetail" component={ProductDetailScreen} />
+        <PharmacyStack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
+        <PharmacyStack.Screen name="GreatOffersScreen" component={GreatOffersScreen} />
+        <PharmacyStack.Screen name="Cart" component={CartScreen} />
+        <PharmacyStack.Screen name="RecentlyBoughtScreen" component={RecentlyBoughtScreen} />
+        <PharmacyStack.Screen name="BrandsScreen" component={BrandsScreen} />
+        <PharmacyStack.Screen name="CategoriesScreen" component={CategoriesScreen} />
     </PharmacyStack.Navigator>
 );
 
 
 const BottomTabNavigator = () => {
   const { section, setSection } = useTheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp>();
 
   return (
     <Tab.Navigator
@@ -88,7 +99,7 @@ const BottomTabNavigator = () => {
             tabPress: (e) => {
               e.preventDefault();
               setSection('pharmacy');
-              navigation.navigate('Pincode' as never);
+              navigation.navigate('Pincode' as any);
             },
           }}
         />
@@ -100,7 +111,7 @@ const BottomTabNavigator = () => {
             tabPress: (e) => {
               e.preventDefault();
               setSection('grocery');
-              navigation.navigate('Pincode' as never);
+              navigation.navigate('Pincode' as any);
             },
           }}
         />

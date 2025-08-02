@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
 import { Text, Button, Card, useTheme } from 'react-native-paper';
 import { useCart } from '../../contexts/CartContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useNavigation } from '@react-navigation/native';
@@ -15,10 +16,13 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Cart'>;
 
 const CartScreen = () => {
   const { groceryItems, pharmacyItems, removeFromCart, updateQuantity, groceryTotal, pharmacyTotal, addToGroceryCart, addToPharmacyCart } = useCart();
+  const { isAuthenticated } = useAuth();
   const theme = useTheme();
   const navigation = useNavigation<NavigationProp>();
   
-  // Combine all items
+  // Separate totals
+  const hasGroceryItems = groceryItems.length > 0;
+  const hasPharmacyItems = pharmacyItems.length > 0;
   const allItems = [...groceryItems, ...pharmacyItems];
   const totalAmount = groceryTotal + pharmacyTotal;
 
@@ -27,30 +31,25 @@ const CartScreen = () => {
     navigation.navigate('PaymentMethods');
   };
 
-  // Mock recommended products
-  const recommendedProducts = [
-    { id: '101', name: 'Amul Milk 1L', price: 65, originalPrice: 80, image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg' },
-    { id: '102', name: 'Britannia Cheese Slices', price: 120, originalPrice: 150, image: 'https://blinkit.com/images/products/400/britannia-cheese-slices.jpg' },
-    { id: '103', name: 'Mother Dairy Curd', price: 30, originalPrice: 40, image: 'https://blinkit.com/images/products/400/mother-dairy-dahi.jpg' },
-    { id: '104', name: 'Tropicana Juice', price: 90, originalPrice: 100, image: 'https://blinkit.com/images/products/400/tropicana-orange-delight.jpg' },
-    { id: '105', name: 'Cadbury Dairy Milk', price: 45, originalPrice: 50, image: 'https://blinkit.com/images/products/400/cadbury-dairy-milk-chocolate.jpg' },
+  // Mock recommended products for grocery
+  const groceryRecommendations = [
+    { id: '101', name: 'Amul Milk 1L', price: 65, originalPrice: 80, image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg', category: 'grocery' as const },
+    { id: '102', name: 'Britannia Cheese Slices', price: 120, originalPrice: 150, image: 'https://blinkit.com/images/products/400/britannia-cheese-slices.jpg', category: 'grocery' as const },
+    { id: '103', name: 'Mother Dairy Curd', price: 30, originalPrice: 40, image: 'https://blinkit.com/images/products/400/mother-dairy-dahi.jpg', category: 'grocery' as const },
   ];
 
-  // Mock recommended products for empty cart
-  const emptyCartRecommendations = [
-    { id: '101', name: 'Amul Milk 1L', price: 65, originalPrice: 80, image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
-    { id: '102', name: 'Britannia Cheese Slices', price: 120, originalPrice: 150, image: 'https://images.pexels.com/photos/821365/pexels-photo-821365.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
-    { id: '103', name: 'Mother Dairy Curd', price: 30, originalPrice: 40, image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
-    { id: '104', name: 'Tropicana Juice', price: 90, originalPrice: 100, image: 'https://images.pexels.com/photos/2789328/pexels-photo-2789328.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
-    { id: '105', name: 'Cadbury Dairy Milk', price: 45, originalPrice: 50, image: 'https://images.pexels.com/photos/5638597/pexels-photo-5638597.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
-    { id: '106', name: 'Fresh Apples', price: 120, originalPrice: 150, image: 'https://images.pexels.com/photos/2093087/pexels-photo-2093087.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1', category: 'grocery' as const },
+  // Mock recommended products for pharmacy
+  const pharmacyRecommendations = [
+    { id: 'p101', name: 'Paracetamol 500mg', price: 5.99, originalPrice: 8.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharmacy' as const },
+    { id: 'p102', name: 'Vitamin C 1000mg', price: 12.50, originalPrice: 15.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharmacy' as const },
+    { id: 'p103', name: 'Cetirizine 10mg', price: 8.99, originalPrice: 12.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharmacy' as const },
   ];
 
-  const renderRecommendations = (navigation: any) => (
+  const renderRecommendations = (items: any[], title: string, addToCart: (item: any) => void) => (
     <View style={{ marginTop: 12, marginBottom: 18 }}>
-      <Text style={{ fontSize: 18, fontWeight: 'bold', marginLeft: 16, marginBottom: 8 }}>You Might Also Like</Text>
+      <Text style={{ fontSize: 18, fontWeight: 'bold', marginLeft: 16, marginBottom: 8 }}>{title}</Text>
       <RNScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: 12, paddingRight: 8 }}>
-        {recommendedProducts.map(product => (
+        {items.map(product => (
           <ProductCard
             key={product.id}
             product={product}
@@ -62,12 +61,79 @@ const CartScreen = () => {
     </View>
   );
 
+  const renderCartSection = (items: any[], title: string, total: number, addToCart: (item: any) => void) => {
+    if (items.length === 0) return null;
+
+    return (
+      <View style={styles.cartSection}>
+        <Text style={styles.sectionTitle}>{title}</Text>
+        {items.map((item) => (
+          <Card key={item.id} style={styles.cartItem}>
+            <Card.Content>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {/* Product Image */}
+                {item.image && (
+                  <Image source={{ uri: item.image }} style={{ width: 48, height: 48, borderRadius: 8, marginRight: 12, backgroundColor: '#f0f0f0' }} />
+                )}
+                <View style={{ flex: 1 }}>
+                  <View style={styles.itemHeader}>
+                    <Text style={styles.itemName}>{item.name}</Text>
+                    <Text style={styles.itemPrice}>₹{item.price.toFixed(2)}</Text>
+                  </View>
+                  {item.originalPrice && item.originalPrice > item.price && (
+                    <Text style={[styles.itemPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{item.originalPrice.toFixed(2)}</Text>
+                  )}
+                  {item.originalPrice && item.originalPrice > item.price && (
+                    <Text style={[styles.itemPrice, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% off</Text>
+                  )}
+                  {item.variant && (
+                    <Text style={styles.variantText}>
+                      {item.variant.name}: {item.variant.unit}
+                    </Text>
+                  )}
+                  <View style={styles.quantityContainer}>
+                    <TouchableOpacity
+                      style={[styles.quantityButton, { backgroundColor: theme.colors.surface }]}
+                      onPress={() => updateQuantity(item.id, item.quantity - 1, item.category)}
+                      activeOpacity={0.7}
+                    >
+                      <MaterialCommunityIcons name="minus" size={18} color={theme.colors.onSurface} />
+                    </TouchableOpacity>
+                    <Text style={styles.quantityText}>{item.quantity}</Text>
+                    <TouchableOpacity
+                      style={[styles.quantityButton, { backgroundColor: theme.colors.surface }]}
+                      onPress={() => updateQuantity(item.id, item.quantity + 1, item.category)}
+                      activeOpacity={0.7}
+                    >
+                      <MaterialCommunityIcons name="plus" size={18} color={theme.colors.onSurface} />
+                    </TouchableOpacity>
+                    <Button
+                      mode="outlined"
+                      onPress={() => removeFromCart(item.id, item.category)}
+                      style={styles.removeButton}
+                    >
+                      Remove
+                    </Button>
+                  </View>
+                </View>
+              </View>
+            </Card.Content>
+          </Card>
+        ))}
+        <View style={styles.sectionTotal}>
+          <Text style={styles.sectionTotalText}>{title} Total: ₹{total.toFixed(2)}</Text>
+        </View>
+      </View>
+    );
+  };
+
   return (
     <View style={styles.container}>
-    <Appbar.Header>
-      <Appbar.BackAction onPress={() => navigation.goBack()} />
-      <Appbar.Content title="My Cart" />
-    </Appbar.Header>
+      <Appbar.Header>
+        <Appbar.BackAction onPress={() => navigation.goBack()} />
+        <Appbar.Content title="My Cart" />
+      </Appbar.Header>
+
       {allItems.length === 0 ? (
         <View style={styles.emptyCart}>
           <View style={styles.emptyCartContent}>
@@ -86,7 +152,7 @@ const CartScreen = () => {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.recommendationsScroll}
             >
-              {emptyCartRecommendations.map(product => (
+              {groceryRecommendations.map(product => (
                 <View key={product.id} style={[styles.recommendationCard, { backgroundColor: theme.colors.surface }]}>
                   <Image source={{ uri: product.image }} style={styles.recommendationImage} />
                   <Text style={[styles.recommendationName, { color: theme.colors.onSurface }]} numberOfLines={2}>
@@ -184,7 +250,8 @@ const CartScreen = () => {
             ))}
           </ScrollView>
           
-          {renderRecommendations(navigation)}
+          {hasGroceryItems && renderRecommendations(groceryRecommendations, 'You Might Also Like', addToGroceryCart)}
+          {hasPharmacyItems && renderRecommendations(pharmacyRecommendations, 'Recommended Medicines', addToPharmacyCart)}
           
           <View style={styles.totalContainer}>
             <Text style={styles.totalText}>Total: ₹{totalAmount.toFixed(2)}</Text>
@@ -193,7 +260,7 @@ const CartScreen = () => {
               onPress={handleCheckout}
               disabled={allItems.length === 0}
             >
-              Proceed to Checkout
+              {isAuthenticated ? 'Place Order' : 'Proceed to Checkout'}
             </Button>
           </View>
         </>
@@ -343,6 +410,24 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#fff',
+  },
+  cartSection: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 12,
+    marginLeft: 16,
+  },
+  sectionTotal: {
+    marginTop: 16,
+    marginBottom: 16,
+    marginLeft: 16,
+  },
+  sectionTotalText: {
+    fontSize: 18,
+    fontWeight: 'bold',
   },
 });
 

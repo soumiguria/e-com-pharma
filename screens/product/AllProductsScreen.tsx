@@ -17,6 +17,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ProductDetailModal from '../../components/product/ProductDetailModal';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useCart } from '../../contexts/CartContext';
+import { Appbar } from 'react-native-paper';
+import { Card, Button } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
 
 type AllProductsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AllProducts'>;
@@ -25,11 +27,11 @@ const { width } = Dimensions.get('window');
 const itemWidth = (width - 48) / 2; // 48 = padding * 2 + margin * 2
 
 const AllProductsScreen = () => {
-  const { theme } = useTheme();
+  const { theme, section } = useTheme();
   const navigation = useNavigation<AllProductsScreenNavigationProp>();
   const route = useRoute();
   const { title, products } = route.params as { title: string; products: any[] };
-  const { addToGroceryCart } = useCart();
+  const { addToGroceryCart, addToPharmacyCart } = useCart();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
 
@@ -43,10 +45,17 @@ const AllProductsScreen = () => {
     const cartItem = {
       id: product.id,
       name: product.name,
-      price: product.price,
-      image: product.image
+      price: product.price || 0,
+      image: product.image,
+      category: section
     };
-    addToGroceryCart(cartItem);
+    
+    if (section === 'pharmacy') {
+      addToPharmacyCart(cartItem);
+    } else {
+      addToGroceryCart(cartItem);
+    }
+    
     Toast.show({
       type: 'success',
       text1: 'Added to Cart',
@@ -61,154 +70,75 @@ const AllProductsScreen = () => {
     setSelectedProduct(null);
   };
 
-  const styles = StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: theme.colors.background,
-    },
-    container: {
-      flex: 1,
-      paddingHorizontal: 16,
-      paddingTop: 16,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 24,
-    },
-    backButton: {
-      padding: 8,
-      borderRadius: 20,
-      backgroundColor: theme.colors.surface,
-      marginRight: 16,
-      elevation: 2,
-    },
-    titleContainer: {
-      flex: 1,
-    },
-    title: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-    },
-    subtitle: {
-      fontSize: 14,
-      color: theme.colors.secondary,
-      marginTop: 4,
-    },
-    gridContainer: {
-      paddingBottom: 16,
-    },
-    itemContainer: {
-      width: itemWidth,
-      marginBottom: 16,
-      borderRadius: 12,
-      backgroundColor: theme.dark ? '#4B3F1D' : '#FFF9E5',
-      overflow: 'hidden',
-      elevation: 2,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-    },
-    itemImageContainer: {
-      position: 'relative',
-    },
-    itemImage: {
-      width: '100%',
-      height: itemWidth * 0.9, // Maintain aspect ratio
-      resizeMode: 'cover',
-    },
-    itemDetails: {
-      padding: 12,
-    },
-    itemName: {
-      fontSize: 14,
-      fontWeight: '600',
-      color: theme.colors.text,
-      marginBottom: 4,
-    },
-    itemPriceContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    },
-    itemPrice: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: theme.colors.primary,
-    },
-    addToCartButton: {
-      padding: 4,
-      borderRadius: 8,
-      backgroundColor: theme.colors.primary,
-    },
-    productCount: {
-      fontSize: 12,
-      color: theme.colors.secondary,
-      marginTop: 4,
-    },
-  });
+  const renderProductItem = ({ item }: { item: any }) => (
+    <Card style={[styles.productCard, { backgroundColor: theme.colors.surface }]}>
+      <TouchableOpacity 
+        onPress={() => handleProductPress(item)}
+        activeOpacity={0.8}
+      >
+        <Image 
+          source={{ uri: item.image }} 
+          style={styles.productImage}
+          resizeMode="cover"
+        />
+        <Card.Content style={styles.productContent}>
+          <Text style={[styles.productName, { color: theme.colors.text }]} numberOfLines={2}>
+            {item.name}
+          </Text>
+          
+          <View style={styles.priceContainer}>
+            <Text style={[styles.productPrice, { color: theme.colors.primary }]}>
+              ₹{item.price ? item.price.toFixed(2) : '0.00'}
+            </Text>
+            {item.originalPrice && item.originalPrice > item.price && (
+              <Text style={[styles.originalPrice, { color: theme.colors.secondary }]}>
+                ₹{item.originalPrice.toFixed(2)}
+              </Text>
+            )}
+          </View>
+          
+          {item.originalPrice && item.originalPrice > item.price && (
+            <Text style={[styles.discountText, { color: '#FF9800' }]}>
+              {Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% off
+            </Text>
+          )}
+          
+          <Button
+            mode="contained"
+            onPress={(e) => handleAddToCart(e, item)}
+            style={[styles.addToCartButton, { backgroundColor: theme.colors.primary }]}
+            labelStyle={styles.addToCartButtonText}
+            compact
+          >
+            Add to Cart
+          </Button>
+        </Card.Content>
+      </TouchableOpacity>
+    </Card>
+  );
 
   return (
-    <SafeAreaView style={[styles.safeArea, { padding: 16 }]}>
-      <View style={[styles.container, { paddingBottom: 16 }]}>
-        <View style={styles.header}>
-          <TouchableOpacity 
-            onPress={() => navigation.goBack()} 
-            style={styles.backButton}
-            activeOpacity={0.7}
-          >
-            <MaterialIcons 
-              name="arrow-back" 
-              size={24} 
-              color={theme.colors.primary} 
-            />
-          </TouchableOpacity>
-          <View style={styles.titleContainer}>
-            <Text style={styles.title}>{title}</Text>
-            <Text style={styles.subtitle}>{products.length} products available</Text>
-          </View>
-        </View>
-
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
+      <Appbar.Header style={{ backgroundColor: theme.colors.surface, elevation: 0 }}>
+        <Appbar.BackAction onPress={() => navigation.goBack()} color={theme.colors.text} />
+        <Appbar.Content 
+          title={title} 
+          titleStyle={{ color: theme.colors.text, fontWeight: 'bold', fontSize: 18 }} 
+        />
+      </Appbar.Header>
+      
+      <View style={styles.container}>
+        <Text style={[styles.subtitle, { color: theme.colors.secondary }]}>
+          {products.length} products available
+        </Text>
+        
         <FlatList
           data={products}
-          renderItem={({ item }) => (
-            <TouchableOpacity 
-              style={[styles.itemContainer, { margin: 8 }]}
-              onPress={() => {
-                setSelectedProduct(item);
-                setModalVisible(true);
-              }}
-              activeOpacity={0.8}
-            >
-              <View style={styles.itemImageContainer}>
-                <Image 
-                  source={{ uri: item.image }} 
-                  style={styles.itemImage} 
-                />
-              </View>
-              <Text style={styles.itemName} numberOfLines={1}>{item.name}</Text>
-              <View style={styles.itemPriceContainer}>
-                <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
-                <TouchableOpacity 
-                  style={styles.addToCartButton}
-                  onPress={(e) => handleAddToCart(e, item)}
-                >
-                  <MaterialIcons 
-                    name="add-shopping-cart" 
-                    size={18} 
-                    color={theme.colors.primary} 
-                  />
-                </TouchableOpacity>
-              </View>
-              <Text style={styles.productCount}>In stock: 10+</Text>
-            </TouchableOpacity>
-          )}
+          renderItem={renderProductItem}
           keyExtractor={(item) => item.id}
           numColumns={2}
-          columnWrapperStyle={{ justifyContent: 'space-between' }}
-          contentContainerStyle={[styles.gridContainer, { paddingBottom: 32 }]}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={styles.gridContainer}
           showsVerticalScrollIndicator={false}
         />
 
@@ -221,5 +151,98 @@ const AllProductsScreen = () => {
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  backButton: {
+    padding: 8,
+    borderRadius: 20,
+    backgroundColor: '#F0F0F0', // Example background color
+    marginRight: 16,
+    elevation: 2,
+  },
+  titleContainer: {
+    flex: 1,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#333', // Example text color
+  },
+  subtitle: {
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  gridContainer: {
+    paddingBottom: 16,
+  },
+  row: {
+    justifyContent: 'space-between',
+  },
+  productCard: {
+    width: itemWidth,
+    marginBottom: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  productImage: {
+    width: '100%',
+    height: itemWidth * 0.8, // Adjust height as needed
+    borderTopLeftRadius: 12,
+    borderTopRightRadius: 12,
+  },
+  productContent: {
+    padding: 12,
+  },
+  productName: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  priceContainer: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 8,
+  },
+  productPrice: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  originalPrice: {
+    fontSize: 12,
+    textDecorationLine: 'line-through',
+    marginLeft: 8,
+  },
+  discountText: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+  addToCartButton: {
+    paddingVertical: 8,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+  },
+  addToCartButtonText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+});
 
 export default AllProductsScreen;
