@@ -4,10 +4,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
 import { StackNavigationProp } from '@react-navigation/stack';
 import ThemeToggle from '../../components/ui/ThemeToggle';
+import { useCallback } from 'react';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Profile'>;
 
@@ -35,6 +36,16 @@ const ProfileScreen = () => {
       refreshUser();
     }
   }, [isAuthenticated, user, refreshUser]);
+
+  // Refresh user data when screen comes into focus (e.g., after login)
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) {
+        console.log('🔄 ProfileScreen focused - refreshing user data...');
+        refreshUser();
+      }
+    }, [isAuthenticated, refreshUser])
+  );
 
   const handleLogout = async () => {
     Alert.alert(

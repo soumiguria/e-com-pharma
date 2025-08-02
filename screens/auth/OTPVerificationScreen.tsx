@@ -74,72 +74,18 @@ const OTPVerificationScreen = () => {
         console.log('⚠️  WARNING: OTP Key appears to be from login flow but isRegistration is:', isRegistration);
       }
       
-      let verifyRes;
-      
-      if (isRegistration) {
-        // Registration flow - user is already registered, just verify OTP
-        console.log('🔄 Registration flow - verifying OTP...');
-        if (!otpKey) {
-          Alert.alert('Error', 'OTP key not found. Please try again.');
-          setIsLoading(false);
-          return;
-        }
-        verifyRes = await authService.verifyOTP(phoneNumber, otpString, otpKey);
-      } else {
-        // Login flow
-        console.log('🔑 Login flow - verifying OTP...');
-        if (!otpKey) {
-          Alert.alert('Error', 'OTP key not found. Please try again.');
-          setIsLoading(false);
-          return;
-        }
-        verifyRes = await authService.verifyOTP(phoneNumber, otpString, otpKey);
-      }
-
-      console.log('📡 Verify OTP Response:', JSON.stringify(verifyRes, null, 2));
-      
-      // Simple token extraction - API returns { status: "success", data: { token: "..." } }
-      let token;
-      
-      if (verifyRes.success && verifyRes.data) {
-        const responseData = verifyRes.data as any;
-        
-        // Direct path: response.data.data.token
-        if (responseData.data && responseData.data.token) {
-          token = responseData.data.token;
-        }
-      }
-
-      console.log('🎫 Extracted Token:', token);
-
-      if (!token) {
-        console.log('❌ No token found in response');
-        Alert.alert('Error', 'Failed to get authentication token. Please try again.');
+      if (!otpKey) {
+        Alert.alert('Error', 'OTP key not found. Please try again.');
         setIsLoading(false);
         return;
       }
 
-      console.log('✅ Token extracted successfully, storing token...');
+      // Use AuthContext login method which handles everything automatically
+      console.log('🔐 Using AuthContext login method...');
+      const loginResult = await login(phoneNumber, otpString, otpKey);
       
-      // Store token directly
-      try {
-        await AsyncStorage.setItem('auth_token', token);
-        console.log('✅ Token stored successfully');
-        
-        // Fetch user data from /v1/customer/self API
-        console.log('👤 Fetching user data from /v1/customer/self...');
-        const userResponse = await authService.getProfile();
-        
-        if (userResponse.success && userResponse.data) {
-          console.log('✅ User data fetched successfully:', userResponse.data);
-          
-          // Store user data
-          await AsyncStorage.setItem('user_data', JSON.stringify(userResponse.data));
-          console.log('✅ User data stored successfully');
-        } else {
-          console.log('⚠️ Failed to fetch user data:', userResponse.error);
-        }
-        
+      if (loginResult.success) {
+        console.log('✅ Login successful, navigating to main app...');
         // Navigate to main app
         navigation.replace('Main', {
           screen: 'Home',
@@ -148,9 +94,9 @@ const OTPVerificationScreen = () => {
             params: { storeId: 'default', pincode: '123456' }
           }
         });
-      } catch (error) {
-        console.error('❌ Error storing token or fetching user data:', error);
-        Alert.alert('Error', 'Failed to complete authentication. Please try again.');
+      } else {
+        console.log('❌ Login failed:', loginResult.error);
+        Alert.alert('Error', loginResult.error || 'Failed to verify OTP. Please try again.');
       }
     } catch (error) {
       console.error('💥 Error verifying OTP:', error);

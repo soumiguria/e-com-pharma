@@ -12,10 +12,11 @@ import {
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useCallback } from 'react';
 
 type EditProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'EditProfile'>;
 
@@ -77,6 +78,16 @@ const EditProfileScreen = () => {
       refreshUser();
     }
   }, [user, isAuthenticated, refreshUser]);
+
+  // Refresh user data when screen comes into focus (e.g., after login)
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) {
+        console.log('🔄 EditProfileScreen focused - refreshing user data...');
+        refreshUser();
+      }
+    }, [isAuthenticated, refreshUser])
+  );
 
   const handleSave = async () => {
     try {

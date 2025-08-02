@@ -52,6 +52,14 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+// Helper to extract user object from API response
+function extractUserObject(data: any): any {
+  if (data && typeof data === 'object' && 'data' in data && typeof data.data === 'object') {
+    return data.data;
+  }
+  return data;
+}
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<UserPayload | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -76,12 +84,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (userData && token) {
         const parsedUser = JSON.parse(userData);
         console.log('✅ Parsed user data:', parsedUser);
-        
-        // Handle nested data structure: {"status":"success","data":{...}}
-        const actualUserData = parsedUser.data || parsedUser;
+        // Extract actual user object if nested
+        const actualUserData = extractUserObject(parsedUser);
         console.log('✅ Actual user data:', actualUserData);
-        
-        // Ensure the user data matches UserPayload structure
         const userPayload: UserPayload = {
           _id: actualUserData._id || actualUserData.id || '',
           firstName: actualUserData.firstName || '',
@@ -98,19 +103,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           iat: actualUserData.iat || 0,
           exp: actualUserData.exp || 0,
         };
-        
-        console.log('✅ Processed user payload:', userPayload);
-        
         setUser(userPayload);
         setToken(token);
-        
         console.log('✅ User loaded from storage successfully');
-      } else {
-        console.log('⚠️ No user data or token found in storage');
       }
+      setIsLoading(false);
     } catch (error) {
       console.error('❌ Error loading user from storage:', error);
-    } finally {
       setIsLoading(false);
     }
   };
@@ -158,11 +157,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (response.success && response.data) {
         const responseData = response.data as any;
-        
         // Extract token from different possible paths
         let token;
         let userData;
-        
         if (responseData.data?.data?.token) {
           token = responseData.data.data.token;
           userData = responseData.data.data;
@@ -173,19 +170,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           token = responseData.token;
           userData = responseData;
         }
-        
         console.log('🎫 Extracted token:', token);
         console.log('👤 Extracted user data:', userData);
-        
         if (!token) {
           return { success: false, error: 'No token found in response' };
         }
-        
         // Decode JWT token to get user info
         try {
           const decodedToken = jwtDecode(token) as any;
           console.log('🔓 Decoded token:', decodedToken);
-          
           const userPayload: UserPayload = {
             _id: decodedToken._id,
             firstName: decodedToken.firstName,
@@ -202,12 +195,24 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             iat: decodedToken.iat,
             exp: decodedToken.exp,
           };
-          
           // Save user data and token
           await saveUserToStorage(userPayload, token);
           setUser(userPayload);
           setToken(token);
-          
+          // Automatically refresh user data from API to ensure latest info
+          console.log('🔄 Auto-refreshing user data after login...');
+          try {
+            const refreshResponse = await authService.getProfile();
+            if (refreshResponse.success && refreshResponse.data) {
+              // Extract actual user object if nested
+              const refreshedUser = extractUserObject(refreshResponse.data);
+              setUser(refreshedUser as UserPayload);
+              await AsyncStorage.setItem('user_data', JSON.stringify(refreshedUser));
+              console.log('✅ User data refreshed after login:', refreshedUser);
+            }
+          } catch (refreshError) {
+            console.log('⚠️ Could not refresh user data, using token data:', refreshError);
+          }
           console.log('✅ User logged in successfully');
           return { success: true };
         } catch (decodeError) {
@@ -268,19 +273,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('🔄 Refreshing user data...');
       const response = await authService.getProfile();
-      
       if (response.success && response.data) {
-        console.log('✅ User data refreshed:', response.data);
-        setUser(response.data as unknown as UserPayload);
-        await AsyncStorage.setItem('user_data', JSON.stringify(response.data));
+        // Extract actual user object if nested
+        const actualUser = extractUserObject(response.data);
+        console.log('✅ User data refreshed:', actualUser);
+        setUser(actualUser as UserPayload);
+        await AsyncStorage.setItem('user_data', JSON.stringify(actualUser));
       } else {
         console.log('❌ Failed to refresh user data:', response.error);
-        // Token might be expired, logout user
         await logout();
       }
     } catch (error) {
       console.error('💥 Error refreshing user:', error);
-      // Token might be expired, logout user
       await logout();
     }
   };

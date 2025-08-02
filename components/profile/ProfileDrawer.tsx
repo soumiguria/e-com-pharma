@@ -3,10 +3,11 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Animated } from '
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import ThemeToggle from '../ui/ThemeToggle';
+import { useCallback } from 'react';
 
 interface DrawerProps {
   onClose: () => void;
@@ -45,6 +46,16 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
       refreshUser();
     }
   }, [isAuthenticated, user, refreshUser]);
+
+  // Refresh user data when drawer opens (additional check)
+  useFocusEffect(
+    useCallback(() => {
+      if (isAuthenticated) {
+        console.log('🔄 Drawer focused - refreshing user data...');
+        refreshUser();
+      }
+    }, [isAuthenticated, refreshUser])
+  );
 
   const handleClose = () => {
     Animated.timing(slideAnim, {
