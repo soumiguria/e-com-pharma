@@ -21,6 +21,8 @@ import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useToast } from '../../contexts/ToastContext';
 import { RootStackParamList } from '../../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useAppContext } from '../../contexts/AppContext';
+import { storeProductService } from '../../services/api/storeProductService';
 
 const { width } = Dimensions.get('window');
 
@@ -48,22 +50,64 @@ const ProductDetailScreen = () => {
   const route = useRoute<ProductDetailRouteProp>();
   const { product } = route.params;
   const extendedProduct = product as ExtendedProduct & { images?: string[], availableQty?: number };
-  const { theme } = useTheme();
+  const { theme, section } = useTheme();
   const { addToGroceryCart, removeFromCart } = useCart();
   const { showToast } = useToast();
+  const { selectedStore } = useAppContext();
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const fadeAnim = new Animated.Value(0);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [detailsExpanded, setDetailsExpanded] = useState(false);
-  // Add state for variant quantities
   const [variantQuantities, setVariantQuantities] = useState<{ [variantId: string]: number }>({});
+  const [productDetails, setProductDetails] = useState<any>(extendedProduct);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch product details from API if store is selected
+  useEffect(() => {
+    const fetchProductDetails = async () => {
+      if (!selectedStore?.id) {
+        console.log('📊 No store selected, using fallback mock data');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        console.log(`🔄 Fetching ${section} product details:`, { storeId: selectedStore.id, productId: extendedProduct.id });
+        
+        if (section === 'pharmacy') {
+          const response = await storeProductService.getPharmaProductDetails(selectedStore.id, extendedProduct.id);
+          if (response.success && response.data) {
+            console.log('✅ Pharma product details loaded from API');
+            setProductDetails(response.data);
+          } else {
+            console.log('📊 Pharma API failed, using fallback mock data');
+          }
+        } else {
+          const response = await storeProductService.getGroceryProductDetails(selectedStore.id, extendedProduct.id);
+          if (response.success && response.data) {
+            console.log('✅ Grocery product details loaded from API');
+            setProductDetails(response.data);
+          } else {
+            console.log('📊 Grocery API failed, using fallback mock data');
+          }
+        }
+      } catch (error) {
+        console.log(`❌ Error fetching ${section} product details:`, error);
+        console.log('📊 Using fallback mock data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProductDetails();
+  }, [selectedStore?.id, section, extendedProduct.id]);
 
   // Use images array if present, else fallback to single image
-  let images = extendedProduct.images && extendedProduct.images.length > 0
-    ? extendedProduct.images
-    : extendedProduct.image ? [extendedProduct.image] : [];
+  let images = productDetails.images && productDetails.images.length > 0
+    ? productDetails.images
+    : productDetails.image ? [productDetails.image] : [];
   // If only one image, add dummy images for demo
   if (images.length <= 1) {
     images = [
@@ -75,9 +119,9 @@ const ProductDetailScreen = () => {
 
   // Mock variants data - replace with actual data from your API
   const variants: ProductVariant[] = [
-    { id: '1', name: 'Small (250g)', price: extendedProduct.price, stock: 10 },
-    { id: '2', name: 'Medium (500g)', price: extendedProduct.price * 1.8, stock: 15 },
-    { id: '3', name: 'Large (1kg)', price: extendedProduct.price * 3.2, stock: 8 },
+    { id: '1', name: 'Small (250g)', price: productDetails.price, stock: 10 },
+    { id: '2', name: 'Medium (500g)', price: productDetails.price * 1.8, stock: 15 },
+    { id: '3', name: 'Large (1kg)', price: productDetails.price * 3.2, stock: 8 },
   ];
 
   // 1. Add state for similar products (mock data for now)
@@ -91,10 +135,10 @@ const ProductDetailScreen = () => {
 
   const handleAddToCart = () => {
     const itemToAdd = {
-      id: selectedVariant ? `${extendedProduct.id}-${selectedVariant.id}` : extendedProduct.id,
-      name: extendedProduct.name,
-      price: selectedVariant ? selectedVariant.price : extendedProduct.price,
-      image: extendedProduct.image || '',
+      id: selectedVariant ? `${productDetails.id}-${selectedVariant.id}` : productDetails.id,
+      name: productDetails.name,
+      price: selectedVariant ? selectedVariant.price : productDetails.price,
+      image: productDetails.image || '',
       quantity,
       variant: selectedVariant ? {
         name: selectedVariant.name,

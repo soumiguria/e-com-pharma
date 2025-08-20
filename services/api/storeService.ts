@@ -1,14 +1,25 @@
 // services/api/storeService.ts
 import apiClient from './client';
-import { 
-  ApiResponse, 
-  Store, 
-  StoreDetail, 
-  StoreSelectionParams,
-  PaginatedResponse,
-  PaginationParams,
-  Location
-} from './types';
+import { ApiResponse, PaginatedResponse, PaginationParams, StoreDetail } from './types';
+
+// Define Location type if not already imported
+export type Location = {
+  latitude: number;
+  longitude: number;
+};
+
+export type Store = {
+  id: string;
+  name: string;
+  type: 'grocery' | 'pharmacy';
+  address: string;
+  pincode: string;
+  rating: number;
+  image?: string;
+  isOpen: boolean;
+  deliveryTime?: string;
+  minimumOrder?: number;
+};
 
 export class StoreService {
   // Get stores by pincode
@@ -199,8 +210,28 @@ export class StoreService {
   ): Promise<ApiResponse<{ message: string }>> {
     return apiClient.patch<{ message: string }>(`/stores/${storeId}/notification-settings`, settings);
   }
+
+  async exploreStores(pincode: string, type?: 'grocery' | 'pharmacy'): Promise<ApiResponse<Store[]>> {
+    try {
+      console.log('🏪 Fetching stores for pincode:', pincode, 'type:', type);
+      // API expects pincode in header: x-pincode; keep type as query param
+      const response = await apiClient.get<Store[]>('/v1/store/explore/pincode', { ...(type ? { type } : {}) }, {
+        headers: { 'x-pincode': pincode }
+      });
+
+      console.log('✅ Stores API Response:', JSON.stringify(response, null, 2));
+      return response;
+    } catch (error: any) {
+      console.log('❌ Stores API Error:', error.response?.data || error.message);
+      return {
+        success: false,
+        error: 'Failed to fetch stores. Please try again.',
+        data: null as any,
+      };
+    }
+  }
 }
 
 // Create singleton instance
 export const storeService = new StoreService();
-export default storeService; 
+export default storeService;

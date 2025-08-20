@@ -10,6 +10,8 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import { useAppContext } from '../../contexts/AppContext';
+import { bannerService } from '../../services/api/bannerService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -19,7 +21,8 @@ interface Banner {
   link: string;
 }
 
-const banners: Banner[] = [
+// Fallback banners data
+const fallbackBanners: Banner[] = [
   {
     id: '1',
     image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
@@ -41,8 +44,46 @@ const { width } = Dimensions.get('window');
 
 const BannerSlider = () => {
   const navigation = useNavigation<NavigationProp>();
+  const { selectedStore } = useAppContext();
   const flatListRef = useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [banners, setBanners] = useState<Banner[]>(fallbackBanners);
+  const [loading, setLoading] = useState(false);
+
+  // Lazy loading: Fetch banners in background after screen renders
+  useEffect(() => {
+    const fetchBanners = async () => {
+      if (!selectedStore?.id) {
+        console.log('📊 No store selected, keeping fallback mock data for banners');
+        return;
+      }
+
+      try {
+        setLoading(true);
+        console.log('🔄 Fetching banners for store:', selectedStore.id);
+        
+        const response = await bannerService.getBanners(selectedStore.id);
+        if (response.success && response.data) {
+          console.log('✅ Banners loaded from API');
+          setBanners(response.data);
+        } else {
+          console.log('📊 Banners API failed, keeping fallback mock data');
+        }
+      } catch (error) {
+        console.log('❌ Error fetching banners:', error);
+        console.log('📊 Keeping fallback mock data');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Add a small delay to let the screen render first
+    const timer = setTimeout(() => {
+      fetchBanners();
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [selectedStore?.id]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -60,7 +101,7 @@ const BannerSlider = () => {
     }, 2000);
 
     return () => clearInterval(interval);
-  }, [currentIndex]);
+  }, [currentIndex, banners.length]);
 
   const handleBannerPress = (link: string) => {
     navigation.navigate('BannerDetail', { bannerId: link });

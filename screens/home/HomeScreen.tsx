@@ -22,6 +22,7 @@ import { RootStackParamList, HomeStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useCart } from '../../contexts/CartContext';
 import { useAppContext } from '../../contexts/AppContext';
+import { useAuth } from '../../contexts/AuthContext';
 import Drawer from '../../components/profile/ProfileDrawer';
 import ProductCard from '../../components/product/ProductCard'
 import BannerSlider from '../../components/common/BannerSlider';
@@ -111,8 +112,12 @@ const pharmacyData: Category[] = [
 const Header = ({ onProfilePress, themedStyles }: { onProfilePress: () => void, themedStyles: any }) => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const { selectedStore } = useAppContext();
+  const { selectedStore, lastVisitedStore, setSelectedStore } = useAppContext();
   const { groceryItems } = useCart();
+  const { isAuthenticated } = useAuth();
+
+  // Show last visited store name if user is logged in and no store is currently selected
+  const displayStore = selectedStore || (isAuthenticated ? lastVisitedStore : null);
 
   return (
     <Animated.View style={[themedStyles.header]}>
@@ -122,9 +127,9 @@ const Header = ({ onProfilePress, themedStyles }: { onProfilePress: () => void, 
           size={28} 
           color={theme.colors.text} 
         />
-        {selectedStore && (
+        {displayStore && (
           <Text style={[themedStyles.storeName, {color: theme.colors.text, marginLeft: 10, fontWeight: 'bold', fontSize: 17}]} numberOfLines={1}>
-            {selectedStore.name}
+            {displayStore.name}
           </Text>
         )}
       </TouchableOpacity>
@@ -207,7 +212,8 @@ const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<HomeRouteProp>();
   const { addToGroceryCart } = useCart();
-  const { selectedStore } = useAppContext();
+  const { selectedStore, setSelectedStore, saveLastVisitedStore } = useAppContext();
+  const { isAuthenticated } = useAuth();
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
@@ -227,6 +233,32 @@ const HomeScreen = () => {
       setSection(currentSection);
     }
   }, [selectedStore, currentSection, setSection]);
+
+  // Apply deep link params to select store on open
+  useEffect(() => {
+    const params = route.params as any;
+    if (params && params.storeId) {
+      const incomingStoreId = params.storeId as string;
+      const incomingType = (params.type as 'grocery' | 'pharmacy' | undefined) ?? 'grocery';
+      const incomingPincode = params.pincode as string | undefined;
+      if (!selectedStore || selectedStore.id !== incomingStoreId) {
+        const newStore = { id: incomingStoreId, name: 'Selected Store', address: '', type: incomingType, pincode: incomingPincode };
+        setSelectedStore(newStore);
+        // Save as last visited store if user is authenticated
+        if (isAuthenticated) {
+          saveLastVisitedStore(newStore);
+        }
+      }
+    }
+  }, [route.params, selectedStore, setSelectedStore, isAuthenticated, saveLastVisitedStore]);
+
+  // Save store as last visited when selected
+  useEffect(() => {
+    if (selectedStore && isAuthenticated) {
+      console.log('💾 Saving selected store as last visited:', selectedStore);
+      saveLastVisitedStore(selectedStore);
+    }
+  }, [selectedStore, isAuthenticated, saveLastVisitedStore]);
 
   const themedStyles = useMemo(() => StyleSheet.create({
     container: {

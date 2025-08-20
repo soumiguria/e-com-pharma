@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -14,6 +14,8 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { Appbar } from 'react-native-paper';
+import { useAppContext } from '../../contexts/AppContext';
+import { storeProductService } from '../../services/api/storeProductService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -86,9 +88,115 @@ const categorySections = [
   },
 ];
 
+// Pharmacy category sections
+const pharmacyCategorySections = [
+  {
+    id: '1',
+    title: 'Medicines & Healthcare',
+    categories: [
+      { id: '1', name: 'Pain Relief', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '2', name: 'Cold & Flu', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '3', name: 'Fever & Headache', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '4', name: 'Digestive Health', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '5', name: 'Vitamins & Supplements', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '6', name: 'Diabetes Care', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '7', name: 'Heart Health', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '8', name: 'Skin Care', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    ],
+  },
+  {
+    id: '2',
+    title: 'Personal Care & Hygiene',
+    categories: [
+      { id: '9', name: 'Oral Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '10', name: 'Hair Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '11', name: 'Baby Care', image: 'https://images.pexels.com/photos/3875217/pexels-photo-3875217.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '12', name: 'Feminine Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '13', name: 'Men\'s Grooming', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '14', name: 'Fragrances', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '15', name: 'Makeup', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '16', name: 'Health Supplements', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    ],
+  },
+  {
+    id: '3',
+    title: 'Medical Devices & Equipment',
+    categories: [
+      { id: '17', name: 'Blood Pressure Monitors', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '18', name: 'Thermometers', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '19', name: 'First Aid', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '20', name: 'Mobility Aids', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '21', name: 'Respiratory Care', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '22', name: 'Diabetes Monitoring', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '23', name: 'Hearing Aids', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+      { id: '24', name: 'Orthopedic Support', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    ],
+  },
+];
+
 const CategoriesScreen = () => {
-  const { theme } = useTheme();
+  const { theme, section } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const { selectedStore } = useAppContext();
+  const [categories, setCategories] = useState<any[]>([]);
+  const [subCategoryMap, setSubCategoryMap] = useState<Record<string, any[]>>({});
+  const [loading, setLoading] = useState(true);
+
+  // Fetch categories (and subcategories for pharmacy) from API
+  useEffect(() => {
+    const fetchCategories = async () => {
+      if (!selectedStore?.id) {
+        console.log('📊 No store selected, using fallback mock data');
+        setCategories(section === 'pharmacy' ? pharmacyCategorySections.flatMap(s => s.categories) : categorySections.flatMap(s => s.categories));
+        setLoading(false);
+        return;
+      }
+
+      try {
+        console.log(`🔄 Fetching ${section} categories for store:`, selectedStore.id);
+        
+        if (section === 'pharmacy') {
+          const [catRes, subRes] = await Promise.all([
+            storeProductService.getPharmaCategories(selectedStore.id),
+            storeProductService.getPharmaSubcategories(selectedStore.id),
+          ]);
+
+          const cats = (catRes.success && Array.isArray(catRes.data)) ? catRes.data : [];
+          const subs = (subRes.success && Array.isArray(subRes.data)) ? subRes.data : [];
+
+          // Build map: categoryId -> subcategories[]
+          const map: Record<string, any[]> = {};
+          subs.forEach((sc: any) => {
+            const parentId = sc.parentCategoryId || sc.categoryId || sc.category?.categoryId;
+            if (!parentId) return;
+            if (!map[parentId]) map[parentId] = [];
+            map[parentId].push(sc);
+          });
+
+          console.log('✅ Pharma categories:', cats.length, 'subcategories:', subs.length);
+          setSubCategoryMap(map);
+          setCategories(cats);
+        } else {
+          const response = await storeProductService.getGroceryCategories(selectedStore.id);
+          if (response.success && response.data) {
+            console.log('✅ Grocery categories loaded from API');
+            setCategories(response.data);
+          } else {
+            console.log('📊 Grocery API failed, using fallback mock data');
+            setCategories(categorySections.flatMap(s => s.categories));
+          }
+        }
+      } catch (error) {
+        console.log(`❌ Error fetching ${section} categories:`, error);
+        console.log('📊 Using fallback mock data');
+        setCategories(section === 'pharmacy' ? pharmacyCategorySections.flatMap(s => s.categories) : categorySections.flatMap(s => s.categories));
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, [selectedStore?.id, section]);
 
   const renderCategoryItem = ({ item }: { item: typeof categorySections[0]['categories'][0] }) => (
     <TouchableOpacity
@@ -99,7 +207,10 @@ const CategoriesScreen = () => {
           borderColor: theme.colors.border,
         },
       ]}
-      onPress={() => navigation.navigate('CategoryDetail', { category: item })}
+      onPress={() => {
+        const subCats = subCategoryMap[item.id] || [];
+        navigation.navigate('CategoryDetail', { category: { ...item, subCategories: subCats } });
+      }}
       activeOpacity={0.8}
     >
       <Image source={{ uri: item.image }} style={styles.image} />
@@ -142,6 +253,11 @@ const CategoriesScreen = () => {
     </View>
   );
 
+  // Build sections for UI rendering
+  const computedSections = section === 'pharmacy'
+    ? [{ id: 'pharmacy', title: 'Pharmacy Categories', categories }]
+    : categorySections;
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <Appbar.Header style={{ backgroundColor: theme.colors.card, elevation: 0 }}>
@@ -149,7 +265,7 @@ const CategoriesScreen = () => {
         <Appbar.Content title="All Categories" titleStyle={{ color: theme.colors.text, fontWeight: 'bold', fontSize: 20 }} />
       </Appbar.Header>
       <FlatList
-        data={categorySections}
+        data={computedSections}
         renderItem={renderSection}
         keyExtractor={(item) => item.title}
         contentContainerStyle={{ padding: 16, paddingBottom: 32 }}

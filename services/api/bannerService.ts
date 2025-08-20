@@ -1,74 +1,58 @@
 // services/api/bannerService.ts
 import apiClient from './client';
-import { 
-  ApiResponse, 
-  Banner 
-} from './types';
+import { ApiResponse } from './types';
+import { API_CONFIG, buildApiUrl, isApiEnabled } from './config';
+
+export interface Banner {
+  id: string;
+  title: string;
+  image: string;
+  link: string;
+  description?: string;
+  isActive: boolean;
+  startDate?: string;
+  endDate?: string;
+}
 
 export class BannerService {
-  // Get all banners
-  async getBanners(params?: {
-    type?: string;
-    location?: string;
-    isActive?: boolean;
-    limit?: number;
-  }): Promise<ApiResponse<Banner[]>> {
-    return apiClient.get<Banner[]>('/banners', params);
+  async getBanners(storeId: string): Promise<ApiResponse<Banner[]>> {
+    console.log('🖼️ Fetching banners for store:', storeId);
+    
+    if (!isApiEnabled('USE_REAL_BANNERS')) {
+      console.log('📊 API disabled, using fallback mock data for banners');
+      throw new Error('API_DISABLED');
+    }
+    
+    try {
+      const url = buildApiUrl(API_CONFIG.ENDPOINTS.BANNERS, { storeId });
+      const response = await apiClient.get<Banner[]>(url);
+      console.log('✅ Banners API response:', response);
+      return response;
+    } catch (error) {
+      console.log('❌ Banners API error:', error);
+      console.log('📊 Using fallback mock data for banners');
+      throw error;
+    }
   }
 
-  // Get banner by ID
   async getBannerById(bannerId: string): Promise<ApiResponse<Banner>> {
-    return apiClient.get<Banner>(`/banners/${bannerId}`);
-  }
-
-  // Get banners by location
-  async getBannersByLocation(location: string): Promise<ApiResponse<Banner[]>> {
-    return apiClient.get<Banner[]>('/banners/by-location', { location });
-  }
-
-  // Get home page banners
-  async getHomeBanners(): Promise<ApiResponse<Banner[]>> {
-    return apiClient.get<Banner[]>('/banners/home');
-  }
-
-  // Get category banners
-  async getCategoryBanners(categoryId: string): Promise<ApiResponse<Banner[]>> {
-    return apiClient.get<Banner[]>(`/banners/category/${categoryId}`);
-  }
-
-  // Get promotional banners
-  async getPromotionalBanners(): Promise<ApiResponse<Banner[]>> {
-    return apiClient.get<Banner[]>('/banners/promotional');
-  }
-
-  // Track banner click
-  async trackBannerClick(bannerId: string): Promise<ApiResponse<{ message: string }>> {
-    return apiClient.post<{ message: string }>(`/banners/${bannerId}/click`);
-  }
-
-  // Track banner impression
-  async trackBannerImpression(bannerId: string): Promise<ApiResponse<{ message: string }>> {
-    return apiClient.post<{ message: string }>(`/banners/${bannerId}/impression`);
-  }
-
-  // Get banner analytics
-  async getBannerAnalytics(bannerId: string): Promise<ApiResponse<{
-    bannerId: string;
-    impressions: number;
-    clicks: number;
-    clickThroughRate: number;
-    views: number;
-  }>> {
-    return apiClient.get<{
-      bannerId: string;
-      impressions: number;
-      clicks: number;
-      clickThroughRate: number;
-      views: number;
-    }>(`/banners/${bannerId}/analytics`);
+    console.log('🖼️ Fetching banner by ID:', bannerId);
+    
+    if (!isApiEnabled('USE_REAL_BANNERS')) {
+      console.log('📊 API disabled, using fallback mock data for banner details');
+      throw new Error('API_DISABLED');
+    }
+    
+    try {
+      const response = await apiClient.get<Banner>(`/banners/${bannerId}`);
+      console.log('✅ Banner details API response:', response);
+      return response;
+    } catch (error) {
+      console.log('❌ Banner details API error:', error);
+      console.log('📊 Using fallback mock data for banner details');
+      throw error;
+    }
   }
 }
 
-// Create singleton instance
-export const bannerService = new BannerService();
-export default bannerService; 
+export const bannerService = new BannerService(); 

@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './navigation/AppNavigator';
@@ -82,8 +82,32 @@ const FloatingCartButton = () => {
 
 const AppContent = () => {
   const { theme } = useTheme();
+  const linking = React.useMemo<LinkingOptions<RootStackParamList>>(() => ({
+    prefixes: ['ecomm://', 'https://stores.yourdomain.com'],
+    config: {
+      screens: {
+        Splash: 'splash',
+        Pincode: 'pincode',
+        StoreList: 'store-list',
+        Main: {
+          screens: {
+            Home: {
+              screens: {
+                HomeRoot: {
+                  path: 'store/:storeId',
+                  parse: {
+                    storeId: (v: string) => `${v}`,
+                  },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  }), []);
   return (
-    <NavigationContainer theme={theme}>
+    <NavigationContainer theme={theme} linking={linking}>
       <PaperProvider theme={theme}>
         <AppProvider>
           <StorageProvider>

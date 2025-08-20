@@ -1,5 +1,5 @@
 // screens/AllProductsScreen.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   StyleSheet, 
@@ -20,6 +20,8 @@ import { useCart } from '../../contexts/CartContext';
 import { Appbar } from 'react-native-paper';
 import { Card, Button } from 'react-native-paper';
 import Toast from 'react-native-toast-message';
+import { useAppContext } from '../../contexts/AppContext';
+import { storeProductService } from '../../services/api/storeProductService';
 
 type AllProductsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'AllProducts'>;
 
@@ -30,10 +32,57 @@ const AllProductsScreen = () => {
   const { theme, section } = useTheme();
   const navigation = useNavigation<AllProductsScreenNavigationProp>();
   const route = useRoute();
-  const { title, products } = route.params as { title: string; products: any[] };
+  const { title, products: initialProducts } = route.params as { title: string; products: any[] };
   const { addToGroceryCart, addToPharmacyCart } = useCart();
+  const { selectedStore } = useAppContext();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
+  const [products, setProducts] = useState<any[]>(initialProducts);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch products from API if store is selected
+  useEffect(() => {
+    const fetchProducts = async () => {
+      if (!selectedStore?.id) {
+        console.log('📊 No store selected, using fallback mock data');
+        setProducts(initialProducts);
+        return;
+      }
+
+      try {
+        setLoading(true);
+        console.log(`🔄 Fetching ${section} products for store:`, selectedStore.id);
+        
+        if (section === 'pharmacy') {
+          const response = await storeProductService.getPharmaProducts(selectedStore.id);
+          if (response.success && response.data) {
+            console.log('✅ Pharma products loaded from API');
+            setProducts(response.data);
+          } else {
+            console.log('📊 Pharma API failed, using fallback mock data');
+            setProducts(initialProducts);
+          }
+        } else {
+          const response = await storeProductService.getGroceryProducts(selectedStore.id);
+          if (response.success && response.data) {
+            console.log('✅ Grocery products loaded from API');
+            setProducts(response.data);
+          } else {
+            console.log('📊 Grocery API failed, using fallback mock data');
+            setProducts(initialProducts);
+          }
+        }
+      } catch (error) {
+        console.log(`❌ Error fetching ${section} products:`, error);
+        console.log('📊 Using fallback mock data');
+        setProducts(initialProducts);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [selectedStore?.id, section, initialProducts]);
 
   const handleProductPress = (product: any) => {
     setSelectedProduct(product);

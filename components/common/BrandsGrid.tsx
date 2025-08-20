@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import { useAppContext } from '../../contexts/AppContext';
 
-const brands = [
+// Fallback brands data
+const groceryBrands = [
     { id: '1', name: 'Coca-Cola', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Coca-Cola_logo.svg/2560px-Coca-Cola_logo.svg.png' },
     { id: '2', name: 'Pepsi', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Pepsi_logo_2014.svg/2560px-Pepsi_logo_2014.svg.png' },
     { id: '3', name: 'Nestle', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d8/Nestle_logo.svg/2560px-Nestle_logo.svg.png' },
@@ -16,9 +18,30 @@ const brands = [
     { id: '8', name: 'Britannia', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Britannia_Industries_logo.svg/2560px-Britannia_Industries_logo.svg.png' },
 ];
 
+const pharmacyBrands = [
+    { id: '1', name: 'Pfizer', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Pfizer_logo.svg/2560px-Pfizer_logo.svg.png' },
+    { id: '2', name: 'Johnson & Johnson', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Johnson_%26_Johnson_logo.svg/2560px-Johnson_%26_Johnson_logo.svg.png' },
+    { id: '3', name: 'Novartis', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Novartis_logo.svg/2560px-Novartis_logo.svg.png' },
+    { id: '4', name: 'Roche', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Roche_logo.svg/2560px-Roche_logo.svg.png' },
+    { id: '5', name: 'Merck', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Merck_logo.svg/2560px-Merck_logo.svg.png' },
+    { id: '6', name: 'GSK', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/GSK_logo.svg/2560px-GSK_logo.svg.png' },
+    { id: '7', name: 'AstraZeneca', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/AstraZeneca_logo.svg/2560px-AstraZeneca_logo.svg.png' },
+    { id: '8', name: 'Sanofi', image: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Sanofi_logo.svg/2560px-Sanofi_logo.svg.png' },
+];
+
 const BrandsGrid = () => {
-    const { theme } = useTheme();
+    const { theme, section } = useTheme();
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+    const { selectedStore } = useAppContext();
+    const [brands, setBrands] = useState<any[]>(section === 'pharmacy' ? pharmacyBrands : groceryBrands);
+    const [loading, setLoading] = useState(false);
+
+    // For now, we'll use fallback data since there's no specific brands API
+    // In the future, you can add API integration here
+    useEffect(() => {
+        console.log('📊 Using fallback brands data for section:', section);
+        setBrands(section === 'pharmacy' ? pharmacyBrands : groceryBrands);
+    }, [section]);
 
     const renderItem = ({ item }: { item: typeof brands[0] }) => (
         <TouchableOpacity

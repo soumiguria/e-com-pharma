@@ -5,7 +5,10 @@ export type RootStackParamList = {
   Splash: undefined;
   Pincode: undefined;
   StoreSelection: undefined;
-  StoreList: { pincode: string };
+  StoreList: {
+    pincode: string;
+    storeType: 'grocery' | 'pharmacy';
+  };
   Main: NavigatorScreenParams<HomeTabParamList>;
   ProductDetail: { product: any };
   CategoryDetail: { category: any };
@@ -68,7 +71,7 @@ export type RootStackParamList = {
 };
 
 export type HomeTabParamList = {
-  Home: { screen: 'HomeRoot', params: { storeId: string, pincode: string }};
+  Home: { screen: 'HomeRoot', params: { storeId: string, pincode?: string }};
   'Order Again': undefined;
   Categories: undefined;
   Pharmacy: undefined;
@@ -76,7 +79,7 @@ export type HomeTabParamList = {
 };
 
 export type HomeStackParamList = {
-  HomeRoot: { storeId: string, pincode: string };
+  HomeRoot: { storeId: string, pincode?: string };
   ProductDetail: { product: any };
   CategoryDetail: { category: any };
   GreatOffersScreen: undefined;

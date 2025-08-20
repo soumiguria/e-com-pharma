@@ -1,11 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
+import { useAppContext } from '../../contexts/AppContext';
+import { storeProductService } from '../../services/api/storeProductService';
 
-const categories = [
+// Fallback categories for grocery
+const groceryCategories = [
     { id: '1', name: 'Fruits', image: 'https://images.pexels.com/photos/2093087/pexels-photo-2093087.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
     { id: '2', name: 'Vegetables', image: 'https://images.pexels.com/photos/2518893/pexels-photo-2518893.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
     { id: '3', name: 'Dairy', image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
@@ -20,11 +23,75 @@ const categories = [
     { id: '12', name: 'Pets', image: 'https://images.pexels.com/photos/5749792/pexels-photo-5749792.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
 ];
 
+// Fallback categories for pharmacy
+const pharmacyCategories = [
+    { id: '1', name: 'Pain Relief', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    { id: '2', name: 'Cold & Flu', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    { id: '3', name: 'Fever & Headache', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    { id: '4', name: 'Digestive Health', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    { id: '5', name: 'Vitamins & Supplements', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    { id: '6', name: 'Diabetes Care', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    { id: '7', name: 'Heart Health', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    { id: '8', name: 'Skin Care', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    { id: '9', name: 'Oral Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    { id: '10', name: 'Hair Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    { id: '11', name: 'Baby Care', image: 'https://images.pexels.com/photos/3875217/pexels-photo-3875217.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    { id: '12', name: 'First Aid', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+];
+
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const CategoryGrid = () => {
-    const { theme } = useTheme();
+    const { theme, section } = useTheme();
     const navigation = useNavigation<NavigationProp>();
+    const { selectedStore } = useAppContext();
+    const [categories, setCategories] = useState<any[]>(section === 'pharmacy' ? pharmacyCategories : groceryCategories);
+    const [loading, setLoading] = useState(false);
+
+    // Lazy loading: Start with fallback data, then fetch API data in background
+    useEffect(() => {
+        const fetchCategories = async () => {
+            if (!selectedStore?.id) {
+                console.log('📊 No store selected, using fallback mock data for categories');
+                return; // Keep fallback data
+            }
+
+            try {
+                setLoading(true);
+                console.log(`🔄 Fetching ${section} categories for store:`, selectedStore.id);
+                
+                if (section === 'pharmacy') {
+                    const response = await storeProductService.getPharmaCategories(selectedStore.id);
+                    if (response.success && response.data) {
+                        console.log('✅ Pharma categories loaded from API');
+                        setCategories(response.data);
+                    } else {
+                        console.log('📊 Pharma API failed, keeping fallback mock data');
+                    }
+                } else {
+                    const response = await storeProductService.getGroceryCategories(selectedStore.id);
+                    if (response.success && response.data) {
+                        console.log('✅ Grocery categories loaded from API');
+                        setCategories(response.data);
+                    } else {
+                        console.log('📊 Grocery API failed, keeping fallback mock data');
+                    }
+                }
+            } catch (error) {
+                console.log(`❌ Error fetching ${section} categories:`, error);
+                console.log('📊 Keeping fallback mock data');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        // Add a small delay to let the screen render first
+        const timer = setTimeout(() => {
+            fetchCategories();
+        }, 100);
+
+        return () => clearTimeout(timer);
+    }, [selectedStore?.id, section]);
 
     const renderItem = ({ item }: { item: typeof categories[0] }) => (
         <TouchableOpacity style={[

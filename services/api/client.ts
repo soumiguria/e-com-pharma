@@ -1,5 +1,6 @@
 // services/api/client.ts
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { ApiResponse, ApiError } from './types';
 
 // API Configuration
@@ -192,11 +193,13 @@ class ApiClient {
       const timeoutId = setTimeout(() => controller.abort(), timeout);
 
       try {
-        const response = await fetch(fullURL, {
+        const response: AxiosResponse = await axios({
           method,
+          url: fullURL,
           headers: requestHeaders,
-          body: data ? JSON.stringify(data) : undefined,
+          data: data ? JSON.stringify(data) : undefined,
           signal: controller.signal,
+          timeout,
         });
 
         clearTimeout(timeoutId);
@@ -208,35 +211,31 @@ class ApiClient {
         });
 
         // Handle HTTP errors
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.log('❌ API Error Response:', errorData);
+        if (response.status >= 400) {
+          console.log('❌ API Error Response:', response.data);
           throw {
             response: {
               status: response.status,
-              data: errorData,
+              data: response.data,
             },
           };
         }
 
         // Handle successful response
-        const responseData = await response.json();
+        const responseData = response.data;
         console.log('✅ API Success Response:', responseData);
         
         // Handle token refresh if needed
-        if (response.headers.get('x-new-token')) {
-          await this.setAuthToken(response.headers.get('x-new-token')!);
+        if (response.headers['x-new-token']) {
+          await this.setAuthToken(response.headers['x-new-token']);
         }
-
-        const responseHeaders: Record<string, string> = {};
-        response.headers.forEach((value: string, key: string) => {
-          responseHeaders[key] = value;
-        });
 
         return {
           data: responseData,
           status: response.status,
-          headers: responseHeaders,
+          headers: Object.fromEntries(
+            Object.entries(response.headers).map(([k, v]) => [k, String(v)])
+          ),
         };
       } catch (error: any) {
         clearTimeout(timeoutId);
@@ -396,4 +395,4 @@ class ApiClient {
 export const apiClient = new ApiClient();
 
 // Export for convenience
-export default apiClient; 
+export default apiClient;

@@ -15,6 +15,104 @@ import {
 } from './types';
 
 export class ProductService {
+  // GROCERY APIs
+  async getGroceryCategories(storeId: string): Promise<ApiResponse<Category[]>> {
+    console.log('🛒 Fetching grocery categories for store:', storeId);
+    try {
+      const response = await apiClient.get<Category[]>(`/v1/store/${storeId}/category/grocery`);
+      console.log('✅ Grocery categories API response:', response);
+      return response;
+    } catch (error) {
+      console.log('❌ Grocery categories API error:', error);
+      throw error;
+    }
+  }
+
+  async getGrocerySubcategories(storeId: string): Promise<ApiResponse<SubCategory[]>> {
+    console.log('🛒 Fetching grocery subcategories for store:', storeId);
+    try {
+      const response = await apiClient.get<SubCategory[]>(`/v1/store/${storeId}/subcategory/grocery`);
+      console.log('✅ Grocery subcategories API response:', response);
+      return response;
+    } catch (error) {
+      console.log('❌ Grocery subcategories API error:', error);
+      throw error;
+    }
+  }
+
+  async getGroceryProducts(storeId: string): Promise<ApiResponse<Product[]>> {
+    console.log('🛒 Fetching grocery products for store:', storeId);
+    try {
+      const response = await apiClient.get<Product[]>(`/v1/store/${storeId}/product/grocery`);
+      console.log('✅ Grocery products API response:', response);
+      return response;
+    } catch (error) {
+      console.log('❌ Grocery products API error:', error);
+      throw error;
+    }
+  }
+
+  async getGroceryProductDetails(storeId: string, productId: string): Promise<ApiResponse<ExtendedProduct>> {
+    console.log('🛒 Fetching grocery product details:', { storeId, productId });
+    try {
+      const response = await apiClient.get<ExtendedProduct>(`/v1/store/${storeId}/product/grocery/${productId}`);
+      console.log('✅ Grocery product details API response:', response);
+      return response;
+    } catch (error) {
+      console.log('❌ Grocery product details API error:', error);
+      throw error;
+    }
+  }
+
+  // PHARMA APIs
+  async getPharmaCategories(storeId: string): Promise<ApiResponse<Category[]>> {
+    console.log('💊 Fetching pharma categories for store:', storeId);
+    try {
+      const response = await apiClient.get<Category[]>(`/v1/store/${storeId}/category/pharma`);
+      console.log('✅ Pharma categories API response:', response);
+      return response;
+    } catch (error) {
+      console.log('❌ Pharma categories API error:', error);
+      throw error;
+    }
+  }
+
+  async getPharmaSubcategories(storeId: string): Promise<ApiResponse<SubCategory[]>> {
+    console.log('💊 Fetching pharma subcategories for store:', storeId);
+    try {
+      const response = await apiClient.get<SubCategory[]>(`/v1/store/${storeId}/subcategory/pharma`);
+      console.log('✅ Pharma subcategories API response:', response);
+      return response;
+    } catch (error) {
+      console.log('❌ Pharma subcategories API error:', error);
+      throw error;
+    }
+  }
+
+  async getPharmaProducts(storeId: string): Promise<ApiResponse<Product[]>> {
+    console.log('💊 Fetching pharma products for store:', storeId);
+    try {
+      const response = await apiClient.get<Product[]>(`/v1/store/${storeId}/product/pharma`);
+      console.log('✅ Pharma products API response:', response);
+      return response;
+    } catch (error) {
+      console.log('❌ Pharma products API error:', error);
+      throw error;
+    }
+  }
+
+  async getPharmaProductDetails(storeId: string, productId: string): Promise<ApiResponse<ExtendedProduct>> {
+    console.log('💊 Fetching pharma product details:', { storeId, productId });
+    try {
+      const response = await apiClient.get<ExtendedProduct>(`/v1/store/${storeId}/product/pharma/${productId}`);
+      console.log('✅ Pharma product details API response:', response);
+      return response;
+    } catch (error) {
+      console.log('❌ Pharma product details API error:', error);
+      throw error;
+    }
+  }
+
   // Get products by store
   async getProductsByStore(
     storeId: string, 

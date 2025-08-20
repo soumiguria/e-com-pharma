@@ -7,6 +7,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useAppContext } from '../../contexts/AppContext';
 
 type SplashScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
 
@@ -15,6 +16,7 @@ const { width, height } = Dimensions.get('window');
 const SplashScreen = () => {
   const { theme } = useTheme();
   const { isAuthenticated, isLoading } = useAuth();
+  const { lastVisitedStore } = useAppContext();
   const navigation = useNavigation<SplashScreenNavigationProp>();
   const { colors, typography, spacing } = theme;
   
@@ -54,13 +56,29 @@ const SplashScreen = () => {
         if (!isLoading) {
           if (isAuthenticated) {
             // User is logged in, navigate to main app
-            navigation.replace('Main', { 
-              screen: 'Home', 
-              params: { 
-                screen: 'HomeRoot', 
-                params: { storeId: 'default', pincode: '110001' } 
-              } 
-            });
+            if (lastVisitedStore) {
+              // Navigate to last visited store
+              console.log('🔄 Navigating to last visited store:', lastVisitedStore);
+              navigation.replace('Main', { 
+                screen: 'Home', 
+                params: { 
+                  screen: 'HomeRoot', 
+                  params: { 
+                    storeId: lastVisitedStore.id, 
+                    pincode: lastVisitedStore.pincode || '110001'
+                  } 
+                } 
+              });
+            } else {
+              // No last visited store, use default
+              navigation.replace('Main', { 
+                screen: 'Home', 
+                params: { 
+                  screen: 'HomeRoot', 
+                  params: { storeId: 'default', pincode: '110001' } 
+                } 
+              });
+            }
           } else {
             // User is not logged in, navigate to pincode screen
             navigation.replace('Pincode');
