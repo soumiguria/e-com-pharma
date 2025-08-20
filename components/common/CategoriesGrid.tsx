@@ -47,6 +47,7 @@ const CategoryGrid = () => {
     const { selectedStore } = useAppContext();
     const [categories, setCategories] = useState<any[]>(section === 'pharmacy' ? pharmacyCategories : groceryCategories);
     const [loading, setLoading] = useState(false);
+    const [tapLoadingId, setTapLoadingId] = useState<string | null>(null);
 
     // Lazy loading: Start with fallback data, then fetch API data in background
     useEffect(() => {
@@ -105,7 +106,30 @@ const CategoryGrid = () => {
                 shadowRadius: 4,
                 elevation: 2,
             }
-        ]} onPress={() => navigation.navigate('CategoryDetail', { category: item as any })}>
+        ]} onPress={async () => {
+            if (tapLoadingId) return;
+            if (section === 'pharmacy') {
+                try {
+                    setTapLoadingId(item.id);
+                    // Fetch subcategories and map them into the category param
+                    if (selectedStore?.id) {
+                        const subRes = await storeProductService.getPharmaSubcategories(selectedStore.id);
+                        const subCats = (subRes.success && Array.isArray(subRes.data))
+                          ? subRes.data.filter((sc: any) => (sc.parentCategoryId || sc.categoryId || sc.category?.categoryId) === item.id)
+                          : [];
+                        navigation.navigate('CategoryDetail', { category: { ...item, subCategories: subCats } });
+                    } else {
+                        navigation.navigate('CategoryDetail', { category: item as any });
+                    }
+                } catch (e) {
+                    navigation.navigate('CategoryDetail', { category: item as any });
+                } finally {
+                    setTapLoadingId(null);
+                }
+            } else {
+                navigation.navigate('CategoryDetail', { category: item as any });
+            }
+        }}>
             <Image source={{ uri: item.image }} style={styles.image} />
             <Text style={[styles.name, { color: theme.colors.text }]}>{item.name}</Text>
         </TouchableOpacity>
