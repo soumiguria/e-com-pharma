@@ -6,8 +6,11 @@ export type RootStackParamList = {
   Pincode: undefined;
   StoreSelection: undefined;
   StoreList: {
-    pincode: string;
-    storeType: 'grocery' | 'pharmacy';
+    pincode?: string;
+    latitude?: number;
+    longitude?: number;
+    address?: string;
+    storeType?: 'grocery' | 'pharmacy';
   };
   Main: NavigatorScreenParams<HomeTabParamList>;
   ProductDetail: { product: any };
@@ -15,11 +18,29 @@ export type RootStackParamList = {
   MedicineDetail: { medicine: any };
   Cart: undefined;
   Checkout: { type: 'grocery' | 'pharmacy' };
-  OrderConfirmation: undefined;
+  OrderConfirmation: {
+    paymentData?: any;
+    orderId?: string;
+    amount?: number;
+  };
   Profile: undefined;
   Orders: undefined;
   OrderDetail: { order: any };
   PaymentMethods: undefined;
+  RazorpayCheckout: {
+    amount: number;
+    currency?: string;
+    name?: string;
+    description: string;
+    prefill?: {
+      name?: string;
+      email?: string;
+      contact?: string;
+    };
+    orderId: string;
+    cartType: 'grocery' | 'pharmacy';
+    deliveryMethod: string;
+  };
   HelpCenter: undefined;
   AllProducts: {
     title: string;

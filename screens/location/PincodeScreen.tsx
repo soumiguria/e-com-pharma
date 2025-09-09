@@ -12,13 +12,19 @@ import * as Location from 'expo-location';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Pincode'>;
 
+interface LocationData {
+  latitude: number;
+  longitude: number;
+  address?: string;
+}
+
 const PincodeScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
   const { colors, typography, spacing, borderRadius } = theme;
   const [pincode, setPincode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [currentLocation, setCurrentLocation] = useState<string | null>(null);
+  const [currentLocation, setCurrentLocation] = useState<LocationData | null>(null);
   const [locationError, setLocationError] = useState<string | null>(null);
 
   const checkLocationPermission = async () => {
@@ -26,8 +32,12 @@ const PincodeScreen = () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
         const location = await Location.getCurrentPositionAsync({});
-        const pincode = await reverseGeocode(location.coords);
-        setCurrentLocation(pincode);
+        const address = await reverseGeocode(location.coords);
+        setCurrentLocation({
+          latitude: location.coords.latitude,
+          longitude: location.coords.longitude,
+          address: address
+        });
       }
     } catch (error) {
       console.log('Location error:', error);
@@ -45,7 +55,11 @@ const PincodeScreen = () => {
       try {
         await checkLocationPermission();
         if (currentLocation) {
-          navigation.navigate('StoreList' as any, { pincode: currentLocation });
+          navigation.navigate('StoreList' as any, { 
+            latitude: currentLocation.latitude,
+            longitude: currentLocation.longitude,
+            address: currentLocation.address || 'Current Location'
+          });
         }
       } catch (error) {
         Alert.alert('Error', 'Could not get your current location');
@@ -53,13 +67,34 @@ const PincodeScreen = () => {
         setIsLoading(false);
       }
     } else {
-      navigation.navigate('StoreList' as any, { pincode: currentLocation });
+      navigation.navigate('StoreList' as any, { 
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        address: currentLocation.address || 'Current Location'
+      });
     }
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (/^\d{6}$/.test(pincode)) {
-      navigation.navigate('StoreList' as any, { pincode });
+      setIsLoading(true);
+      try {
+        // Convert pincode to coordinates using geocoding
+        const coordinates = await geocodePincode(pincode);
+        if (coordinates) {
+          navigation.navigate('StoreList' as any, { 
+            latitude: coordinates.latitude,
+            longitude: coordinates.longitude,
+            address: `Pincode: ${pincode}`
+          });
+        } else {
+          Alert.alert('Error', 'Could not find location for this pincode');
+        }
+      } catch (error) {
+        Alert.alert('Error', 'Could not process pincode');
+      } finally {
+        setIsLoading(false);
+      }
     } else {
       Alert.alert('Invalid Pincode', 'Please enter a valid 6-digit pincode');
     }
@@ -184,7 +219,7 @@ const PincodeScreen = () => {
               theme={{ roundness: borderRadius.md }}
               icon="crosshairs-gps"
             >
-              {currentLocation ? `Use ${currentLocation}` : 'Use Current Location'}
+              {currentLocation ? `Use ${currentLocation.address}` : 'Use Current Location'}
             </Button>
 
             {locationError && <Text style={styles.errorText}>{locationError}</Text>}
@@ -209,7 +244,8 @@ const PincodeScreen = () => {
             <Button
               mode="contained"
               onPress={handleSubmit}
-              disabled={!pincode || pincode.length !== 6}
+              loading={isLoading}
+              disabled={!pincode || pincode.length !== 6 || isLoading}
               style={styles.button}
               theme={{ roundness: borderRadius.md }}
             >
@@ -233,6 +269,23 @@ async function reverseGeocode(coords: { latitude: number; longitude: number }): 
   } catch (error) {
     console.error('Reverse geocoding error:', error);
     return '110001'; // Default fallback
+  }
+}
+
+async function geocodePincode(pincode: string): Promise<{ latitude: number; longitude: number } | null> {
+  try {
+    const geocodeResponse = await Location.geocodeAsync(pincode);
+    if (geocodeResponse.length > 0) {
+      const location = geocodeResponse[0];
+      return {
+        latitude: location.latitude,
+        longitude: location.longitude
+      };
+    }
+    return null;
+  } catch (error) {
+    console.error('Geocoding error:', error);
+    return null;
   }
 }
 

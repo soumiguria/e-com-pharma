@@ -11,6 +11,7 @@ import ProfileScreen from '../screens/profile/ProfileScreen';
 import OrdersScreen from '../screens/order/OrdersScreen';
 import OrderDetailScreen from '../screens/order/OrderDetailScreen';
 import PaymentMethodsScreen from '../screens/cart/PaymentMethodsScreen';
+import RazorpayCheckoutScreen from '../screens/payment/RazorpayCheckoutScreen';
 import HelpCenterScreen from '../screens/help/HelpCenterScreen';
 import AllProductsScreen from '../screens/product/AllProductsScreen';
 import BannerDetailScreen from '../screens/home/BannerDetailScreen';
@@ -64,6 +65,7 @@ const AppNavigator = () => {
       <Stack.Screen name="Orders" component={OrdersScreen} />
       <Stack.Screen name="OrderDetail" component={OrderDetailScreen} />
       <Stack.Screen name="PaymentMethods" component={PaymentMethodsScreen} />
+      <Stack.Screen name="RazorpayCheckout" component={RazorpayCheckoutScreen} />
       <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
       <Stack.Screen name="AllProducts" component={AllProductsScreen} />
       <Stack.Screen name="BannerDetail" component={BannerDetailScreen} />

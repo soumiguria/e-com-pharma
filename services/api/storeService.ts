@@ -230,6 +230,28 @@ export class StoreService {
       };
     }
   }
+
+  async exploreStoresByLocation(latitude: number, longitude: number, type?: 'grocery' | 'pharmacy'): Promise<ApiResponse<Store[]>> {
+    try {
+      console.log('🏪 Fetching stores for location:', { latitude, longitude, type });
+      // Use the new location-based API endpoint
+      const response = await apiClient.get<Store[]>('/v1/store/explore/location', { 
+        latitude, 
+        longitude, 
+        ...(type ? { type } : {}) 
+      });
+
+      console.log('✅ Stores Location API Response:', JSON.stringify(response, null, 2));
+      return response;
+    } catch (error: any) {
+      console.log('❌ Stores Location API Error:', error.response?.data || error.message);
+      return {
+        success: false,
+        error: 'Failed to fetch stores. Please try again.',
+        data: null as any,
+      };
+    }
+  }
 }
 
 // Create singleton instance

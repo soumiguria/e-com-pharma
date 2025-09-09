@@ -1,452 +1,412 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
-  Image,
-  FlatList,
-  SafeAreaView,
-  Alert,
   ScrollView,
+  TouchableOpacity,
+  RefreshControl,
+  Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation } from '@react-navigation/native';
-import { MaterialIcons } from '@expo/vector-icons';
-import { RootStackParamList } from '../../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { Appbar } from 'react-native-paper';
+import { RootStackParamList } from '../../navigation/types';
+import { Card, Chip, Button } from 'react-native-paper';
+import { Ionicons } from '@expo/vector-icons';
 
-type OrdersScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Orders'>;
-
-// Mock order data
-const mockOrders = [
-  {
-    id: 'ORD001',
-    orderDate: '2024-01-15',
-    status: 'Delivered',
-    orderType: 'Home Delivery',
-    address: '123 Main Street, Apartment 4B, New York, NY 10001',
-    items: [
-      {
-        id: '1',
-        name: 'Fresh Apples',
-        price: 2.99,
-        quantity: 2,
-        image: 'https://images.pexels.com/photos/2093087/pexels-photo-2093087.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      },
-      {
-        id: '2',
-        name: 'Organic Milk',
-        price: 3.49,
-        quantity: 1,
-        image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      },
-      {
-        id: '3',
-        name: 'Whole Grain Bread',
-        price: 1.99,
-        quantity: 1,
-        image: 'https://images.pexels.com/photos/1721934/pexels-photo-1721934.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      },
-      {
-        id: '4',
-        name: 'Bananas',
-        price: 1.49,
-        quantity: 3,
-        image: 'https://images.pexels.com/photos/47305/bananas-banana-bunch-yellow-47305.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      },
-      {
-        id: '5',
-        name: 'Tomatoes',
-        price: 2.99,
-        quantity: 2,
-        image: 'https://images.pexels.com/photos/1327838/pexels-photo-1327838.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      },
-    ],
-    itemTotal: 10.46,
-    deliveryFee: 2.99,
-    discount: 1.50,
-    grandTotal: 11.95,
-    paymentMode: 'Credit Card',
-  },
-  {
-    id: 'ORD002',
-    orderDate: '2024-01-10',
-    status: 'In Transit',
-    orderType: 'Store Pickup',
-    address: '456 Oak Avenue, Suite 8, Brooklyn, NY 11201',
-    items: [
-      {
-        id: '4',
-        name: 'Fresh Vegetables',
-        price: 4.99,
-        quantity: 1,
-        image: 'https://images.pexels.com/photos/2518893/pexels-photo-2518893.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      },
-    ],
-    itemTotal: 4.99,
-    deliveryFee: 0,
-    discount: 0,
-    grandTotal: 4.99,
-    paymentMode: 'Cash',
-  },
-  {
-    id: 'ORD003',
-    orderDate: '2024-01-08',
-    status: 'Processing',
-    orderType: 'Home Delivery',
-    address: '789 Pine Street, Unit 12, Queens, NY 11375',
-    items: [
-      {
-        id: '5',
-        name: 'Chicken Breast',
-        price: 8.99,
-        quantity: 1,
-        image: 'https://images.pexels.com/photos/3997388/pexels-photo-3997388.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      },
-      {
-        id: '6',
-        name: 'Rice',
-        price: 3.99,
-        quantity: 2,
-        image: 'https://images.pexels.com/photos/4110225/pexels-photo-4110225.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      },
-      {
-        id: '7',
-        name: 'Cooking Oil',
-        price: 4.99,
-        quantity: 1,
-        image: 'https://images.pexels.com/photos/4110225/pexels-photo-4110225.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-      },
-    ],
-    itemTotal: 16.97,
-    deliveryFee: 2.99,
-    discount: 2.00,
-    grandTotal: 17.96,
-    paymentMode: 'Debit Card',
-  },
-];
-
-const TABS = [
-  { key: 'all', label: 'All' },
-  { key: 'grocery', label: 'Grocery' },
-  { key: 'pharmacy', label: 'Pharmacy' },
-];
+interface Order {
+  id: string;
+  orderNumber: string;
+  date: string;
+  total: number;
+  status: 'pending' | 'paid' | 'completed' | 'cancelled';
+  paymentMethod: 'online' | 'offline';
+  items: Array<{
+    name: string;
+    quantity: number;
+    price: number;
+    type: 'grocery' | 'pharmacy';
+  }>;
+  deliveryMethod: 'store_pickup' | 'home_delivery';
+  address?: string;
+}
 
 const OrdersScreen = () => {
   const { theme } = useTheme();
-  const navigation = useNavigation<OrdersScreenNavigationProp>();
-  const [activeTab, setActiveTab] = useState('all');
+  const { user, isAuthenticated } = useAuth();
+  const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Delivered':
-        return '#00b14f';
-      case 'In Transit':
-        return '#ff9500';
-      case 'Processing':
-        return '#007aff';
-      default:
-        return '#8e8e93';
+  // Mock orders data - in real app, fetch from API
+  const mockOrders: Order[] = [
+    {
+      id: '1',
+      orderNumber: 'ORD-001',
+      date: '2024-01-15',
+      total: 450,
+      status: 'paid',
+      paymentMethod: 'online',
+      items: [
+        { name: 'Organic Apples', quantity: 2, price: 120, type: 'grocery' },
+        { name: 'Fresh Milk', quantity: 1, price: 60, type: 'grocery' },
+      ],
+      deliveryMethod: 'home_delivery',
+      address: '123 Main St, City',
+    },
+    {
+      id: '2',
+      orderNumber: 'ORD-002',
+      date: '2024-01-14',
+      total: 280,
+      status: 'pending',
+      paymentMethod: 'offline',
+      items: [
+        { name: 'Paracetamol', quantity: 1, price: 15, type: 'pharmacy' },
+        { name: 'Vitamin C', quantity: 1, price: 200, type: 'pharmacy' },
+      ],
+      deliveryMethod: 'store_pickup',
+    },
+    {
+      id: '3',
+      orderNumber: 'ORD-003',
+      date: '2024-01-13',
+      total: 650,
+      status: 'completed',
+      paymentMethod: 'online',
+      items: [
+        { name: 'Rice 5kg', quantity: 1, price: 300, type: 'grocery' },
+        { name: 'Cooking Oil', quantity: 2, price: 180, type: 'grocery' },
+      ],
+      deliveryMethod: 'home_delivery',
+      address: '456 Oak Ave, City',
+    },
+  ];
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  const fetchOrders = async () => {
+    setIsLoading(true);
+    try {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      setOrders(mockOrders);
+    } catch (error) {
+      console.log('Error fetching orders:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleOrderPress = (order: typeof mockOrders[0]) => {
-    // Navigate to order detail screen
-    navigation.navigate('OrderDetail' as any, { order });
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchOrders();
+    setRefreshing(false);
   };
 
-  const handleReorder = (order: typeof mockOrders[0]) => {
-    // Add items to cart logic
-    Alert.alert('Reorder', 'Items added to cart successfully!');
+  const getStatusColor = (status: Order['status']) => {
+    switch (status) {
+      case 'pending':
+        return '#FF9800';
+      case 'paid':
+        return '#4CAF50';
+      case 'completed':
+        return '#2196F3';
+      case 'cancelled':
+        return '#F44336';
+      default:
+        return theme.colors.text;
+    }
   };
 
-  const handleRateOrder = (order: typeof mockOrders[0]) => {
-    // Navigate to rating screen or show rating modal
-    Alert.alert('Rate Order', 'Rating feature coming soon!');
+  const getStatusText = (status: Order['status']) => {
+    switch (status) {
+      case 'pending':
+        return 'Payment Pending';
+      case 'paid':
+        return 'Paid';
+      case 'completed':
+        return 'Completed';
+      case 'cancelled':
+        return 'Cancelled';
+      default:
+        return status;
+    }
   };
 
-  const styles = StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: theme.colors.background,
-    },
-    container: {
-      flex: 1,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 16,
-      backgroundColor: theme.colors.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
-    },
-    headerTitle: {
-      fontSize: 22,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-    },
-    tabsRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-around',
-      backgroundColor: theme.colors.surface,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
-    },
-    tabBtn: {
-      flex: 1,
-      paddingVertical: 12,
-      alignItems: 'center',
-    },
-    tabText: {
-      fontSize: 16,
-      color: theme.colors.text,
-    },
-    tabTextActive: {
-      color: theme.colors.primary,
-      fontWeight: 'bold',
-      textDecorationLine: 'underline',
-    },
-    orderCard: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: 12,
-      margin: 16,
-      padding: 16,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 4,
-      elevation: 2,
-    },
-    itemsImagesContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 12,
-    },
-    itemImage: {
-      width: 56,
-      height: 56,
-      borderRadius: 8,
-      marginRight: 12,
-    },
-    remainingItemsContainer: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: 12,
-      padding: 4,
-      marginLeft: -15,
-      borderWidth: 2,
-      borderColor: theme.colors.background,
-    },
-    remainingItemsText: {
-      fontSize: 12,
-      color: theme.colors.secondary,
-      fontWeight: 'bold',
-    },
-    totalItemsContainer: {
-      marginLeft: 'auto',
-      backgroundColor: theme.colors.primary + '20',
-      borderRadius: 12,
-      paddingHorizontal: 8,
-      paddingVertical: 4,
-    },
-    totalItemsText: {
-      fontSize: 12,
-      color: theme.colors.primary,
-      fontWeight: '600',
-    },
-    statusContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 12,
-    },
-    statusDot: {
-      width: 12,
-      height: 12,
-      borderRadius: 6,
-      marginRight: 8,
-    },
-    orderStatus: {
-      fontSize: 15,
-      fontWeight: 'bold',
-      color: theme.colors.primary,
-    },
-    orderDetailsContainer: {
-      marginBottom: 12,
-    },
-    orderDetailRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 4,
-    },
-    orderDetailLabel: {
-      fontSize: 14,
-      color: theme.colors.secondary,
-    },
-    orderDetailValue: {
-      fontSize: 14,
-      color: theme.colors.text,
-    },
-    actionButtonsContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 12,
-      gap: 8,
-    },
-    actionButton: {
-      flex: 1,
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-      borderRadius: 6,
-      backgroundColor: '#4CAF50',
-      borderWidth: 1,
-      borderColor: '#4CAF50',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.1,
-      shadowRadius: 2,
-      elevation: 1,
-    },
-    actionButtonText: {
-      fontSize: 13,
-      color: '#FFFFFF',
-      fontWeight: '600',
-      marginLeft: 4,
-    },
-    emptyText: {
-      textAlign: 'center',
-      color: theme.colors.secondary,
-      marginTop: 40,
-      fontSize: 16,
-    },
-  });
+  const getPaymentMethodText = (method: Order['paymentMethod']) => {
+    return method === 'online' ? 'Online Payment' : 'Offline Payment';
+  };
 
-  const renderOrder = ({ item }: { item: typeof mockOrders[0] }) => {
-    const totalItems = item.items.reduce((sum, item) => sum + item.quantity, 0);
-    const displayItems = item.items.slice(0, 3); // Show only first 3 items
-    const remainingItems = item.items.length - 3;
+  const getDeliveryMethodText = (method: Order['deliveryMethod']) => {
+    return method === 'store_pickup' ? 'Store Pickup' : 'Home Delivery';
+  };
 
+  const handleOrderPress = (order: Order) => {
+    navigation.navigate('OrderDetail', { orderId: order.id });
+  };
+
+  const handlePayNow = (order: Order) => {
+    if (order.status === 'pending' && order.paymentMethod === 'online') {
+      // Navigate to payment screen
+      navigation.navigate('PaymentMethods', { orderId: order.id });
+    }
+  };
+
+  if (!isAuthenticated) {
     return (
-      <TouchableOpacity
-        style={[
-          styles.orderCard,
-          {
-            backgroundColor: theme.colors.card,
-            borderColor: theme.colors.border,
-            borderRadius: 16,
-            marginBottom: 16,
-            padding: 16,
-            shadowColor: theme.colors.text,
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.08,
-            shadowRadius: 8,
-            elevation: 3,
-          },
-        ]}
-        onPress={() => handleOrderPress(item)}
-        activeOpacity={0.85}
-      >
-        {/* Item Images Section */}
-        <View style={styles.itemsImagesContainer}>
-          {displayItems.map((orderItem, index) => (
-            <Image 
-              key={orderItem.id}
-              source={{ uri: orderItem.image }} 
-              style={[
-                styles.itemImage, 
-                { 
-                  marginLeft: index > 0 ? -15 : 0,
-                  zIndex: displayItems.length - index 
-                }
-              ]} 
-            />
-          ))}
-          {remainingItems > 0 && (
-            <View style={styles.remainingItemsContainer}>
-              <Text style={styles.remainingItemsText}>+{remainingItems}</Text>
-            </View>
-          )}
-          <View style={styles.totalItemsContainer}>
-            <Text style={styles.totalItemsText}>{totalItems} items</Text>
-          </View>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()}>
+            <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+          </TouchableOpacity>
+          <Text style={[styles.headerTitle, { color: theme.colors.text }]}>My Orders</Text>
+          <View style={{ width: 24 }} />
         </View>
-
-        {/* Order Status */}
-        <View style={styles.statusContainer}>
-          <View style={[styles.statusDot, { backgroundColor: getStatusColor(item.status) }]} />
-          <Text style={[styles.orderStatus, { color: getStatusColor(item.status) }]}>
-            {item.status}
+        <View style={styles.centerContent}>
+          <Ionicons name="log-in-outline" size={64} color={theme.colors.secondary} />
+          <Text style={[styles.loginText, { color: theme.colors.text }]}>
+            Please login to view your orders
           </Text>
+          <Button
+            mode="contained"
+            onPress={() => navigation.navigate('PhoneAuth')}
+            style={styles.loginButton}
+          >
+            Login
+          </Button>
         </View>
-
-        {/* Order Details */}
-        <View style={styles.orderDetailsContainer}>
-          <View style={styles.orderDetailRow}>
-            <Text style={styles.orderDetailLabel}>Order ID:</Text>
-            <Text style={styles.orderDetailValue}>{item.id}</Text>
-          </View>
-          <View style={styles.orderDetailRow}>
-            <Text style={styles.orderDetailLabel}>Total Amount:</Text>
-            <Text style={styles.orderDetailValue}>₹{item.grandTotal.toFixed(2)}</Text>
-          </View>
-          <View style={styles.orderDetailRow}>
-            <Text style={styles.orderDetailLabel}>Total Items:</Text>
-            <Text style={styles.orderDetailValue}>{totalItems}</Text>
-          </View>
-          <View style={styles.orderDetailRow}>
-            <Text style={styles.orderDetailLabel}>Store:</Text>
-            <Text style={styles.orderDetailValue}>Pass ki Dukaan</Text>
-          </View>
-        </View>
-
-        {/* Action Buttons */}
-        <View style={styles.actionButtonsContainer}>
-          <TouchableOpacity style={styles.actionButton} onPress={() => handleReorder(item)}>
-            <MaterialIcons name="refresh" size={20} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={styles.actionButtonText}>Reorder</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.actionButton} onPress={() => handleRateOrder(item)}>
-            <MaterialIcons name="star" size={20} color="#fff" style={{ marginRight: 8 }} />
-            <Text style={styles.actionButtonText}>Rate Order</Text>
-          </TouchableOpacity>
-        </View>
-      </TouchableOpacity>
+      </SafeAreaView>
     );
-  };
+  }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <Appbar.Header style={{ backgroundColor: theme.colors.card, elevation: 0 }}>
-        <Appbar.BackAction onPress={() => navigation.goBack()} color={theme.colors.text} />
-        <Appbar.Content title="My Orders" titleStyle={{ color: theme.colors.text, fontWeight: 'bold', fontSize: 20 }} />
-      </Appbar.Header>
-      <View style={[styles.tabsRow, { backgroundColor: theme.colors.surface, borderRadius: 0, marginHorizontal: 0, paddingHorizontal: 0, elevation: 2, shadowColor: theme.colors.text, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 4 }]}> 
-        {TABS.map(tab => (
-          <TouchableOpacity
-            key={tab.key}
-            style={[styles.tabBtn, activeTab === tab.key && { borderBottomWidth: 3, borderBottomColor: theme.colors.primary, backgroundColor: theme.colors.background }]} 
-            onPress={() => setActiveTab(tab.key)}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.tabText, { color: activeTab === tab.key ? theme.colors.primary : theme.colors.text }]}>{tab.label}</Text>
-          </TouchableOpacity>
-        ))}
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+          <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>My Orders</Text>
+        <View style={{ width: 24 }} />
       </View>
-      <FlatList
-        data={mockOrders}
-        keyExtractor={(item) => item.id}
-        renderItem={renderOrder}
-        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+
+      <ScrollView
+        style={styles.scrollView}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
         showsVerticalScrollIndicator={false}
-        ListEmptyComponent={<Text style={styles.emptyText}>No orders found.</Text>}
-      />
+      >
+        {orders.length === 0 ? (
+          <View style={styles.centerContent}>
+            <Ionicons name="receipt-outline" size={64} color={theme.colors.secondary} />
+            <Text style={[styles.emptyText, { color: theme.colors.text }]}>
+              No orders found
+            </Text>
+            <Text style={[styles.emptySubtext, { color: theme.colors.secondary }]}>
+              Your orders will appear here
+            </Text>
+          </View>
+        ) : (
+          orders.map((order) => (
+            <Card key={order.id} style={[styles.orderCard, { backgroundColor: theme.colors.surface }]}>
+              <TouchableOpacity onPress={() => handleOrderPress(order)}>
+                <Card.Content>
+                  <View style={styles.orderHeader}>
+                    <View>
+                      <Text style={[styles.orderNumber, { color: theme.colors.text }]}>
+                        {order.orderNumber}
+                      </Text>
+                      <Text style={[styles.orderDate, { color: theme.colors.secondary }]}>
+                        {new Date(order.date).toLocaleDateString()}
+                      </Text>
+                    </View>
+                    <View style={styles.orderTotal}>
+                      <Text style={[styles.totalAmount, { color: theme.colors.text }]}>
+                        ₹{order.total}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.orderDetails}>
+                    <View style={styles.detailRow}>
+                      <Ionicons name="card-outline" size={16} color={theme.colors.secondary} />
+                      <Text style={[styles.detailText, { color: theme.colors.text }]}>
+                        {getPaymentMethodText(order.paymentMethod)}
+                      </Text>
+                    </View>
+                    <View style={styles.detailRow}>
+                      <Ionicons name="car-outline" size={16} color={theme.colors.secondary} />
+                      <Text style={[styles.detailText, { color: theme.colors.text }]}>
+                        {getDeliveryMethodText(order.deliveryMethod)}
+                      </Text>
+                    </View>
+                    {order.address && (
+                      <View style={styles.detailRow}>
+                        <Ionicons name="location-outline" size={16} color={theme.colors.secondary} />
+                        <Text style={[styles.detailText, { color: theme.colors.text }]}>
+                          {order.address}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
+
+                  <View style={styles.orderItems}>
+                    {order.items.slice(0, 2).map((item, index) => (
+                      <Text key={index} style={[styles.itemText, { color: theme.colors.secondary }]}>
+                        {item.name} x{item.quantity}
+                      </Text>
+                    ))}
+                    {order.items.length > 2 && (
+                      <Text style={[styles.itemText, { color: theme.colors.secondary }]}>
+                        +{order.items.length - 2} more items
+                      </Text>
+                    )}
+                  </View>
+
+                  <View style={styles.orderFooter}>
+                    <Chip
+                      style={[styles.statusChip, { backgroundColor: getStatusColor(order.status) + '20' }]}
+                      textStyle={{ color: getStatusColor(order.status) }}
+                    >
+                      {getStatusText(order.status)}
+                    </Chip>
+                    
+                    {order.status === 'pending' && order.paymentMethod === 'online' && (
+                      <Button
+                        mode="contained"
+                        onPress={() => handlePayNow(order)}
+                        style={styles.payButton}
+                        compact
+                      >
+                        Pay Now
+                      </Button>
+                    )}
+                  </View>
+                </Card.Content>
+              </TouchableOpacity>
+            </Card>
+          ))
+        )}
+      </ScrollView>
     </SafeAreaView>
   );
 };
 
-export default OrdersScreen; 
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  headerTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+  },
+  scrollView: {
+    flex: 1,
+    padding: 16,
+  },
+  centerContent: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 32,
+  },
+  loginText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  loginButton: {
+    marginTop: 16,
+  },
+  emptyText: {
+    fontSize: 18,
+    fontWeight: '600',
+    marginTop: 16,
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptySubtext: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  orderCard: {
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
+  orderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 12,
+  },
+  orderNumber: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  orderDate: {
+    fontSize: 12,
+    marginTop: 2,
+  },
+  orderTotal: {
+    alignItems: 'flex-end',
+  },
+  totalAmount: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  orderDetails: {
+    marginBottom: 12,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 4,
+  },
+  detailText: {
+    fontSize: 14,
+    marginLeft: 8,
+    flex: 1,
+  },
+  orderItems: {
+    marginBottom: 12,
+  },
+  itemText: {
+    fontSize: 12,
+    marginBottom: 2,
+  },
+  orderFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  statusChip: {
+    height: 32,
+  },
+  payButton: {
+    borderRadius: 16,
+  },
+});
+
+export default OrdersScreen;

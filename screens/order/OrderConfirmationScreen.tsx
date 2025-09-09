@@ -12,28 +12,32 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useCart } from '../../contexts/CartContext';
 
 type OrderConfirmationNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderConfirmation'>;
+type OrderConfirmationRouteProp = RouteProp<RootStackParamList, 'OrderConfirmation'>;
 
 const OrderConfirmationScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<OrderConfirmationNavigationProp>();
+  const route = useRoute<OrderConfirmationRouteProp>();
   const { clearCart } = useCart();
   const [buttonPressed, setButtonPressed] = useState<string | null>(null);
   const logoScale = useRef(new Animated.Value(0)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
 
-  // Generate random order ID
-  const orderId = `ORD${Date.now().toString().slice(-8)}`;
+  // Get order details from route params or use defaults
+  const { paymentData, orderId: routeOrderId, amount: routeAmount } = route.params || {};
+  const orderId = routeOrderId || `ORD${Date.now().toString().slice(-8)}`;
+  const totalAmount = routeAmount || 460;
 
   // Mock order details
   const orderDetails = {
     orderId,
-    totalAmount: 460,
+    totalAmount,
     items: [
       { name: 'Organic Apples', quantity: 2, price: 120 },
       { name: 'Fresh Milk', quantity: 1, price: 65 },
@@ -42,6 +46,7 @@ const OrderConfirmationScreen = () => {
     deliveryAddress: '123 Main Street, Apartment 4B, New Delhi, Delhi 110001',
     deliveryMethod: 'Home Delivery',
     estimatedDelivery: '2-3 days',
+    paymentData: paymentData,
   };
 
   useEffect(() => {

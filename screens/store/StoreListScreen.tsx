@@ -437,7 +437,7 @@ const StoreListScreen = () => {
   const route = useRoute<StoreListRouteProp>();
   const { theme, section } = useTheme();
   const { colors, typography, spacing, borderRadius } = theme;
-  const { pincode } = route.params;
+  const { pincode, latitude, longitude, address } = route.params;
   const [activeTab, setActiveTab] = useState<'grocery' | 'pharmacy'>(section === 'pharmacy' ? 'pharmacy' : 'grocery');
   const { setSelectedStore, saveLastVisitedStore } = useAppContext();
   const { isAuthenticated } = useAuth();
@@ -458,10 +458,10 @@ const StoreListScreen = () => {
         screen: 'HomeRoot',
         params: {
           storeId: store.id,
-          pincode: pincode,
+          pincode: pincode || address,
         },
       },
-    });
+    });    
   };
 
   // Helper: map backend shape to UI Store shape
@@ -485,7 +485,18 @@ const StoreListScreen = () => {
     const fetchStores = async () => {
       setLoading(true);
       try {
-        const response = await storeService.exploreStores(pincode, activeTab);
+        let response;
+        // Use location-based API if coordinates are available, otherwise fall back to pincode
+        if (latitude && longitude) {
+          console.log('📍 Using location-based API:', { latitude, longitude, activeTab });
+          response = await storeService.exploreStoresByLocation(latitude, longitude, activeTab);
+        } else if (pincode) {
+          console.log('📮 Using pincode-based API:', { pincode, activeTab });
+          response = await storeService.exploreStores(pincode, activeTab);
+        } else {
+          throw new Error('No location data available');
+        }
+        
         const raw: any = response.data;
         const list: any[] = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
         const mapped: Store[] = (list as any[]).map(mapStore).filter((s: Store) => s.type === activeTab);
@@ -504,7 +515,7 @@ const StoreListScreen = () => {
 
     fetchStores();
     return () => { cancelled = true; };
-  }, [pincode, activeTab]);
+  }, [pincode, latitude, longitude, activeTab]);
 
   const filteredStores = stores; // already filtered by type
 
@@ -578,70 +589,72 @@ const StoreListScreen = () => {
           <ScrollView style={styles.content} contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
             <View style={styles.header}>
               <Text style={styles.title}>Stores Near You</Text>
-              <Text style={styles.subtitle}>Pincode: {pincode}</Text>
+              <Text style={styles.subtitle}>
+                {address || (pincode ? `Pincode: ${pincode}` : 'Location not available')}
+              </Text>
             </View>
 
             {/* Tabs */}
             <View style={styles.tabContainer}>
               <TouchableOpacity style={[styles.tab, activeTab === 'grocery' && styles.activeTab]} onPress={() => setActiveTab('grocery')}>
                 <Text style={[styles.tabText, activeTab === 'grocery' && styles.activeTabText]}>Grocery Stores</Text>
-              </TouchableOpacity>
+            </TouchableOpacity>
               <TouchableOpacity style={[styles.tab, activeTab === 'pharmacy' && styles.activeTab]} onPress={() => setActiveTab('pharmacy')}>
                 <Text style={[styles.tabText, activeTab === 'pharmacy' && styles.activeTabText]}>Pharmacy Stores</Text>
-              </TouchableOpacity>
-            </View>
-
+            </TouchableOpacity>
+          </View>
+          
             {/* Store Cards */}
-            {filteredStores.map((store) => (
-              <Card key={store.id} style={styles.card}>
-                <Card.Content style={styles.cardContent}>
-                  <View style={styles.storeHeader}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                      <Image
-                        source={store.image ? { uri: store.image } : require('../../assets/icon.png')}
-                        style={{ width: 32, height: 32, borderRadius: 16, marginRight: 10 }}
-                      />
-                      <Text style={styles.storeName}>{store.name}</Text>
-                    </View>
-                    <MaterialIcons name="call" size={20} color={colors.primary} />
+          {filteredStores.map((store) => (
+            <Card key={store.id} style={styles.card}>
+              <Card.Content style={styles.cardContent}>
+                <View style={styles.storeHeader}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <Image
+                      source={store.image ? { uri: store.image } : require('../../assets/icon.png')}
+                      style={{ width: 32, height: 32, borderRadius: 16, marginRight: 10 }}
+                    />
+                    <Text style={styles.storeName}>{store.name}</Text>
                   </View>
-                  <Text style={styles.storeAddress}>{store.address}</Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                  <MaterialIcons name="call" size={20} color={colors.primary} />
+                </View>
+                <Text style={styles.storeAddress}>{store.address}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                     <Text style={{ color: colors.secondary, fontSize: 13, marginRight: 4 }}>Total items:</Text>
                     <Text style={{ color: colors.secondary, fontSize: 13, marginRight: 12 }}>{store.totalItems || 0}</Text>
+                </View>
+                <View style={styles.storeInfo}>
+                  <Text style={styles.storeDistance}>{store.distance}</Text>
+                  <View style={styles.storeRating}>
+                    <MaterialCommunityIcons
+                      name="star"
+                      size={16}
+                      color={store.type === 'grocery' ? colors.grocery.primary : colors.pharmacy.primary}
+                    />
+                    <Text style={{ marginLeft: 4 }}>{store.rating}</Text>
                   </View>
-                  <View style={styles.storeInfo}>
-                    <Text style={styles.storeDistance}>{store.distance}</Text>
-                    <View style={styles.storeRating}>
-                      <MaterialCommunityIcons
-                        name="star"
-                        size={16}
-                        color={store.type === 'grocery' ? colors.grocery.primary : colors.pharmacy.primary}
-                      />
-                      <Text style={{ marginLeft: 4 }}>{store.rating}</Text>
-                    </View>
-                  </View>
-                  <Button
-                    mode="contained"
-                    onPress={() => handleStoreSelect(store)}
-                    style={styles.button}
-                    theme={{
-                      roundness: borderRadius.md,
-                      colors: {
-                        primary: store.type === 'grocery' ? colors.grocery.primary : colors.pharmacy.primary,
-                      },
-                    }}
-                  >
-                    Select Store
-                  </Button>
-                </Card.Content>
-              </Card>
-            ))}
-          </ScrollView>
+                </View>
+                <Button
+                  mode="contained"
+                  onPress={() => handleStoreSelect(store)}
+                  style={styles.button}
+                  theme={{
+                    roundness: borderRadius.md,
+                    colors: {
+                      primary: store.type === 'grocery' ? colors.grocery.primary : colors.pharmacy.primary,
+                    },
+                  }}
+                >
+                  Select Store
+                </Button>
+              </Card.Content>
+            </Card>
+          ))}
+        </ScrollView>
         )}
       </LinearGradient>
     </SafeAreaView>
   );
 };
 
-export default StoreListScreen;
+export default StoreListScreen; 

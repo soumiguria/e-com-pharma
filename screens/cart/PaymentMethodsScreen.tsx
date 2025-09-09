@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, TextInput } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ThemedButton from '../../components/ui/ThemedButton';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -9,65 +9,108 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useCart } from '../../contexts/CartContext';
 import LoadingOverlay from '../../components/ui/LoadingOverlay';
+import { getRazorpayKeys, RAZORPAY_CONFIG } from '../../services/api/razorpayConfig';
 
 const deliveryMethods = [
   { id: '1', label: 'Store Pickup' },
   { id: '2', label: 'Home Delivery' },
 ];
-const deliverySpeeds = [
-  { id: '1', label: 'Standard', desc: '2-3 days', price: 0 },
-  { id: '2', label: 'Express', desc: 'Within 2 hours', price: 49 },
-];
-const timeSlots = [
-  '8:00 AM - 10:00 AM',
-  '10:00 AM - 12:00 PM',
-  '12:00 PM - 2:00 PM',
-  '2:00 PM - 4:00 PM',
-];
-const billDetails = {
-  mrp: 500,
-  productDiscount: 50,
-  shipping: 30,
-  couponDiscount: 20,
-  total: 460,
-};
-const mostUsedPayment = 'UPI';
-const userAddresses = [
-  { id: '1', address: '123 Main St, City, State' },
-  { id: '2', address: '456 Oak St, City, State' },
+
+const paymentMethods = [
+  { id: 'offline', label: 'Offline Payment', description: 'Pay at store or delivery' },
+  { id: 'online', label: 'Online Payment', description: 'Pay now with Razorpay' },
 ];
 
 const PaymentMethodsScreen = () => {
   const { theme } = useTheme();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { clearCart, groceryItems, pharmacyItems } = useCart();
+  const { clearCart, groceryItems, pharmacyItems, groceryTotal, pharmacyTotal } = useCart();
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = React.useState('1');
-  const [selectedAddress, setSelectedAddress] = React.useState(userAddresses[0].id);
-  const [selectedSpeed, setSelectedSpeed] = React.useState('1');
-  const [selectedTimeSlot, setSelectedTimeSlot] = React.useState(timeSlots[0]);
-  const [addresses, setAddresses] = React.useState(userAddresses);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = React.useState('offline');
 
   // Determine cart type based on items
   const hasPharmacyItems = pharmacyItems.length > 0;
   const cartType = hasPharmacyItems ? 'pharmacy' : 'grocery';
 
+  // Get Razorpay keys
+  const { keyId } = getRazorpayKeys();
+
+
+  // Calculate bill details dynamically
+  const subtotal = groceryTotal + pharmacyTotal;
+  const productDiscount = Math.round(subtotal * 0.1); // 10% discount
+  const shipping = 0; // No shipping fee for now
+  const couponDiscount = 20; // Fixed coupon discount
+  const total = subtotal - productDiscount + shipping - couponDiscount;
+
+  const billDetails = {
+    mrp: subtotal,
+    productDiscount,
+    shipping,
+    couponDiscount,
+    total: Math.max(0, total), // Ensure total is not negative
+  };
+
   const handlePlaceOrder = () => {
+    if (!isAuthenticated) {
+      // User is not logged in, go to phone auth
+      navigation.navigate('PhoneAuth', { cartType });
+      return;
+    }
+
+    // User is logged in, check payment method
+    if (selectedPaymentMethod === 'online') {
+      // Online payment - open Razorpay checkout
+      openRazorpayCheckout();
+    } else {
+      // Offline payment - directly place order
+      placeOfflineOrder();
+    }
+  };
+
+  const placeOfflineOrder = () => {
     setIsLoading(true);
     
-    // Simulate a small delay for better UX
+    // Simulate offline order processing
     setTimeout(() => {
-      if (isAuthenticated) {
-        // User is logged in, skip phone/OTP and go directly to order confirmation
-        clearCart();
-        navigation.navigate('OrderConfirmation');
-      } else {
-        // User is not logged in, go to phone auth
-        navigation.navigate('PhoneAuth', { cartType });
-      }
       setIsLoading(false);
-    }, 500);
+      
+      // Clear cart and navigate to confirmation
+      clearCart();
+      (navigation as any).navigate('OrderConfirmation');
+      
+      // No popup for offline payments - direct navigation
+    }, 1500);
+  };
+
+  const openRazorpayCheckout = () => {
+    // Use calculated total from bill details
+    const totalAmount = billDetails.total;
+    
+    // Generate order ID
+    const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    console.log('💳 Opening Razorpay Checkout...');
+    console.log('💰 Amount:', totalAmount, '₹');
+    console.log('🆔 Order ID:', orderId);
+    
+    // Navigate to RazorpayCheckoutScreen
+    (navigation as any).navigate('RazorpayCheckout', {
+      amount: totalAmount,
+      currency: 'INR',
+      name: RAZORPAY_CONFIG.APP_NAME,
+      description: `${cartType === 'pharmacy' ? 'Pharmacy' : 'Grocery'} Order`,
+      prefill: {
+        name: user ? `${user.firstName} ${user.lastName}` : 'User Name',
+        email: user?.email || 'user@example.com',
+        contact: user?.mobile || '9999999999',
+      },
+      orderId: orderId,
+      cartType: cartType,
+      deliveryMethod: selectedDeliveryMethod === '1' ? 'Store Pickup' : 'Home Delivery',
+    });
   };
 
   const styles = StyleSheet.create({
@@ -118,53 +161,60 @@ const PaymentMethodsScreen = () => {
       fontSize: 16,
       color: theme.colors.text,
     },
-    changeAddressBtn: {
-      backgroundColor: theme.colors.primary,
-      borderRadius: 16,
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      alignSelf: 'flex-start',
+    paymentMethodContainer: {
+      marginBottom: 20,
+    },
+    paymentMethodCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 2,
+      borderColor: theme.colors.border,
+    },
+    paymentMethodSelected: {
+      borderColor: theme.colors.primary,
+      backgroundColor: theme.colors.primary + '10',
+    },
+    paymentMethodHeader: {
+      flexDirection: 'row',
+      alignItems: 'center',
       marginBottom: 8,
     },
-    changeAddressText: {
-      color: theme.colors.surface,
-      fontWeight: 'bold',
-    },
-    modalContainer: {
-      flex: 1,
+    radioButton: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: theme.colors.border,
+      marginRight: 12,
       justifyContent: 'center',
       alignItems: 'center',
-      backgroundColor: theme.colors.text + '33',
     },
-    modalContent: {
-      backgroundColor: theme.colors.surface,
-      padding: 20,
-      borderRadius: 12,
-      width: '80%',
-    },
-    input: {
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderRadius: 8,
-      padding: 10,
-      marginBottom: 12,
-      color: theme.colors.text,
-      backgroundColor: theme.colors.background,
-    },
-    modalButton: {
+    radioButtonSelected: {
+      width: 10,
+      height: 10,
+      borderRadius: 5,
       backgroundColor: theme.colors.primary,
-      borderRadius: 8,
-      padding: 10,
-      alignItems: 'center',
     },
-    modalButtonText: {
-      color: theme.colors.surface,
-      fontWeight: 'bold',
+    paymentMethodLabel: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.text,
+    },
+    paymentMethodLabelSelected: {
+      color: theme.colors.primary,
+    },
+    paymentMethodDescription: {
+      fontSize: 14,
+      color: theme.colors.secondary,
+      marginLeft: 32,
+    },
+    paymentMethodDescriptionSelected: {
+      color: theme.colors.primary + 'CC',
     },
   });
 
-  // Assume defaultAddress is passed as a prop or imported from a shared context/state
-  const defaultAddress = addresses.find(addr => addr.id === selectedAddress);
 
   return (
     <>
@@ -184,45 +234,35 @@ const PaymentMethodsScreen = () => {
           ))}
         </View>
 
-        {/* Delivery Address - only for Home Delivery */}
-        {selectedDeliveryMethod === '2' && defaultAddress && (
-          <>
-            <Text style={styles.sectionTitle}>Delivery Address</Text>
-            <View style={styles.row}>
-              <View style={[styles.chip, styles.chipSelected]}>
-                <Text style={[styles.chipText, styles.chipTextSelected]}>{defaultAddress.address}</Text>
+        {/* Payment Method */}
+        <Text style={styles.sectionTitle}>Payment Method</Text>
+        <View style={styles.paymentMethodContainer}>
+          {paymentMethods.map((method) => (
+            <TouchableOpacity
+              key={method.id}
+              style={[
+                styles.paymentMethodCard,
+                selectedPaymentMethod === method.id && styles.paymentMethodSelected
+              ]}
+              onPress={() => setSelectedPaymentMethod(method.id)}
+            >
+              <View style={styles.paymentMethodHeader}>
+                <View style={styles.radioButton}>
+                  {selectedPaymentMethod === method.id && <View style={styles.radioButtonSelected} />}
+                </View>
+                <Text style={[
+                  styles.paymentMethodLabel,
+                  selectedPaymentMethod === method.id && styles.paymentMethodLabelSelected
+                ]}>
+                  {method.label}
+                </Text>
               </View>
-            </View>
-            <TouchableOpacity style={styles.changeAddressBtn} onPress={() => navigation.navigate('MyAddresses')}>
-              <Text style={styles.changeAddressText}>Change Address</Text>
-            </TouchableOpacity>
-          </>
-        )}
-
-        {/* Delivery Speed */}
-        <Text style={styles.sectionTitle}>Delivery Speed</Text>
-        <View style={styles.row}>
-          {deliverySpeeds.map(speed => (
-            <TouchableOpacity
-              key={speed.id}
-              style={[styles.chip, selectedSpeed === speed.id && styles.chipSelected]}
-              onPress={() => setSelectedSpeed(speed.id)}
-            >
-              <Text style={[styles.chipText, selectedSpeed === speed.id && styles.chipTextSelected]}>{speed.label} ({speed.desc}) {speed.price > 0 ? `+₹${speed.price}` : 'Free'}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        {/* Time Slot */}
-        <Text style={styles.sectionTitle}>Select Time Slot</Text>
-        <View style={styles.row}>
-          {timeSlots.map(slot => (
-            <TouchableOpacity
-              key={slot}
-              style={[styles.chip, selectedTimeSlot === slot && styles.chipSelected]}
-              onPress={() => setSelectedTimeSlot(slot)}
-            >
-              <Text style={[styles.chipText, selectedTimeSlot === slot && styles.chipTextSelected]}>{slot}</Text>
+              <Text style={[
+                styles.paymentMethodDescription,
+                selectedPaymentMethod === method.id && styles.paymentMethodDescriptionSelected
+              ]}>
+                {method.description}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -238,13 +278,6 @@ const PaymentMethodsScreen = () => {
           <Text style={{ fontWeight: 'bold' }}>₹{billDetails.total}</Text>
         </View>
 
-        {/* Most Used Payment Method */}
-        <Text style={styles.sectionTitle}>Most Used Payment Method</Text>
-        <View style={styles.row}>
-          <TouchableOpacity style={[styles.chip, styles.chipSelected]}>
-            <Text style={[styles.chipText, styles.chipTextSelected]}>{mostUsedPayment}</Text>
-          </TouchableOpacity>
-        </View>
 
         {/* Place Order Button */}
         <ThemedButton title="Place Order" onPress={handlePlaceOrder} style={{ marginTop: 24 }} />
@@ -253,7 +286,7 @@ const PaymentMethodsScreen = () => {
 
       <LoadingOverlay 
         visible={isLoading} 
-        message="Processing order..." 
+        message={selectedPaymentMethod === 'online' ? "Opening Razorpay..." : "Placing order..."} 
       />
     </>
   );

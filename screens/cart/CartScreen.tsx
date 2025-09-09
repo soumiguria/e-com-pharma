@@ -129,10 +129,10 @@ const CartScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Appbar.Header>
-        <Appbar.BackAction onPress={() => navigation.goBack()} />
-        <Appbar.Content title="My Cart" />
-      </Appbar.Header>
+    <Appbar.Header>
+      <Appbar.BackAction onPress={() => navigation.goBack()} />
+      <Appbar.Content title="My Cart" />
+    </Appbar.Header>
 
       {allItems.length === 0 ? (
         <View style={styles.emptyCart}>

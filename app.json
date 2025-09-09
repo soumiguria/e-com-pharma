@@ -38,6 +38,10 @@
           ],
           "category": ["BROWSABLE", "DEFAULT"]
         }
+      ],
+      "permissions": [
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
       ]
     },
     "web": {

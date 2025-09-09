@@ -16,7 +16,7 @@ const ProfileScreen = () => {
   const { theme } = useTheme();
   const { user, isAuthenticated, logout, refreshUser } = useAuth();
   const navigation = useNavigation<ProfileScreenNavigationProp>();
-
+  
   // Debug logging
   console.log('🔍 ProfileScreen Debug:', {
     isAuthenticated,
@@ -205,19 +205,19 @@ const ProfileScreen = () => {
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Settings</Text>
           {settingsOptions.map((option) => (
-            <TouchableOpacity 
-              key={option.id} 
+        <TouchableOpacity 
+          key={option.id} 
               style={[styles.optionItem, { backgroundColor: theme.colors.surface }]}
-              onPress={() => handleOptionPress(option.screen)}
-            >
-              <Ionicons name={option.icon} size={24} color={theme.colors.primary} />
+          onPress={() => handleOptionPress(option.screen)}
+        >
+          <Ionicons name={option.icon} size={24} color={theme.colors.primary} />
               <View style={styles.optionContent}>
                 <Text style={[styles.optionText, { color: theme.colors.text }]}>{option.name}</Text>
                 <Text style={[styles.optionDescription, { color: theme.colors.secondary }]}>{option.description}</Text>
               </View>
               <Ionicons name="chevron-forward" size={20} color={theme.colors.secondary} />
-            </TouchableOpacity>
-          ))}
+        </TouchableOpacity>
+      ))}
         </View>
 
         {/* Theme Toggle */}
@@ -229,8 +229,8 @@ const ProfileScreen = () => {
               <Text style={[styles.themeDescription, { color: theme.colors.secondary }]}>Toggle app theme</Text>
             </View>
           </View>
-          <ThemeToggle />
-        </View>
+        <ThemeToggle />
+      </View>
 
         {/* Logout Button */}
         <TouchableOpacity 
