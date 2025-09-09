@@ -149,13 +149,13 @@ const OrdersScreen = () => {
   };
 
   const handleOrderPress = (order: Order) => {
-    navigation.navigate('OrderDetail', { orderId: order.id });
+    navigation.navigate('OrderDetail', { order: order });
   };
 
   const handlePayNow = (order: Order) => {
     if (order.status === 'pending' && order.paymentMethod === 'online') {
       // Navigate to payment screen
-      navigation.navigate('PaymentMethods', { orderId: order.id });
+      navigation.navigate('PaymentMethods' as any);
     }
   };
 
@@ -176,7 +176,7 @@ const OrdersScreen = () => {
           </Text>
           <Button
             mode="contained"
-            onPress={() => navigation.navigate('PhoneAuth')}
+            onPress={() => navigation.navigate('PhoneAuth' as any, { cartType: 'grocery' })}
             style={styles.loginButton}
           >
             Login

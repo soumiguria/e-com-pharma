@@ -492,7 +492,7 @@ const StoreListScreen = () => {
           response = await storeService.exploreStoresByLocation(latitude, longitude, activeTab);
         } else if (pincode) {
           console.log('📮 Using pincode-based API:', { pincode, activeTab });
-          response = await storeService.exploreStores(pincode, activeTab);
+          response = await storeService.exploreStores(pincode || '110001', activeTab);
         } else {
           throw new Error('No location data available');
         }

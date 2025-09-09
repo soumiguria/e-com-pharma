@@ -364,7 +364,7 @@ const ProductDetailScreen = () => {
           />
           {/* Pagination Dots */}
           <View style={{ flexDirection: 'row', position: 'absolute', bottom: 12, alignSelf: 'center' }}>
-            {images.map((_, idx) => (
+            {images.map((_: any, idx: number) => (
               <View
                 key={idx}
                 style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: idx === currentImageIndex ? theme.colors.primary : '#ddd', marginHorizontal: 4 }}

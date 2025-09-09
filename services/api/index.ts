@@ -8,7 +8,7 @@ export { default as productService } from './productService';
 export { default as cartService } from './cartService';
 export { default as orderService } from './orderService';
 export { default as userService } from './userService';
-export { default as bannerService } from './bannerService';
+export { bannerService } from './bannerService';
 
 // Export API client
 export { default as apiClient } from './client';

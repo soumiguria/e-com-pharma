@@ -22,7 +22,7 @@ const StoreListScreen = () => {
   const loadStores = async () => {
     try {
       setLoading(true);
-      const response = await storeService.exploreStores(pincode, storeType);
+      const response = await storeService.exploreStores(pincode || '110001', storeType);
       
       if (response.success && response.data) {
         setStores(response.data);

@@ -54,13 +54,6 @@ const PincodeScreen = () => {
       setIsLoading(true);
       try {
         await checkLocationPermission();
-        if (currentLocation) {
-          navigation.navigate('StoreList' as any, { 
-            latitude: currentLocation.latitude,
-            longitude: currentLocation.longitude,
-            address: currentLocation.address || 'Current Location'
-          });
-        }
       } catch (error) {
         Alert.alert('Error', 'Could not get your current location');
       } finally {
@@ -74,6 +67,18 @@ const PincodeScreen = () => {
       });
     }
   };
+
+  // Navigate when location is available
+  useEffect(() => {
+    if (currentLocation && isLoading) {
+      navigation.navigate('StoreList' as any, { 
+        latitude: currentLocation.latitude,
+        longitude: currentLocation.longitude,
+        address: currentLocation.address || 'Current Location'
+      });
+      setIsLoading(false);
+    }
+  }, [currentLocation, isLoading, navigation]);
 
   const handleSubmit = async () => {
     if (/^\d{6}$/.test(pincode)) {
