@@ -60,7 +60,7 @@ const HorizontallyScrollableSection: React.FC<HorizontallyScrollableSectionProps
 
     // Initialize with fallback data immediately
     useEffect(() => {
-        const fallbackItems = section === 'pharmacy' 
+        const fallbackItems = section === 'pharma' 
             ? (title === 'Recently Bought' ? pharmacyRecentlyBoughtItems : pharmacyGrandOffersItems)
             : (title === 'Recently Bought' ? groceryRecentlyBoughtItems : groceryGrandOffersItems);
         setItems(fallbackItems);
@@ -78,7 +78,7 @@ const HorizontallyScrollableSection: React.FC<HorizontallyScrollableSectionProps
                 setLoading(true);
                 console.log(`🔄 Fetching ${section} products for store:`, selectedStore.id, 'Title:', title);
                 
-                if (section === 'pharmacy') {
+                if (section === 'pharma') {
                     const response = await storeProductService.getPharmaProducts(selectedStore.id);
                     if (response.success && response.data) {
                         console.log('✅ Pharma products loaded from API');

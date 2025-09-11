@@ -38,7 +38,7 @@ const pickImage = (raw: any): string => {
   return raw.image || (Array.isArray(raw.images) && raw.images.length > 0 ? raw.images[0] : PLACEHOLDER_IMAGE);
 };
 
-const mapProduct = (raw: any, category: 'grocery' | 'pharmacy'): Product => {
+const mapProduct = (raw: any, category: 'grocery' | 'pharma'): Product => {
   return {
     id: raw.productId || raw.id || String(Math.random()),
     name: raw.name || raw.productName || 'Product',
@@ -64,7 +64,7 @@ const mapProduct = (raw: any, category: 'grocery' | 'pharmacy'): Product => {
   } as Product;
 };
 
-const mapExtendedProduct = (raw: any, category: 'grocery' | 'pharmacy'): ExtendedProduct => {
+const mapExtendedProduct = (raw: any, category: 'grocery' | 'pharma'): ExtendedProduct => {
   const base = mapProduct(raw, category);
   return {
     ...base,
@@ -221,7 +221,7 @@ export class StoreProductService {
       const url = buildApiUrl(API_CONFIG.ENDPOINTS.PHARMA_PRODUCTS, { storeId });
       const response = await apiClient.get<any>(url);
       const raw = response.data;
-      const mapped = Array.isArray(raw?.data) ? raw.data.map((p: any) => mapProduct(p, 'pharmacy')) : [];
+      const mapped = Array.isArray(raw?.data) ? raw.data.map((p: any) => mapProduct(p, 'pharma')) : [];
       console.log('✅ Pharma products API mapped:', mapped.length);
       return { success: true, data: mapped } as ApiResponse<Product[]>;
     } catch (error) {
@@ -243,7 +243,7 @@ export class StoreProductService {
       const url = buildApiUrl(API_CONFIG.ENDPOINTS.PHARMA_PRODUCT_DETAILS, { storeId, productId });
       const response = await apiClient.get<any>(url);
       const raw = response.data?.data || response.data;
-      const mapped = mapExtendedProduct(raw, 'pharmacy');
+      const mapped = mapExtendedProduct(raw, 'pharma');
       console.log('✅ Pharma product details API mapped');
       return { success: true, data: mapped } as ApiResponse<ExtendedProduct>;
     } catch (error) {
@@ -265,7 +265,7 @@ export class StoreProductService {
       const url = buildApiUrl(API_CONFIG.ENDPOINTS.PHARMA_SUBCATEGORIES, { storeId, subcategoryId });
       const response = await apiClient.get<any>(url);
       const raw = response.data;
-      const mapped = Array.isArray(raw?.data) ? raw.data.map((p: any) => mapProduct(p, 'pharmacy')) : [];
+      const mapped = Array.isArray(raw?.data) ? raw.data.map((p: any) => mapProduct(p, 'pharma')) : [];
       console.log('✅ Pharma products API mapped:', mapped.length);
       return { success: true, data: mapped } as ApiResponse<Product[]>;
     } catch (error) {

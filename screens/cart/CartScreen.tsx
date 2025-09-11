@@ -28,7 +28,7 @@ const CartScreen = () => {
 
   const handleCheckout = () => {
     // Navigate to payment methods/checkout screen
-    navigation.navigate('PaymentMethods');
+    navigation.navigate('PaymentMethods', {});
   };
 
   // Mock recommended products for grocery
@@ -40,9 +40,9 @@ const CartScreen = () => {
 
   // Mock recommended products for pharmacy
   const pharmacyRecommendations = [
-    { id: 'p101', name: 'Paracetamol 500mg', price: 5.99, originalPrice: 8.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharmacy' as const },
-    { id: 'p102', name: 'Vitamin C 1000mg', price: 12.50, originalPrice: 15.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharmacy' as const },
-    { id: 'p103', name: 'Cetirizine 10mg', price: 8.99, originalPrice: 12.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharmacy' as const },
+    { id: 'p101', name: 'Paracetamol 500mg', price: 5.99, originalPrice: 8.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharma' as const },
+    { id: 'p102', name: 'Vitamin C 1000mg', price: 12.50, originalPrice: 15.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharma' as const },
+    { id: 'p103', name: 'Cetirizine 10mg', price: 8.99, originalPrice: 12.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharma' as const },
   ];
 
   const renderRecommendations = (items: any[], title: string, addToCart: (item: any) => void) => (

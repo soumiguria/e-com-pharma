@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -11,11 +11,12 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { Card, Chip, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
+import orderListService from '../../services/api/orderListService';
 
 interface Order {
   id: string;
@@ -28,7 +29,7 @@ interface Order {
     name: string;
     quantity: number;
     price: number;
-    type: 'grocery' | 'pharmacy';
+    type: 'grocery' | 'pharma';
   }>;
   deliveryMethod: 'store_pickup' | 'home_delivery';
   address?: string;
@@ -44,8 +45,8 @@ const OrdersScreen = () => {
 
   // Mock orders data - in real app, fetch from API
   const mockOrders: Order[] = [
-    {
-      id: '1',
+      {
+        id: '1',
       orderNumber: 'ORD-001',
       date: '2024-01-15',
       total: 450,
@@ -57,28 +58,28 @@ const OrdersScreen = () => {
       ],
       deliveryMethod: 'home_delivery',
       address: '123 Main St, City',
-    },
-    {
-      id: '2',
+      },
+      {
+        id: '2',
       orderNumber: 'ORD-002',
       date: '2024-01-14',
       total: 280,
       status: 'pending',
       paymentMethod: 'offline',
       items: [
-        { name: 'Paracetamol', quantity: 1, price: 15, type: 'pharmacy' },
-        { name: 'Vitamin C', quantity: 1, price: 200, type: 'pharmacy' },
+        { name: 'Paracetamol', quantity: 1, price: 15, type: 'pharma' },
+        { name: 'Vitamin C', quantity: 1, price: 200, type: 'pharma' },
       ],
       deliveryMethod: 'store_pickup',
-    },
-    {
-      id: '3',
+      },
+      {
+        id: '3',
       orderNumber: 'ORD-003',
       date: '2024-01-13',
       total: 650,
       status: 'completed',
       paymentMethod: 'online',
-      items: [
+    items: [
         { name: 'Rice 5kg', quantity: 1, price: 300, type: 'grocery' },
         { name: 'Cooking Oil', quantity: 2, price: 180, type: 'grocery' },
       ],
@@ -91,14 +92,45 @@ const OrdersScreen = () => {
     fetchOrders();
   }, []);
 
+  // Refresh orders when screen comes into focus (e.g., after payment completion)
+  useFocusEffect(
+    useCallback(() => {
+      fetchOrders();
+    }, [])
+  );
+
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setOrders(mockOrders);
+      const response = await orderListService.getOrders();
+      if (response.success && response.data) {
+        // Transform API data to match UI format
+        const transformedOrders = response.data.map((order: any) => ({
+          id: order.orderId.toString(),
+          orderNumber: order.orderNo,
+          date: order.createdAt,
+          total: parseFloat(order.totalAmount),
+          status: (order.payment?.status === 'completed' ? 'paid' : 
+                  order.payment?.status === 'created' ? 'pending' : 'pending') as 'pending' | 'paid' | 'completed' | 'cancelled',
+          paymentMethod: (order.payment?.mode === 'online' ? 'online' : 'offline') as 'online' | 'offline',
+          items: order.products.map((product: any) => ({
+            name: product.name,
+            quantity: product.quantity,
+            price: product.actual,
+            type: 'grocery' as const, // Default to grocery, can be enhanced later
+          })),
+          deliveryMethod: (order.deliveryMethod === 'store' ? 'store_pickup' : 'home_delivery') as 'store_pickup' | 'home_delivery',
+          address: order.shippingAddress?.address || 'Store Pickup',
+        }));
+        setOrders(transformedOrders);
+      } else {
+        // Fallback to mock data
+        setOrders(mockOrders);
+      }
     } catch (error) {
       console.log('Error fetching orders:', error);
+      // Fallback to mock data
+      setOrders(mockOrders);
     } finally {
       setIsLoading(false);
     }
@@ -297,33 +329,33 @@ const OrdersScreen = () => {
       </ScrollView>
     </SafeAreaView>
   );
-};
+  };
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
+  const styles = StyleSheet.create({
+    container: {
+      flex: 1,
+    },
+    header: {
+      flexDirection: 'row',
+      alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    borderBottomWidth: 1,
+      borderBottomWidth: 1,
     borderBottomColor: '#E0E0E0',
-  },
-  headerTitle: {
+    },
+    headerTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+      fontWeight: 'bold',
   },
   scrollView: {
     flex: 1,
     padding: 16,
   },
   centerContent: {
-    flex: 1,
+      flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
+      alignItems: 'center',
     paddingHorizontal: 32,
   },
   loginText: {
@@ -346,27 +378,27 @@ const styles = StyleSheet.create({
   emptySubtext: {
     fontSize: 14,
     textAlign: 'center',
-  },
-  orderCard: {
+    },
+    orderCard: {
     marginBottom: 16,
     elevation: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
+      shadowRadius: 4,
+    },
   orderHeader: {
-    flexDirection: 'row',
+      flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginBottom: 12,
-  },
+      marginBottom: 12,
+    },
   orderNumber: {
     fontSize: 16,
-    fontWeight: 'bold',
-  },
+      fontWeight: 'bold',
+    },
   orderDate: {
-    fontSize: 12,
+      fontSize: 12,
     marginTop: 2,
   },
   orderTotal: {
@@ -374,18 +406,18 @@ const styles = StyleSheet.create({
   },
   totalAmount: {
     fontSize: 18,
-    fontWeight: 'bold',
-  },
+      fontWeight: 'bold',
+    },
   orderDetails: {
-    marginBottom: 12,
-  },
+      marginBottom: 12,
+    },
   detailRow: {
-    flexDirection: 'row',
+      flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
-  },
+      marginBottom: 4,
+    },
   detailText: {
-    fontSize: 14,
+      fontSize: 14,
     marginLeft: 8,
     flex: 1,
   },
@@ -397,16 +429,16 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   orderFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
   },
   statusChip: {
     height: 32,
   },
   payButton: {
     borderRadius: 16,
-  },
-});
+    },
+  });
 
-export default OrdersScreen;
+export default OrdersScreen; 

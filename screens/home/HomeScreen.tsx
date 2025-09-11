@@ -41,7 +41,7 @@ interface Product {
   name: string;
   price: number;
   image: string;
-  category: 'grocery' | 'pharmacy';
+  category: 'grocery' | 'pharma';
 }
 
 interface SubCategory {
@@ -92,16 +92,16 @@ const pharmacyData: Category[] = [
         id: '1-1',
         name: 'Pain Relief',
         products: [
-          { id: '1-1-1', name: 'Ibuprofen', price: 5.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharmacy' },
-          { id: '1-1-2', name: 'Aspirin', price: 3.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharmacy' },
+          { id: '1-1-1', name: 'Ibuprofen', price: 5.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharma' },
+          { id: '1-1-2', name: 'Aspirin', price: 3.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharma' },
         ],
       },
       {
         id: '1-2',
         name: 'Cold & Flu',
         products: [
-          { id: '1-2-1', name: 'Cold Syrup', price: 7.49, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharmacy' },
-          { id: '1-2-2', name: 'Nasal Spray', price: 6.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharmacy' },
+          { id: '1-2-1', name: 'Cold Syrup', price: 7.49, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharma' },
+          { id: '1-2-2', name: 'Nasal Spray', price: 6.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharma' },
         ],
       },
     ],
@@ -193,7 +193,7 @@ const SearchResults = ({ results, onProductPress, activeTab, themedStyles }: { r
         renderItem={({ item }) => (
           <View style={themedStyles.searchResultCard}>
             <ProductCard 
-              product={{...item, category: activeTab as 'grocery' | 'pharmacy'}} 
+              product={{...item, category: activeTab as 'grocery' | 'pharma'}} 
               onPress={() => onProductPress(item)}
               compact={true}
               hideCartButton={true}
@@ -224,8 +224,8 @@ const HomeScreen = () => {
   const scrollY = new Animated.Value(0);
 
   // Determine if current store is pharmacy or grocery
-  const isPharmacyStore = selectedStore?.type === 'pharmacy';
-  const currentSection = isPharmacyStore ? 'pharmacy' : 'grocery';
+  const isPharmacyStore = selectedStore?.type === 'pharma';
+  const currentSection = isPharmacyStore ? 'pharma' : 'grocery';
 
   // Set section based on store type
   useEffect(() => {
@@ -239,7 +239,7 @@ const HomeScreen = () => {
     const params = route.params as any;
     if (params && params.storeId) {
       const incomingStoreId = params.storeId as string;
-      const incomingType = (params.type as 'grocery' | 'pharmacy' | undefined) ?? 'grocery';
+      const incomingType = (params.type as 'grocery' | 'pharma' | undefined) ?? 'grocery';
       const incomingPincode = params.pincode as string | undefined;
       if (!selectedStore || selectedStore.id !== incomingStoreId) {
         const newStore = { id: incomingStoreId, name: 'Selected Store', address: '', type: incomingType, pincode: incomingPincode };

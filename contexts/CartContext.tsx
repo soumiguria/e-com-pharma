@@ -9,7 +9,7 @@ interface CartItem {
   originalPrice?: number; // Optional original price for MRP/discount
   image: string;
   quantity: number;
-  category: 'grocery' | 'pharmacy';
+  category: 'grocery' | 'pharma';
   variant?: {
     name: string;
     unit: string;
@@ -21,8 +21,8 @@ interface CartContextType {
   pharmacyItems: CartItem[];
   addToGroceryCart: (product: Omit<CartItem, 'quantity' | 'category'>) => void;
   addToPharmacyCart: (product: Omit<CartItem, 'quantity' | 'category'>) => void;
-  removeFromCart: (productId: string, category: 'grocery' | 'pharmacy') => void;
-  updateQuantity: (productId: string, newQuantity: number, category: 'grocery' | 'pharmacy') => void;
+  removeFromCart: (productId: string, category: 'grocery' | 'pharma') => void;
+  updateQuantity: (productId: string, newQuantity: number, category: 'grocery' | 'pharma') => void;
   groceryTotal: number;
   pharmacyTotal: number;
   totalItems: number;
@@ -102,11 +102,11 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
             : item
         );
       }
-      return [...prevItems, { ...product, quantity: 1, category: 'pharmacy' }];
+      return [...prevItems, { ...product, quantity: 1, category: 'pharma' }];
     });
   };
 
-  const removeFromCart = (productId: string, category: 'grocery' | 'pharmacy') => {
+  const removeFromCart = (productId: string, category: 'grocery' | 'pharma') => {
     if (category === 'grocery') {
       setGroceryItems(prevItems => prevItems.filter(item => item.id !== productId));
     } else {
@@ -114,7 +114,7 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
     }
   };
 
-  const updateQuantity = (productId: string, newQuantity: number, category: 'grocery' | 'pharmacy') => {
+  const updateQuantity = (productId: string, newQuantity: number, category: 'grocery' | 'pharma') => {
     if (newQuantity < 1) {
       removeFromCart(productId, category);
       return;

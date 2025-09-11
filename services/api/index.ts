@@ -21,6 +21,6 @@ export { AuthService } from './authService';
 export { StoreService } from './storeService';
 export { ProductService } from './productService';
 export { CartService } from './cartService';
-export { OrderService } from './orderService';
+// OrderService is exported as default, no need for named export
 export { UserService } from './userService';
 export { BannerService } from './bannerService'; 

@@ -226,7 +226,7 @@ const AddAddressScreen = () => {
                 text: 'OK',
                 onPress: () => {
                   // Navigate back to MyAddresses which will automatically refresh
-                  navigation.navigate('MyAddresses');
+                  navigation.navigate('MyAddresses', {});
                 }
               },
             ]
@@ -247,7 +247,7 @@ const AddAddressScreen = () => {
           text: 'OK',
                 onPress: () => {
                   // Navigate back to MyAddresses which will automatically refresh
-                  navigation.navigate('MyAddresses');
+                  navigation.navigate('MyAddresses', {});
                 }
         },
       ]

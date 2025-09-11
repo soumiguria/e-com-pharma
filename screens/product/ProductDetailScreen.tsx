@@ -76,7 +76,7 @@ const ProductDetailScreen = () => {
         setLoading(true);
         console.log(`🔄 Fetching ${section} product details:`, { storeId: selectedStore.id, productId: extendedProduct.id });
         
-        if (section === 'pharmacy') {
+        if (section === 'pharma') {
           const response = await storeProductService.getPharmaProductDetails(selectedStore.id, extendedProduct.id);
           if (response.success && response.data) {
             console.log('✅ Pharma product details loaded from API');

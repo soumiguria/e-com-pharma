@@ -70,14 +70,9 @@ const SplashScreen = () => {
                 } 
               });
             } else {
-              // No last visited store, use default
-              navigation.replace('Main', { 
-                screen: 'Home', 
-                params: { 
-                  screen: 'HomeRoot', 
-                  params: { storeId: 'default', pincode: '110001' } 
-                } 
-              });
+              // No last visited store, navigate to pincode screen to select store
+              console.log('🔄 No last visited store found, navigating to pincode screen');
+              navigation.replace('Pincode');
             }
           } else {
             // User is not logged in, navigate to pincode screen

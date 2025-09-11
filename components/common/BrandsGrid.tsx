@@ -33,14 +33,14 @@ const BrandsGrid = () => {
     const { theme, section } = useTheme();
     const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
     const { selectedStore } = useAppContext();
-    const [brands, setBrands] = useState<any[]>(section === 'pharmacy' ? pharmacyBrands : groceryBrands);
+    const [brands, setBrands] = useState<any[]>(section === 'pharma' ? pharmacyBrands : groceryBrands);
     const [loading, setLoading] = useState(false);
 
     // For now, we'll use fallback data since there's no specific brands API
     // In the future, you can add API integration here
     useEffect(() => {
         console.log('📊 Using fallback brands data for section:', section);
-        setBrands(section === 'pharmacy' ? pharmacyBrands : groceryBrands);
+        setBrands(section === 'pharma' ? pharmacyBrands : groceryBrands);
     }, [section]);
 
     const renderItem = ({ item }: { item: typeof brands[0] }) => (

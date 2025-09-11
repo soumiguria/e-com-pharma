@@ -5,7 +5,7 @@ interface Store {
   id: string;
   name: string;
   address: string;
-  type?: 'grocery' | 'pharmacy';
+  type?: 'grocery' | 'pharma';
   pincode?: string;
 }
 

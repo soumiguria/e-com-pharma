@@ -98,7 +98,7 @@ const BottomTabNavigator = () => {
           listeners={{
             tabPress: (e) => {
               e.preventDefault();
-              setSection('pharmacy');
+              setSection('pharma');
               navigation.navigate('Pincode' as any);
             },
           }}

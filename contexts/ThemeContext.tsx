@@ -3,7 +3,7 @@ import { lightTheme, darkTheme, Theme } from '../theme/theme';
 import { useStorage } from './StorageContext';
 
 type ThemeMode = 'light' | 'dark';
-type AppSection = 'grocery' | 'pharmacy';
+type AppSection = 'grocery' | 'pharma';
 
 interface ThemeContextProps {
   theme: Theme;
@@ -26,7 +26,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const theme = useMemo(() => {
     const baseTheme = themeMode === 'light' ? lightTheme : darkTheme;
-    const section: AppSection = appSection === 'pharmacy' ? 'pharmacy' : 'grocery';
+    const section: AppSection = appSection === 'pharma' ? 'pharma' : 'grocery';
     const sectionColors = baseTheme.colors[section];
 
     return {

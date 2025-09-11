@@ -15,7 +15,7 @@ type Product = {
   name: string;
   price: number;
   image?: string;
-  category?: 'grocery' | 'pharmacy';
+  category?: 'grocery' | 'pharma';
   description?: string;
   manufacturer?: string;
   prescription?: boolean;
@@ -27,7 +27,7 @@ type Store = {
   name: string;
   distance: string;
   rating: number;
-  type: 'pharmacy';
+  type: 'pharma';
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -40,7 +40,7 @@ const pharmacyProducts: Record<string, Product[]> = {
       id: 'p101', 
       name: 'Paracetamol 500mg', 
       price: 5.99,
-      category: 'pharmacy',
+      category: 'pharma',
       productCategory: 'Pain Relief',
       description: 'Effective pain relief and fever reduction',
       manufacturer: 'ABC Pharma',
@@ -50,7 +50,7 @@ const pharmacyProducts: Record<string, Product[]> = {
       id: 'p102', 
       name: 'Vitamin C 1000mg', 
       price: 12.50,
-      category: 'pharmacy',
+      category: 'pharma',
       productCategory: 'Vitamins',
       description: 'Immune system support',
       manufacturer: 'Health Plus',
@@ -60,7 +60,7 @@ const pharmacyProducts: Record<string, Product[]> = {
       id: 'p103', 
       name: 'Omeprazole 20mg', 
       price: 25.99,
-      category: 'pharmacy',
+      category: 'pharma',
       productCategory: 'Digestive Health',
       description: 'Acid reflux medication',
       manufacturer: 'MediCare',
@@ -72,7 +72,7 @@ const pharmacyProducts: Record<string, Product[]> = {
       id: 'p201', 
       name: 'Cetirizine 10mg', 
       price: 8.99,
-      category: 'pharmacy',
+      category: 'pharma',
       productCategory: 'Allergy',
       description: 'Allergy relief tablets',
       manufacturer: 'AllerCare',
@@ -82,7 +82,7 @@ const pharmacyProducts: Record<string, Product[]> = {
       id: 'p202', 
       name: 'Calcium + Vitamin D', 
       price: 15.50,
-      category: 'pharmacy',
+      category: 'pharma',
       productCategory: 'Supplements',
       description: 'Bone health supplement',
       manufacturer: 'BoneHealth',
@@ -94,7 +94,7 @@ const pharmacyProducts: Record<string, Product[]> = {
       id: 'p401', 
       name: 'Ibuprofen 400mg', 
       price: 7.99,
-      category: 'pharmacy',
+      category: 'pharma',
       productCategory: 'Pain Relief',
       description: 'Anti-inflammatory pain relief',
       manufacturer: 'City Pharma',
@@ -104,7 +104,7 @@ const pharmacyProducts: Record<string, Product[]> = {
       id: 'p402', 
       name: 'Multivitamin Tablets', 
       price: 18.99,
-      category: 'pharmacy',
+      category: 'pharma',
       productCategory: 'Vitamins',
       description: 'Complete daily multivitamin',
       manufacturer: 'VitaCare',
@@ -116,7 +116,7 @@ const pharmacyProducts: Record<string, Product[]> = {
       id: 'p501', 
       name: 'Aspirin 100mg', 
       price: 6.50,
-      category: 'pharmacy',
+      category: 'pharma',
       productCategory: 'Pain Relief',
       description: 'Blood thinner and pain relief',
       manufacturer: 'Health First',
@@ -126,7 +126,7 @@ const pharmacyProducts: Record<string, Product[]> = {
       id: 'p502', 
       name: 'Vitamin B12', 
       price: 22.99,
-      category: 'pharmacy',
+      category: 'pharma',
       productCategory: 'Vitamins',
       description: 'Energy and nerve health',
       manufacturer: 'Health First',
@@ -136,7 +136,7 @@ const pharmacyProducts: Record<string, Product[]> = {
       id: 'p503', 
       name: 'Metformin 500mg', 
       price: 35.99,
-      category: 'pharmacy',
+      category: 'pharma',
       productCategory: 'Diabetes Care',
       description: 'Diabetes medication',
       manufacturer: 'Health First',
@@ -148,7 +148,7 @@ const pharmacyProducts: Record<string, Product[]> = {
       id: 'p601', 
       name: 'Loratadine 10mg', 
       price: 9.99,
-      category: 'pharmacy',
+      category: 'pharma',
       productCategory: 'Allergy',
       description: 'Non-drowsy allergy relief',
       manufacturer: 'MediCare',
@@ -158,7 +158,7 @@ const pharmacyProducts: Record<string, Product[]> = {
       id: 'p602', 
       name: 'Iron Supplements', 
       price: 16.50,
-      category: 'pharmacy',
+      category: 'pharma',
       productCategory: 'Supplements',
       description: 'Iron deficiency treatment',
       manufacturer: 'MediCare',
@@ -170,7 +170,7 @@ const pharmacyProducts: Record<string, Product[]> = {
       id: 'p801', 
       name: 'Melatonin 3mg', 
       price: 14.99,
-      category: 'pharmacy',
+      category: 'pharma',
       productCategory: 'Sleep & Relaxation',
       description: 'Natural sleep aid',
       manufacturer: 'Wellness',
@@ -180,7 +180,7 @@ const pharmacyProducts: Record<string, Product[]> = {
       id: 'p802', 
       name: 'Omega-3 Fish Oil', 
       price: 28.99,
-      category: 'pharmacy',
+      category: 'pharma',
       productCategory: 'Supplements',
       description: 'Heart and brain health',
       manufacturer: 'Wellness',
@@ -204,7 +204,7 @@ const PharmacyHomeScreen = () => {
       name: `Pharmacy Store ${storeId.split('-')[1]}`,
       distance: '0.8 km',
       rating: 4.7,
-      type: 'pharmacy'
+      type: 'pharma'
     });
     setProducts(pharmacyProducts[storeId] || []);
   }, [route.params]);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ThemedButton from '../../components/ui/ThemedButton';
@@ -9,7 +9,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useCart } from '../../contexts/CartContext';
 import LoadingOverlay from '../../components/ui/LoadingOverlay';
-import { getRazorpayKeys, RAZORPAY_CONFIG } from '../../services/api/razorpayConfig';
+import { orderService } from '../../services/api';
+import { Ionicons } from '@expo/vector-icons';
 
 const deliveryMethods = [
   { id: '1', label: 'Store Pickup' },
@@ -32,11 +33,76 @@ const PaymentMethodsScreen = () => {
 
   // Determine cart type based on items
   const hasPharmacyItems = pharmacyItems.length > 0;
-  const cartType = hasPharmacyItems ? 'pharmacy' : 'grocery';
+  const cartType = hasPharmacyItems ? 'pharma' : 'grocery';
 
-  // Get Razorpay keys
-  const { keyId } = getRazorpayKeys();
+  // Payment processing state
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
+  // Address state
+  const [selectedAddress, setSelectedAddress] = useState<any>(null);
+  const [addresses, setAddresses] = useState<any[]>([]);
+
+  // Load addresses on component mount
+  useEffect(() => {
+    loadAddresses();
+  }, []);
+
+  // Handle address selection from MyAddressesScreen
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      // Check if we have a selected address from MyAddressesScreen
+      const state = navigation.getState();
+      const currentRoute = state.routes[state.index];
+      if (currentRoute.name === 'PaymentMethods' && (currentRoute.params as any)?.selectedAddress) {
+        setSelectedAddress((currentRoute.params as any).selectedAddress);
+        // Clear the selected address from route params to avoid re-selection
+        navigation.setParams({ selectedAddress: undefined });
+      }
+    });
+
+    return unsubscribe;
+  }, [navigation]);
+
+  const loadAddresses = () => {
+    // Mock addresses - in real app, fetch from API
+    const mockAddresses = [
+      {
+        id: '1',
+        name: user ? `${user.firstName} ${user.lastName}` : 'User Name',
+        mobile: user?.mobile || '9999999999',
+        email: user?.email || 'user@example.com',
+        line1: '123 Main Street',
+        line2: 'Apt 4B',
+        city: 'Delhi',
+        state: 'Delhi',
+        pincode: '110001',
+        country: 'India',
+        isDefault: true,
+      },
+      {
+        id: '2',
+        name: user ? `${user.firstName} ${user.lastName}` : 'User Name',
+        mobile: user?.mobile || '9999999999',
+        email: user?.email || 'user@example.com',
+        line1: '456 Oak Avenue',
+        line2: 'Floor 2',
+        city: 'Mumbai',
+        state: 'Maharashtra',
+        pincode: '400001',
+        country: 'India',
+        isDefault: false,
+      },
+    ];
+    
+    setAddresses(mockAddresses);
+    // Set default address as selected only if no address is already selected
+    if (!selectedAddress) {
+      const defaultAddress = mockAddresses.find(addr => addr.isDefault);
+      if (defaultAddress) {
+        setSelectedAddress(defaultAddress);
+      }
+    }
+  };
 
   // Calculate bill details dynamically
   const subtotal = groceryTotal + pharmacyTotal;
@@ -53,7 +119,7 @@ const PaymentMethodsScreen = () => {
     total: Math.max(0, total), // Ensure total is not negative
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!isAuthenticated) {
       // User is not logged in, go to phone auth
       navigation.navigate('PhoneAuth', { cartType });
@@ -63,54 +129,125 @@ const PaymentMethodsScreen = () => {
     // User is logged in, check payment method
     if (selectedPaymentMethod === 'online') {
       // Online payment - open Razorpay checkout
-      openRazorpayCheckout();
+      await openRazorpayCheckout();
     } else {
       // Offline payment - directly place order
-      placeOfflineOrder();
+      await placeOfflineOrder();
     }
   };
 
-  const placeOfflineOrder = () => {
-    setIsLoading(true);
-    
-    // Simulate offline order processing
-    setTimeout(() => {
+  const placeOfflineOrder = async () => {
+    try {
+      setIsLoading(true);
+      setIsProcessingPayment(true);
+      
+      console.log('🛒 Placing offline order...');
+      
+      // Prepare order data
+      const orderData = {
+        products: getCartItems(),
+        deliveryMethod: selectedDeliveryMethod === '1' ? 'store' : 'home_delivery',
+        shippingAddress: selectedAddress || getShippingAddress(),
+        billingSameAsShipping: true,
+        billingAddress: null,
+        storeDiscount: billDetails.productDiscount,
+        couponDiscount: billDetails.couponDiscount,
+        shippingAmount: billDetails.shipping,
+        taxAmount: 0,
+        subtotalAmount: billDetails.mrp,
+        totalAmount: billDetails.total,
+        paymentMethod: 'offline' as const,
+        expressDelivery: false,
+        freeShipping: billDetails.shipping === 0,
+        pincodeAllowed: true,
+      };
+
+      const response = await orderService.placeOrder(orderData);
+      
+      if (response.success && response.data) {
+        console.log('✅ Offline order placed successfully:', response.data.orderNo);
+        
+        // Clear cart
+        clearCart();
+        
+        // Navigate to order confirmation
+        navigation.navigate('OrderConfirmation', {
+          orderId: response.data.orderId.toString(),
+          amount: billDetails.total,
+        });
+      } else {
+        throw new Error(response.error || 'Failed to place order');
+      }
+    } catch (error: any) {
+      console.error('❌ Error placing offline order:', error);
+      Alert.alert('Order Failed', error.message || 'Failed to place order. Please try again.');
+    } finally {
       setIsLoading(false);
-      
-      // Clear cart and navigate to confirmation
-      clearCart();
-      (navigation as any).navigate('OrderConfirmation');
-      
-      // No popup for offline payments - direct navigation
-    }, 1500);
+      setIsProcessingPayment(false);
+    }
   };
 
-  const openRazorpayCheckout = () => {
-    // Use calculated total from bill details
-    const totalAmount = billDetails.total;
-    
-    // Generate order ID
-    const orderId = `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    
-    console.log('💳 Opening Razorpay Checkout...');
-    console.log('💰 Amount:', totalAmount, '₹');
-    console.log('🆔 Order ID:', orderId);
-    
-    // Navigate to RazorpayCheckoutScreen
-    (navigation as any).navigate('RazorpayCheckout', {
-      amount: totalAmount,
-      currency: 'INR',
-      name: RAZORPAY_CONFIG.APP_NAME,
-      description: `${cartType === 'pharmacy' ? 'Pharmacy' : 'Grocery'} Order`,
-      prefill: {
-        name: user ? `${user.firstName} ${user.lastName}` : 'User Name',
-        email: user?.email || 'user@example.com',
-        contact: user?.mobile || '9999999999',
-      },
-      orderId: orderId,
-      cartType: cartType,
-      deliveryMethod: selectedDeliveryMethod === '1' ? 'Store Pickup' : 'Home Delivery',
-    });
+  const openRazorpayCheckout = async () => {
+    try {
+      setIsProcessingPayment(true);
+      
+      // Use calculated total from bill details
+      const totalAmount = billDetails.total;
+      
+      console.log('💳 Opening Razorpay Checkout...');
+      console.log('💰 Amount:', totalAmount, '₹');
+      
+      // Navigate to RazorpayCheckoutScreen
+      navigation.navigate('RazorpayCheckout', {
+        amount: totalAmount,
+        currency: 'INR',
+        name: 'E-Commerce App',
+        description: `${cartType === 'pharma' ? 'Pharmacy' : 'Grocery'} Order`,
+        prefill: {
+          name: user ? `${user.firstName} ${user.lastName}` : 'User Name',
+          email: user?.email || 'user@example.com',
+          contact: user?.mobile || '9999999999',
+        },
+        orderId: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        cartType: cartType,
+        deliveryMethod: selectedDeliveryMethod === '1' ? 'Store Pickup' : 'Home Delivery',
+      });
+    } catch (error: any) {
+      console.error('❌ Error opening Razorpay checkout:', error);
+      Alert.alert('Payment Error', 'Failed to open payment gateway. Please try again.');
+    } finally {
+      setIsProcessingPayment(false);
+    }
+  };
+
+  const getCartItems = () => {
+    const items = cartType === 'grocery' ? groceryItems : pharmacyItems;
+    return items.map(item => ({
+      productId: item.id,
+      quantity: item.quantity,
+      price: item.price,
+      name: item.name,
+    }));
+  };
+
+  const getShippingAddress = () => {
+    // Return selected address or default
+    return selectedAddress || {
+      name: user?.firstName + ' ' + user?.lastName || 'User',
+      mobile: user?.mobile || '',
+      email: user?.email || '',
+      line1: '123 Main Street',
+      line2: 'Apt 4B',
+      city: 'Delhi',
+      state: 'Delhi',
+      pincode: '110001',
+      country: 'India',
+    };
+  };
+
+  const handleAddressChange = () => {
+    // Navigate to address selection screen
+    navigation.navigate('MyAddresses' as any, { fromPaymentMethods: true });
   };
 
   const styles = StyleSheet.create({
@@ -213,6 +350,46 @@ const PaymentMethodsScreen = () => {
     paymentMethodDescriptionSelected: {
       color: theme.colors.primary + 'CC',
     },
+    addressCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    addressHeader: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      marginBottom: 8,
+    },
+    addressName: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.text,
+    },
+    changeAddressButton: {
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      backgroundColor: theme.colors.primary + '20',
+      borderRadius: 6,
+    },
+    changeAddressText: {
+      color: theme.colors.primary,
+      fontSize: 14,
+      fontWeight: '500',
+    },
+    addressText: {
+      fontSize: 14,
+      color: theme.colors.text,
+      marginBottom: 2,
+    },
+    addressContact: {
+      fontSize: 14,
+      color: theme.colors.secondary,
+      marginTop: 4,
+    },
   });
 
 
@@ -220,6 +397,39 @@ const PaymentMethodsScreen = () => {
     <>
       <SafeAreaView style={styles.container}>
         <ScrollView showsVerticalScrollIndicator={false}>
+        {/* Delivery Address */}
+        {selectedDeliveryMethod === '2' && (
+          <>
+            <Text style={styles.sectionTitle}>Delivery Address</Text>
+            <View style={styles.addressCard}>
+              <View style={styles.addressHeader}>
+                <Text style={styles.addressName}>
+                  {selectedAddress?.firstName ? `${selectedAddress.firstName} ${selectedAddress.lastName}` : selectedAddress?.name || 'User Name'}
+                </Text>
+                <TouchableOpacity onPress={handleAddressChange} style={styles.changeAddressButton}>
+                  <Text style={styles.changeAddressText}>Change</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={styles.addressText}>{selectedAddress?.line1 || '123 Main Street'}</Text>
+              {selectedAddress?.line2 && (
+                <Text style={styles.addressText}>{selectedAddress.line2}</Text>
+              )}
+              <Text style={styles.addressText}>
+                {selectedAddress?.city || 'Delhi'}, {selectedAddress?.state || 'Delhi'} - {selectedAddress?.pincode || '110001'}
+              </Text>
+              <Text style={styles.addressText}>{selectedAddress?.country || 'India'}</Text>
+              <Text style={styles.addressContact}>
+                📞 {selectedAddress?.mobile || user?.mobile || '9999999999'}
+              </Text>
+              {selectedAddress?.isDefault && (
+                <Text style={[styles.addressText, { color: theme.colors.primary, fontWeight: 'bold', marginTop: 4 }]}>
+                  ✓ Default Address
+                </Text>
+              )}
+            </View>
+          </>
+        )}
+
         {/* Delivery Method */}
         <Text style={styles.sectionTitle}>Delivery Method</Text>
         <View style={styles.row}>
@@ -256,7 +466,7 @@ const PaymentMethodsScreen = () => {
                 ]}>
                   {method.label}
                 </Text>
-              </View>
+        </View>
               <Text style={[
                 styles.paymentMethodDescription,
                 selectedPaymentMethod === method.id && styles.paymentMethodDescriptionSelected
@@ -285,8 +495,8 @@ const PaymentMethodsScreen = () => {
       </SafeAreaView>
 
       <LoadingOverlay 
-        visible={isLoading} 
-        message={selectedPaymentMethod === 'online' ? "Opening Razorpay..." : "Placing order..."} 
+        visible={isLoading || isProcessingPayment} 
+        message={isProcessingPayment ? "Processing payment..." : (selectedPaymentMethod === 'online' ? "Opening Razorpay..." : "Placing order...")} 
       />
     </>
   );

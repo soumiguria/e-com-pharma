@@ -15,7 +15,7 @@ interface Product {
   rating?: number;
   isNew?: boolean;
   isOnSale?: boolean;
-  category?: 'grocery' | 'pharmacy';
+  category?: 'grocery' | 'pharma';
   perUnit?: string;
 }
 
@@ -46,7 +46,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
       price: product.price,
       image: typeof product.image === 'string' ? product.image : ''
     };
-    if (product.category === 'pharmacy') {
+    if (product.category === 'pharma') {
       addToPharmacyCart(cartItem);
     } else {
       addToGroceryCart(cartItem);

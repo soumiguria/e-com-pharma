@@ -10,14 +10,14 @@ export type RootStackParamList = {
     latitude?: number;
     longitude?: number;
     address?: string;
-    storeType?: 'grocery' | 'pharmacy';
+    storeType?: 'grocery' | 'pharma';
   };
   Main: NavigatorScreenParams<HomeTabParamList>;
   ProductDetail: { product: any };
   CategoryDetail: { category: any };
   MedicineDetail: { medicine: any };
   Cart: undefined;
-  Checkout: { type: 'grocery' | 'pharmacy' };
+  Checkout: { type: 'grocery' | 'pharma' };
   OrderConfirmation: {
     paymentData?: any;
     orderId?: string;
@@ -26,7 +26,7 @@ export type RootStackParamList = {
   Profile: undefined;
   Orders: undefined;
   OrderDetail: { order: any };
-  PaymentMethods: undefined;
+  PaymentMethods: { selectedAddress?: any };
   RazorpayCheckout: {
     amount: number;
     currency?: string;
@@ -38,7 +38,7 @@ export type RootStackParamList = {
       contact?: string;
     };
     orderId: string;
-    cartType: 'grocery' | 'pharmacy';
+    cartType: 'grocery' | 'pharma';
     deliveryMethod: string;
   };
   HelpCenter: undefined;
@@ -47,14 +47,14 @@ export type RootStackParamList = {
     products: any[];
   };
   BannerDetail: { bannerId: string };
-  PhoneAuth: { cartType: 'grocery' | 'pharmacy' };
+  PhoneAuth: { cartType: 'grocery' | 'pharma' };
   Register: { 
     phoneNumber: string; 
-    cartType: 'grocery' | 'pharmacy'; 
+    cartType: 'grocery' | 'pharma'; 
   };
   OTPVerification: {
     phoneNumber: string;
-    cartType: 'grocery' | 'pharmacy';
+    cartType: 'grocery' | 'pharma';
     isRegistration?: boolean;
     userData?: {
       firstName: string;
@@ -68,7 +68,7 @@ export type RootStackParamList = {
   RecentlyBoughtScreen: undefined;
   GreatOffersScreen: undefined;
   EditProfile: undefined;
-  MyAddresses: undefined;
+  MyAddresses: { fromPaymentMethods?: boolean };
   AddAddress: { 
     location?: { latitude: number; longitude: number; address: string };
     addressId?: string;

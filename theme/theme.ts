@@ -147,7 +147,7 @@ export const lightTheme = {
       tertiary: palette.tertiary_green,
     },
     // Pharmacy-specific colors
-    pharmacy: {
+    pharma: {
       primary: palette.primary_blue,
       secondary: palette.secondary_blue,
       tertiary: palette.tertiary_blue,
@@ -181,7 +181,7 @@ export const darkTheme = {
       secondary: palette.secondary_green,
       tertiary: palette.tertiary_green,
     },
-    pharmacy: {
+    pharma: {
       primary: palette.primary_blue,
       secondary: palette.secondary_blue,
       tertiary: palette.tertiary_blue,

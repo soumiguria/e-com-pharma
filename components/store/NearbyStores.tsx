@@ -87,7 +87,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'StoreSelect
 interface NearbyStore {
   id: string;
   name: string;
-  type: 'grocery' | 'pharmacy';
+  type: 'grocery' | 'pharma';
   distance: string;
   rating: number;
   image: any; // or use a more specific type for images
@@ -105,7 +105,7 @@ const nearbyStores: NearbyStore[] = [
   { 
     id: '2', 
     name: 'Quick Pharmacy', 
-    type: 'pharmacy',
+    type: 'pharma',
     distance: '1.2 km',
     rating: 4.2,
     image: require('../../assets/pharmacy-store.jpg')

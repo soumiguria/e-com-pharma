@@ -94,7 +94,7 @@ const OTPVerificationScreen = () => {
         if (cartType) {
           console.log('🛒 User came from cart flow, navigating back to PaymentMethods...');
           // Navigate back to PaymentMethods screen
-          navigation.navigate('PaymentMethods');
+          navigation.navigate('PaymentMethods', {});
         } else {
           console.log('🏠 User came from normal login flow, navigating to main app...');
           // Navigate to main app

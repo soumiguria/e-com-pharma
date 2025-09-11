@@ -53,7 +53,7 @@ const AllProductsScreen = () => {
         setLoading(true);
         console.log(`🔄 Fetching ${section} products for store:`, selectedStore.id);
         
-        if (section === 'pharmacy') {
+        if (section === 'pharma') {
           const response = await storeProductService.getPharmaProducts(selectedStore.id);
           if (response.success && response.data) {
             console.log('✅ Pharma products loaded from API');
@@ -99,7 +99,7 @@ const AllProductsScreen = () => {
       category: section
     };
     
-    if (section === 'pharmacy') {
+    if (section === 'pharma') {
       addToPharmacyCart(cartItem);
     } else {
       addToGroceryCart(cartItem);

@@ -147,7 +147,7 @@ const CategoriesScreen = () => {
     const fetchCategories = async () => {
       if (!selectedStore?.id) {
         console.log('📊 No store selected, using fallback mock data');
-        setCategories(section === 'pharmacy' ? pharmacyCategorySections.flatMap(s => s.categories) : categorySections.flatMap(s => s.categories));
+        setCategories(section === 'pharma' ? pharmacyCategorySections.flatMap(s => s.categories) : categorySections.flatMap(s => s.categories));
         setLoading(false);
         return;
       }
@@ -155,7 +155,7 @@ const CategoriesScreen = () => {
       try {
         console.log(`🔄 Fetching ${section} categories for store:`, selectedStore.id);
         
-        if (section === 'pharmacy') {
+        if (section === 'pharma') {
           const [catRes, subRes] = await Promise.all([
             storeProductService.getPharmaCategories(selectedStore.id),
             storeProductService.getPharmaSubcategories(selectedStore.id),
@@ -189,7 +189,7 @@ const CategoriesScreen = () => {
       } catch (error) {
         console.log(`❌ Error fetching ${section} categories:`, error);
         console.log('📊 Using fallback mock data');
-        setCategories(section === 'pharmacy' ? pharmacyCategorySections.flatMap(s => s.categories) : categorySections.flatMap(s => s.categories));
+        setCategories(section === 'pharma' ? pharmacyCategorySections.flatMap(s => s.categories) : categorySections.flatMap(s => s.categories));
       } finally {
         setLoading(false);
       }
@@ -254,8 +254,8 @@ const CategoriesScreen = () => {
   );
 
   // Build sections for UI rendering
-  const computedSections = section === 'pharmacy'
-    ? [{ id: 'pharmacy', title: 'Pharmacy Categories', categories }]
+  const computedSections = section === 'pharma'
+    ? [{ id: 'pharma', title: 'Pharmacy Categories', categories }]
     : categorySections;
 
   return (

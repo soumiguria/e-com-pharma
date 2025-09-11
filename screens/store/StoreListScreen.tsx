@@ -399,7 +399,7 @@ type StoreListRouteProp = RouteProp<RootStackParamList, 'StoreList'>;
 interface Store {
   id: string;
   name: string;
-  type: 'grocery' | 'pharmacy';
+  type: 'grocery' | 'pharma';
   address: string;
   distance: string;
   rating: number;
@@ -422,7 +422,7 @@ const mockedStores: Store[] = [
   {
     id: '2',
     name: 'Quick Pharmacy',
-    type: 'pharmacy',
+    type: 'pharma',
     address: '456 Park Avenue, Downtown',
     distance: '1.2 km',
     rating: 4.2,
@@ -438,7 +438,7 @@ const StoreListScreen = () => {
   const { theme, section } = useTheme();
   const { colors, typography, spacing, borderRadius } = theme;
   const { pincode, latitude, longitude, address } = route.params;
-  const [activeTab, setActiveTab] = useState<'grocery' | 'pharmacy'>(section === 'pharmacy' ? 'pharmacy' : 'grocery');
+  const [activeTab, setActiveTab] = useState<'grocery' | 'pharma'>(section === 'pharma' ? 'pharma' : 'grocery');
   const { setSelectedStore, saveLastVisitedStore } = useAppContext();
   const { isAuthenticated } = useAuth();
 
@@ -466,7 +466,7 @@ const StoreListScreen = () => {
 
   // Helper: map backend shape to UI Store shape
   const mapStore = (raw: any): Store => {
-    const type = (raw.type || raw.storeType || activeTab) as 'grocery' | 'pharmacy';
+    const type = (raw.type || raw.storeType || activeTab) as 'grocery' | 'pharma';
     return {
       id: raw.storeId || raw.id || String(Math.random()),
       name: raw.name || raw.storeName || 'Store',
@@ -522,13 +522,13 @@ const StoreListScreen = () => {
   const getGradientColors = () => {
     return activeTab === 'grocery'
       ? [colors.grocery.primary, colors.grocery.secondary]
-      : [colors.pharmacy.primary, colors.pharmacy.secondary];
+      : [colors.pharma.primary, colors.pharma.secondary];
   };
 
   const getTabColors = () => {
     return activeTab === 'grocery'
       ? { activeTab: colors.grocery.primary, activeText: colors.surface, inactiveText: colors.text }
-      : { activeTab: colors.pharmacy.primary, activeText: colors.surface, inactiveText: colors.text };
+      : { activeTab: colors.pharma.primary, activeText: colors.surface, inactiveText: colors.text };
   };
 
   const tabColors = getTabColors();
@@ -571,7 +571,7 @@ const StoreListScreen = () => {
     storeInfo: { flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md },
     storeDistance: {
       ...typography.body2,
-      color: activeTab === 'grocery' ? colors.grocery.primary : colors.pharmacy.primary,
+      color: activeTab === 'grocery' ? colors.grocery.primary : colors.pharma.primary,
       marginRight: spacing.md,
     },
     storeRating: { flexDirection: 'row', alignItems: 'center' },
@@ -599,8 +599,8 @@ const StoreListScreen = () => {
               <TouchableOpacity style={[styles.tab, activeTab === 'grocery' && styles.activeTab]} onPress={() => setActiveTab('grocery')}>
                 <Text style={[styles.tabText, activeTab === 'grocery' && styles.activeTabText]}>Grocery Stores</Text>
             </TouchableOpacity>
-              <TouchableOpacity style={[styles.tab, activeTab === 'pharmacy' && styles.activeTab]} onPress={() => setActiveTab('pharmacy')}>
-                <Text style={[styles.tabText, activeTab === 'pharmacy' && styles.activeTabText]}>Pharmacy Stores</Text>
+              <TouchableOpacity style={[styles.tab, activeTab === 'pharma' && styles.activeTab]} onPress={() => setActiveTab('pharma')}>
+                <Text style={[styles.tabText, activeTab === 'pharma' && styles.activeTabText]}>Pharmacy Stores</Text>
             </TouchableOpacity>
           </View>
           
@@ -629,7 +629,7 @@ const StoreListScreen = () => {
                     <MaterialCommunityIcons
                       name="star"
                       size={16}
-                      color={store.type === 'grocery' ? colors.grocery.primary : colors.pharmacy.primary}
+                      color={store.type === 'grocery' ? colors.grocery.primary : colors.pharma.primary}
                     />
                     <Text style={{ marginLeft: 4 }}>{store.rating}</Text>
                   </View>
@@ -641,7 +641,7 @@ const StoreListScreen = () => {
                   theme={{
                     roundness: borderRadius.md,
                     colors: {
-                      primary: store.type === 'grocery' ? colors.grocery.primary : colors.pharmacy.primary,
+                      primary: store.type === 'grocery' ? colors.grocery.primary : colors.pharma.primary,
                     },
                   }}
                 >

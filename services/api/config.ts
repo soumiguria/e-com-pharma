@@ -3,7 +3,7 @@
 
 export const API_CONFIG = {
   // Base URL for all APIs
-  BASE_URL: 'https://marg-api.thelocalsandbox.dev',
+  BASE_URL: 'https://api.grocup.com',
   
   // API Endpoints - Change these to switch between mock and real APIs
   ENDPOINTS: {
@@ -40,8 +40,16 @@ export const API_CONFIG = {
     CART: '/v1/customer/cart',
     
     // Order APIs
-    ORDERS: '/v1/customer/orders',
+    ORDERS: '/v1/store/customer/order',
     ORDER_DETAILS: '/v1/customer/orders/:orderId',
+    
+    // Store Details
+    STORE_DETAILS: '/v1/store/details',
+    
+    // Payment APIs
+    PLACE_ORDER: 'https://api.grocup.com/v1/store/checkout/placeorder',
+    INITIATE_PAYMENT: 'https://api.grocup.com/v1/store/checkout/orderpayment/initiate',
+    VERIFY_PAYMENT: 'https://api.grocup.com/v1/store/checkout/orderpayment/verify',
   },
   
   // Feature Flags - Enable/disable API usage

@@ -119,6 +119,24 @@ const OrderConfirmationScreen = () => {
     }, 200);
   };
 
+  const handleViewMyOrders = () => {
+    console.log('View My Orders pressed');
+    setButtonPressed('orders');
+    
+    // Add a small delay for visual feedback
+    setTimeout(() => {
+      try {
+        // Navigate to orders screen
+        navigation.navigate('Orders' as any);
+      } catch (error) {
+        console.error('Navigation error:', error);
+        Alert.alert('Error', 'Unable to navigate to orders');
+      } finally {
+        setButtonPressed(null);
+      }
+    }, 500);
+  };
+
   const handleClose = () => {
     console.log('Close pressed');
     try {
@@ -257,8 +275,8 @@ const OrderConfirmationScreen = () => {
       lineHeight: 20,
     },
     actionButtons: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
+      flexDirection: 'column',
+      gap: 12,
       marginTop: 20,
     },
     actionButton: {
@@ -278,6 +296,11 @@ const OrderConfirmationScreen = () => {
       borderWidth: 1,
       borderColor: theme.colors.primary,
     },
+    tertiaryButton: {
+      backgroundColor: theme.colors.secondary,
+      borderWidth: 1,
+      borderColor: theme.colors.secondary,
+    },
     primaryButtonText: {
       color: '#fff',
       fontSize: 16,
@@ -285,6 +308,11 @@ const OrderConfirmationScreen = () => {
     },
     secondaryButtonText: {
       color: theme.colors.primary,
+      fontSize: 16,
+      fontWeight: '600',
+    },
+    tertiaryButtonText: {
+      color: '#fff',
       fontSize: 16,
       fontWeight: '600',
     },
@@ -383,6 +411,20 @@ const OrderConfirmationScreen = () => {
           >
             <Text style={styles.secondaryButtonText}>
               {buttonPressed === 'continue' ? 'Loading...' : 'Continue Shopping'}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.actionButton, 
+              styles.tertiaryButton,
+              buttonPressed === 'orders' && { opacity: 0.6 }
+            ]}
+            onPress={handleViewMyOrders}
+            activeOpacity={0.7}
+            disabled={buttonPressed !== null}
+          >
+            <Text style={styles.tertiaryButtonText}>
+              {buttonPressed === 'orders' ? 'Loading...' : 'View My Orders'}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity

@@ -11,7 +11,7 @@ export type Location = {
 export type Store = {
   id: string;
   name: string;
-  type: 'grocery' | 'pharmacy';
+  type: 'grocery' | 'pharma';
   address: string;
   pincode: string;
   rating: number;
@@ -23,7 +23,7 @@ export type Store = {
 
 export class StoreService {
   // Get stores by pincode
-  async getStoresByPincode(pincode: string, category?: 'grocery' | 'pharmacy'): Promise<ApiResponse<Store[]>> {
+  async getStoresByPincode(pincode: string, category?: 'grocery' | 'pharma'): Promise<ApiResponse<Store[]>> {
     const params: Record<string, any> = { pincode };
     if (category) {
       params.category = category;
@@ -32,7 +32,7 @@ export class StoreService {
   }
 
   // Get stores by location
-  async getStoresByLocation(location: Location, category?: 'grocery' | 'pharmacy'): Promise<ApiResponse<Store[]>> {
+  async getStoresByLocation(location: Location, category?: 'grocery' | 'pharma'): Promise<ApiResponse<Store[]>> {
     const params: Record<string, any> = {
       latitude: location.latitude,
       longitude: location.longitude,
@@ -64,7 +64,7 @@ export class StoreService {
   }
 
   // Get stores with pagination
-  async getStores(params: PaginationParams & { category?: 'grocery' | 'pharmacy' }): Promise<ApiResponse<PaginatedResponse<Store>>> {
+  async getStores(params: PaginationParams & { category?: 'grocery' | 'pharma' }): Promise<ApiResponse<PaginatedResponse<Store>>> {
     return apiClient.get<PaginatedResponse<Store>>('/stores', params);
   }
 
@@ -154,7 +154,7 @@ export class StoreService {
   }
 
   // Get popular stores
-  async getPopularStores(category?: 'grocery' | 'pharmacy', limit: number = 10): Promise<ApiResponse<Store[]>> {
+  async getPopularStores(category?: 'grocery' | 'pharma', limit: number = 10): Promise<ApiResponse<Store[]>> {
     const params: Record<string, any> = { limit };
     if (category) {
       params.category = category;
@@ -163,7 +163,7 @@ export class StoreService {
   }
 
   // Get trending stores
-  async getTrendingStores(category?: 'grocery' | 'pharmacy', limit: number = 10): Promise<ApiResponse<Store[]>> {
+  async getTrendingStores(category?: 'grocery' | 'pharma', limit: number = 10): Promise<ApiResponse<Store[]>> {
     const params: Record<string, any> = { limit };
     if (category) {
       params.category = category;
@@ -211,7 +211,7 @@ export class StoreService {
     return apiClient.patch<{ message: string }>(`/stores/${storeId}/notification-settings`, settings);
   }
 
-  async exploreStores(pincode: string, type?: 'grocery' | 'pharmacy'): Promise<ApiResponse<Store[]>> {
+  async exploreStores(pincode: string, type?: 'grocery' | 'pharma'): Promise<ApiResponse<Store[]>> {
     try {
       console.log('🏪 Fetching stores for pincode:', pincode, 'type:', type);
       // API expects pincode in header: x-pincode; keep type as query param
@@ -231,7 +231,7 @@ export class StoreService {
     }
   }
 
-  async exploreStoresByLocation(latitude: number, longitude: number, type?: 'grocery' | 'pharmacy'): Promise<ApiResponse<Store[]>> {
+  async exploreStoresByLocation(latitude: number, longitude: number, type?: 'grocery' | 'pharma'): Promise<ApiResponse<Store[]>> {
     try {
       console.log('🏪 Fetching stores for location:', { latitude, longitude, type });
       // Use the new location-based API endpoint

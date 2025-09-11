@@ -45,7 +45,7 @@ const CategoryGrid = () => {
     const { theme, section } = useTheme();
     const navigation = useNavigation<NavigationProp>();
     const { selectedStore } = useAppContext();
-    const [categories, setCategories] = useState<any[]>(section === 'pharmacy' ? pharmacyCategories : groceryCategories);
+    const [categories, setCategories] = useState<any[]>(section === 'pharma' ? pharmacyCategories : groceryCategories);
     const [loading, setLoading] = useState(false);
     const [tapLoadingId, setTapLoadingId] = useState<string | null>(null);
 
@@ -61,7 +61,7 @@ const CategoryGrid = () => {
                 setLoading(true);
                 console.log(`🔄 Fetching ${section} categories for store:`, selectedStore.id);
                 
-                if (section === 'pharmacy') {
+                if (section === 'pharma') {
                     const response = await storeProductService.getPharmaCategories(selectedStore.id);
                     if (response.success && response.data) {
                         console.log('✅ Pharma categories loaded from API');
@@ -108,7 +108,7 @@ const CategoryGrid = () => {
             }
         ]} onPress={async () => {
             if (tapLoadingId) return;
-            if (section === 'pharmacy') {
+            if (section === 'pharma') {
                 try {
                     setTapLoadingId(item.id);
                     // Fetch subcategories and map them into the category param

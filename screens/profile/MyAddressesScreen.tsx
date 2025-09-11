@@ -11,18 +11,23 @@ import {
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { addressService, Address } from '../../services/api/addressService';
 
 type MyAddressesScreenNavigationProp = StackNavigationProp<RootStackParamList, 'MyAddresses'>;
+type MyAddressesScreenRouteProp = RouteProp<RootStackParamList, 'MyAddresses'>;
 
 const MyAddressesScreen = React.memo(() => {
   const { theme } = useTheme();
   const { user, isAuthenticated } = useAuth();
   const navigation = useNavigation<MyAddressesScreenNavigationProp>();
+  const route = useRoute<MyAddressesScreenRouteProp>();
+  
+  // Check if coming from PaymentMethodsScreen for address selection
+  const { fromPaymentMethods = false } = route.params || {};
   
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -177,6 +182,16 @@ const MyAddressesScreen = React.memo(() => {
     }
   }, []);
 
+  const handleSelectAddress = useCallback((address: Address) => {
+    if (fromPaymentMethods) {
+      // Return selected address to PaymentMethodsScreen
+      navigation.navigate('PaymentMethods', { selectedAddress: address });
+    } else {
+      // Normal flow - set as default
+      handleSetDefaultAddress(address.customerAddressId || '');
+    }
+  }, [fromPaymentMethods, navigation, handleSetDefaultAddress]);
+
   const renderAddressItem = useCallback(({ item }: { item: Address }) => (
     <View style={styles.addressItem}>
       <View style={styles.addressHeader}>
@@ -221,7 +236,7 @@ const MyAddressesScreen = React.memo(() => {
       
       <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
         <TouchableOpacity 
-          onPress={() => handleSetDefaultAddress(item.customerAddressId || '')} 
+          onPress={() => handleSelectAddress(item)} 
           style={{ marginRight: 12 }}
         >
           <MaterialIcons 
@@ -235,7 +250,10 @@ const MyAddressesScreen = React.memo(() => {
           fontWeight: 'bold', 
           marginRight: 16 
         }}>
-          {defaultAddressId === item.customerAddressId ? 'Default' : 'Set as default'}
+          {fromPaymentMethods 
+            ? (defaultAddressId === item.customerAddressId ? 'Default' : 'Select this address')
+            : (defaultAddressId === item.customerAddressId ? 'Default' : 'Set as default')
+          }
         </Text>
       </View>
     </View>
@@ -363,7 +381,9 @@ const MyAddressesScreen = React.memo(() => {
             >
               <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>My Addresses</Text>
+            <Text style={styles.headerTitle}>
+              {fromPaymentMethods ? 'Select Delivery Address' : 'My Addresses'}
+            </Text>
           </View>
           <View style={styles.loadingContainer}>
             <MaterialIcons name="hourglass-empty" size={64} color={theme.colors.secondary} />
@@ -386,7 +406,9 @@ const MyAddressesScreen = React.memo(() => {
             >
               <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>My Addresses</Text>
+            <Text style={styles.headerTitle}>
+              {fromPaymentMethods ? 'Select Delivery Address' : 'My Addresses'}
+            </Text>
           </View>
           <View style={styles.emptyState}>
             <MaterialIcons name="person" size={64} color={theme.colors.secondary} />

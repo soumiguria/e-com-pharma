@@ -88,7 +88,7 @@ export interface Address {
 export interface Store {
   id: string;
   name: string;
-  type: 'grocery' | 'pharmacy';
+  type: 'grocery' | 'pharma';
   address: string;
   distance: string;
   rating: number;
@@ -137,7 +137,7 @@ export interface Product {
   images?: string[];
   description?: string;
   brand?: string;
-  category: 'grocery' | 'pharmacy';
+  category: 'grocery' | 'pharma';
   subCategory?: string;
   availableQty: number;
   unit: string;
@@ -216,7 +216,7 @@ export interface CartItem {
   originalPrice?: number;
   image: string;
   quantity: number;
-  category: 'grocery' | 'pharmacy';
+  category: 'grocery' | 'pharma';
   variant?: {
     id: string;
     name: string;
@@ -421,7 +421,7 @@ export interface Location {
 export interface StoreSelectionParams {
   pincode: string;
   location?: Location;
-  category?: 'grocery' | 'pharmacy';
+  category?: 'grocery' | 'pharma';
 }
 
 // Auth types
