@@ -134,9 +134,20 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
     }
   };
 
-  const clearCart = () => {
-    setGroceryItems([]);
-    setPharmacyItems([]);
+  const clearCart = async () => {
+    try {
+      console.log('🧹 Clearing cart from context...');
+      setGroceryItems([]);
+      setPharmacyItems([]);
+      
+      // Also clear from AsyncStorage
+      await AsyncStorage.removeItem('grocery_cart');
+      await AsyncStorage.removeItem('pharmacy_cart');
+      
+      console.log('✅ Cart cleared from context and AsyncStorage');
+    } catch (error) {
+      console.error('❌ Error clearing cart:', error);
+    }
   };
 
   const groceryTotal = groceryItems.reduce(

@@ -88,24 +88,10 @@ const OTPVerificationScreen = () => {
       const loginResult = await login(actualPhoneNumber, otpString, otpKey);
       
       if (loginResult.success) {
-        console.log('✅ Login successful, checking navigation flow...');
+        console.log('✅ Login successful, redirecting to home screen...');
         
-        // Check if user came from cart flow (PaymentMethods)
-        if (cartType) {
-          console.log('🛒 User came from cart flow, navigating back to PaymentMethods...');
-          // Navigate back to PaymentMethods screen
-          navigation.navigate('PaymentMethods', {});
-        } else {
-          console.log('🏠 User came from normal login flow, navigating to main app...');
-          // Navigate to main app
-          navigation.replace('Main', {
-            screen: 'Home',
-            params: {
-              screen: 'HomeRoot',
-              params: { storeId: 'default', pincode: '123456' }
-            }
-          });
-        }
+        // Always redirect to main tabs (Home) without dummy params
+        navigation.replace('Main', undefined as any);
       } else {
         console.log('❌ Login failed:', loginResult.error);
         Alert.alert('Error', loginResult.error || 'Failed to verify OTP. Please try again.');

@@ -85,7 +85,7 @@ class OrderListService {
       const token = await this.getAuthToken();
       const headers = {
         'gc-seller-token': `Bearer ${token}`,
-        'gc-customer-token': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IjcwMDM1NDQ1MjciLCJjdXN0b21lcklkIjozLCJzZWxsZXJJZCI6MSwiaWF0IjoxNzU3NTk2NTcxLCJleHAiOjE3NTc2MzI1NzF9.3QOFtCaNHU94rg_0tlz46YpTbNS4pQQexuDTwmzqRBA`,
+        'gc-customer-token': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IjcwMDM1NDQ1MjciLCJjdXN0b21lcklkIjozLCJzZWxsZXJJZCI6MSwiaWF0IjoxNzU3Njg3NzU5LCJleHAiOjE3NTc3MjM3NTl9.H5lWQytQcayKb8rfERIElT8O5JyRT4TmRsXH-GynbmM`,
         'origin': 'https://www.earthenlume.com',
         'Content-Type': 'application/json',
       };

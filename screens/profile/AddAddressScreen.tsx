@@ -18,6 +18,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import MapView, { Marker } from 'react-native-maps';
 import { addressService, CreateAddressRequest, Address } from '../../services/api/addressService';
+import { googleMapsService, ReverseGeocodeResult } from '../../services/api/googleMapsService';
 
 type AddAddressScreenNavigationProp = StackNavigationProp<RootStackParamList, 'AddAddress'>;
 
@@ -93,6 +94,34 @@ const AddAddressScreen = () => {
       loadAddressData(addressId);
     }
   }, [addressId]);
+
+  // Auto-fill address fields when location is provided
+  useEffect(() => {
+    if (location && !isEditMode) {
+      autoFillAddressFromLocation(location.latitude, location.longitude);
+    }
+  }, [location, isEditMode]);
+
+  const autoFillAddressFromLocation = async (latitude: number, longitude: number) => {
+    try {
+      console.log('🗺️ Auto-filling address from location:', { latitude, longitude });
+      const addressResult = await googleMapsService.reverseGeocode(latitude, longitude);
+      
+      if (addressResult) {
+        console.log('✅ Address auto-filled from Google Maps:', addressResult);
+        setFormData(prev => ({
+          ...prev,
+          city: addressResult.city || prev.city,
+          state: addressResult.state || prev.state,
+          pincode: addressResult.pincode || prev.pincode,
+          country: addressResult.country || prev.country,
+          line1: prev.line1 || addressResult.address.split(',')[0] || '',
+        }));
+      }
+    } catch (error) {
+      console.error('❌ Error auto-filling address:', error);
+    }
+  };
 
   const loadAddressData = async (id: string) => {
     setIsLoadingAddress(true);
@@ -423,6 +452,26 @@ const AddAddressScreen = () => {
                 latitudeDelta: 0.01,
                 longitudeDelta: 0.01,
               }}
+              mapType="standard"
+              showsUserLocation={true}
+              showsMyLocationButton={false}
+              showsCompass={true}
+              showsScale={true}
+              showsBuildings={true}
+              showsIndoors={true}
+              showsTraffic={false}
+              showsPointsOfInterest={true}
+              rotateEnabled={true}
+              scrollEnabled={false}
+              zoomEnabled={false}
+              pitchEnabled={true}
+              loadingEnabled={true}
+              loadingIndicatorColor={theme.colors.primary}
+              loadingBackgroundColor={theme.colors.background}
+              moveOnMarkerPress={false}
+              followsUserLocation={false}
+              maxZoomLevel={20}
+              minZoomLevel={3}
             >
               <Marker
                 coordinate={{
@@ -430,6 +479,8 @@ const AddAddressScreen = () => {
                   longitude: location?.longitude || 77.2090,
                 }}
                 title="Selected Location"
+                description={location?.address || 'Selected Location'}
+                pinColor={theme.colors.primary}
               />
             </MapView>
           </View>

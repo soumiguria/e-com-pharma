@@ -34,7 +34,7 @@ const RazorpayCheckoutScreen = () => {
   const [orderNumber, setOrderNumber] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
-  const { amount, currency = 'INR', name, description, prefill, cartType } = route.params;
+  const { amount, currency = 'INR', name, description, prefill, cartType, deliveryMethod } = route.params;
 
   useEffect(() => {
     initializePayment();
@@ -47,19 +47,24 @@ const RazorpayCheckoutScreen = () => {
 
       // Step 1: Place the order
       console.log('🛒 Placing order...');
+      const isStoreDelivery = deliveryMethod === 'Store Pickup';
       const orderData: PlaceOrderRequest = {
         products: getCartItems(),
-        deliveryMethod: 'home_delivery', // Default for now
-        shippingAddress: getShippingAddress(),
-        billingSameAsShipping: true,
-        storeDiscount: 0,
-        couponDiscount: 0,
-        shippingAmount: 0,
-        taxAmount: 0,
-        subtotalAmount: amount,
-        totalAmount: amount,
+        deliveryMethod: isStoreDelivery ? 'store' : 'home_delivery',
         paymentMethod: 'online',
-        expressDelivery: false,
+        // Only include address and billing details for home delivery
+        ...(isStoreDelivery ? {} : {
+          shippingAddress: getShippingAddress(),
+          billingSameAsShipping: true,
+          storeDiscount: 0,
+          couponDiscount: 0,
+          shippingAmount: 0,
+          taxAmount: 0,
+          subtotalAmount: amount,
+          totalAmount: amount,
+          expressDelivery: false,
+          timeslot: undefined,
+        }),
       };
 
       const placeOrderResponse = await orderService.placeOrder(orderData);
@@ -145,31 +150,52 @@ const RazorpayCheckoutScreen = () => {
         console.log('✅ Payment verified successfully');
         
         // Clear the cart
-        clearCart();
+        console.log('🧹 Clearing cart after successful payment...');
+        await clearCart();
+        console.log('✅ Cart cleared successfully');
         
-        // Navigate to order confirmation
-        navigation.navigate('OrderConfirmation', {
-          orderId: orderNumber,
-          paymentData: {
-            paymentId: razorpayPaymentId,
-            orderId: razorpayOrderId,
-            signature: razorpaySignature,
-          },
-          amount: amount,
+        // Small delay to ensure cart state is updated
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Navigate to home screen and reset the navigation stack
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'Main',
+              params: {
+                screen: 'Home',
+                params: {
+                  screen: 'HomeRoot'
+                }
+              }
+            },
+          ],
         });
       } else {
         console.log('⚠️ Payment verification failed, but proceeding with success flow');
         // Even if verification fails, we'll proceed as if payment was successful
         // since the user has already paid through Razorpay
-        clearCart();
-        navigation.navigate('OrderConfirmation', {
-          orderId: orderNumber,
-          paymentData: {
-            paymentId: razorpayPaymentId,
-            orderId: razorpayOrderId,
-            signature: razorpaySignature,
-          },
-          amount: amount,
+        console.log('🧹 Clearing cart after payment verification failed but proceeding...');
+        await clearCart();
+        console.log('✅ Cart cleared successfully');
+        
+        // Small delay to ensure cart state is updated
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        navigation.reset({
+          index: 0,
+          routes: [
+            {
+              name: 'Main',
+              params: {
+                screen: 'Home',
+                params: {
+                  screen: 'HomeRoot'
+                }
+              }
+            },
+          ],
         });
       }
     } catch (error: any) {
@@ -183,6 +209,39 @@ const RazorpayCheckoutScreen = () => {
     Alert.alert('Payment Failed', 'Your payment could not be processed. Please try again.', [
       { text: 'OK', onPress: () => navigation.goBack() }
     ]);
+  };
+
+  const handlePaymentCancelled = async () => {
+    try {
+      console.log('🔄 Payment cancelled, but order is still placed with pending status');
+      
+      // Clear the cart even though payment was cancelled
+      console.log('🧹 Clearing cart after payment cancellation...');
+      await clearCart();
+      console.log('✅ Cart cleared successfully');
+      
+      // Small delay to ensure cart state is updated
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Navigate to home screen and reset navigation stack
+      navigation.reset({
+        index: 0,
+        routes: [
+          {
+            name: 'Main',
+            params: {
+              screen: 'Home',
+              params: {
+                screen: 'HomeRoot'
+              }
+            }
+          },
+        ],
+      });
+    } catch (error) {
+      console.error('❌ Error handling payment cancellation:', error);
+      navigation.goBack();
+    }
   };
 
   const generateRazorpayHTML = () => {
@@ -341,7 +400,7 @@ const RazorpayCheckoutScreen = () => {
           handlePaymentError(message.error);
           break;
         case 'PAYMENT_CANCELLED':
-          navigation.goBack();
+          handlePaymentCancelled();
           break;
         default:
           console.log('Unknown message type:', message.type);

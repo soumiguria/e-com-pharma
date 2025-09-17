@@ -20,7 +20,14 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.yourcompany.ecommexpo",
-      "buildNumber": "1.0.0"
+      "buildNumber": "1.0.0",
+      "config": {
+        "googleMapsApiKey": "AIzaSyACYDuQEBFQZWFNj1U838PoHEARNzPPCBw"
+      },
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "This app needs access to location to show nearby stores and delivery options.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to location to show nearby stores and delivery options."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -41,8 +48,15 @@
       ],
       "permissions": [
         "INTERNET",
-        "ACCESS_NETWORK_STATE"
-      ]
+        "ACCESS_NETWORK_STATE",
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION"
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyACYDuQEBFQZWFNj1U838PoHEARNzPPCBw"
+        }
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"

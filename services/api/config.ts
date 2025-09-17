@@ -3,7 +3,14 @@
 
 export const API_CONFIG = {
   // Base URL for all APIs
-  BASE_URL: 'https://api.grocup.com',
+  BASE_URL: 'https://marg-api.thelocalsandbox.dev',
+  
+  // Google Maps Configuration
+  GOOGLE_MAPS: {
+    API_KEY: 'AIzaSyACYDuQEBFQZWFNj1U838PoHEARNzPPCBw',
+    GEOCODING_URL: 'https://maps.googleapis.com/maps/api/geocode/json',
+    PLACES_URL: 'https://maps.googleapis.com/maps/api/place',
+  },
   
   // API Endpoints - Change these to switch between mock and real APIs
   ENDPOINTS: {
@@ -47,9 +54,9 @@ export const API_CONFIG = {
     STORE_DETAILS: '/v1/store/details',
     
     // Payment APIs
-    PLACE_ORDER: 'https://api.grocup.com/v1/store/checkout/placeorder',
-    INITIATE_PAYMENT: 'https://api.grocup.com/v1/store/checkout/orderpayment/initiate',
-    VERIFY_PAYMENT: 'https://api.grocup.com/v1/store/checkout/orderpayment/verify',
+    PLACE_ORDER: 'https://marg-api.thelocalsandbox.dev/v1/store/checkout/placeorder',
+    INITIATE_PAYMENT: 'https://marg-api.thelocalsandbox.dev/v1/store/checkout/orderpayment/initiate',
+    VERIFY_PAYMENT: 'https://marg-api.thelocalsandbox.dev/v1/store/checkout/orderpayment/verify',
   },
   
   // Feature Flags - Enable/disable API usage

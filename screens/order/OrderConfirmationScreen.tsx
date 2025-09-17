@@ -51,7 +51,10 @@ const OrderConfirmationScreen = () => {
 
   useEffect(() => {
     // Clear cart on successful order
-    clearCart();
+    const clearCartAsync = async () => {
+      await clearCart();
+    };
+    clearCartAsync();
     
     // Animate logo on mount
     Animated.parallel([
@@ -66,6 +69,13 @@ const OrderConfirmationScreen = () => {
         useNativeDriver: true,
       }),
     ]).start();
+
+    // Auto redirect to HomeScreen after 5 seconds
+    const timer = setTimeout(() => {
+      handleContinueShopping();
+    }, 5000);
+
+    return () => clearTimeout(timer);
   }, []); // Remove clearCart from dependencies to prevent infinite loop
 
   const handleContinueShopping = () => {
@@ -109,7 +119,7 @@ const OrderConfirmationScreen = () => {
           orderNumber: orderId,
           status: 'confirmed',
           orderDate: new Date().toISOString(),
-          paymentStatus: 'completed'
+          paymentStatus: paymentData ? 'paid' : 'pending'
         };
         navigation.navigate('OrderDetail', { order: orderData });
       } catch (error) {
@@ -330,7 +340,18 @@ const OrderConfirmationScreen = () => {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {/* Thanks Section */}
         <View style={styles.thanksSection}>
-          <Text style={styles.thanksText}>Thanks for shopping with Pass ki Dukaan!</Text>
+          <Text style={styles.thanksText}>
+            {paymentData ? 'Thank You! 🎉' : 'Order Placed! 📦'}
+          </Text>
+          <Text style={[styles.thanksText, { fontSize: 16, marginTop: 10, opacity: 0.7 }]}>
+            {paymentData 
+              ? 'Your order has been placed and payment completed successfully' 
+              : 'Your order has been placed successfully (Payment pending)'
+            }
+          </Text>
+          <Text style={[styles.thanksText, { fontSize: 14, marginTop: 5, opacity: 0.5 }]}>
+            Redirecting to home in 5 seconds...
+          </Text>
           
           <View style={styles.logoContainer}>
             <Animated.View

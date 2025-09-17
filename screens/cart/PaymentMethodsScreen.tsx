@@ -10,6 +10,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { useCart } from '../../contexts/CartContext';
 import LoadingOverlay from '../../components/ui/LoadingOverlay';
 import { orderService } from '../../services/api';
+import { PlaceOrderRequest } from '../../services/api/orderService';
 import { Ionicons } from '@expo/vector-icons';
 
 const deliveryMethods = [
@@ -143,23 +144,26 @@ const PaymentMethodsScreen = () => {
       
       console.log('🛒 Placing offline order...');
       
-      // Prepare order data
-      const orderData = {
+      // Prepare order data based on delivery method
+      const isStoreDelivery = selectedDeliveryMethod === '1';
+      const orderData: PlaceOrderRequest = {
         products: getCartItems(),
-        deliveryMethod: selectedDeliveryMethod === '1' ? 'store' : 'home_delivery',
-        shippingAddress: selectedAddress || getShippingAddress(),
-        billingSameAsShipping: true,
-        billingAddress: null,
-        storeDiscount: billDetails.productDiscount,
-        couponDiscount: billDetails.couponDiscount,
-        shippingAmount: billDetails.shipping,
-        taxAmount: 0,
-        subtotalAmount: billDetails.mrp,
-        totalAmount: billDetails.total,
+        deliveryMethod: isStoreDelivery ? 'store' : 'home_delivery',
         paymentMethod: 'offline' as const,
-        expressDelivery: false,
-        freeShipping: billDetails.shipping === 0,
-        pincodeAllowed: true,
+        // Only include address and billing details for home delivery
+        ...(isStoreDelivery ? {} : {
+          shippingAddress: selectedAddress || getShippingAddress(),
+          billingSameAsShipping: true,
+          billingAddress: null,
+          storeDiscount: billDetails.productDiscount,
+          couponDiscount: billDetails.couponDiscount,
+          shippingAmount: billDetails.shipping,
+          taxAmount: 0,
+          subtotalAmount: billDetails.mrp,
+          totalAmount: billDetails.total,
+          expressDelivery: false,
+          timeslot: undefined,
+        }),
       };
 
       const response = await orderService.placeOrder(orderData);
@@ -168,7 +172,7 @@ const PaymentMethodsScreen = () => {
         console.log('✅ Offline order placed successfully:', response.data.orderNo);
         
         // Clear cart
-        clearCart();
+        await clearCart();
         
         // Navigate to order confirmation
         navigation.navigate('OrderConfirmation', {

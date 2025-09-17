@@ -55,25 +55,9 @@ const SplashScreen = () => {
       try {
         if (!isLoading) {
           if (isAuthenticated) {
-            // User is logged in, navigate to main app
-            if (lastVisitedStore) {
-              // Navigate to last visited store
-              console.log('🔄 Navigating to last visited store:', lastVisitedStore);
-              navigation.replace('Main', { 
-                screen: 'Home', 
-                params: { 
-                  screen: 'HomeRoot', 
-                  params: { 
-                    storeId: lastVisitedStore.id, 
-                    pincode: lastVisitedStore.pincode || '110001'
-                  } 
-                } 
-              });
-            } else {
-              // No last visited store, navigate to pincode screen to select store
-              console.log('🔄 No last visited store found, navigating to pincode screen');
-              navigation.replace('Pincode');
-            }
+            // User is logged in, navigate to main tabs only; Home will adopt lastVisitedStore
+            console.log('🔄 User is authenticated, navigating to main tabs');
+            navigation.replace('Main', undefined as any);
           } else {
             // User is not logged in, navigate to pincode screen
             navigation.replace('Pincode');

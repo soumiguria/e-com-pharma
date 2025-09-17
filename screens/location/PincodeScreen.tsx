@@ -9,6 +9,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import * as Location from 'expo-location';
+import { googleMapsService, GeocodeResult } from '../../services/api/googleMapsService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Pincode'>;
 
@@ -32,12 +33,26 @@ const PincodeScreen = () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status === 'granted') {
         const location = await Location.getCurrentPositionAsync({});
-        const address = await reverseGeocode(location.coords);
-        setCurrentLocation({
-          latitude: location.coords.latitude,
-          longitude: location.coords.longitude,
-          address: address
-        });
+        const addressResult = await googleMapsService.reverseGeocode(
+          location.coords.latitude, 
+          location.coords.longitude
+        );
+        
+        if (addressResult) {
+          setCurrentLocation({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            address: addressResult.formattedAddress
+          });
+        } else {
+          // Fallback to expo location
+          const address = await reverseGeocode(location.coords);
+          setCurrentLocation({
+            latitude: location.coords.latitude,
+            longitude: location.coords.longitude,
+            address: address
+          });
+        }
       }
     } catch (error) {
       console.log('Location error:', error);
@@ -84,16 +99,26 @@ const PincodeScreen = () => {
     if (/^\d{6}$/.test(pincode)) {
       setIsLoading(true);
       try {
-        // Convert pincode to coordinates using geocoding
-        const coordinates = await geocodePincode(pincode);
-        if (coordinates) {
+        // Convert pincode to coordinates using Google Maps geocoding
+        const geocodeResult = await googleMapsService.geocodePincode(pincode);
+        if (geocodeResult) {
           navigation.navigate('StoreList' as any, { 
-            latitude: coordinates.latitude,
-            longitude: coordinates.longitude,
-            address: `Pincode: ${pincode}`
+            latitude: geocodeResult.latitude,
+            longitude: geocodeResult.longitude,
+            address: geocodeResult.formattedAddress
           });
         } else {
-          Alert.alert('Error', 'Could not find location for this pincode');
+          // Fallback to expo location
+          const coordinates = await geocodePincode(pincode);
+          if (coordinates) {
+            navigation.navigate('StoreList' as any, { 
+              latitude: coordinates.latitude,
+              longitude: coordinates.longitude,
+              address: `Pincode: ${pincode}`
+            });
+          } else {
+            Alert.alert('Error', 'Could not find location for this pincode');
+          }
         }
       } catch (error) {
         Alert.alert('Error', 'Could not process pincode');
@@ -255,6 +280,26 @@ const PincodeScreen = () => {
               theme={{ roundness: borderRadius.md }}
             >
               Continue
+            </Button>
+
+            {/* Test Google Maps Integration */}
+            <Button
+              mode="outlined"
+              onPress={async () => {
+                if (pincode.length === 6) {
+                  console.log('🧪 Testing Google Maps geocoding for:', pincode);
+                  const result = await googleMapsService.geocodePincode(pincode);
+                  console.log('🧪 Test result:', result);
+                  Alert.alert('Test Result', result ? `Found: ${result.formattedAddress}` : 'No results found');
+                } else {
+                  Alert.alert('Test', 'Please enter a 6-digit pincode first');
+                }
+              }}
+              disabled={!pincode || pincode.length !== 6}
+              style={[styles.button, { marginTop: spacing.sm }]}
+              theme={{ roundness: borderRadius.md }}
+            >
+              Test Google Maps
             </Button>
           </View>
         </LinearGradient>

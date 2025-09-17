@@ -212,14 +212,14 @@ const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<HomeRouteProp>();
   const { addToGroceryCart } = useCart();
-  const { selectedStore, setSelectedStore, saveLastVisitedStore } = useAppContext();
+  const { selectedStore, setSelectedStore, saveLastVisitedStore, lastVisitedStore } = useAppContext();
   const { isAuthenticated } = useAuth();
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [activeTab, setActiveTab] = useState('all');
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const scrollY = new Animated.Value(0);
 
@@ -234,17 +234,23 @@ const HomeScreen = () => {
     }
   }, [selectedStore, currentSection, setSection]);
 
-  // Apply deep link params to select store on open
+  // Adopt last visited store on mount if no selectedStore
+  useEffect(() => {
+    if (!selectedStore && lastVisitedStore) {
+      setSelectedStore(lastVisitedStore);
+    }
+  }, [selectedStore, lastVisitedStore, setSelectedStore]);
+
+  // Apply deep link params to select store on open (ignore dummy/empty values)
   useEffect(() => {
     const params = route.params as any;
-    if (params && params.storeId) {
-      const incomingStoreId = params.storeId as string;
+    const incomingStoreId = params?.storeId;
+    if (incomingStoreId && incomingStoreId !== 'default') {
       const incomingType = (params.type as 'grocery' | 'pharma' | undefined) ?? 'grocery';
       const incomingPincode = params.pincode as string | undefined;
       if (!selectedStore || selectedStore.id !== incomingStoreId) {
         const newStore = { id: incomingStoreId, name: 'Selected Store', address: '', type: incomingType, pincode: incomingPincode };
         setSelectedStore(newStore);
-        // Save as last visited store if user is authenticated
         if (isAuthenticated) {
           saveLastVisitedStore(newStore);
         }
@@ -525,13 +531,12 @@ const HomeScreen = () => {
     navigation.navigate('ProductDetail', { product });
   };
 
-  useEffect(() => {
-    // Here you would typically fetch data from an API
-    // For now, we'll just simulate a loading delay
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-  }, []);
+  // If you need a loading delay, re-enable this. For now, render immediately to avoid stuck loading.
+  // useEffect(() => {
+  //   setTimeout(() => {
+  //     setLoading(false);
+  //   }, 500);
+  // }, []);
 
   if (loading) {
     return (
