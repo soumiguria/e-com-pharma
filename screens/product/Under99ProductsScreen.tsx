@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -13,72 +13,44 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ProductCard from '../../components/product/ProductCard';
+import { storeProductService } from '../../services/api/storeProductService';
+import { useAppContext } from '../../contexts/AppContext';
 
 type Under99ProductsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Under99Products'>;
 
-// Mock products under ₹99
-const mockUnder99Products = [
-  {
-    id: '1',
-    name: 'Bananas',
-    price: 0.99,
-    image: 'https://images.pexels.com/photos/47305/bananas-banana-bunch-yellow-47305.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '2',
-    name: 'Onions',
-    price: 0.79,
-    image: 'https://images.pexels.com/photos/144206/pexels-photo-144206.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '3',
-    name: 'Tomatoes',
-    price: 0.89,
-    image: 'https://images.pexels.com/photos/1327838/pexels-photo-1327838.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '4',
-    name: 'Potatoes',
-    price: 0.69,
-    image: 'https://images.pexels.com/photos/144206/pexels-photo-144206.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '5',
-    name: 'Carrots',
-    price: 0.59,
-    image: 'https://images.pexels.com/photos/144206/pexels-photo-144206.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '6',
-    name: 'Cucumber',
-    price: 0.49,
-    image: 'https://images.pexels.com/photos/144206/pexels-photo-144206.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '7',
-    name: 'Lemon',
-    price: 0.39,
-    image: 'https://images.pexels.com/photos/144206/pexels-photo-144206.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '8',
-    name: 'Garlic',
-    price: 0.29,
-    image: 'https://images.pexels.com/photos/144206/pexels-photo-144206.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-];
+const INR_UNDER_99 = 99;
 
 const Under99ProductsScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<Under99ProductsScreenNavigationProp>();
+  const { selectedStore, lastVisitedStore } = useAppContext();
+  const [loading, setLoading] = useState<boolean>(true);
+  const [products, setProducts] = useState<any[]>([]);
+  const [error, setError] = useState<string | null>(null);
+
+  const activeStoreId = useMemo(() => {
+    return selectedStore?.id || lastVisitedStore?.id || 'c4defa9f-0bf2-4226-a4b9-6b578e737714';
+  }, [selectedStore, lastVisitedStore]);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchProducts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const resp = await storeProductService.getPharmaProducts(activeStoreId);
+        const list = Array.isArray(resp.data) ? resp.data : [];
+        const under99 = list.filter((p: any) => Number(p.price) <= INR_UNDER_99);
+        if (mounted) setProducts(under99);
+      } catch (e: any) {
+        if (mounted) setError(e?.message || 'Failed to load products');
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    fetchProducts();
+    return () => { mounted = false; };
+  }, [activeStoreId]);
 
   const handleProductPress = (product: any) => {
     navigation.navigate('ProductDetail', { product });
@@ -140,7 +112,7 @@ const Under99ProductsScreen = () => {
 
         <View style={styles.content}>
           <View style={styles.productsGrid}>
-            {mockUnder99Products.map((product) => (
+            {products.map((product) => (
               <View key={product.id} style={styles.productCard}>
                 <ProductCard
                   product={product}

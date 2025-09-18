@@ -22,7 +22,7 @@
       "bundleIdentifier": "com.yourcompany.ecommexpo",
       "buildNumber": "1.0.0",
       "config": {
-        "googleMapsApiKey": "AIzaSyACYDuQEBFQZWFNj1U838PoHEARNzPPCBw"
+        "googleMapsApiKey": "AIzaSyAVXxFLtJn-hLmeLAreKFdON1rzuHtNBDc"
       },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app needs access to location to show nearby stores and delivery options.",
@@ -40,10 +40,19 @@
         {
           "action": "VIEW",
           "data": [
-            { "scheme": "ecomm" },
-            { "scheme": "https", "host": "stores.yourdomain.com", "pathPrefix": "/store" }
+            {
+              "scheme": "ecomm"
+            },
+            {
+              "scheme": "https",
+              "host": "stores.yourdomain.com",
+              "pathPrefix": "/store"
+            }
           ],
-          "category": ["BROWSABLE", "DEFAULT"]
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
         }
       ],
       "permissions": [
@@ -54,17 +63,29 @@
       ],
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyACYDuQEBFQZWFNj1U838PoHEARNzPPCBw"
+          "apiKey": "AIzaSyAVXxFLtJn-hLmeLAreKFdON1rzuHtNBDc"
         }
       }
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "config": {
+        "googleMapsApiKey": "AIzaSyAVXxFLtJn-hLmeLAreKFdON1rzuHtNBDc"
+      }
     },
     "extra": {
       "eas": {
         "projectId": "92688e56-01bd-4ba6-99dd-e4bb4922ad33"
-      }
-    }
+      },
+      "googleMapsApiKey": "AIzaSyAVXxFLtJn-hLmeLAreKFdON1rzuHtNBDc"
+    },
+    "plugins": [
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "This app needs access to location to show nearby stores and delivery options."
+        }
+      ]
+    ]
   }
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ThemedButton from '../../components/ui/ThemedButton';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -38,6 +38,9 @@ const PaymentMethodsScreen = () => {
 
   // Payment processing state
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [paymentSuccess, setPaymentSuccess] = useState<null | boolean>(null);
+  const [pendingOrderAmount, setPendingOrderAmount] = useState<number>(0);
 
   // Address state
   const [selectedAddress, setSelectedAddress] = useState<any>(null);
@@ -129,8 +132,10 @@ const PaymentMethodsScreen = () => {
 
     // User is logged in, check payment method
     if (selectedPaymentMethod === 'online') {
-      // Online payment - open Razorpay checkout
-      await openRazorpayCheckout();
+      // Show Pay Now modal first
+      setPendingOrderAmount(billDetails.total);
+      setPaymentSuccess(null);
+      setShowPaymentModal(true);
     } else {
       // Offline payment - directly place order
       await placeOfflineOrder();
@@ -223,6 +228,26 @@ const PaymentMethodsScreen = () => {
       setIsProcessingPayment(false);
     }
   };
+
+  // Listen for payment result when coming back from Razorpay screen
+  useEffect(() => {
+    const unsubscribe = navigation.addListener('focus', () => {
+      const state = navigation.getState();
+      const currentRoute = state.routes[state.index];
+      const params: any = currentRoute.params;
+      if (currentRoute.name === 'PaymentMethods' && params?.paymentStatus) {
+        const status = params.paymentStatus as 'success' | 'failed' | 'cancelled';
+        if (status === 'success') {
+          setPaymentSuccess(true);
+        } else {
+          setPaymentSuccess(false);
+        }
+        // Clear the flag so it doesn't re-trigger
+        navigation.setParams({ paymentStatus: undefined });
+      }
+    });
+    return unsubscribe;
+  }, [navigation]);
 
   const getCartItems = () => {
     const items = cartType === 'grocery' ? groceryItems : pharmacyItems;
@@ -502,6 +527,45 @@ const PaymentMethodsScreen = () => {
         visible={isLoading || isProcessingPayment} 
         message={isProcessingPayment ? "Processing payment..." : (selectedPaymentMethod === 'online' ? "Opening Razorpay..." : "Placing order...")} 
       />
+
+      {/* Pay Now / Payment Successful Modal */}
+      <Modal visible={showPaymentModal} transparent animationType="fade">
+        <View style={{ flex: 1, backgroundColor: '#00000066', justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ width: '85%', borderRadius: 12, backgroundColor: theme.colors.surface, padding: 20 }}>
+            <Text style={{ fontSize: 18, fontWeight: '700', color: theme.colors.text, marginBottom: 12 }}>
+              {paymentSuccess === true ? 'Payment Successful' : paymentSuccess === false ? 'Payment Status' : 'Pay Now'}
+            </Text>
+            {paymentSuccess === null && (
+              <>
+                <Text style={{ color: theme.colors.secondary, marginBottom: 16 }}>Amount payable: ₹{pendingOrderAmount}</Text>
+                <ThemedButton title="Pay Now" onPress={openRazorpayCheckout} />
+                <TouchableOpacity onPress={() => setShowPaymentModal(false)} style={{ marginTop: 12, alignSelf: 'center' }}>
+                  <Text style={{ color: theme.colors.primary }}>Not now</Text>
+                </TouchableOpacity>
+              </>
+            )}
+
+            {paymentSuccess !== null && (
+              <>
+                <Text style={{ color: theme.colors.secondary, marginBottom: 16 }}>
+                  {paymentSuccess ? 'Your payment was successful.' : 'Payment not completed. You can try again from My Orders.'}
+                </Text>
+                <ThemedButton
+                  title="OK"
+                  onPress={() => {
+                    setShowPaymentModal(false);
+                    if (paymentSuccess) {
+                      navigation.navigate('OrderConfirmation' as any, {
+                        amount: pendingOrderAmount,
+                      });
+                    }
+                  }}
+                />
+              </>
+            )}
+          </View>
+        </View>
+      </Modal>
     </>
   );
 };

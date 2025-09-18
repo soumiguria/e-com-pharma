@@ -47,68 +47,33 @@ interface Item {
 
 interface HorizontallyScrollableSectionProps {
     title: string;
+    itemsOverride?: any[]; // If provided, render these items instead of fallbacks
 }
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
-const HorizontallyScrollableSection: React.FC<HorizontallyScrollableSectionProps> = ({ title }) => {
+const HorizontallyScrollableSection: React.FC<HorizontallyScrollableSectionProps> = ({ title, itemsOverride }) => {
     const { theme, section } = useTheme();
     const navigation = useNavigation<NavigationProp>();
     const { selectedStore } = useAppContext();
     const [items, setItems] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
 
-    // Initialize with fallback data immediately
+    // Initialize with fallback data immediately unless overridden
     useEffect(() => {
+        if (itemsOverride && Array.isArray(itemsOverride)) {
+            setItems(itemsOverride);
+            return;
+        }
         const fallbackItems = section === 'pharma' 
             ? (title === 'Recently Bought' ? pharmacyRecentlyBoughtItems : pharmacyGrandOffersItems)
             : (title === 'Recently Bought' ? groceryRecentlyBoughtItems : groceryGrandOffersItems);
         setItems(fallbackItems);
-    }, [section, title]);
+    }, [section, title, itemsOverride]);
 
-    // Lazy loading: Fetch API data in background after screen renders
+    // Live API fetching disabled here; showing static fallback items only as requested
     useEffect(() => {
-        const fetchProducts = async () => {
-            if (!selectedStore?.id) {
-                console.log('📊 No store selected, keeping fallback mock data for products');
-                return;
-            }
-
-            try {
-                setLoading(true);
-                console.log(`🔄 Fetching ${section} products for store:`, selectedStore.id, 'Title:', title);
-                
-                if (section === 'pharma') {
-                    const response = await storeProductService.getPharmaProducts(selectedStore.id);
-                    if (response.success && response.data) {
-                        console.log('✅ Pharma products loaded from API');
-                        setItems(response.data.slice(0, 4)); // Take first 4 items
-                    } else {
-                        console.log('📊 Pharma API failed, keeping fallback mock data');
-                    }
-                } else {
-                    const response = await storeProductService.getGroceryProducts(selectedStore.id);
-                    if (response.success && response.data) {
-                        console.log('✅ Grocery products loaded from API');
-                        setItems(response.data.slice(0, 4)); // Take first 4 items
-                    } else {
-                        console.log('📊 Grocery API failed, keeping fallback mock data');
-                    }
-                }
-            } catch (error) {
-                console.log(`❌ Error fetching ${section} products:`, error);
-                console.log('📊 Keeping fallback mock data');
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        // Add a small delay to let the screen render first
-        const timer = setTimeout(() => {
-            fetchProducts();
-        }, 200);
-
-        return () => clearTimeout(timer);
+        setLoading(false);
     }, [selectedStore?.id, section, title]);
 
     const handleProductPress = (product: any) => {
@@ -135,7 +100,7 @@ const HorizontallyScrollableSection: React.FC<HorizontallyScrollableSectionProps
     return (
         <View style={styles.container}>
             <FlatList
-                data={items}
+                data={itemsOverride && Array.isArray(itemsOverride) ? itemsOverride : items}
                 renderItem={renderItem}
                 keyExtractor={item => item.id}
                 horizontal

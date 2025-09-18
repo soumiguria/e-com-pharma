@@ -89,6 +89,7 @@ export type RootStackParamList = {
   Under99Products: undefined;
   Under199Products: undefined;
   BrandDetail: { brand: string };
+  UploadPrescription: undefined;
 };
 
 export type HomeTabParamList = {

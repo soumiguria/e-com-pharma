@@ -282,6 +282,22 @@ const PincodeScreen = () => {
               Continue
             </Button>
 
+            <View style={styles.dividerContainer}>
+              <View style={styles.dividerLine} />
+              <Text style={styles.dividerText}>OR</Text>
+              <View style={styles.dividerLine} />
+            </View>
+
+            <Button
+              mode="outlined"
+              onPress={() => navigation.navigate('LocationPicker' as any)}
+              style={styles.button}
+              theme={{ roundness: borderRadius.md }}
+              icon="map"
+            >
+              Choose from Map
+            </Button>
+
             {/* Test Google Maps Integration */}
             <Button
               mode="outlined"

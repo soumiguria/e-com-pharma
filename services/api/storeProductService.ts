@@ -28,10 +28,20 @@ const mapSubCategory = (raw: any): SubCategory => {
   } as SubCategory;
 };
 
+const toNumber = (val: any): number => {
+  if (typeof val === 'number') return val;
+  const n = Number(val);
+  return Number.isFinite(n) ? n : 0;
+};
+
 const pickPrice = (raw: any): number => {
-  return (
-    raw.price ?? raw.sellingPrice ?? raw.salePrice ?? raw.mrp ?? raw.maxRetailPrice ?? 0
-  );
+  // Prefer selling price fields; backend may send strings like 'sp' and 'mrp'
+  const candidates = [raw.sp, raw.price, raw.sellingPrice, raw.salePrice, raw.mrp, raw.maxRetailPrice];
+  for (const c of candidates) {
+    const n = toNumber(c);
+    if (n > 0) return n;
+  }
+  return 0;
 };
 
 const pickImage = (raw: any): string => {
@@ -43,7 +53,7 @@ const mapProduct = (raw: any, category: 'grocery' | 'pharma'): Product => {
     id: raw.productId || raw.id || String(Math.random()),
     name: raw.name || raw.productName || 'Product',
     price: pickPrice(raw),
-    originalPrice: raw.mrp || undefined,
+    originalPrice: (() => { const n = toNumber(raw.mrp); return n > 0 ? n : undefined; })(),
     image: pickImage(raw),
     images: raw.images || undefined,
     description: raw.description || undefined,

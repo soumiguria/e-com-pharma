@@ -26,6 +26,17 @@ const CartScreen = () => {
   const allItems = [...groceryItems, ...pharmacyItems];
   const totalAmount = groceryTotal + pharmacyTotal;
 
+  const toNumber = (value: unknown): number => {
+    if (typeof value === 'number') return value;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const formatAmount = (value: unknown): string => {
+    const n = toNumber(value);
+    return n.toFixed(2);
+  };
+
   const handleCheckout = () => {
     // Navigate to payment methods/checkout screen
     navigation.navigate('PaymentMethods', {});
@@ -78,13 +89,13 @@ const CartScreen = () => {
                 <View style={{ flex: 1 }}>
                   <View style={styles.itemHeader}>
                     <Text style={styles.itemName}>{item.name}</Text>
-                    <Text style={styles.itemPrice}>₹{item.price.toFixed(2)}</Text>
+                    <Text style={styles.itemPrice}>₹{formatAmount(item.price)}</Text>
                   </View>
-                  {item.originalPrice && item.originalPrice > item.price && (
-                    <Text style={[styles.itemPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{item.originalPrice.toFixed(2)}</Text>
+                  {toNumber(item.originalPrice) > toNumber(item.price) && (
+                    <Text style={[styles.itemPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{formatAmount(item.originalPrice)}</Text>
                   )}
-                  {item.originalPrice && item.originalPrice > item.price && (
-                    <Text style={[styles.itemPrice, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% off</Text>
+                  {toNumber(item.originalPrice) > toNumber(item.price) && (
+                    <Text style={[styles.itemPrice, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((toNumber(item.originalPrice) - toNumber(item.price)) / toNumber(item.originalPrice)) * 100)}% off</Text>
                   )}
                   {item.variant && (
                     <Text style={styles.variantText}>
@@ -121,7 +132,7 @@ const CartScreen = () => {
           </Card>
         ))}
         <View style={styles.sectionTotal}>
-          <Text style={styles.sectionTotalText}>{title} Total: ₹{total.toFixed(2)}</Text>
+          <Text style={styles.sectionTotalText}>{title} Total: ₹{formatAmount(total)}</Text>
         </View>
       </View>
     );
@@ -158,12 +169,12 @@ const CartScreen = () => {
                   <Text style={[styles.recommendationName, { color: theme.colors.onSurface }]} numberOfLines={2}>
                     {product.name}
                   </Text>
-                  <Text style={[styles.recommendationPrice, { color: theme.colors.primary }]}>₹{product.price.toFixed(2)}</Text>
-                  {product.originalPrice && product.originalPrice > product.price && (
-                    <Text style={[styles.recommendationPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{product.originalPrice.toFixed(2)}</Text>
+                  <Text style={[styles.recommendationPrice, { color: theme.colors.primary }]}>₹{formatAmount(product.price)}</Text>
+                  {toNumber(product.originalPrice) > toNumber(product.price) && (
+                    <Text style={[styles.recommendationPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{formatAmount(product.originalPrice)}</Text>
                   )}
-                  {product.originalPrice && product.originalPrice > product.price && (
-                    <Text style={[styles.recommendationPrice, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% off</Text>
+                  {toNumber(product.originalPrice) > toNumber(product.price) && (
+                    <Text style={[styles.recommendationPrice, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((toNumber(product.originalPrice) - toNumber(product.price)) / toNumber(product.originalPrice)) * 100)}% off</Text>
                   )}
                   <TouchableOpacity 
                     style={[styles.addButton, { backgroundColor: theme.colors.primary }]}
@@ -206,13 +217,13 @@ const CartScreen = () => {
                     <View style={{ flex: 1 }}>
                       <View style={styles.itemHeader}>
                         <Text style={styles.itemName}>{item.name}</Text>
-                        <Text style={styles.itemPrice}>₹{item.price.toFixed(2)}</Text>
+                        <Text style={styles.itemPrice}>₹{formatAmount(item.price)}</Text>
                       </View>
-                      {item.originalPrice && item.originalPrice > item.price && (
-                        <Text style={[styles.itemPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{item.originalPrice.toFixed(2)}</Text>
+                      {toNumber(item.originalPrice) > toNumber(item.price) && (
+                        <Text style={[styles.itemPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{formatAmount(item.originalPrice)}</Text>
                       )}
-                      {item.originalPrice && item.originalPrice > item.price && (
-                        <Text style={[styles.itemPrice, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% off</Text>
+                      {toNumber(item.originalPrice) > toNumber(item.price) && (
+                        <Text style={[styles.itemPrice, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((toNumber(item.originalPrice) - toNumber(item.price)) / toNumber(item.originalPrice)) * 100)}% off</Text>
                       )}
                       {item.variant && (
                         <Text style={styles.variantText}>
@@ -254,7 +265,7 @@ const CartScreen = () => {
           {hasPharmacyItems && renderRecommendations(pharmacyRecommendations, 'Recommended Medicines', addToPharmacyCart)}
           
           <View style={styles.totalContainer}>
-            <Text style={styles.totalText}>Total: ₹{totalAmount.toFixed(2)}</Text>
+            <Text style={styles.totalText}>Total: ₹{formatAmount(totalAmount)}</Text>
             <Button
               mode="contained"
               onPress={handleCheckout}

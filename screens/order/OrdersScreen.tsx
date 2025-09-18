@@ -17,6 +17,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { Card, Chip, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import orderListService from '../../services/api/orderListService';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Order {
   id: string;
@@ -102,26 +103,52 @@ const OrdersScreen = () => {
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
+      // No local payment tracking - use backend status only
+
       const response = await orderListService.getOrders();
       if (response.success && response.data) {
-        // Transform API data to match UI format
-        const transformedOrders = response.data.map((order: any) => ({
-          id: order.orderId.toString(),
-          orderNumber: order.orderNo,
-          date: order.createdAt,
-          total: parseFloat(order.totalAmount),
-          status: (order.payment?.status === 'completed' ? 'paid' : 
-                  order.payment?.status === 'created' ? 'pending' : 'pending') as 'pending' | 'paid' | 'completed' | 'cancelled',
-          paymentMethod: (order.payment?.mode === 'online' ? 'online' : 'offline') as 'online' | 'offline',
-          items: order.products.map((product: any) => ({
-            name: product.name,
-            quantity: product.quantity,
-            price: product.actual,
-            type: 'grocery' as const, // Default to grocery, can be enhanced later
-          })),
-          deliveryMethod: (order.deliveryMethod === 'store' ? 'store_pickup' : 'home_delivery') as 'store_pickup' | 'home_delivery',
-          address: order.shippingAddress?.address || 'Store Pickup',
-        }));
+        // Transform API data to match UI format safely
+        const transformedOrders = (response.data || []).map((order: any) => {
+          const itemsArray = Array.isArray(order.orderItems)
+            ? order.orderItems
+            : Array.isArray(order.products)
+              ? order.products
+              : [];
+
+          const mappedItems = itemsArray.map((item: any) => ({
+            name: item.name || item.productName || 'Item',
+            quantity: Number(item.quantity) || 1,
+            price: Number(item.actual ?? item.price ?? item.sp ?? 0),
+            type: 'grocery' as const,
+          }));
+
+          const paymentStatus = (order.payment?.status || '').toLowerCase();
+          console.log('🔍 Order payment status:', order.orderNo, paymentStatus, order.payment);
+          
+          // Use the actual status from backend - no forced changes
+          const uiStatus: 'pending' | 'paid' | 'completed' | 'cancelled' =
+            paymentStatus === 'success' || paymentStatus === 'completed'
+              ? 'paid'
+              : paymentStatus === 'cancelled'
+                ? 'cancelled'
+                : 'pending';
+                
+          console.log('🔍 Mapped UI status:', order.orderNo, uiStatus, 'backend status:', paymentStatus);
+
+          const paymentMethod: 'online' | 'offline' = (order.payment?.mode === 'online') ? 'online' : 'offline';
+
+          return {
+            id: String(order.orderId || order._id || order.orderNo),
+            orderNumber: order.orderNo || String(order.orderId || ''),
+            date: order.createdAt || new Date().toISOString(),
+            total: Number(order.totalAmount ?? 0),
+            status: uiStatus,
+            paymentMethod,
+            items: mappedItems,
+            deliveryMethod: (order.deliveryMethod === 'store' ? 'store_pickup' : 'home_delivery') as 'store_pickup' | 'home_delivery',
+            address: order.shippingAddress?.address || 'Store Pickup',
+          } as Order;
+        });
         setOrders(transformedOrders);
       } else {
         // Fallback to mock data

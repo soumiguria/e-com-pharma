@@ -41,6 +41,7 @@ import Under99ProductsScreen from '../screens/product/Under99ProductsScreen';
 import Under199ProductsScreen from '../screens/product/Under199ProductsScreen';
 import SearchResultsScreen from '../screens/search/SearchResultsScreen';
 import BrandDetailScreen from '../screens/category/BrandDetailScreen';
+import UploadPrescriptionScreen from '../screens/prescription/UploadPrescriptionScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -95,6 +96,7 @@ const AppNavigator = () => {
       <Stack.Screen name="Under99Products" component={Under99ProductsScreen} />
       <Stack.Screen name="Under199Products" component={Under199ProductsScreen} />
       <Stack.Screen name="SearchResults" component={SearchResultsScreen} />
+      <Stack.Screen name="UploadPrescription" component={UploadPrescriptionScreen} />
     </Stack.Navigator>
   );
 };

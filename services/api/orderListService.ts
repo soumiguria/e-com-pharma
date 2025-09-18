@@ -84,16 +84,14 @@ class OrderListService {
     try {
       const token = await this.getAuthToken();
       const headers = {
-        'gc-seller-token': `Bearer ${token}`,
-        'gc-customer-token': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6IjcwMDM1NDQ1MjciLCJjdXN0b21lcklkIjozLCJzZWxsZXJJZCI6MSwiaWF0IjoxNzU3Njg3NzU5LCJleHAiOjE3NTc3MjM3NTl9.H5lWQytQcayKb8rfERIElT8O5JyRT4TmRsXH-GynbmM`,
-        'origin': 'https://www.earthenlume.com',
+        'marg-customer-token': `Bearer ${token}`,
         'Content-Type': 'application/json',
       };
 
       console.log('📋 Fetching orders...');
       console.log('🔑 Token retrieved:', token ? `${token.substring(0, 20)}...` : 'No token');
 
-      const response = await axios.get('https://api.grocup.com/v1/store/customer/order?page=all&limit=0&orders[orderId]=desc', {
+      const response = await axios.get('https://marg-api.thelocalsandbox.dev/v1/customer/order?page=1&limit=10&orders[createdAt]=desc', {
         headers,
       });
 
@@ -112,11 +110,38 @@ class OrderListService {
         data: response.data.data as OrderListItem[],
       };
     } catch (error: any) {
-      console.error('❌ Error fetching orders:', error);
+      console.error(' Error fetching orders:', error);
       return {
         success: false,
         error: error.response?.data?.message || 'Failed to fetch orders',
         data: [],
+      };
+    }
+  }
+
+  async getOrderById(orderId: string): Promise<ApiResponse<any>> {
+    try {
+      const token = await this.getAuthToken();
+      const headers = {
+        'marg-customer-token': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+
+      const url = `https://marg-api.thelocalsandbox.dev/v1/customer/order/${orderId}`;
+      console.log('📦 Fetching order detail:', url);
+      const response = await axios.get(url, { headers });
+
+      if (!response.data || !response.data.data) {
+        return { success: false, error: 'No order found', data: null as any };
+      }
+
+      return { success: true, data: response.data.data };
+    } catch (error: any) {
+      console.error(' Error fetching order detail:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || 'Failed to fetch order',
+        data: null as any,
       };
     }
   }

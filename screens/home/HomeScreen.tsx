@@ -26,6 +26,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import Drawer from '../../components/profile/ProfileDrawer';
 import ProductCard from '../../components/product/ProductCard'
 import BannerSlider from '../../components/common/BannerSlider';
+import { storeProductService } from '../../services/api/storeProductService';
 import CategoryGrid from '../../components/common/CategoriesGrid';
 import BrandsGrid from '../../components/common/BrandsGrid';
 import HorizontallyScrollableSection from '../../components/layout/HorizontallyScrollableSection';
@@ -222,6 +223,8 @@ const HomeScreen = () => {
   const [loading, setLoading] = useState(false);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const scrollY = new Animated.Value(0);
+  const [homeProducts, setHomeProducts] = useState<any[]>([]);
+  const [homeProductsLoading, setHomeProductsLoading] = useState<boolean>(false);
 
   // Determine if current store is pharmacy or grocery
   const isPharmacyStore = selectedStore?.type === 'pharma';
@@ -265,6 +268,25 @@ const HomeScreen = () => {
       saveLastVisitedStore(selectedStore);
     }
   }, [selectedStore, isAuthenticated, saveLastVisitedStore]);
+
+  // Fetch "Some products" based on current store type
+  useEffect(() => {
+    const fetch = async () => {
+      if (!selectedStore?.id) return;
+      try {
+        setHomeProductsLoading(true);
+        const resp = isPharmacyStore
+          ? await storeProductService.getPharmaProducts(selectedStore.id)
+          : await storeProductService.getGroceryProducts(selectedStore.id);
+        setHomeProducts(Array.isArray(resp.data) ? resp.data.slice(0, 8) : []);
+      } catch (e) {
+        setHomeProducts([]);
+      } finally {
+        setHomeProductsLoading(false);
+      }
+    };
+    fetch();
+  }, [selectedStore?.id, isPharmacyStore]);
 
   const themedStyles = useMemo(() => StyleSheet.create({
     container: {
@@ -456,6 +478,27 @@ const HomeScreen = () => {
       fontSize: 16,
       paddingHorizontal: 8,
     },
+    prescriptionButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 20,
+      borderRadius: 12,
+      marginHorizontal: 4,
+      shadowColor: theme.colors.primary,
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.2,
+      shadowRadius: 4,
+      elevation: 3,
+    },
+    prescriptionButtonText: {
+      color: 'white',
+      fontSize: 16,
+      fontWeight: 'bold',
+      marginLeft: 12,
+      marginRight: 8,
+    },
   }), [theme]);
 
   useFocusEffect(
@@ -573,6 +616,25 @@ const HomeScreen = () => {
         ) : (
           <ScrollView>
             <BannerSlider />
+
+            
+            
+            {/* Order with Prescription Button - Only for Pharmacy Stores */}
+            {isPharmacyStore && (
+              <View style={themedStyles.section}>
+                <TouchableOpacity 
+                  style={[themedStyles.prescriptionButton, { backgroundColor: theme.colors.primary }]}
+                  onPress={() => navigation.navigate('UploadPrescription' as any)}
+                >
+                  <MaterialIcons name="upload-file" size={24} color="white" />
+                  <Text style={themedStyles.prescriptionButtonText}>Order with Prescription</Text>
+                  <MaterialIcons name="arrow-forward-ios" size={20} color="white" />
+                </TouchableOpacity>
+              </View>
+            )}
+            
+            {/* Removed previous grid version of Some products */}
+
             <View style={themedStyles.section}>
               <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>
                 {isPharmacyStore ? 'Medicine Categories' : 'Categories'}
@@ -594,6 +656,16 @@ const HomeScreen = () => {
                   <Text style={[themedStyles.viewAll, {color: theme.colors.primary}]}>View All</Text>
                 </TouchableOpacity>
               </View>
+            </View>
+            {/* Some products below brands - same UI as Recently Bought */}
+            <View style={themedStyles.section}>
+              <View style={themedStyles.sectionHeaderRow}>
+                <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>Some products</Text>
+              </View>
+              <HorizontallyScrollableSection 
+                title={isPharmacyStore ? 'Recently Bought Medicines' : 'Recently Bought'}
+                itemsOverride={homeProducts.map(p => ({...p, category: isPharmacyStore ? 'pharma' : 'grocery'}))}
+              />
             </View>
             {/* Recently Bought Section */}
             <View style={themedStyles.section}>

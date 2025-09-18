@@ -43,7 +43,7 @@ const OrderConfirmationScreen = () => {
       { name: 'Fresh Milk', quantity: 1, price: 65 },
       { name: 'Whole Grain Bread', quantity: 1, price: 45 },
     ],
-    deliveryAddress: '123 Main Street, Apartment 4B, New Delhi, Delhi 110001',
+    shippingAddress: '123 Main Street, Apartment 4B, New Delhi, Delhi 110001',
     deliveryMethod: 'Home Delivery',
     estimatedDelivery: '2-3 days',
     paymentData: paymentData,
@@ -69,13 +69,6 @@ const OrderConfirmationScreen = () => {
         useNativeDriver: true,
       }),
     ]).start();
-
-    // Auto redirect to HomeScreen after 5 seconds
-    const timer = setTimeout(() => {
-      handleContinueShopping();
-    }, 5000);
-
-    return () => clearTimeout(timer);
   }, []); // Remove clearCart from dependencies to prevent infinite loop
 
   const handleContinueShopping = () => {
@@ -349,9 +342,7 @@ const OrderConfirmationScreen = () => {
               : 'Your order has been placed successfully (Payment pending)'
             }
           </Text>
-          <Text style={[styles.thanksText, { fontSize: 14, marginTop: 5, opacity: 0.5 }]}>
-            Redirecting to home in 5 seconds...
-          </Text>
+          {/* Removed auto-redirect text per requirement */}
           
           <View style={styles.logoContainer}>
             <Animated.View
@@ -404,7 +395,7 @@ const OrderConfirmationScreen = () => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Delivery Address</Text>
           <View style={styles.addressSection}>
-            <Text style={styles.addressText}>{orderDetails.deliveryAddress}</Text>
+            <Text style={styles.addressText}>{orderDetails.shippingAddress}</Text>
           </View>
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Delivery Method</Text>

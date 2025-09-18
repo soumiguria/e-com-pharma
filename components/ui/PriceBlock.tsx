@@ -2,17 +2,31 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
 interface PriceBlockProps {
-  price: number;
-  originalPrice?: number;
+  price?: number | string;
+  originalPrice?: number | string;
   perUnit?: string; // e.g., "500g", "₹33.4/100 g"
 }
 
+const toNumber = (value: unknown): number => {
+  if (typeof value === 'number') return value;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const formatAmount = (value: unknown): string => {
+  const n = toNumber(value);
+  return n.toFixed(2);
+};
+
 const PriceBlock: React.FC<PriceBlockProps> = ({ price, originalPrice, perUnit }) => {
+  const priceNum = toNumber(price);
+  const originalNum = toNumber(originalPrice);
+
   const percentOff =
-    originalPrice && originalPrice > price
-      ? Math.round(((originalPrice - price) / originalPrice) * 100)
+    originalPrice !== undefined && originalNum > priceNum
+      ? Math.round(((originalNum - priceNum) / originalNum) * 100)
       : null;
-  const hasDiscount = percentOff && percentOff > 0;
+  const hasDiscount = percentOff !== null && percentOff > 0;
 
   return (
     <View style={styles.container}>
@@ -22,9 +36,9 @@ const PriceBlock: React.FC<PriceBlockProps> = ({ price, originalPrice, perUnit }
         </View>
       )}
       <View style={styles.row}>
-        <Text style={styles.price}>₹{price.toFixed(2)}</Text>
+        <Text style={styles.price}>₹{formatAmount(priceNum)}</Text>
         {hasDiscount && (
-          <Text style={styles.mrp}>₹{originalPrice?.toFixed(2)}</Text>
+          <Text style={styles.mrp}>₹{formatAmount(originalNum)}</Text>
         )}
       </View>
       {perUnit && (

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
+import orderListService from '../../services/api/orderListService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 type OrderDetailScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderDetail'>;
@@ -21,22 +22,40 @@ const OrderDetailScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<OrderDetailScreenNavigationProp>();
   const route = useRoute();
-  const { order } = route.params as { order: any };
+  const params = route.params as any;
+  const passedOrder = params?.order;
+  const passedOrderId = params?.orderId as string | undefined;
+  const [loading, setLoading] = useState<boolean>(false);
+  const [apiOrder, setApiOrder] = useState<any>(null);
+
+  // Use API data if available, otherwise fallback to passed order
+  const order = apiOrder || passedOrder;
 
   // Add default values to prevent undefined errors
   const orderData = {
-    id: order?.id || 'N/A',
-    items: order?.items || [],
-    itemTotal: order?.itemTotal || 0,
-    deliveryFee: order?.deliveryFee || 0,
-    discount: order?.discount || 0,
-    grandTotal: order?.grandTotal || order?.totalAmount || 0,
-    paymentMode: order?.paymentMode || 'Online',
-    orderType: order?.orderType || 'Home Delivery',
-    address: order?.address || order?.deliveryAddress || 'N/A',
-    orderDate: order?.orderDate || new Date().toLocaleDateString(),
+    id: order?.orderNo || order?.orderNumber || order?.id || 'N/A',
+    items: (order?.orderItems || order?.items || []).map((it: any) => ({
+      id: it.productId || it.id || 'unknown',
+      name: it.name || it.productName || 'Product',
+      price: Number(it.actual ?? it.price ?? it.sp ?? 0),
+      originalPrice: Number(it.mrp ?? 0),
+      quantity: Number(it.quantity ?? 1),
+      image: it.images?.primary || it.signedImages?.primary || 'https://via.placeholder.com/150',
+    })),
+    itemTotal: Number(order?.subtotalAmount || order?.itemTotal || order?.total || 0),
+    deliveryFee: Number(order?.shippingAmount || order?.deliveryFee || 0),
+    discount: Number((order?.storeDiscount || 0) + (order?.couponDiscount || 0) || order?.discount || 0),
+    grandTotal: Number(order?.totalAmount || order?.grandTotal || order?.total || 0),
+    paymentMode: order?.payment?.mode === 'online' || order?.paymentMethod === 'online' ? 'Online' : 'Offline',
+    orderType: order?.deliveryMethod === 'store' || order?.deliveryMethod === 'store_pickup' ? 'Store Pickup' : 'Home Delivery',
+    address: order?.shippingAddress?.address || order?.address || order?.shippingAddress || 'Store Pickup',
+    orderDate: order?.createdAt ? new Date(order.createdAt).toLocaleDateString() : order?.date ? new Date(order.date).toLocaleDateString() : order?.orderDate || new Date().toLocaleDateString(),
     status: order?.status || 'Processing',
   };
+
+  // Debug logging
+  console.log('📦 Order data for rendering:', JSON.stringify(orderData, null, 2));
+  console.log('📦 Raw order object:', JSON.stringify(order, null, 2));
 
   const handleDownloadInvoice = () => {
     Alert.alert('Download Invoice', 'Invoice download started...');
@@ -62,6 +81,29 @@ const OrderDetailScreen = () => {
         return '#8e8e93';
     }
   };
+
+  useEffect(() => {
+    const fetchDetail = async () => {
+      if (!passedOrderId) return;
+      try {
+        setLoading(true);
+        console.log('📦 Fetching order details for ID:', passedOrderId);
+        const res = await orderListService.getOrderById(passedOrderId);
+        console.log('📦 Order detail response:', JSON.stringify(res, null, 2));
+        if (res.success && res.data) {
+          console.log('📦 Setting API order data:', JSON.stringify(res.data, null, 2));
+          setApiOrder(res.data);
+        } else {
+          console.log('❌ Failed to fetch order details:', res.error);
+        }
+      } catch (error) {
+        console.error('❌ Error fetching order details:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDetail();
+  }, [passedOrderId]);
 
   const styles = StyleSheet.create({
     safeArea: {
@@ -270,7 +312,40 @@ const OrderDetailScreen = () => {
       fontWeight: '600',
       marginLeft: 8,
     },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      fontSize: 16,
+      color: theme.colors.text,
+    },
   });
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={[styles.container, { padding: 16 }]}>
+          <View style={styles.header}>
+            <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', minWidth: 0 }}>
+              <TouchableOpacity
+                onPress={() => navigation.goBack()}
+                style={styles.backButton}
+              >
+                <MaterialIcons name="arrow-back" size={24} color={theme.colors.text} />
+              </TouchableOpacity>
+              <Text style={[styles.headerTitle, { flexShrink: 1 }]} numberOfLines={1} ellipsizeMode="tail">Order Summary</Text>
+            </View>
+            <View style={{ width: 24 }} />
+          </View>
+          <View style={styles.loadingContainer}>
+            <Text style={[styles.loadingText, { color: theme.colors.text }]}>Loading order details...</Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -311,12 +386,12 @@ const OrderDetailScreen = () => {
                 <View style={styles.itemDetails}>
                   <Text style={styles.itemName}>{item.name}</Text>
                   <Text style={styles.itemPrice}>₹{(item.price || 0).toFixed(2)}</Text>
-                  {item.originalPrice && item.originalPrice > item.price && (
-                    <Text style={[styles.itemPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{item.originalPrice.toFixed(2)}</Text>
-                  )}
-                  {item.originalPrice && item.originalPrice > item.price && (
+                  {item.originalPrice && item.originalPrice > item.price ? (
+                    <Text style={[styles.itemPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{(item.originalPrice || 0).toFixed(2)}</Text>
+                  ) : null}
+                  {item.originalPrice && item.originalPrice > item.price ? (
                     <Text style={[styles.itemPrice, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% off</Text>
-                  )}
+                  ) : null}
                   <Text style={styles.itemQuantity}>Quantity: {item.quantity || 1}</Text>
                 </View>
               </View>
@@ -328,23 +403,23 @@ const OrderDetailScreen = () => {
             <Text style={styles.sectionTitle}>Bill Details</Text>
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Item Bill</Text>
-              <Text style={styles.billValue}>₹{orderData.itemTotal.toFixed(2)}</Text>
+              <Text style={styles.billValue}>₹{(orderData.itemTotal || 0).toFixed(2)}</Text>
             </View>
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Delivery Fee</Text>
-              <Text style={styles.billValue}>₹{orderData.deliveryFee.toFixed(2)}</Text>
+              <Text style={styles.billValue}>₹{(orderData.deliveryFee || 0).toFixed(2)}</Text>
             </View>
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Discount</Text>
-              <Text style={styles.billValue}>-₹{orderData.discount.toFixed(2)}</Text>
+              <Text style={styles.billValue}>-₹{(orderData.discount || 0).toFixed(2)}</Text>
             </View>
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Payment Mode</Text>
-              <Text style={styles.billValue}>{orderData.paymentMode}</Text>
+              <Text style={styles.billValue}>{orderData.paymentMode || 'N/A'}</Text>
             </View>
             <View style={styles.grandTotalRow}>
               <Text style={styles.grandTotalLabel}>Grand Total</Text>
-              <Text style={styles.grandTotalValue}>₹{orderData.grandTotal.toFixed(2)}</Text>
+              <Text style={styles.grandTotalValue}>₹{(orderData.grandTotal || 0).toFixed(2)}</Text>
             </View>
           </View>
 
@@ -353,17 +428,15 @@ const OrderDetailScreen = () => {
             <Text style={styles.sectionTitle}>Order Details</Text>
             <View style={styles.orderDetailRow}>
               <Text style={styles.orderDetailLabel}>Order Type</Text>
-              <Text style={styles.orderDetailValue}>{orderData.orderType}</Text>
+              <Text style={styles.orderDetailValue}>{orderData.orderType || 'N/A'}</Text>
             </View>
             <View style={styles.orderDetailRow}>
-              <Text style={styles.orderDetailLabel}>
-                Address{'   '}
-                <Text style={styles.orderDetailValue} numberOfLines={2}>{orderData.address}</Text>
-              </Text>
+              <Text style={styles.orderDetailLabel}>Address</Text>
+              <Text style={styles.orderDetailValue} numberOfLines={2}>{orderData.address || 'N/A'}</Text>
             </View>
             <View style={styles.orderDetailRow}>
               <Text style={styles.orderDetailLabel}>Order Placed On</Text>
-              <Text style={styles.orderDetailValue}>{orderData.orderDate}</Text>
+              <Text style={styles.orderDetailValue}>{orderData.orderDate || 'N/A'}</Text>
             </View>
             <View style={styles.statusContainer}>
               <View
@@ -378,7 +451,7 @@ const OrderDetailScreen = () => {
                   { color: getStatusColor(orderData.status) },
                 ]}
               >
-                {orderData.status}
+                {orderData.status || 'Processing'}
               </Text>
             </View>
           </View>
