@@ -10,7 +10,9 @@ import { RootStackParamList } from '../../navigation/types';
 import { useCart } from '../../contexts/CartContext';
 import LoadingOverlay from '../../components/ui/LoadingOverlay';
 import { orderService } from '../../services/api';
+import { addressService } from '../../services/api/addressService';
 import { PlaceOrderRequest } from '../../services/api/orderService';
+import { Address } from '../../services/api/addressService';
 import { Ionicons } from '@expo/vector-icons';
 
 const deliveryMethods = [
@@ -43,17 +45,21 @@ const PaymentMethodsScreen = () => {
   const [pendingOrderAmount, setPendingOrderAmount] = useState<number>(0);
 
   // Address state
-  const [selectedAddress, setSelectedAddress] = useState<any>(null);
-  const [addresses, setAddresses] = useState<any[]>([]);
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [addressLoading, setAddressLoading] = useState(true);
 
   // Load addresses on component mount
   useEffect(() => {
     loadAddresses();
   }, []);
 
-  // Handle address selection from MyAddressesScreen
+  // Handle screen focus - reload addresses and check for selected address
   useEffect(() => {
     const unsubscribe = navigation.addListener('focus', () => {
+      // Reload addresses when returning from AddAddress or MyAddresses
+      loadAddresses();
+      
       // Check if we have a selected address from MyAddressesScreen
       const state = navigation.getState();
       const currentRoute = state.routes[state.index];
@@ -67,44 +73,52 @@ const PaymentMethodsScreen = () => {
     return unsubscribe;
   }, [navigation]);
 
-  const loadAddresses = () => {
-    // Mock addresses - in real app, fetch from API
-    const mockAddresses = [
-      {
-        id: '1',
-        name: user ? `${user.firstName} ${user.lastName}` : 'User Name',
-        mobile: user?.mobile || '9999999999',
-        email: user?.email || 'user@example.com',
-        line1: '123 Main Street',
-        line2: 'Apt 4B',
-        city: 'Delhi',
-        state: 'Delhi',
-        pincode: '110001',
-        country: 'India',
-        isDefault: true,
-      },
-      {
-        id: '2',
-        name: user ? `${user.firstName} ${user.lastName}` : 'User Name',
-        mobile: user?.mobile || '9999999999',
-        email: user?.email || 'user@example.com',
-        line1: '456 Oak Avenue',
-        line2: 'Floor 2',
-        city: 'Mumbai',
-        state: 'Maharashtra',
-        pincode: '400001',
-        country: 'India',
-        isDefault: false,
-      },
-    ];
-    
-    setAddresses(mockAddresses);
-    // Set default address as selected only if no address is already selected
-    if (!selectedAddress) {
-      const defaultAddress = mockAddresses.find(addr => addr.isDefault);
-      if (defaultAddress) {
-        setSelectedAddress(defaultAddress);
+  const loadAddresses = async () => {
+    try {
+      setAddressLoading(true);
+      console.log('📍 Loading user addresses...');
+      
+      const response = await addressService.getAddresses();
+      
+      if (response.success && response.data) {
+        // Handle nested response structure
+        const responseData = response.data as any;
+        const addressesList = responseData.data || responseData || [];
+        
+        console.log('📍 Loaded addresses:', addressesList);
+        setAddresses(addressesList);
+        
+        // Set default address as selected only if no address is already selected
+        if (!selectedAddress) {
+          const defaultAddress = addressesList.find((addr: Address) => addr.isDefault);
+          if (defaultAddress) {
+            setSelectedAddress(defaultAddress);
+            console.log('📍 Set default address:', defaultAddress);
+          } else if (addressesList.length > 0) {
+            // If no default, use first address
+            setSelectedAddress(addressesList[0]);
+            console.log('📍 Set first address as default:', addressesList[0]);
+          } else {
+            // No addresses available
+            setSelectedAddress(null);
+            console.log('📍 No addresses found');
+          }
+        }
+      } else {
+        console.log('❌ Failed to load addresses:', response.error);
+        setAddresses([]);
+        if (!selectedAddress) {
+          setSelectedAddress(null);
+        }
       }
+    } catch (error) {
+      console.error('❌ Error loading addresses:', error);
+      setAddresses([]);
+      if (!selectedAddress) {
+        setSelectedAddress(null);
+      }
+    } finally {
+      setAddressLoading(false);
     }
   };
 
@@ -153,13 +167,13 @@ const PaymentMethodsScreen = () => {
       const isStoreDelivery = selectedDeliveryMethod === '1';
       const orderData: PlaceOrderRequest = {
         products: getCartItems(),
-        deliveryMethod: isStoreDelivery ? 'store' : 'home_delivery',
+        deliveryMethod: isStoreDelivery ? 'store' : 'home',
         paymentMethod: 'offline' as const,
         // Only include address and billing details for home delivery
         ...(isStoreDelivery ? {} : {
           shippingAddress: selectedAddress || getShippingAddress(),
           billingSameAsShipping: true,
-          billingAddress: null,
+          billingAddress: selectedAddress || getShippingAddress(), // Same as shipping address
           storeDiscount: billDetails.productDiscount,
           couponDiscount: billDetails.couponDiscount,
           shippingAmount: billDetails.shipping,
@@ -167,7 +181,7 @@ const PaymentMethodsScreen = () => {
           subtotalAmount: billDetails.mrp,
           totalAmount: billDetails.total,
           expressDelivery: false,
-          timeslot: undefined,
+          timeslot: undefined, // Can be set based on user selection
         }),
       };
 
@@ -277,6 +291,10 @@ const PaymentMethodsScreen = () => {
   const handleAddressChange = () => {
     // Navigate to address selection screen
     navigation.navigate('MyAddresses' as any, { fromPaymentMethods: true });
+  };
+
+  const handleAddAddress = () => {
+    navigation.navigate('AddAddress' as any);
   };
 
   const styles = StyleSheet.create({
@@ -419,6 +437,50 @@ const PaymentMethodsScreen = () => {
       color: theme.colors.secondary,
       marginTop: 4,
     },
+    loadingText: {
+      fontSize: 14,
+      color: theme.colors.secondary,
+      textAlign: 'center',
+      padding: 20,
+    },
+    noAddressCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 20,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderStyle: 'dashed',
+    },
+    noAddressContent: {
+      alignItems: 'center',
+    },
+    noAddressTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginBottom: 8,
+    },
+    noAddressText: {
+      fontSize: 14,
+      color: theme.colors.secondary,
+      textAlign: 'center',
+      marginBottom: 16,
+      lineHeight: 20,
+    },
+    addAddressButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderRadius: 8,
+    },
+    addAddressButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
+      marginLeft: 8,
+    },
   });
 
 
@@ -430,32 +492,55 @@ const PaymentMethodsScreen = () => {
         {selectedDeliveryMethod === '2' && (
           <>
             <Text style={styles.sectionTitle}>Delivery Address</Text>
-            <View style={styles.addressCard}>
-              <View style={styles.addressHeader}>
-                <Text style={styles.addressName}>
-                  {selectedAddress?.firstName ? `${selectedAddress.firstName} ${selectedAddress.lastName}` : selectedAddress?.name || 'User Name'}
-                </Text>
-                <TouchableOpacity onPress={handleAddressChange} style={styles.changeAddressButton}>
-                  <Text style={styles.changeAddressText}>Change</Text>
-                </TouchableOpacity>
+            
+            {addressLoading ? (
+              <View style={styles.addressCard}>
+                <Text style={styles.loadingText}>Loading addresses...</Text>
               </View>
-              <Text style={styles.addressText}>{selectedAddress?.line1 || '123 Main Street'}</Text>
-              {selectedAddress?.line2 && (
-                <Text style={styles.addressText}>{selectedAddress.line2}</Text>
-              )}
-              <Text style={styles.addressText}>
-                {selectedAddress?.city || 'Delhi'}, {selectedAddress?.state || 'Delhi'} - {selectedAddress?.pincode || '110001'}
-              </Text>
-              <Text style={styles.addressText}>{selectedAddress?.country || 'India'}</Text>
-              <Text style={styles.addressContact}>
-                📞 {selectedAddress?.mobile || user?.mobile || '9999999999'}
-              </Text>
-              {selectedAddress?.isDefault && (
-                <Text style={[styles.addressText, { color: theme.colors.primary, fontWeight: 'bold', marginTop: 4 }]}>
-                  ✓ Default Address
+            ) : selectedAddress ? (
+              <View style={styles.addressCard}>
+                <View style={styles.addressHeader}>
+                  <Text style={styles.addressName}>
+                    {selectedAddress?.firstName ? `${selectedAddress.firstName} ${selectedAddress.lastName}` : 'User Name'}
+                  </Text>
+                  <TouchableOpacity onPress={handleAddressChange} style={styles.changeAddressButton}>
+                    <Text style={styles.changeAddressText}>Change</Text>
+                  </TouchableOpacity>
+                </View>
+                <Text style={styles.addressText}>{selectedAddress?.line1 || ''}</Text>
+                {selectedAddress?.line2 && (
+                  <Text style={styles.addressText}>{selectedAddress.line2}</Text>
+                )}
+                <Text style={styles.addressText}>
+                  {selectedAddress?.city || ''}, {selectedAddress?.state || ''} - {selectedAddress?.pincode || ''}
                 </Text>
-              )}
-            </View>
+                <Text style={styles.addressText}>{selectedAddress?.country || ''}</Text>
+                <Text style={styles.addressContact}>
+                  📞 {selectedAddress?.mobile || user?.mobile || ''}
+                </Text>
+                {selectedAddress?.isDefault && (
+                  <Text style={[styles.addressText, { color: theme.colors.primary, fontWeight: 'bold', marginTop: 4 }]}>
+                    ✓ Default Address
+                  </Text>
+                )}
+              </View>
+            ) : (
+              <View style={styles.noAddressCard}>
+                <View style={styles.noAddressContent}>
+                  <Text style={styles.noAddressTitle}>No Default Address</Text>
+                  <Text style={styles.noAddressText}>
+                    Please add an address to continue with home delivery
+                  </Text>
+                  <TouchableOpacity 
+                    style={[styles.addAddressButton, { backgroundColor: theme.colors.primary }]}
+                    onPress={handleAddAddress}
+                  >
+                    <Ionicons name="add" size={20} color="#fff" />
+                    <Text style={styles.addAddressButtonText}>Add Address</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
           </>
         )}
 

@@ -6,7 +6,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface PlaceOrderRequest {
   products: any;
-  deliveryMethod: 'store' | 'home_delivery';
+  deliveryMethod: 'store' | 'home';
   shippingAddress?: any;
   billingSameAsShipping?: boolean;
   billingAddress?: any;
@@ -153,7 +153,7 @@ class OrderService {
       // Add additional fields based on delivery method
       let requestBody: any = { ...baseRequestBody };
 
-      if (orderData.deliveryMethod === 'home_delivery') {
+      if (orderData.deliveryMethod === 'home') {
         // For home delivery, include all address and billing details
         requestBody = {
           ...requestBody,

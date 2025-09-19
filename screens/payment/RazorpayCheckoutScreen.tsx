@@ -579,6 +579,8 @@ import {
   Alert,
   ActivityIndicator,
   BackHandler,
+  ScrollView,
+  Modal,
 } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
@@ -588,7 +590,9 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { orderService } from '../../services/api';
+import { addressService } from '../../services/api/addressService';
 import { PlaceOrderRequest, InitiatePaymentResponse } from '../../services/api/orderService';
+import { Address } from '../../services/api/addressService';
 
 type RazorpayCheckoutRouteProp = RouteProp<RootStackParamList, 'RazorpayCheckout'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'RazorpayCheckout'>;
@@ -598,7 +602,7 @@ const RazorpayCheckoutScreen = () => {
   const route = useRoute<RazorpayCheckoutRouteProp>();
   const { theme } = useTheme();
   const { user } = useAuth();
-  const { groceryItems, pharmacyItems, clearCart } = useCart();
+  const { groceryItems, pharmacyItems, clearCart, resetAllContexts } = useCart();
 
   const [isLoading, setIsLoading] = useState(true);
   const [paymentData, setPaymentData] = useState<InitiatePaymentResponse | null>(null);
@@ -606,8 +610,11 @@ const RazorpayCheckoutScreen = () => {
   const [backendPaymentId, setBackendPaymentId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
+  const [availableAddresses, setAvailableAddresses] = useState<Address[]>([]);
+  const [showAddressModal, setShowAddressModal] = useState(false);
 
-  const { amount, currency = 'INR', name, description, prefill, cartType, deliveryMethod } = route.params;
+  const { amount, currency = 'INR', name, description, prefill, cartType, deliveryMethod, orderId, isExistingOrder } = route.params as any;
   
   // Refs to prevent multiple processing
   const handledRef = useRef<boolean>(false);
@@ -616,7 +623,20 @@ const RazorpayCheckoutScreen = () => {
 
   // Initialize payment when component mounts
   useEffect(() => {
-    initializePayment();
+    const initialize = async () => {
+      let loadedAddress: Address | null = null;
+      
+      if (deliveryMethod !== 'Store Pickup') {
+        console.log('📍 Loading addresses before payment initialization...');
+        loadedAddress = await loadUserAddresses();
+        console.log('📍 Addresses loaded, selectedAddress:', loadedAddress);
+      }
+      
+      // Pass the loaded address to payment initialization
+      initializePayment(loadedAddress);
+    };
+    
+    initialize();
     
     return () => {
       if (timeoutRef.current) {
@@ -639,6 +659,25 @@ const RazorpayCheckoutScreen = () => {
       return () => subscription.remove();
     }, [isProcessing])
   );
+
+  // Reload addresses when screen comes into focus (e.g., returning from AddAddress)
+  useFocusEffect(
+    useCallback(() => {
+      const reloadAddresses = async () => {
+        if (deliveryMethod !== 'Store Pickup' && !selectedAddress) {
+          console.log('📍 Screen focused, reloading addresses...');
+          await loadUserAddresses();
+        }
+      };
+      
+      reloadAddresses();
+    }, [deliveryMethod, selectedAddress])
+  );
+
+  // Debug: Log when selectedAddress changes
+  useEffect(() => {
+    console.log('📍 selectedAddress state changed:', selectedAddress);
+  }, [selectedAddress]);
 
   // Handle navigation back
   useEffect(() => {
@@ -670,7 +709,51 @@ const RazorpayCheckoutScreen = () => {
     };
   }, [paymentData]);
 
-  const initializePayment = async () => {
+  const loadUserAddresses = async (): Promise<Address | null> => {
+    try {
+      console.log('📍 Loading user addresses...');
+      const response = await addressService.getAddresses();
+      
+      if (response.success && response.data) {
+        // Handle nested response structure
+        const responseData = response.data as any;
+        const addresses = responseData.data || responseData || [];
+        
+        console.log('📍 Loaded addresses:', addresses);
+        setAvailableAddresses(addresses);
+        
+        // Find and set default address
+        const defaultAddress = addresses.find((addr: Address) => addr.isDefault);
+        let selectedAddr: Address | null = null;
+        
+        if (defaultAddress) {
+          selectedAddr = defaultAddress;
+          setSelectedAddress(defaultAddress);
+          console.log('📍 Set default address:', defaultAddress);
+        } else if (addresses.length > 0) {
+          // If no default, use first address
+          selectedAddr = addresses[0];
+          setSelectedAddress(addresses[0]);
+          console.log('📍 Set first address as default:', addresses[0]);
+        } else {
+          setSelectedAddress(null);
+          console.log('📍 No addresses found');
+        }
+        
+        return selectedAddr;
+      } else {
+        console.log('❌ Failed to load addresses:', response.error);
+        setSelectedAddress(null);
+        return null;
+      }
+    } catch (error) {
+      console.error('❌ Error loading addresses:', error);
+      setSelectedAddress(null);
+      return null;
+    }
+  };
+
+  const initializePayment = async (loadedAddress?: Address | null) => {
     try {
       setIsLoading(true);
       setError(null);
@@ -679,45 +762,117 @@ const RazorpayCheckoutScreen = () => {
       console.log('🛒 Initializing payment...');
       console.log('📦 Cart type:', cartType);
       console.log('🚚 Delivery method:', deliveryMethod);
+      console.log('🔄 Is existing order:', isExistingOrder);
+      console.log('📦 Order ID:', orderId);
+      console.log('📍 Loaded address for payment:', loadedAddress);
 
-      // Step 1: Place the order
-      const isStoreDelivery = deliveryMethod === 'Store Pickup';
-      const cartItems = getCartItems();
+      // Use the loaded address or current selected address
+      const addressToUse = loadedAddress || selectedAddress;
       
-      console.log('📦 Cart items:', cartItems);
+      console.log('📍 Address selection in initializePayment:');
+      console.log('  - loadedAddress:', loadedAddress);
+      console.log('  - selectedAddress:', selectedAddress);
+      console.log('  - addressToUse:', addressToUse);
+      
+      console.log('📍 Address validation:');
+      console.log('  - deliveryMethod:', deliveryMethod);
+      console.log('  - loadedAddress:', loadedAddress);
+      console.log('  - selectedAddress:', selectedAddress);
+      console.log('  - addressToUse:', addressToUse);
+      console.log('  - isExistingOrder:', isExistingOrder);
 
-      const orderData: PlaceOrderRequest = {
-        products: cartItems,
-        deliveryMethod: isStoreDelivery ? 'store' : 'home_delivery',
-        paymentMethod: 'online',
-        subtotalAmount: amount,
-        totalAmount: amount,
-        ...(isStoreDelivery ? {} : {
-          shippingAddress: getShippingAddress(),
-          billingSameAsShipping: true,
-          storeDiscount: 0,
-          couponDiscount: 0,
-          shippingAmount: 0,
-          taxAmount: 0,
-          expressDelivery: false,
-        }),
-      };
-
-      console.log('📤 Placing order with data:', JSON.stringify(orderData, null, 2));
-
-      const placeOrderResponse = await orderService.placeOrder(orderData);
-
-      if (!placeOrderResponse.success || !placeOrderResponse.data) {
-        throw new Error(placeOrderResponse.error || 'Failed to place order');
+      // Check if home delivery is selected but no address is available
+      if (deliveryMethod !== 'Store Pickup' && !addressToUse && !isExistingOrder) {
+        console.log('❌ Address validation failed - no address available');
+        throw new Error('Please select a delivery address to continue');
       }
+      
+      console.log('✅ Address validation passed');
 
-      const orderNo = placeOrderResponse.data.orderNo;
-      setOrderNumber(orderNo);
-      console.log('✅ Order placed successfully:', orderNo);
+      let orderNo: string;
+      let orderResponseData: any;
+      let paymentDataFromOrder: any;
 
-      // Step 2: Extract payment data from response
-      const orderResponseData = placeOrderResponse.data;
-      const paymentDataFromOrder = orderResponseData.paymentData;
+      if (isExistingOrder && orderId) {
+        // For existing orders, get payment data from the order
+        console.log('🔄 Processing existing order payment...');
+        
+        // For existing orders, we'll use the orderId as orderNo
+        orderNo = orderId;
+        setOrderNumber(orderNo);
+        
+        // Initiate payment for existing order
+        console.log('💳 Initiating payment for existing order...');
+        const initiatePaymentResponse = await orderService.initiatePayment(orderNo);
+        
+        if (initiatePaymentResponse.success && initiatePaymentResponse.data) {
+          paymentDataFromOrder = initiatePaymentResponse.data;
+          orderResponseData = {
+            orderNo: orderNo,
+            totalAmount: amount,
+            paymentId: initiatePaymentResponse.data.paymentId,
+          };
+        } else {
+          throw new Error('Failed to initiate payment for existing order');
+        }
+        
+      } else {
+        // For new orders, place the order first
+        console.log('🆕 Creating new order...');
+        const isStoreDelivery = deliveryMethod === 'Store Pickup';
+        const cartItems = getCartItems();
+        
+        console.log('📦 Cart items:', cartItems);
+
+        // Calculate bill details (you can customize these calculations)
+        const subtotal = amount;
+        const productDiscount = Math.round(subtotal * 0.1); // 10% product discount
+        const shippingAmount = isStoreDelivery ? 0 : 0; // Free shipping for now
+        const taxAmount = 0; // No tax for now
+        const couponDiscount = 0; // No coupon discount for now
+        const totalAmount = subtotal - productDiscount + shippingAmount + taxAmount - couponDiscount;
+
+        const orderData: PlaceOrderRequest = {
+          products: cartItems,
+          deliveryMethod: isStoreDelivery ? 'store' : 'home',
+          paymentMethod: 'online',
+          subtotalAmount: subtotal,
+          totalAmount: totalAmount,
+          ...(isStoreDelivery ? {} : {
+            shippingAddress: getShippingAddress(addressToUse),
+            billingSameAsShipping: true,
+            billingAddress: getShippingAddress(addressToUse), // Same as shipping for now
+            storeDiscount: productDiscount,
+            couponDiscount: couponDiscount,
+            shippingAmount: shippingAmount,
+            taxAmount: taxAmount,
+            expressDelivery: false,
+            timeslot: undefined, // Can be set based on user selection
+          }),
+        };
+
+        console.log('💰 Bill details calculated:');
+        console.log('  - Subtotal:', subtotal);
+        console.log('  - Product Discount:', productDiscount);
+        console.log('  - Shipping Amount:', shippingAmount);
+        console.log('  - Tax Amount:', taxAmount);
+        console.log('  - Coupon Discount:', couponDiscount);
+        console.log('  - Total Amount:', totalAmount);
+        console.log('📤 Placing order with data:', JSON.stringify(orderData, null, 2));
+
+        const placeOrderResponse = await orderService.placeOrder(orderData);
+
+        if (!placeOrderResponse.success || !placeOrderResponse.data) {
+          throw new Error(placeOrderResponse.error || 'Failed to place order');
+        }
+
+        orderNo = placeOrderResponse.data.orderNo;
+        setOrderNumber(orderNo);
+        console.log('✅ Order placed successfully:', orderNo);
+
+        orderResponseData = placeOrderResponse.data;
+        paymentDataFromOrder = orderResponseData.paymentData;
+      }
 
       console.log('💳 Payment data from order:', JSON.stringify(paymentDataFromOrder, null, 2));
 
@@ -725,17 +880,17 @@ const RazorpayCheckoutScreen = () => {
         const transformedData: InitiatePaymentResponse = {
           razorpay_order_id: paymentDataFromOrder.pgReferenceId,
           razorpay_key_id: paymentDataFromOrder.pgKey,
-          amount: Number(orderResponseData.totalAmount) || amount,
+          amount: Number(orderResponseData?.totalAmount || amount),
           currency: currency,
           orderNo: orderNo,
-          paymentId: orderResponseData.paymentId || orderNo,
+          paymentId: orderResponseData?.paymentId || orderNo,
         };
 
         console.log('💰 Final payment amount:', transformedData.amount);
         console.log('🔑 Razorpay Key ID:', transformedData.razorpay_key_id);
         console.log('📦 Razorpay Order ID:', transformedData.razorpay_order_id);
         setPaymentData(transformedData);
-        setBackendPaymentId(orderResponseData.paymentId || orderNo);
+        setBackendPaymentId(orderResponseData?.paymentId || orderNo);
         console.log('✅ Payment data set successfully');
       } else {
         throw new Error('Invalid payment data received from server');
@@ -759,7 +914,25 @@ const RazorpayCheckoutScreen = () => {
     }));
   };
 
-  const getShippingAddress = () => {
+  const getShippingAddress = (address?: Address | null) => {
+    const addressToUse = address || selectedAddress;
+    
+    if (addressToUse) {
+      console.log('📍 Using address:', addressToUse);
+      return {
+        name: `${addressToUse.firstName} ${addressToUse.lastName}`,
+        mobile: addressToUse.mobile,
+        email: addressToUse.email,
+        address: `${addressToUse.line1}${addressToUse.line2 ? ', ' + addressToUse.line2 : ''}`,
+        city: addressToUse.city,
+        state: addressToUse.state,
+        pincode: addressToUse.pincode,
+        country: addressToUse.country,
+      };
+    }
+    
+    // Fallback to user profile or hardcoded
+    console.log('📍 Using fallback address');
     return {
       name: `${user?.firstName || ''} ${user?.lastName || ''}`.trim() || 'User',
       mobile: user?.mobile || '',
@@ -804,6 +977,9 @@ const RazorpayCheckoutScreen = () => {
       // Clear cart after successful payment
       await clearCart();
       console.log('✅ Cart cleared successfully');
+      
+      // Optional: Reset all app contexts (uncomment if needed)
+      // await resetAllContexts();
 
       // Navigate to success page
       navigation.replace('OrderConfirmation' as any, {
@@ -1222,6 +1398,184 @@ const RazorpayCheckoutScreen = () => {
         <View style={styles.headerSpacer} />
       </View>
 
+      {/* Address Selector for Home Delivery */}
+      {deliveryMethod !== 'Store Pickup' && (
+        selectedAddress ? (
+        <View style={[styles.addressSection, { borderBottomColor: theme.colors.border }]}>
+          <View style={styles.addressHeader}>
+            <Text style={[styles.addressTitle, { color: theme.colors.text }]}>
+              Delivery Address
+            </Text>
+            <TouchableOpacity
+              onPress={() => setShowAddressModal(true)}
+              style={[styles.changeAddressButton, { borderColor: theme.colors.primary }]}
+            >
+              <Text style={[styles.changeAddressText, { color: theme.colors.primary }]}>
+                Change
+              </Text>
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.addressDetails}>
+            <Text style={[styles.addressName, { color: theme.colors.text }]}>
+              {`${selectedAddress.firstName} ${selectedAddress.lastName}`}
+            </Text>
+            <Text style={[styles.addressText, { color: theme.colors.secondary }]}>
+              {selectedAddress.line1}
+              {selectedAddress.line2 && `, ${selectedAddress.line2}`}
+            </Text>
+            <Text style={[styles.addressText, { color: theme.colors.secondary }]}>
+              {selectedAddress.city}, {selectedAddress.state} - {selectedAddress.pincode}
+            </Text>
+            <Text style={[styles.addressText, { color: theme.colors.secondary }]}>
+              {selectedAddress.mobile}
+            </Text>
+            {selectedAddress.isDefault && (
+              <View style={[styles.defaultBadge, { backgroundColor: theme.colors.primary }]}>
+                <Text style={styles.defaultBadgeText}>Default</Text>
+              </View>
+            )}
+            {/* Debug info */}
+            <Text style={[styles.addressText, { color: theme.colors.secondary, fontSize: 10 }]}>
+              ID: {selectedAddress._id}
+            </Text>
+          </View>
+        </View>
+        ) : (
+          <View style={[styles.noAddressSection, { borderBottomColor: theme.colors.border }]}>
+            <View style={styles.noAddressContent}>
+              <Text style={[styles.noAddressTitle, { color: theme.colors.text }]}>
+                No Delivery Address
+              </Text>
+              <Text style={[styles.noAddressText, { color: theme.colors.secondary }]}>
+                Please add an address to continue with home delivery
+              </Text>
+              <TouchableOpacity
+                style={[styles.addAddressButton, { backgroundColor: theme.colors.primary }]}
+                onPress={() => {
+                  navigation.navigate('AddAddress' as any);
+                }}
+              >
+                <Text style={styles.addAddressButtonText}>+ Add Address</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )
+      )}
+
+      {/* Address Selection Modal */}
+      <Modal
+        visible={showAddressModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <SafeAreaView style={[styles.modalContainer, { backgroundColor: theme.colors.background }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: theme.colors.border }]}>
+            <TouchableOpacity
+              onPress={() => setShowAddressModal(false)}
+              style={styles.modalCloseButton}
+            >
+              <Text style={[styles.modalCloseText, { color: theme.colors.primary }]}>
+                Cancel
+              </Text>
+            </TouchableOpacity>
+            <Text style={[styles.modalTitle, { color: theme.colors.text }]}>
+              Select Address
+            </Text>
+            <View style={styles.modalSpacer} />
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            {/* Add New Address Option */}
+            <TouchableOpacity
+              style={[
+                styles.addressOption,
+                styles.addAddressOption,
+                { borderColor: theme.colors.primary, backgroundColor: `${theme.colors.primary}05` }
+              ]}
+              onPress={() => {
+                setShowAddressModal(false);
+                navigation.navigate('AddAddress' as any);
+              }}
+            >
+              <View style={styles.addressOptionContent}>
+                <Text style={[styles.addAddressText, { color: theme.colors.primary }]}>
+                  + Add New Address
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            {availableAddresses.map((address, index) => (
+              <TouchableOpacity
+                key={`${address._id}-${selectedAddress?._id === address._id ? 'selected' : 'unselected'}-${index}`}
+                style={[
+                  styles.addressOption,
+                  { borderColor: theme.colors.border },
+                  selectedAddress?._id === address._id && {
+                    borderColor: theme.colors.primary,
+                    backgroundColor: `${theme.colors.primary}10`,
+                  }
+                ]}
+                onPress={async () => {
+                  console.log('📍 User selected address:', address);
+                  console.log('📍 Current selectedAddress before update:', selectedAddress);
+                  
+                  setSelectedAddress(address);
+                  setShowAddressModal(false);
+                  
+                  console.log('📍 Address updated in state, re-placing order...');
+                  console.log('📍 isProcessing:', isProcessing, 'paymentData:', !!paymentData);
+                  
+                  // Re-place order with new address if payment hasn't started yet
+                  if (!isProcessing && !paymentData) {
+                    console.log('📍 Address changed, re-placing order with new address...');
+                    try {
+                      setIsLoading(true);
+                      // Use the address directly instead of relying on state
+                      await initializePayment(address);
+                    } catch (error) {
+                      console.error('❌ Error re-placing order with new address:', error);
+                      setError('Failed to update order with new address');
+                      setIsLoading(false);
+                    }
+                  } else {
+                    console.log('📍 Cannot re-place order - payment already in progress');
+                  }
+                }}
+              >
+                <View style={styles.addressOptionContent}>
+                  <Text style={[styles.addressOptionName, { color: theme.colors.text }]}>
+                    {`${address.firstName} ${address.lastName}`}
+                  </Text>
+                  <Text style={[styles.addressOptionText, { color: theme.colors.secondary }]}>
+                    {address.line1}
+                    {address.line2 && `, ${address.line2}`}
+                  </Text>
+                  <Text style={[styles.addressOptionText, { color: theme.colors.secondary }]}>
+                    {address.city}, {address.state} - {address.pincode}
+                  </Text>
+                  <Text style={[styles.addressOptionText, { color: theme.colors.secondary }]}>
+                    {address.mobile}
+                  </Text>
+                  {address.isDefault && (
+                    <View style={[styles.defaultBadgeSmall, { backgroundColor: theme.colors.primary }]}>
+                      <Text style={styles.defaultBadgeText}>Default</Text>
+                    </View>
+                  )}
+                </View>
+                
+                {selectedAddress?._id === address._id && (
+                  <View style={styles.selectedIndicatorContainer}>
+                    <View style={[styles.selectedIndicator, { backgroundColor: theme.colors.primary }]} />
+                    <Text style={[styles.selectedText, { color: theme.colors.primary }]}>Selected</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </SafeAreaView>
+      </Modal>
+
       {paymentData && (
         <WebView
           ref={webViewRef}
@@ -1365,6 +1719,172 @@ const styles = StyleSheet.create({
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  // Address selector styles
+  addressSection: {
+    padding: 16,
+    borderBottomWidth: 1,
+    backgroundColor: '#ffffff',
+  },
+  addressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  addressTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  changeAddressButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderRadius: 6,
+  },
+  changeAddressText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  addressDetails: {
+    position: 'relative',
+  },
+  addressName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  addressText: {
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  defaultBadge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  defaultBadgeSmall: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginTop: 4,
+  },
+  defaultBadgeText: {
+    color: '#ffffff',
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  // Modal styles
+  modalContainer: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  modalCloseButton: {
+    padding: 4,
+  },
+  modalCloseText: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  modalSpacer: {
+    width: 60,
+  },
+  modalContent: {
+    flex: 1,
+    padding: 16,
+  },
+  addressOption: {
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 16,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  addressOptionContent: {
+    flex: 1,
+  },
+  addressOptionName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  addressOptionText: {
+    fontSize: 14,
+    marginBottom: 2,
+  },
+  selectedIndicatorContainer: {
+    alignItems: 'center',
+    marginLeft: 12,
+  },
+  selectedIndicator: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginBottom: 4,
+  },
+  selectedText: {
+    fontSize: 10,
+    fontWeight: '600',
+  },
+  addAddressOption: {
+    borderStyle: 'dashed',
+    borderWidth: 2,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  addAddressText: {
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  // No Address Section
+  noAddressSection: {
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  noAddressContent: {
+    alignItems: 'center',
+    paddingVertical: 20,
+  },
+  noAddressTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  noAddressText: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  addAddressButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  addAddressButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+    marginLeft: 4,
   },
 });
 

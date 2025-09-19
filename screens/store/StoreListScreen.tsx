@@ -472,7 +472,7 @@ const StoreListScreen = () => {
       name: raw.name || raw.storeName || 'Store',
       type,
       address: raw.address || raw.location?.address || '—',
-      distance: raw.distance ? `${raw.distance} km` : '—',
+      distance: raw.distance ? `${parseFloat(raw.distance).toFixed(1)} km` : '—',
       rating: Number(raw.rating ?? raw.avgRating ?? 4.2),
       image: raw.image || raw.logo || undefined,
       totalItems: raw.totalItems || raw.itemCount || 0,
@@ -619,10 +619,10 @@ const StoreListScreen = () => {
                   <MaterialIcons name="call" size={20} color={colors.primary} />
                 </View>
                 <Text style={styles.storeAddress}>{store.address}</Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                {/* <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                     <Text style={{ color: colors.secondary, fontSize: 13, marginRight: 4 }}>Total items:</Text>
                     <Text style={{ color: colors.secondary, fontSize: 13, marginRight: 12 }}>{store.totalItems || 0}</Text>
-                </View>
+                </View> */}
                 <View style={styles.storeInfo}>
                   <Text style={styles.storeDistance}>{store.distance}</Text>
                   <View style={styles.storeRating}>

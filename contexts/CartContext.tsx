@@ -1,6 +1,7 @@
 // contexts/CartContext.tsx
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { resetApp } from '../utils/resetApp';
 
 interface CartItem {
   id: string;
@@ -26,7 +27,8 @@ interface CartContextType {
   groceryTotal: number;
   pharmacyTotal: number;
   totalItems: number;
-  clearCart: () => void;
+  clearCart: (resetAll?: boolean) => void;
+  resetAllContexts: () => Promise<void>;
 }
 
 const CartContext = createContext<CartContextType>({
@@ -40,6 +42,7 @@ const CartContext = createContext<CartContextType>({
   pharmacyTotal: 0,
   totalItems: 0,
   clearCart: () => {},
+  resetAllContexts: async () => {},
 });
 
 export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
@@ -134,19 +137,41 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
     }
   };
 
-  const clearCart = async () => {
+  const clearCart = async (resetAll: boolean = false) => {
     try {
       console.log('🧹 Clearing cart from context...');
       setGroceryItems([]);
       setPharmacyItems([]);
       
-      // Also clear from AsyncStorage
-      await AsyncStorage.removeItem('grocery_cart');
-      await AsyncStorage.removeItem('pharmacy_cart');
-      
-      console.log('✅ Cart cleared from context and AsyncStorage');
+      if (resetAll) {
+        console.log('🔄 Reset all requested, clearing all contexts...');
+        await resetAllContexts();
+      } else {
+        // Just clear cart data
+        await AsyncStorage.removeItem('grocery_cart');
+        await AsyncStorage.removeItem('pharmacy_cart');
+        console.log('✅ Cart cleared from context and AsyncStorage');
+      }
     } catch (error) {
       console.error('❌ Error clearing cart:', error);
+    }
+  };
+
+  const resetAllContexts = async () => {
+    try {
+      console.log('🔄 Resetting all app contexts...');
+      
+      // Use the comprehensive reset utility
+      await resetApp();
+      
+      // Reset local state
+      setGroceryItems([]);
+      setPharmacyItems([]);
+      
+      console.log('✅ All app contexts reset successfully');
+      
+    } catch (error) {
+      console.error('❌ Error resetting all contexts:', error);
     }
   };
 
@@ -181,6 +206,7 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
         pharmacyTotal,
         totalItems,
         clearCart,
+        resetAllContexts,
       }}
     >
       {children}

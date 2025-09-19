@@ -69,6 +69,22 @@ const OrderDetailScreen = () => {
     Alert.alert('Reorder', 'Adding items to cart...');
   };
 
+  const handlePayNow = () => {
+    console.log('💳 Pay Now pressed for order:', orderData.id);
+    
+    // Navigate to Razorpay checkout with order details
+    navigation.navigate('RazorpayCheckout' as any, {
+      amount: orderData.grandTotal,
+      currency: 'INR',
+      name: 'Order Payment',
+      description: `Payment for Order ${orderData.id}`,
+      cartType: 'pharma', // Default, can be determined from order
+      deliveryMethod: orderData.orderType === 'Store Pickup' ? 'Store Pickup' : 'Home Delivery',
+      orderId: orderData.id,
+      isExistingOrder: true,
+    });
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Delivered':
@@ -251,6 +267,21 @@ const OrderDetailScreen = () => {
       fontWeight: 'bold',
       color: theme.colors.primary,
     },
+    payNowButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      paddingVertical: 16,
+      paddingHorizontal: 24,
+      borderRadius: 8,
+      marginVertical: 8,
+    },
+    payNowButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
+      marginLeft: 8,
+    },
     orderDetailRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -422,6 +453,19 @@ const OrderDetailScreen = () => {
               <Text style={styles.grandTotalValue}>₹{(orderData.grandTotal || 0).toFixed(2)}</Text>
             </View>
           </View>
+
+          {/* Pay Now Button for Pending Orders */}
+          {orderData.status === 'pending' && orderData.paymentMode === 'Online' && (
+            <View style={styles.section}>
+              <TouchableOpacity
+                style={[styles.payNowButton, { backgroundColor: theme.colors.primary }]}
+                onPress={handlePayNow}
+              >
+                <MaterialIcons name="payment" size={20} color="#fff" />
+                <Text style={styles.payNowButtonText}>Pay Now - ₹{(orderData.grandTotal || 0).toFixed(2)}</Text>
+              </TouchableOpacity>
+            </View>
+          )}
 
           {/* Order Details */}
           <View style={styles.section}>
