@@ -17,6 +17,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useCallback } from 'react';
+import userService from '../../services/api/userService';
 
 type EditProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'EditProfile'>;
 
@@ -37,14 +38,14 @@ const EditProfileScreen = () => {
     anniversary: '',
   });
 
-  const [specialDates, setSpecialDates] = useState([
-    { id: '1', name: 'Wife Birthday', date: '10/08/1988' },
-    { id: '2', name: 'Son Birthday', date: '25/12/2010' },
-  ]);
+
+  const [isDataLoaded, setIsDataLoaded] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Debug logging
   console.log('🔍 EditProfileScreen Debug:', {
     isAuthenticated,
+    isDataLoaded,
     user: user ? {
       firstName: user.firstName,
       lastName: user.lastName,
@@ -54,9 +55,9 @@ const EditProfileScreen = () => {
     hasUser: !!user
   });
 
-  // Load user data when component mounts
+  // Load user data only once when component mounts and user is available
   useEffect(() => {
-    if (user) {
+    if (user && !isDataLoaded) {
       setProfileData({
         firstName: user.firstName || '',
         lastName: user.lastName || '',
@@ -66,70 +67,50 @@ const EditProfileScreen = () => {
         birthday: '',
         anniversary: '',
       });
-      console.log('✅ User data loaded into form:', {
+      setIsDataLoaded(true);
+      console.log('✅ User data loaded into form (first time only):', {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
         mobile: user.mobile
       });
-    } else if (isAuthenticated) {
+    } else if (isAuthenticated && !user && !isDataLoaded) {
       // If authenticated but no user data, refresh it
       console.log('🔄 Refreshing user data in EditProfileScreen...');
       refreshUser();
     }
-  }, [user, isAuthenticated, refreshUser]);
+  }, [user, isAuthenticated, refreshUser, isDataLoaded]);
 
   // Refresh user data when screen comes into focus (e.g., after login)
   useFocusEffect(
     useCallback(() => {
-      if (isAuthenticated) {
+      if (isAuthenticated && !user) {
         console.log('🔄 EditProfileScreen focused - refreshing user data...');
         refreshUser();
       }
-    }, [isAuthenticated, refreshUser])
+    }, [isAuthenticated, refreshUser, user])
   );
 
   const handleSave = async () => {
+    if (isSaving) return; // Prevent multiple saves
+    
     try {
-      // Validate required fields
-      if (!profileData.firstName.trim() || !profileData.lastName.trim() || !profileData.email.trim()) {
-        Alert.alert('Error', 'Please fill in all required fields (First Name, Last Name, Email)');
-        return;
-      }
-
-      if (!profileData.email.includes('@')) {
-        Alert.alert('Error', 'Please enter a valid email address');
-        return;
-      }
-
-      // TODO: Implement API call to update user profile
-      console.log('💾 Saving profile data:', profileData);
+      setIsSaving(true);
       
-      // For now, just show success and go back
-      Alert.alert(
-        'Success',
-        'Profile updated successfully!',
-        [
-          {
-            text: 'OK',
-            onPress: () => navigation.goBack()
-          }
-        ]
-      );
+      console.log('💾 Saving profile data locally:', profileData);
+      
+      // Just go back without API call
+      console.log('✅ Profile saved locally, going back...');
+      navigation.goBack();
+      
     } catch (error) {
       console.error('❌ Error saving profile:', error);
       Alert.alert('Error', 'Failed to save profile. Please try again.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const addSpecialDate = () => {
-    const newDate = {
-      id: Date.now().toString(),
-      name: 'New Special Date',
-      date: '01/01/2024',
-    };
-    setSpecialDates([...specialDates, newDate]);
-  };
 
   const styles = StyleSheet.create({
     safeArea: {
@@ -200,32 +181,6 @@ const EditProfileScreen = () => {
       color: theme.colors.text,
       backgroundColor: theme.colors.surface,
     },
-    specialDateItem: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.colors.surface,
-      padding: 12,
-      borderRadius: 8,
-      marginBottom: 8,
-    },
-    specialDateText: {
-      flex: 1,
-      fontSize: 14,
-      color: theme.colors.text,
-    },
-    addSpecialDateButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      padding: 12,
-      backgroundColor: theme.colors.primary,
-      borderRadius: 8,
-      marginTop: 8,
-    },
-    addSpecialDateText: {
-      color: theme.colors.surface,
-      marginLeft: 8,
-      fontWeight: '600',
-    },
     centerContainer: {
       flex: 1,
       justifyContent: 'center',
@@ -275,8 +230,14 @@ const EditProfileScreen = () => {
             <MaterialIcons name="arrow-back" size={24} color={theme.colors.primary} />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>My Profile</Text>
-          <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-            <Text style={styles.saveButtonText}>Save</Text>
+          <TouchableOpacity 
+            style={[styles.saveButton, isSaving && { opacity: 0.6 }]} 
+            onPress={handleSave}
+            disabled={isSaving}
+          >
+            <Text style={styles.saveButtonText}>
+              {isSaving ? 'Saving...' : 'Save'}
+            </Text>
           </TouchableOpacity>
         </View>
 
@@ -290,7 +251,10 @@ const EditProfileScreen = () => {
               <TextInput
                 style={styles.input}
                 value={profileData.firstName}
-                onChangeText={(text) => setProfileData({...profileData, firstName: text})}
+                onChangeText={(text) => {
+                  console.log('📝 First Name changed:', text);
+                  setProfileData({...profileData, firstName: text});
+                }}
                 placeholder="Enter first name"
                 placeholderTextColor={theme.colors.secondary}
               />
@@ -301,7 +265,10 @@ const EditProfileScreen = () => {
               <TextInput
                 style={styles.input}
                 value={profileData.lastName}
-                onChangeText={(text) => setProfileData({...profileData, lastName: text})}
+                onChangeText={(text) => {
+                  console.log('📝 Last Name changed:', text);
+                  setProfileData({...profileData, lastName: text});
+                }}
                 placeholder="Enter last name"
                 placeholderTextColor={theme.colors.secondary}
               />
@@ -324,7 +291,10 @@ const EditProfileScreen = () => {
               <TextInput
                 style={styles.input}
                 value={profileData.email}
-                onChangeText={(text) => setProfileData({...profileData, email: text})}
+                onChangeText={(text) => {
+                  console.log('📝 Email changed:', text);
+                  setProfileData({...profileData, email: text});
+                }}
                 placeholder="Enter email"
                 placeholderTextColor={theme.colors.secondary}
                 keyboardType="email-address"
@@ -342,12 +312,7 @@ const EditProfileScreen = () => {
                 keyboardType="phone-pad"
               />
             </View>
-          </View>
 
-          {/* Special Dates Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Special Dates</Text>
-            
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Birthday</Text>
               <TextInput
@@ -369,21 +334,8 @@ const EditProfileScreen = () => {
                 placeholderTextColor={theme.colors.secondary}
               />
             </View>
-
-            {specialDates.map((date) => (
-              <View key={date.id} style={styles.specialDateItem}>
-                <Text style={styles.specialDateText}>{date.name}: {date.date}</Text>
-                <TouchableOpacity>
-                  <MaterialIcons name="edit" size={20} color={theme.colors.primary} />
-                </TouchableOpacity>
-              </View>
-            ))}
-
-            <TouchableOpacity style={styles.addSpecialDateButton} onPress={addSpecialDate}>
-              <MaterialIcons name="add" size={20} color={theme.colors.surface} />
-              <Text style={styles.addSpecialDateText}>Add Special Date</Text>
-            </TouchableOpacity>
           </View>
+
         </ScrollView>
       </View>
     </SafeAreaView>

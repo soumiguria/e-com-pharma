@@ -1,12 +1,12 @@
 // screens/CartScreen.tsx
-import React, { useState } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Platform } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, Alert } from 'react-native';
 import { Text, Button, Card, useTheme } from 'react-native-paper';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import ProductCard from '../../components/product/ProductCard';
 import { ScrollView as RNScrollView } from 'react-native';
 import { Appbar } from 'react-native-paper';
@@ -19,6 +19,8 @@ const CartScreen = () => {
   const { isAuthenticated } = useAuth();
   const theme = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute();
+  
   
   // Separate totals
   const hasGroceryItems = groceryItems.length > 0;
@@ -73,12 +75,14 @@ const CartScreen = () => {
   );
 
   const renderCartSection = (items: any[], title: string, total: number, addToCart: (item: any) => void) => {
-    if (items.length === 0) return null;
+    // Only show items with quantity > 0
+    const activeItems = items.filter(item => item.quantity > 0);
+    if (activeItems.length === 0) return null;
 
     return (
       <View style={styles.cartSection}>
         <Text style={styles.sectionTitle}>{title}</Text>
-        {items.map((item) => (
+        {activeItems.map((item) => (
           <Card key={item.id} style={styles.cartItem}>
             <Card.Content>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -154,7 +158,8 @@ const CartScreen = () => {
             </Text>
           </View>
           
-          <View style={styles.recommendationsContainer}>
+          {/* Recommended for You section - HIDDEN */}
+          {/* <View style={styles.recommendationsContainer}>
             <Text style={[styles.recommendationsTitle, { color: theme.colors.onSurface }]}>
               Recommended for you
             </Text>
@@ -193,7 +198,7 @@ const CartScreen = () => {
                 </View>
               ))}
             </ScrollView>
-          </View>
+          </View> */}
           
           <Button
             mode="contained"
@@ -261,8 +266,9 @@ const CartScreen = () => {
             ))}
           </ScrollView>
           
-          {hasGroceryItems && renderRecommendations(groceryRecommendations, 'You Might Also Like', addToGroceryCart)}
-          {hasPharmacyItems && renderRecommendations(pharmacyRecommendations, 'Recommended Medicines', addToPharmacyCart)}
+          {/* Recommendation sections - HIDDEN */}
+          {/* {hasGroceryItems && renderRecommendations(groceryRecommendations, 'You Might Also Like', addToGroceryCart)}
+          {hasPharmacyItems && renderRecommendations(pharmacyRecommendations, 'Recommended Medicines', addToPharmacyCart)} */}
           
           <View style={styles.totalContainer}>
             <Text style={styles.totalText}>Total: ₹{formatAmount(totalAmount)}</Text>
@@ -271,7 +277,7 @@ const CartScreen = () => {
               onPress={handleCheckout}
               disabled={allItems.length === 0}
             >
-              {isAuthenticated ? 'Place Order' : 'Proceed to Checkout'}
+              {isAuthenticated ? 'Process to Checkout' : 'Proceed to Checkout'}
             </Button>
           </View>
         </>

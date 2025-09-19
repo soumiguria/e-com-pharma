@@ -33,6 +33,7 @@ import LocationPickerScreen from '../screens/location/LocationPickerScreen';
 import MyWishlistScreen from '../screens/profile/MyWishlistScreen';
 import AboutStoreScreen from '../screens/store/AboutStoreScreen';
 import ContactStoreScreen from '../screens/store/ContactStoreScreen';
+import SettingsScreen from '../screens/profile/SettingsScreen';
 import GroceryHomeScreen from '../screens/home/GroceryHomeScreen';
 import PharmacyHomeScreen from '../screens/home/PharmacyHomeScreen';
 import SearchScreen from '../screens/search/SearchScreen';
@@ -89,7 +90,7 @@ const AppNavigator = () => {
       <Stack.Screen name="PharmacyHome" component={PharmacyHomeScreen} />
       <Stack.Screen name="LocateStore" component={AboutStoreScreen} />
       <Stack.Screen name="AboutPassKiDukaan" component={AboutStoreScreen} />
-      <Stack.Screen name="Settings" component={AboutStoreScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="Notifications" component={AboutStoreScreen} />
       <Stack.Screen name="SearchScreen" component={SearchScreen} />
       <Stack.Screen name="SavedProducts" component={SavedProductsScreen} />

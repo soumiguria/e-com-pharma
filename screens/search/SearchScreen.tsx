@@ -301,8 +301,8 @@ const SearchScreen = () => {
 
           <View style={styles.divider} />
 
-          {/* Saved Products */}
-          <View style={styles.section}>
+          {/* Saved Products - HIDDEN (requires API) */}
+          {/* <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Your Saved Products</Text>
               <TouchableOpacity onPress={() => navigation.navigate('SavedProducts' as any)}>
@@ -321,10 +321,10 @@ const SearchScreen = () => {
             </View>
           </View>
 
-          <View style={styles.divider} />
+          <View style={styles.divider} /> */}
 
-          {/* Under ₹99 */}
-          <View style={styles.section}>
+          {/* Under ₹99 - HIDDEN (requires API) */}
+          {/* <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Under ₹99</Text>
               <TouchableOpacity onPress={() => navigation.navigate('Under99Products' as any)}>
@@ -343,10 +343,10 @@ const SearchScreen = () => {
             </View>
           </View>
 
-          <View style={styles.divider} />
+          <View style={styles.divider} /> */}
 
-          {/* Under ₹199 */}
-          <View style={styles.section}>
+          {/* Under ₹199 - HIDDEN (requires API) */}
+          {/* <View style={styles.section}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Under ₹199</Text>
               <TouchableOpacity onPress={() => navigation.navigate('Under199Products' as any)}>
@@ -363,7 +363,7 @@ const SearchScreen = () => {
                 </View>
               ))}
             </View>
-          </View>
+          </View> */}
         </ScrollView>
       </View>
     </SafeAreaView>

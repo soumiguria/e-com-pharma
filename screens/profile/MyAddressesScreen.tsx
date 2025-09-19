@@ -131,7 +131,7 @@ const MyAddressesScreen = React.memo(() => {
   }, []);
 
   const handleAddAddress = useCallback(() => {
-    navigation.navigate('LocationPicker');
+    navigation.navigate('LocationPicker', { forAddress: true });
   }, [navigation]);
 
   const handleDeleteAddress = useCallback(async (addressId: string) => {
@@ -192,6 +192,13 @@ const MyAddressesScreen = React.memo(() => {
     }
   }, [fromPaymentMethods, navigation, handleSetDefaultAddress]);
 
+  // Sort addresses: default first, then others
+  const sortedAddresses = [...addresses].sort((a, b) => {
+    if (a.isDefault && !b.isDefault) return -1;
+    if (!a.isDefault && b.isDefault) return 1;
+    return 0;
+  });
+
   const renderAddressItem = useCallback(({ item }: { item: Address }) => (
     <View style={styles.addressItem}>
       <View style={styles.addressHeader}>
@@ -234,30 +241,30 @@ const MyAddressesScreen = React.memo(() => {
         </View>
       </View>
       
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
-        <TouchableOpacity 
-          onPress={() => handleSelectAddress(item)} 
-          style={{ marginRight: 12 }}
-        >
-          <MaterialIcons 
-            name={defaultAddressId === item.customerAddressId ? 'radio-button-checked' : 'radio-button-unchecked'} 
-            size={22} 
-            color={theme.colors.primary} 
-          />
-        </TouchableOpacity>
-        <Text style={{ 
-          color: theme.colors.primary, 
-          fontWeight: 'bold', 
-          marginRight: 16 
-        }}>
-          {fromPaymentMethods 
-            ? (defaultAddressId === item.customerAddressId ? 'Default' : 'Select this address')
-            : (defaultAddressId === item.customerAddressId ? 'Default' : 'Set as default')
-          }
-        </Text>
-      </View>
+      {fromPaymentMethods && (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8 }}>
+          <TouchableOpacity 
+            onPress={() => handleSelectAddress(item)} 
+            style={{ marginRight: 12 }}
+          >
+            <MaterialIcons 
+              name={defaultAddressId === item.customerAddressId ? 'radio-button-checked' : 'radio-button-unchecked'} 
+              size={22} 
+              color={theme.colors.primary} 
+            />
+          </TouchableOpacity>
+          <Text style={{ 
+            color: theme.colors.primary, 
+            fontWeight: 'bold', 
+            marginRight: 16 
+          }}>
+            {defaultAddressId === item.customerAddressId ? 'Default' : 'Select this address'}
+          </Text>
+        </View>
+      )}
     </View>
   ), [getTypeColor, getTypeIcon, theme.colors.surface, theme.colors.error, theme.colors.primary, handleDeleteAddress, handleSetDefaultAddress, defaultAddressId, navigation]);
+
 
   const styles = StyleSheet.create({
     safeArea: {
@@ -449,7 +456,7 @@ const MyAddressesScreen = React.memo(() => {
             </View>
           ) : (
             <FlatList
-              data={addresses}
+              data={sortedAddresses}
               keyExtractor={(item) => item._id || item.label}
               renderItem={renderAddressItem}
               showsVerticalScrollIndicator={false}

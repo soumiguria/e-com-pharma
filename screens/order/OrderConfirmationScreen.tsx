@@ -30,12 +30,23 @@ const OrderConfirmationScreen = () => {
   const logoOpacity = useRef(new Animated.Value(0)).current;
 
   // Get order details from route params or use defaults
-  const { paymentData, orderId: routeOrderId, amount: routeAmount } = route.params || {};
+  const { paymentData, orderId: routeOrderId, amount: routeAmount, orderData: routeOrderData } = route.params || {};
   const orderId = routeOrderId || `ORD${Date.now().toString().slice(-8)}`;
   const totalAmount = routeAmount || 460;
 
-  // Mock order details
-  const orderDetails = {
+  // Use real order data if available, otherwise fallback to mock data
+  const orderDetails = routeOrderData ? {
+    orderId,
+    totalAmount: routeOrderData.grandTotal || totalAmount,
+    items: routeOrderData.items || [],
+    shippingAddress: routeOrderData.shippingAddress || 'Address not available',
+    deliveryMethod: routeOrderData.deliveryMethod || 'Home Delivery',
+    deliveryFee: routeOrderData.deliveryFee || 0,
+    discount: routeOrderData.discount || 0,
+    itemTotal: routeOrderData.itemTotal || 0,
+    paymentData: paymentData,
+  } : {
+    // Fallback mock data
     orderId,
     totalAmount,
     items: [
@@ -45,9 +56,15 @@ const OrderConfirmationScreen = () => {
     ],
     shippingAddress: '123 Main Street, Apartment 4B, New Delhi, Delhi 110001',
     deliveryMethod: 'Home Delivery',
-    estimatedDelivery: '2-3 days',
+    deliveryFee: 30,
+    discount: 0,
+    itemTotal: 230,
     paymentData: paymentData,
   };
+
+  // Debug logging
+  console.log('🎉 OrderConfirmation route params:', { paymentData, routeOrderId, routeAmount, routeOrderData });
+  console.log('🎉 OrderConfirmation orderDetails:', orderDetails);
 
   useEffect(() => {
     // Clear cart on successful order
@@ -371,40 +388,77 @@ const OrderConfirmationScreen = () => {
         {/* Bill Details Section */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Bill Details</Text>
+          
+          {/* Item Total */}
+          <View style={styles.billRow}>
+            <Text style={styles.billLabel}>Item Total</Text>
+            <Text style={styles.billValue}>₹{orderDetails.itemTotal.toFixed(2)}</Text>
+          </View>
+          
+          {/* Individual Items */}
           {orderDetails.items.map((item, index) => (
-            <View key={index} style={styles.billRow}>
-              <Text style={styles.billLabel}>
+            <View key={index} style={[styles.billRow, { marginLeft: 16, marginBottom: 4 }]}>
+              <Text style={[styles.billLabel, { fontSize: 14, color: theme.colors.secondary }]}>
                 {item.name} x{item.quantity}
               </Text>
-              <Text style={styles.billValue}>₹{item.price}</Text>
+              <Text style={[styles.billValue, { fontSize: 14 }]}>
+                ₹{(item.price * item.quantity).toFixed(2)}
+              </Text>
             </View>
           ))}
-          <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Delivery Charges</Text>
-            <Text style={styles.billValue}>₹30</Text>
-          </View>
+          
+          {/* Delivery Charges */}
+          {orderDetails.deliveryFee > 0 && (
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Delivery Charges</Text>
+              <Text style={styles.billValue}>₹{orderDetails.deliveryFee.toFixed(2)}</Text>
+            </View>
+          )}
+          
+          {/* Discount */}
+          {orderDetails.discount > 0 && (
+            <View style={styles.billRow}>
+              <Text style={styles.billLabel}>Discount</Text>
+              <Text style={[styles.billValue, { color: theme.colors.success }]}>
+                -₹{orderDetails.discount.toFixed(2)}
+              </Text>
+            </View>
+          )}
+          
           <View style={styles.totalRow}>
             <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalValue}>₹{orderDetails.totalAmount}</Text>
+            <Text style={styles.totalValue}>₹{orderDetails.totalAmount.toFixed(2)}</Text>
           </View>
         </View>
 
         <View style={styles.divider} />
 
-        {/* Delivery Address Section */}
+        {/* Delivery Information Section */}
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Delivery Address</Text>
-          <View style={styles.addressSection}>
-            <Text style={styles.addressText}>{orderDetails.shippingAddress}</Text>
-          </View>
+          <Text style={styles.sectionTitle}>
+            {orderDetails.deliveryMethod === 'Store Pickup' ? 'Pickup Information' : 'Delivery Information'}
+          </Text>
+          
           <View style={styles.billRow}>
             <Text style={styles.billLabel}>Delivery Method</Text>
             <Text style={styles.billValue}>{orderDetails.deliveryMethod}</Text>
           </View>
-          <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Estimated Delivery</Text>
-            <Text style={styles.billValue}>{orderDetails.estimatedDelivery}</Text>
-          </View>
+          
+          {orderDetails.deliveryMethod === 'Store Pickup' ? (
+            <View style={styles.addressSection}>
+              <Text style={styles.addressLabel}>Store Pickup</Text>
+              <Text style={styles.addressText}>
+                Please visit the store to collect your order. Order ID: {orderDetails.orderId}
+              </Text>
+            </View>
+          ) : (
+            <View style={styles.addressSection}>
+              <Text style={styles.addressLabel}>Delivery Address</Text>
+              <Text style={styles.addressText}>
+                {orderDetails.shippingAddress || 'Address not available'}
+              </Text>
+            </View>
+          )}
         </View>
 
         <View style={styles.divider} />

@@ -11,7 +11,6 @@ export interface PlaceOrderRequest {
   billingSameAsShipping?: boolean;
   billingAddress?: any;
   storeDiscount?: number;
-  couponDiscount?: number;
   shippingAmount?: number;
   taxAmount?: number;
   subtotalAmount?: number;
@@ -161,7 +160,6 @@ class OrderService {
           billingAddress: orderData.billingAddress,
           billingSameAsShipping: orderData.billingSameAsShipping,
           storeDiscount: orderData.storeDiscount ?? 0,
-          couponDiscount: orderData.couponDiscount ?? 0,
           shippingAmount: orderData.shippingAmount ?? 0,
           taxAmount: orderData.taxAmount ?? 0,
           subtotalAmount: orderData.subtotalAmount ?? 0,
@@ -283,8 +281,8 @@ class OrderService {
           customerId: '3',
           paymentId: '22',
           deliveryMethod: orderData.deliveryMethod,
-          shippingAddress: orderData.deliveryMethod === 'home_delivery' ? (orderData.shippingAddress || {}) : {},
-          billingAddress: orderData.deliveryMethod === 'home_delivery' ? (orderData.billingAddress || {}) : {},
+          shippingAddress: orderData.deliveryMethod === 'home' ? (orderData.shippingAddress || {}) : {},
+          billingAddress: orderData.deliveryMethod === 'home' ? (orderData.billingAddress || {}) : {},
           products: orderData.products || [],
           storeDiscount: (orderData.storeDiscount ?? 0).toString(),
           couponDiscount: (orderData.couponDiscount ?? 0).toString(),
@@ -296,9 +294,9 @@ class OrderService {
           otp: orderData.deliveryMethod === 'store' ? '000000' : '',
           isOtpVerified: false,
           expressDelivery: orderData.expressDelivery ?? false,
-          timeslotId: orderData.deliveryMethod === 'home_delivery' ? orderData.timeslot : null,
-          timeslotDate: orderData.deliveryMethod === 'home_delivery' ? orderData.timeslot : null,
-          timeslot: orderData.deliveryMethod === 'home_delivery' ? { timeslot: orderData.timeslot } : {},
+          timeslotId: orderData.deliveryMethod === 'home' ? orderData.timeslot : null,
+          timeslotDate: orderData.deliveryMethod === 'home' ? orderData.timeslot : null,
+          timeslot: orderData.deliveryMethod === 'home' ? { timeslot: orderData.timeslot } : {},
           status: 'created',
           activities: [],
           createdAt: new Date().toISOString(),

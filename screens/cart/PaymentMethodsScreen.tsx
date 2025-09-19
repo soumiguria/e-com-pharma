@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react'; 
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ThemedButton from '../../components/ui/ThemedButton';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useCart } from '../../contexts/CartContext';
@@ -29,14 +29,27 @@ const PaymentMethodsScreen = () => {
   const { theme } = useTheme();
   const { isAuthenticated, user } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const route = useRoute();
   const { clearCart, groceryItems, pharmacyItems, groceryTotal, pharmacyTotal } = useCart();
+  
+  // Check if this is a reorder
+  const reorderItems = (route.params as any)?.reorderItems;
+  const reorderTotal = (route.params as any)?.reorderTotal;
+  const isReorder = (route.params as any)?.isReorder;
+  
+  // Debug reorder data
+  console.log('🔄 PaymentMethods reorder check:', { isReorder, reorderItems, reorderTotal });
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDeliveryMethod, setSelectedDeliveryMethod] = React.useState('1');
   const [selectedPaymentMethod, setSelectedPaymentMethod] = React.useState('offline');
 
-  // Determine cart type based on items
-  const hasPharmacyItems = pharmacyItems.length > 0;
+  // Determine cart type and totals based on reorder or regular cart
+  const hasPharmacyItems = pharmacyItems.filter(item => item.quantity > 0).length > 0;
   const cartType = hasPharmacyItems ? 'pharma' : 'grocery';
+  
+  // Use reorder totals if this is a reorder, otherwise use cart totals
+  const currentItemTotal = isReorder ? (reorderItems?.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0) || 0) : (groceryTotal + pharmacyTotal);
+  const currentGrandTotal = isReorder ? (reorderTotal || 0) : (groceryTotal + pharmacyTotal);
 
   // Payment processing state
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -122,18 +135,14 @@ const PaymentMethodsScreen = () => {
     }
   };
 
-  // Calculate bill details dynamically
-  const subtotal = groceryTotal + pharmacyTotal;
-  const productDiscount = Math.round(subtotal * 0.1); // 10% discount
+  // Calculate bill details dynamically - use reorder totals if reordering
+  const subtotal = isReorder ? currentItemTotal : (groceryTotal + pharmacyTotal);
   const shipping = 0; // No shipping fee for now
-  const couponDiscount = 20; // Fixed coupon discount
-  const total = subtotal - productDiscount + shipping - couponDiscount;
+  const total = isReorder ? currentGrandTotal : (subtotal + shipping);
 
   const billDetails = {
     mrp: subtotal,
-    productDiscount,
     shipping,
-    couponDiscount,
     total: Math.max(0, total), // Ensure total is not negative
   };
 
@@ -165,8 +174,17 @@ const PaymentMethodsScreen = () => {
       
       // Prepare order data based on delivery method
       const isStoreDelivery = selectedDeliveryMethod === '1';
+      const productsToOrder = isReorder ? reorderItems : getCartItems();
+      
+      console.log('🔄 Order data being sent:', {
+        isReorder,
+        productsToOrder,
+        deliveryMethod: isStoreDelivery ? 'store' : 'home',
+        paymentMethod: 'offline'
+      });
+      
       const orderData: PlaceOrderRequest = {
-        products: getCartItems(),
+        products: productsToOrder,
         deliveryMethod: isStoreDelivery ? 'store' : 'home',
         paymentMethod: 'offline' as const,
         // Only include address and billing details for home delivery
@@ -174,8 +192,6 @@ const PaymentMethodsScreen = () => {
           shippingAddress: selectedAddress || getShippingAddress(),
           billingSameAsShipping: true,
           billingAddress: getAddressString(selectedAddress), // Convert to string format
-          storeDiscount: billDetails.productDiscount,
-          couponDiscount: billDetails.couponDiscount,
           shippingAmount: billDetails.shipping,
           taxAmount: 0,
           subtotalAmount: billDetails.mrp,
@@ -193,10 +209,27 @@ const PaymentMethodsScreen = () => {
         // Clear cart
         await clearCart();
         
+        // Prepare order data for confirmation screen
+        const confirmationOrderData = {
+          items: productsToOrder.map((item: any) => ({
+            id: item.productId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+          })),
+          itemTotal: billDetails.mrp,
+          deliveryFee: billDetails.shipping,
+          discount: 0, // No discount for now
+          grandTotal: billDetails.total,
+          deliveryMethod: isStoreDelivery ? 'Store Pickup' : 'Home Delivery',
+          shippingAddress: isStoreDelivery ? undefined : getAddressString(selectedAddress),
+        };
+
         // Navigate to order confirmation
         navigation.navigate('OrderConfirmation', {
           orderId: response.data.orderId.toString(),
           amount: billDetails.total,
+          orderData: confirmationOrderData,
         });
       } else {
         throw new Error(response.error || 'Failed to place order');
@@ -225,7 +258,7 @@ const PaymentMethodsScreen = () => {
         amount: totalAmount,
         currency: 'INR',
         name: 'E-Commerce App',
-        description: `${cartType === 'pharma' ? 'Pharmacy' : 'Grocery'} Order`,
+        description: `${isReorder ? 'Reorder' : (cartType === 'pharma' ? 'Pharmacy' : 'Grocery')} Order`,
         prefill: {
           name: user ? `${user.firstName} ${user.lastName}` : 'User Name',
           email: user?.email || 'user@example.com',
@@ -234,6 +267,8 @@ const PaymentMethodsScreen = () => {
         orderId: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         cartType: cartType,
         deliveryMethod: selectedDeliveryMethod === '1' ? 'Store Pickup' : 'Home Delivery',
+        isReorder: isReorder,
+        reorderItems: reorderItems,
       });
     } catch (error: any) {
       console.error('❌ Error opening Razorpay checkout:', error);
@@ -265,7 +300,8 @@ const PaymentMethodsScreen = () => {
 
   const getCartItems = () => {
     const items = cartType === 'grocery' ? groceryItems : pharmacyItems;
-    return items.map(item => ({
+    // Only include items with quantity > 0
+    return items.filter(item => item.quantity > 0).map(item => ({
       productId: item.id,
       quantity: item.quantity,
       price: item.price,
@@ -304,7 +340,7 @@ const PaymentMethodsScreen = () => {
   };
 
   const handleAddAddress = () => {
-    navigation.navigate('AddAddress' as any);
+    navigation.navigate('LocationPicker' as any, { forAddress: true });
   };
 
   const styles = StyleSheet.create({
@@ -604,9 +640,7 @@ const PaymentMethodsScreen = () => {
         {/* Bill Details */}
         <Text style={styles.sectionTitle}>Bill Details</Text>
         <View style={styles.billRow}><Text>MRP Total</Text><Text>₹{billDetails.mrp}</Text></View>
-        <View style={styles.billRow}><Text>Product Discount</Text><Text>-₹{billDetails.productDiscount}</Text></View>
         <View style={styles.billRow}><Text>Shipping</Text><Text>₹{billDetails.shipping}</Text></View>
-        <View style={styles.billRow}><Text>Coupon Discount</Text><Text>-₹{billDetails.couponDiscount}</Text></View>
         <View style={[styles.billRow, { borderTopWidth: 1, borderTopColor: theme.colors.surface, marginTop: 8, paddingTop: 8 }]}>
           <Text style={{ fontWeight: 'bold' }}>Total</Text>
           <Text style={{ fontWeight: 'bold' }}>₹{billDetails.total}</Text>
@@ -614,7 +648,11 @@ const PaymentMethodsScreen = () => {
 
 
         {/* Place Order Button */}
-        <ThemedButton title="Place Order" onPress={handlePlaceOrder} style={{ marginTop: 24 }} />
+        <ThemedButton 
+          title={isReorder ? "Reorder Items" : "Place Order"} 
+          onPress={handlePlaceOrder} 
+          style={{ marginTop: 24 }} 
+        />
               </ScrollView>
       </SafeAreaView>
 
@@ -650,8 +688,18 @@ const PaymentMethodsScreen = () => {
                   onPress={() => {
                     setShowPaymentModal(false);
                     if (paymentSuccess) {
+                      // For pending orders, we don't have full order data, so use minimal data
                       navigation.navigate('OrderConfirmation' as any, {
                         amount: pendingOrderAmount,
+                        orderData: {
+                          items: [],
+                          itemTotal: pendingOrderAmount,
+                          deliveryFee: 0,
+                          discount: 0,
+                          grandTotal: pendingOrderAmount,
+                          deliveryMethod: 'Payment Pending',
+                          shippingAddress: 'Address not available',
+                        },
                       });
                     }
                   }}

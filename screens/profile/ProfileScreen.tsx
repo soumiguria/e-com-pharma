@@ -7,7 +7,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
 import { StackNavigationProp } from '@react-navigation/stack';
-import ThemeToggle from '../../components/ui/ThemeToggle';
 import { useCallback } from 'react';
 
 type ProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Profile'>;
@@ -73,59 +72,8 @@ const ProfileScreen = () => {
       screen: 'EditProfile' as keyof RootStackParamList,
       description: 'Update your personal information'
     },
-    { 
-      id: '2', 
-      name: 'My Addresses', 
-      icon: 'location-outline' as const, 
-      screen: 'MyAddresses' as keyof RootStackParamList,
-      description: 'Manage your delivery addresses'
-    },
-    { 
-      id: '3', 
-      name: 'My Orders', 
-      icon: 'receipt-outline' as const, 
-      screen: 'Orders' as keyof RootStackParamList,
-      description: 'View your order history'
-    },
-    { 
-      id: '4', 
-      name: 'My Wishlist', 
-      icon: 'heart-outline' as const, 
-      screen: 'MyWishlist' as keyof RootStackParamList,
-      description: 'Your saved items'
-    },
-    { 
-      id: '5', 
-      name: 'Recently Bought', 
-      icon: 'time-outline' as const, 
-      screen: 'RecentlyBought' as keyof RootStackParamList,
-      description: 'Your recent purchases'
-    },
-    { 
-      id: '6', 
-      name: 'Saved Products', 
-      icon: 'bookmark-outline' as const, 
-      screen: 'SavedProducts' as keyof RootStackParamList,
-      description: 'Your saved products'
-    },
   ];
 
-  const settingsOptions = [
-    { 
-      id: '7', 
-      name: 'Payment Methods', 
-      icon: 'card-outline' as const, 
-      screen: 'PaymentMethods' as keyof RootStackParamList,
-      description: 'Manage payment options'
-    },
-    { 
-      id: '8', 
-      name: 'Help Center', 
-      icon: 'help-circle-outline' as const, 
-      screen: 'HelpCenter' as keyof RootStackParamList,
-      description: 'Get help and support'
-    },
-  ];
 
   const handleOptionPress = (screen: keyof RootStackParamList) => {
     navigation.navigate(screen as any);
@@ -201,36 +149,7 @@ const ProfileScreen = () => {
           ))}
         </View>
 
-        {/* Settings Options */}
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Settings</Text>
-          {settingsOptions.map((option) => (
-        <TouchableOpacity 
-          key={option.id} 
-              style={[styles.optionItem, { backgroundColor: theme.colors.surface }]}
-          onPress={() => handleOptionPress(option.screen)}
-        >
-          <Ionicons name={option.icon} size={24} color={theme.colors.primary} />
-              <View style={styles.optionContent}>
-                <Text style={[styles.optionText, { color: theme.colors.text }]}>{option.name}</Text>
-                <Text style={[styles.optionDescription, { color: theme.colors.secondary }]}>{option.description}</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color={theme.colors.secondary} />
-        </TouchableOpacity>
-      ))}
-        </View>
 
-        {/* Theme Toggle */}
-        <View style={[styles.themeSection, { backgroundColor: theme.colors.surface }]}>
-          <View style={styles.themeContent}>
-            <Ionicons name="moon-outline" size={24} color={theme.colors.primary} />
-            <View style={styles.themeTextContainer}>
-              <Text style={[styles.themeText, { color: theme.colors.text }]}>Dark Mode</Text>
-              <Text style={[styles.themeDescription, { color: theme.colors.secondary }]}>Toggle app theme</Text>
-            </View>
-          </View>
-        <ThemeToggle />
-      </View>
 
         {/* Logout Button */}
         <TouchableOpacity 
@@ -352,30 +271,6 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   optionDescription: {
-    fontSize: 12,
-  },
-  themeSection: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    marginHorizontal: 16,
-    marginBottom: 24,
-    borderRadius: 12,
-  },
-  themeContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  themeTextContainer: {
-    marginLeft: 16,
-  },
-  themeText: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 2,
-  },
-  themeDescription: {
     fontSize: 12,
   },
   logoutButton: {

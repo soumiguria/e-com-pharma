@@ -55,9 +55,16 @@ const SplashScreen = () => {
       try {
         if (!isLoading) {
           if (isAuthenticated) {
-            // User is logged in, navigate to main tabs only; Home will adopt lastVisitedStore
-            console.log('🔄 User is authenticated, navigating to main tabs');
-            navigation.replace('Main', undefined as any);
+            // User is logged in, check if they have a last visited store
+            if (lastVisitedStore) {
+              // User has a saved store, navigate directly to main tabs
+              console.log('🔄 User is authenticated with saved store, navigating to main tabs');
+              navigation.replace('Main', undefined as any);
+            } else {
+              // User is logged in but no saved store, navigate to pincode
+              console.log('🔄 User is authenticated but no saved store, navigating to pincode');
+              navigation.replace('Pincode');
+            }
           } else {
             // User is not logged in, navigate to pincode screen
             navigation.replace('Pincode');
@@ -71,7 +78,7 @@ const SplashScreen = () => {
     }, 2500); // Slightly longer to allow animations to complete
     
     return () => clearTimeout(timer);
-  }, [navigation, isAuthenticated, isLoading]);
+  }, [navigation, isAuthenticated, isLoading, lastVisitedStore]);
 
   const rotateInterpolate = rotateValue.interpolate({
     inputRange: [0, 1],

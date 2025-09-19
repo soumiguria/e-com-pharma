@@ -6,7 +6,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import ThemeToggle from '../ui/ThemeToggle';
 import { useCallback } from 'react';
 
 interface DrawerProps {
@@ -89,7 +88,7 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
 
   const handleMyProfilePress = () => {
     onClose();
-    navigation.navigate('Profile' as any);
+    navigation.navigate('EditProfile' as any);
   };
 
   const handleMyWishlistPress = () => {
@@ -109,7 +108,8 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
 
   const handleLocateStorePress = () => {
     onClose();
-    navigation.navigate('LocateStore' as any);
+    // navigation.navigate('LocateStore' as any);
+    console.log('Locate store pressed');
   };
 
   const handleShareAppPress = () => {
@@ -120,7 +120,13 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
 
   const handleAboutPassKiDukaanPress = () => {
     onClose();
-    navigation.navigate('AboutPassKiDukaan' as any);
+    // navigation.navigate('AboutPassKiDukaan' as any);
+    console.log('About Pass ki Dukaan pressed');
+  };
+
+  const handleChangeStorePress = () => {
+    onClose();
+    navigation.navigate('Pincode');
   };
 
   const handleSettingsPress = () => {
@@ -130,8 +136,9 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
 
   const handleNotificationsPress = () => {
     onClose();
-    navigation.navigate('Notifications' as any);
-  };
+    // navigation.navigate('Notifications' as any);
+
+    console.log('Notifications pressed');};
 
   const handleLogoutPress = async () => {
     onClose();
@@ -167,6 +174,7 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
     {
       key: 'settings',
       items: [
+        { icon: 'store', label: 'Change Store', onPress: handleChangeStorePress },
         { icon: 'cog', label: 'Settings', onPress: handleSettingsPress },
         { icon: 'bell', label: 'Notifications', onPress: handleNotificationsPress },
         { icon: 'logout', label: 'Logout', onPress: handleLogoutPress },
@@ -251,7 +259,10 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
 
       {/* User Profile Section for authenticated users */}
       {isAuthenticated && user && (
-        <View style={[styles.userProfileSection, { backgroundColor: theme.colors.surface }]}>
+        <TouchableOpacity 
+          style={[styles.userProfileSection, { backgroundColor: theme.colors.surface }]}
+          onPress={handleMyProfilePress}
+        >
           <View style={styles.userInfo}>
             <View style={[styles.avatar, { backgroundColor: theme.colors.primary }]}>
               <Text style={styles.avatarText}>
@@ -270,17 +281,12 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
               </Text>
             </View>
           </View>
-        </View>
+        </TouchableOpacity>
       )}
 
       <ScrollView style={styles.menuContainer} showsVerticalScrollIndicator={false}>
         {menuSections.map(renderMenuSection)}
       </ScrollView>
-
-      <View style={[styles.themeToggleBottomContainer, { backgroundColor: theme.colors.surface, borderTopColor: theme.colors.border }]}> 
-        <Text style={[styles.themeLabel, { color: theme.colors.text }]}>Theme</Text>
-        <ThemeToggle />
-      </View>
     </Animated.View>
   );
 };

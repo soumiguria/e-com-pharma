@@ -82,58 +82,83 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
   }, [groceryItems, pharmacyItems]);
 
   const addToGroceryCart = (product: Omit<CartItem, 'quantity' | 'category'>) => {
+    console.log('🛒 addToGroceryCart called:', product);
     setGroceryItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id);
       if (existingItem) {
+        console.log('🛒 Existing item found, incrementing quantity:', existingItem);
         return prevItems.map(item =>
           item.id === product.id 
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
+      console.log('🛒 New item, adding to cart:', { ...product, quantity: 1, category: 'grocery' });
       return [...prevItems, { ...product, quantity: 1, category: 'grocery' }];
     });
   };
 
   const addToPharmacyCart = (product: Omit<CartItem, 'quantity' | 'category'>) => {
+    console.log('🛒 addToPharmacyCart called:', product);
     setPharmacyItems(prevItems => {
       const existingItem = prevItems.find(item => item.id === product.id);
       if (existingItem) {
+        console.log('🛒 Existing item found, incrementing quantity:', existingItem);
         return prevItems.map(item =>
           item.id === product.id 
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
+      console.log('🛒 New item, adding to cart:', { ...product, quantity: 1, category: 'pharma' });
       return [...prevItems, { ...product, quantity: 1, category: 'pharma' }];
     });
   };
 
   const removeFromCart = (productId: string, category: 'grocery' | 'pharma') => {
+    console.log('🛒 removeFromCart called:', { productId, category });
     if (category === 'grocery') {
-      setGroceryItems(prevItems => prevItems.filter(item => item.id !== productId));
+      setGroceryItems(prevItems => {
+        console.log('🛒 Removing from grocery, prev items:', prevItems.length);
+        const filtered = prevItems.filter(item => item.id !== productId);
+        console.log('🛒 After removal, items:', filtered.length);
+        return filtered;
+      });
     } else {
-      setPharmacyItems(prevItems => prevItems.filter(item => item.id !== productId));
+      setPharmacyItems(prevItems => {
+        console.log('🛒 Removing from pharmacy, prev items:', prevItems.length);
+        const filtered = prevItems.filter(item => item.id !== productId);
+        console.log('🛒 After removal, items:', filtered.length);
+        return filtered;
+      });
     }
   };
 
   const updateQuantity = (productId: string, newQuantity: number, category: 'grocery' | 'pharma') => {
-    if (newQuantity < 1) {
+    console.log('🛒 updateQuantity called:', { productId, newQuantity, category });
+    
+    // Allow quantity to be 0 to keep the item in cart (for form persistence)
+    // Only remove from cart if quantity is negative
+    if (newQuantity < 0) {
+      console.log('🛒 Quantity < 0, removing from cart');
       removeFromCart(productId, category);
       return;
     }
+    
     if (category === 'grocery') {
-      setGroceryItems(prevItems =>
-        prevItems.map(item =>
+      setGroceryItems(prevItems => {
+        console.log('🛒 Updating grocery quantity, prev items:', prevItems.length);
+        return prevItems.map(item =>
           item.id === productId ? { ...item, quantity: newQuantity } : item
-        )
-      );
+        );
+      });
     } else {
-      setPharmacyItems(prevItems =>
-        prevItems.map(item =>
+      setPharmacyItems(prevItems => {
+        console.log('🛒 Updating pharmacy quantity, prev items:', prevItems.length);
+        return prevItems.map(item =>
           item.id === productId ? { ...item, quantity: newQuantity } : item
-        )
-      );
+        );
+      });
     }
   };
 
@@ -176,20 +201,20 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
   };
 
   const groceryTotal = groceryItems.reduce(
-    (total, item) => total + item.price * item.quantity,
+    (total, item) => total + (item.quantity > 0 ? item.price * item.quantity : 0),
     0
   );
 
   const pharmacyTotal = pharmacyItems.reduce(
-    (total, item) => total + item.price * item.quantity,
+    (total, item) => total + (item.quantity > 0 ? item.price * item.quantity : 0),
     0
   );
 
   const totalItems = groceryItems.reduce(
-    (count, item) => count + item.quantity,
+    (count, item) => count + (item.quantity > 0 ? item.quantity : 0),
     0
   ) + pharmacyItems.reduce(
-    (count, item) => count + item.quantity,
+    (count, item) => count + (item.quantity > 0 ? item.quantity : 0),
     0
   );
 

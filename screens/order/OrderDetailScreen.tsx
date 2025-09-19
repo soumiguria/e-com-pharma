@@ -35,16 +35,16 @@ const OrderDetailScreen = () => {
   const orderData = {
     id: order?.orderNo || order?.orderNumber || order?.id || 'N/A',
     items: (order?.orderItems || order?.items || []).map((it: any) => ({
-      id: it.productId || it.id || 'unknown',
-      name: it.name || it.productName || 'Product',
-      price: Number(it.actual ?? it.price ?? it.sp ?? 0),
-      originalPrice: Number(it.mrp ?? 0),
+      id: it.productId || it.product_id || it.id || it._id || `product_${Math.random().toString(36).substr(2, 9)}`,
+      name: it.name || it.productName || it.product_name || 'Product',
+      price: Number(it.actual ?? it.price ?? it.sp ?? it.selling_price ?? 0),
+      originalPrice: Number(it.mrp ?? it.original_price ?? 0),
       quantity: Number(it.quantity ?? 1),
-      image: it.images?.primary || it.signedImages?.primary || 'https://via.placeholder.com/150',
+      image: it.images?.primary || it.signedImages?.primary || it.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
     })),
     itemTotal: Number(order?.subtotalAmount || order?.itemTotal || order?.total || 0),
     deliveryFee: Number(order?.shippingAmount || order?.deliveryFee || 0),
-    discount: Number((order?.storeDiscount || 0) + (order?.couponDiscount || 0) || order?.discount || 0),
+    discount: Number(order?.storeDiscount || order?.discount || 0),
     grandTotal: Number(order?.totalAmount || order?.grandTotal || order?.total || 0),
     paymentMode: order?.payment?.mode === 'online' || order?.paymentMethod === 'online' ? 'Online' : 'Offline',
     orderType: order?.deliveryMethod === 'store' || order?.deliveryMethod === 'store_pickup' ? 'Store Pickup' : 'Home Delivery',
@@ -56,6 +56,8 @@ const OrderDetailScreen = () => {
   // Debug logging
   console.log('📦 Order data for rendering:', JSON.stringify(orderData, null, 2));
   console.log('📦 Raw order object:', JSON.stringify(order, null, 2));
+  console.log('📦 Order items structure:', JSON.stringify(order?.orderItems || order?.items, null, 2));
+  console.log('📦 First item structure:', JSON.stringify((order?.orderItems || order?.items)?.[0], null, 2));
 
   const handleDownloadInvoice = () => {
     Alert.alert('Download Invoice', 'Invoice download started...');
@@ -66,21 +68,55 @@ const OrderDetailScreen = () => {
   };
 
   const handleReorder = () => {
-    Alert.alert('Reorder', 'Adding items to cart...');
+    console.log('🔄 Reordering items:', orderData.items);
+    console.log('🔄 Reorder items structure:', JSON.stringify(orderData.items, null, 2));
+    
+    // Calculate total amount for reorder
+    const itemTotal = orderData.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
+    const totalAmount = itemTotal + (orderData.deliveryFee || 0) - (orderData.discount || 0);
+    
+    console.log('🔄 Reorder totals:', { itemTotal, totalAmount });
+    
+    // Navigate directly to payment methods with reorder items
+    navigation.navigate('PaymentMethods' as any, {
+      reorderItems: orderData.items,
+      reorderTotal: totalAmount,
+      isReorder: true,
+      reorderMessage: 'Reordering your previous order items'
+    });
   };
 
   const handlePayNow = () => {
-    console.log('💳 Pay Now pressed for order:', orderData.id);
+    // Get the correct orderNo - prioritize orderNumber field from OrdersScreen
+    const orderNo = order?.orderNumber || (order as any)?.originalOrderData?.orderNo || orderData.id;
+    
+    console.log('💳 Pay Now pressed for order:', orderNo);
+    console.log('📋 Order object:', order);
+    console.log('🔍 OrderNo sources check:', {
+      'order.orderNumber': order?.orderNumber,
+      'originalData.orderNo': (order as any)?.originalOrderData?.orderNo,
+      'orderData.id': orderData.id,
+      'finalOrderNo': orderNo
+    });
+    console.log('💰 Amount breakdown:', {
+      subtotalAmount: order?.subtotalAmount,
+      storeDiscount: order?.storeDiscount,
+      couponDiscount: order?.couponDiscount,
+      shippingAmount: order?.shippingAmount,
+      taxAmount: order?.taxAmount,
+      totalAmount: order?.totalAmount,
+      grandTotal: orderData.grandTotal
+    });
     
     // Navigate to Razorpay checkout with order details
     navigation.navigate('RazorpayCheckout' as any, {
-      amount: orderData.grandTotal,
+      amount: orderData.grandTotal, // Use calculated grandTotal from backend amounts
       currency: 'INR',
       name: 'Order Payment',
-      description: `Payment for Order ${orderData.id}`,
+      description: `Payment for Order ${orderNo}`,
       cartType: 'pharma', // Default, can be determined from order
       deliveryMethod: orderData.orderType === 'Store Pickup' ? 'Store Pickup' : 'Home Delivery',
-      orderId: orderData.id,
+      orderId: orderNo, // Use the actual orderNo from backend
       isExistingOrder: true,
     });
   };
@@ -191,14 +227,15 @@ const OrderDetailScreen = () => {
     },
     section: {
       backgroundColor: theme.colors.surface,
-      borderRadius: 12,
-      padding: 16,
-      marginBottom: 16,
+      borderRadius: 16,
+      padding: 20,
+      marginBottom: 20,
+      marginHorizontal: 4,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.15,
+      shadowRadius: 8,
+      elevation: 4,
     },
     sectionTitle: {
       fontSize: 18,
@@ -209,13 +246,21 @@ const OrderDetailScreen = () => {
     itemContainer: {
       flexDirection: 'row',
       alignItems: 'center',
-      marginBottom: 12,
+      marginBottom: 16,
+      paddingVertical: 8,
+      paddingHorizontal: 4,
+      backgroundColor: '#f8f9fa',
+      borderRadius: 12,
+      marginHorizontal: 4,
     },
     itemImage: {
-      width: 60,
-      height: 60,
-      borderRadius: 8,
-      marginRight: 12,
+      width: 80,
+      height: 80,
+      borderRadius: 16,
+      marginRight: 16,
+      backgroundColor: '#f8f9fa',
+      borderWidth: 1,
+      borderColor: '#e9ecef',
     },
     itemDetails: {
       flex: 1,
@@ -432,10 +477,27 @@ const OrderDetailScreen = () => {
           {/* Bill Details */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Bill Details</Text>
+            
+            {/* Calculate actual item total from order items */}
             <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Item Bill</Text>
-              <Text style={styles.billValue}>₹{(orderData.itemTotal || 0).toFixed(2)}</Text>
+              <Text style={styles.billLabel}>Item Total</Text>
+              <Text style={styles.billValue}>
+                ₹{orderData.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0).toFixed(2)}
+              </Text>
             </View>
+            
+            {/* Show individual item breakdown */}
+            {orderData.items.map((item: any, index: number) => (
+              <View key={index} style={[styles.billRow, { marginLeft: 16, marginBottom: 4 }]}>
+                <Text style={[styles.billLabel, { fontSize: 12, color: theme.colors.secondary }]}>
+                  {item.name} x{item.quantity}
+                </Text>
+                <Text style={[styles.billValue, { fontSize: 12 }]}>
+                  ₹{(item.price * item.quantity).toFixed(2)}
+                </Text>
+              </View>
+            ))}
+            
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Delivery Fee</Text>
               <Text style={styles.billValue}>₹{(orderData.deliveryFee || 0).toFixed(2)}</Text>
@@ -475,8 +537,15 @@ const OrderDetailScreen = () => {
               <Text style={styles.orderDetailValue}>{orderData.orderType || 'N/A'}</Text>
             </View>
             <View style={styles.orderDetailRow}>
-              <Text style={styles.orderDetailLabel}>Address</Text>
-              <Text style={styles.orderDetailValue} numberOfLines={2}>{orderData.address || 'N/A'}</Text>
+              <Text style={styles.orderDetailLabel}>
+                {orderData.orderType === 'Store Pickup' ? 'Store Address' : 'Delivery Address'}
+              </Text>
+              <Text style={styles.orderDetailValue} numberOfLines={2}>
+                {orderData.orderType === 'Store Pickup' 
+                  ? (order?.storeAddress || order?.store?.address || 'Store pickup location not available')
+                  : (orderData.address || 'N/A')
+                }
+              </Text>
             </View>
             <View style={styles.orderDetailRow}>
               <Text style={styles.orderDetailLabel}>Order Placed On</Text>

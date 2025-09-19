@@ -610,11 +610,25 @@ const RazorpayCheckoutScreen = () => {
   const [backendPaymentId, setBackendPaymentId] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [orderConfirmationData, setOrderConfirmationData] = useState<any>(null);
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [availableAddresses, setAvailableAddresses] = useState<Address[]>([]);
   const [showAddressModal, setShowAddressModal] = useState(false);
 
-  const { amount, currency = 'INR', name, description, prefill, cartType, deliveryMethod, orderId, isExistingOrder } = route.params as any;
+  const { amount, currency = 'INR', name, description, prefill, cartType, deliveryMethod, orderId, isExistingOrder, isReorder, reorderItems } = route.params as any;
+  
+  // Debug route params
+  console.log('🔍 RazorpayCheckout route params:', {
+    amount,
+    currency,
+    name,
+    description,
+    cartType,
+    deliveryMethod,
+    orderId,
+    isExistingOrder,
+    allParams: route.params
+  });
   
   // Refs to prevent multiple processing
   const handledRef = useRef<boolean>(false);
@@ -793,6 +807,13 @@ const RazorpayCheckoutScreen = () => {
       let orderResponseData: any;
       let paymentDataFromOrder: any;
 
+      console.log('🔍 Checking order type:', {
+        'isExistingOrder': isExistingOrder,
+        'orderId': orderId,
+        'willProcessExisting': isExistingOrder && orderId,
+        'willProcessNew': !isExistingOrder || !orderId
+      });
+
       if (isExistingOrder && orderId) {
         // For existing orders, get payment data from the order
         console.log('🔄 Processing existing order payment...');
@@ -825,12 +846,10 @@ const RazorpayCheckoutScreen = () => {
         console.log('📦 Cart items:', cartItems);
 
         // Calculate bill details (you can customize these calculations)
-        const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
-        const productDiscount = Math.round(subtotal * 0.1); // 10% product discount
+        const subtotal = cartItems.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
         const shippingAmount = isStoreDelivery ? 0 : 0; // Free shipping for now
         const taxAmount = 0; // No tax for now
-        const couponDiscount = 0; // No coupon discount for now
-        const totalAmount = subtotal - productDiscount + shippingAmount + taxAmount - couponDiscount;
+        const totalAmount = subtotal + shippingAmount + taxAmount;
 
         const orderData: PlaceOrderRequest = {
           products: cartItems,
@@ -842,8 +861,6 @@ const RazorpayCheckoutScreen = () => {
             shippingAddress: getShippingAddress(addressToUse),
             billingSameAsShipping: true,
             billingAddress: getAddressString(addressToUse), // Convert to string format
-            storeDiscount: productDiscount,
-            couponDiscount: couponDiscount,
             shippingAmount: shippingAmount,
             taxAmount: taxAmount,
             expressDelivery: false,
@@ -854,10 +871,8 @@ const RazorpayCheckoutScreen = () => {
         console.log('💰 Bill details calculated:');
         console.log('  - Cart Items Count:', cartItems.length);
         console.log('  - Subtotal:', subtotal);
-        console.log('  - Product Discount:', productDiscount);
         console.log('  - Shipping Amount:', shippingAmount);
         console.log('  - Tax Amount:', taxAmount);
-        console.log('  - Coupon Discount:', couponDiscount);
         console.log('  - Total Amount:', totalAmount);
         console.log('📤 Placing order with data:', JSON.stringify(orderData, null, 2));
 
@@ -873,6 +888,22 @@ const RazorpayCheckoutScreen = () => {
 
         orderResponseData = placeOrderResponse.data;
         paymentDataFromOrder = orderResponseData.paymentData;
+
+        // Store order data for confirmation screen
+        setOrderConfirmationData({
+          items: cartItems.map((item: any) => ({
+            id: item.productId,
+            name: item.name,
+            price: item.price,
+            quantity: item.quantity,
+          })),
+          itemTotal: subtotal,
+          deliveryFee: shippingAmount,
+          discount: 0, // No discount for now
+          grandTotal: totalAmount,
+          deliveryMethod: isStoreDelivery ? 'Store Pickup' : 'Home Delivery',
+          shippingAddress: isStoreDelivery ? undefined : getAddressString(addressToUse),
+        });
       }
 
       console.log('💳 Payment data from order:', JSON.stringify(paymentDataFromOrder, null, 2));
@@ -910,6 +941,19 @@ const RazorpayCheckoutScreen = () => {
   };
 
   const getCartItems = () => {
+    // Use reorder items if this is a reorder, otherwise use cart items
+    if (isReorder && reorderItems) {
+      console.log('🔄 Using reorder items:', reorderItems);
+      const mappedItems = reorderItems.map((item: any) => ({
+        productId: item.id,
+        quantity: item.quantity,
+        price: item.price,
+        name: item.name,
+      }));
+      console.log('🔄 Mapped reorder items:', mappedItems);
+      return mappedItems;
+    }
+    
     const items = cartType === 'grocery' ? groceryItems : pharmacyItems;
     return items.map(item => ({
       productId: item.id,
@@ -991,10 +1035,11 @@ const RazorpayCheckoutScreen = () => {
       // Optional: Reset all app contexts (uncomment if needed)
       // await resetAllContexts();
 
-      // Navigate to success page
+      // Navigate to success page with stored order data
       navigation.replace('OrderConfirmation' as any, {
         orderId: orderNumber,
         amount: paymentData?.amount ?? amount,
+        orderData: orderConfirmationData,
         paymentData: {
           razorpayPaymentId,
           razorpayOrderId,

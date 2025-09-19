@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
+import { Linking } from 'react-native';
 import { PaperProvider } from 'react-native-paper';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './navigation/AppNavigator';
@@ -11,6 +12,7 @@ import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
 import CustomToast from './components/ui/CustomToast';
 import ErrorBoundary from './components/ui/ErrorBoundary';
+import SimpleStoreDeepLink from './components/deepLink/SimpleStoreDeepLink';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { TouchableOpacity, Text } from 'react-native';
@@ -27,9 +29,8 @@ const getDeepestRouteName = (navState: any) => {
 };
 
 const FloatingCartButton = () => {
-  const { groceryItems, pharmacyItems } = useCart();
+  const { totalItems } = useCart();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const totalItems = (groceryItems?.length || 0) + (pharmacyItems?.length || 0);
 
   // Get current route name (deepest focused route)
   const navState = useNavigationState(state => state);
@@ -83,27 +84,66 @@ const FloatingCartButton = () => {
 const AppContent = () => {
   const { theme } = useTheme();
   const linking = React.useMemo<LinkingOptions<RootStackParamList>>(() => ({
-    prefixes: ['ecomm://', 'https://stores.yourdomain.com'],
+    prefixes: [
+      'ecomm://',
+      'https://stores.yourdomain.com',
+      'https://qr.ecomm.com',
+      'https://ecomm-stores.com'
+    ],
     config: {
       screens: {
         Splash: 'splash',
         Pincode: 'pincode',
         StoreList: 'store-list',
-        Main: {
-          screens: {
-            Home: {
-              screens: {
-                HomeRoot: {
-                  path: 'store/:storeId',
-                  parse: {
-                    storeId: (v: string) => `${v}`,
-                  },
-                },
-              },
-            },
+        AboutStore: {
+          path: 'store/:storeId',
+          parse: {
+            storeId: (storeId: string) => storeId,
           },
         },
       },
+    },
+    // Custom getStateFromPath to handle ecomm://store/{storeId}
+    getStateFromPath: (path, options) => {
+      console.log('🔗 NavigationContainer: getStateFromPath called with:', path);
+      
+      // Handle ecomm://store/{storeId} format - SKIP ALL SCREENS
+      if (path.startsWith('store/')) {
+        const storeId = path.replace('store/', '');
+        console.log('🔗 NavigationContainer: Extracted storeId:', storeId);
+        console.log('🔗 NavigationContainer: SKIPPING Splash, Pincode, StoreList - Going DIRECT to Store Home Screen');
+        
+        // Determine store type based on storeId pattern
+        // For now, we'll default to GroceryHome and let the screen determine the actual type
+        // The screen will fetch store details and redirect to the correct home screen if needed
+        const targetScreen = 'GroceryHome'; // Default to grocery, will be corrected by the screen
+        
+        return {
+          routes: [
+            {
+              name: 'Main',
+              state: {
+                routes: [
+                  {
+                    name: 'Home',
+                    state: {
+                      routes: [
+                        {
+                          name: 'HomeRoot',
+                          params: { storeId },
+                        },
+                      ],
+                    },
+                  },
+                ],
+              },
+            },
+          ],
+        };
+      }
+      
+      // Fallback to default parsing
+      return undefined;
     },
   }), []);
   return (
@@ -114,8 +154,10 @@ const AppContent = () => {
             <CartProvider>
               <ToastProvider>
                 <ErrorBoundary>
-                  <AppNavigator />
-                  <FloatingCartButton />
+                  <SimpleStoreDeepLink>
+                    <AppNavigator />
+                    <FloatingCartButton />
+                  </SimpleStoreDeepLink>
                 </ErrorBoundary>
                 <CustomToast />
               </ToastProvider>

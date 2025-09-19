@@ -22,11 +22,32 @@ export type RootStackParamList = {
     paymentData?: any;
     orderId?: string;
     amount?: number;
+    orderData?: {
+      items: Array<{
+        id: string;
+        name: string;
+        price: number;
+        quantity: number;
+        image?: string;
+      }>;
+      itemTotal: number;
+      deliveryFee: number;
+      discount: number;
+      grandTotal: number;
+      deliveryMethod: string;
+      shippingAddress?: string;
+    };
   };
   Profile: undefined;
   Orders: undefined;
   OrderDetail: { order: any };
-  PaymentMethods: { selectedAddress?: any };
+  PaymentMethods: { 
+    selectedAddress?: any;
+    reorderItems?: any[];
+    reorderTotal?: number;
+    isReorder?: boolean;
+    reorderMessage?: string;
+  };
   RazorpayCheckout: {
     amount: number;
     currency?: string;
@@ -40,6 +61,8 @@ export type RootStackParamList = {
     orderId: string;
     cartType: 'grocery' | 'pharma';
     deliveryMethod: string;
+    isReorder?: boolean;
+    reorderItems?: any[];
   };
   HelpCenter: undefined;
   AllProducts: {
@@ -73,9 +96,9 @@ export type RootStackParamList = {
     location?: { latitude: number; longitude: number; address: string };
     addressId?: string;
   };
-  LocationPicker: undefined;
+  LocationPicker: { forAddress?: boolean };
   MyWishlist: undefined;
-  AboutStore: undefined;
+  AboutStore: { storeId?: string };
   ContactStore: undefined;
   LocateStore: undefined;
   AboutPassKiDukaan: undefined;

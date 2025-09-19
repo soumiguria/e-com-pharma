@@ -1,12 +1,74 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, SafeAreaView, ScrollView, Alert } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import deepLinkingService from '../../services/deepLinkingService';
 
 const AboutStoreScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation();
+  const route = useRoute();
+  const [storeData, setStoreData] = useState<any>(null);
+  const [loading, setLoading] = useState(false);
+  
+  // Debug route parameters
+  console.log('🏪 AboutStoreScreen: Route params:', route.params);
+  console.log('🏪 AboutStoreScreen: Route name:', route.name);
+  
+  // Check if store data is available
+  const params = route.params as any;
+  const storeId = params?.storeId;
+  
+  useEffect(() => {
+    if (storeId) {
+      console.log('🏪 AboutStoreScreen: Store ID from params:', storeId);
+      console.log('🏪 AboutStoreScreen: Store data from params:', params.store);
+      
+      // If we have store data from deep link, use it
+      if (params.store) {
+        console.log('🏪 AboutStoreScreen: Using store data from deep link');
+        setStoreData(params.store);
+      } else {
+        // Fetch store details using storeId
+        console.log('🏪 AboutStoreScreen: Fetching store details for ID:', storeId);
+        fetchStoreDetails(storeId);
+      }
+    }
+  }, [storeId, params.store]);
+
+  const fetchStoreDetails = async (storeId: string) => {
+    setLoading(true);
+    try {
+      console.log('🔍 Fetching store details for deep link storeId:', storeId);
+      const response = await deepLinkingService.fetchStoreDetails(storeId);
+      
+      if (response.success && response.data) {
+        console.log('✅ Store details fetched for deep link:', response.data);
+        setStoreData(response.data);
+      } else {
+        console.log('❌ Store not found for deep link storeId:', storeId);
+        Alert.alert(
+          'Store Not Found',
+          'The store you\'re looking for could not be found.',
+          [
+            { text: 'Go Back', onPress: () => navigation.goBack() }
+          ]
+        );
+      }
+    } catch (error) {
+      console.error('❌ Error fetching store details for deep link:', error);
+      Alert.alert(
+        'Error',
+        'Failed to load store details.',
+        [
+          { text: 'Go Back', onPress: () => navigation.goBack() }
+        ]
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
@@ -14,18 +76,37 @@ const AboutStoreScreen = () => {
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>About Store</Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
+          {storeData?.name || 'About Store'}
+        </Text>
         <View style={styles.placeholder} />
       </View>
       
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Store Information</Text>
-          <Text style={[styles.description, { color: theme.colors.text }]}>
-            Welcome to our grocery store! We are committed to providing fresh, high-quality products 
-            to our customers. Our store has been serving the community for over 10 years.
-          </Text>
-        </View>
+        {loading ? (
+          <View style={[styles.section, { backgroundColor: theme.colors.surface, alignItems: 'center', padding: 20 }]}>
+            <Text style={[styles.description, { color: theme.colors.text }]}>Loading store details...</Text>
+          </View>
+        ) : (
+          <>
+            <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
+              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Store Information</Text>
+              <Text style={[styles.description, { color: theme.colors.text }]}>
+                {storeData?.description || 'Welcome to our store! We are committed to providing fresh, high-quality products to our customers.'}
+              </Text>
+              {storeData?.address && (
+                <Text style={[styles.description, { color: theme.colors.text, marginTop: 10 }]}>
+                  📍 Address: {storeData.address}
+                </Text>
+              )}
+              {storeData?.phone && (
+                <Text style={[styles.description, { color: theme.colors.text, marginTop: 5 }]}>
+                  📞 Phone: {storeData.phone}
+                </Text>
+              )}
+            </View>
+          </>
+        )}
 
         <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Our Mission</Text>

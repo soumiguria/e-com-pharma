@@ -13,6 +13,7 @@ import {
   BackHandler,
   Image as RNImage,
 } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { MaterialCommunityIcons, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -110,11 +111,11 @@ const pharmacyData: Category[] = [
   // Add more pharmacy categories as needed
 ];
 
-const Header = ({ onProfilePress, themedStyles }: { onProfilePress: () => void, themedStyles: any }) => {
+const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { onProfilePress: () => void, themedStyles: any, isDrawerVisible: boolean }) => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const { selectedStore, lastVisitedStore, setSelectedStore } = useAppContext();
-  const { groceryItems } = useCart();
+  const { groceryItems, totalItems } = useCart();
   const { isAuthenticated } = useAuth();
 
   // Show last visited store name if user is logged in and no store is currently selected
@@ -122,20 +123,38 @@ const Header = ({ onProfilePress, themedStyles }: { onProfilePress: () => void, 
 
   return (
     <Animated.View style={[themedStyles.header]}>
-      <TouchableOpacity onPress={onProfilePress} style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <MaterialCommunityIcons 
-          name="account-circle" 
-          size={28} 
-          color={theme.colors.text} 
-        />
-        {displayStore && (
-          <Text style={[themedStyles.storeName, {color: theme.colors.text, marginLeft: 10, fontWeight: 'bold', fontSize: 17}]} numberOfLines={1}>
-            {displayStore.name}
-          </Text>
-        )}
-      </TouchableOpacity>
-      <View style={themedStyles.headerRight}>
+      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+        {/* Hamburger Menu Icon */}
         <TouchableOpacity 
+          onPress={onProfilePress} 
+          style={{ 
+            marginRight: 12,
+            padding: 8,
+          }}
+          activeOpacity={0.7}
+        >
+          <MaterialCommunityIcons 
+            name="menu" 
+            size={24} 
+            color={theme.colors.text} 
+          />
+        </TouchableOpacity>
+        
+        <TouchableOpacity onPress={() => navigation.navigate('EditProfile' as any)} style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+          <MaterialCommunityIcons 
+            name="account-circle" 
+            size={28} 
+            color={theme.colors.text} 
+          />
+          {displayStore && (
+            <Text style={[themedStyles.storeName, {color: theme.colors.text, marginLeft: 10, fontWeight: 'bold', fontSize: 17}]} numberOfLines={1}>
+              {displayStore.name}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </View>
+      <View style={themedStyles.headerRight}>
+        {/* <TouchableOpacity 
           style={themedStyles.headerIcon}
           onPress={() => navigation.navigate('GreatOffersScreen')}
         >
@@ -143,7 +162,7 @@ const Header = ({ onProfilePress, themedStyles }: { onProfilePress: () => void, 
             source={require('../../assets/discount.png')}
             style={{ width: 26, height: 26, resizeMode: 'contain', marginTop: 1 }}
           />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity 
           style={themedStyles.headerIcon}
           onPress={() => navigation.navigate('Cart')}
@@ -153,16 +172,16 @@ const Header = ({ onProfilePress, themedStyles }: { onProfilePress: () => void, 
             size={24} 
             color={theme.colors.text} 
           />
-          {groceryItems.length > 0 && (
+          {totalItems > 0 && (
             <View style={[themedStyles.cartBadge, { backgroundColor: theme.colors.primary }]}> 
-              <Text style={themedStyles.cartBadgeText}>{groceryItems.length}</Text>
+              <Text style={themedStyles.cartBadgeText}>{totalItems}</Text>
             </View>
           )}
         </TouchableOpacity>
       </View>
     </Animated.View>
   );
-};
+});
 
 const SearchResults = ({ results, onProductPress, activeTab, themedStyles }: { results: Product[], onProductPress: (product: Product) => void, activeTab: string, themedStyles: any }) => {
   const { theme } = useTheme();
@@ -249,14 +268,61 @@ const HomeScreen = () => {
     const params = route.params as any;
     const incomingStoreId = params?.storeId;
     if (incomingStoreId && incomingStoreId !== 'default') {
-      const incomingType = (params.type as 'grocery' | 'pharma' | undefined) ?? 'grocery';
-      const incomingPincode = params.pincode as string | undefined;
-      if (!selectedStore || selectedStore.id !== incomingStoreId) {
-        const newStore = { id: incomingStoreId, name: 'Selected Store', address: '', type: incomingType, pincode: incomingPincode };
-        setSelectedStore(newStore);
-        if (isAuthenticated) {
-          saveLastVisitedStore(newStore);
+      console.log('🏠 HomeScreen: Deep link storeId received:', incomingStoreId);
+      
+      // Fetch store details to get proper store type and info
+      const fetchStoreDetails = async () => {
+        try {
+          console.log('🔍 Fetching store details for deep link storeId:', incomingStoreId);
+          const response = await fetch(`https://marg-api.thelocalsandbox.dev/dl/${incomingStoreId}`);
+          
+          if (response.ok) {
+            const data = await response.json();
+            console.log('✅ Store details fetched for deep link:', data);
+            
+            if (data.success && data.data) {
+              const storeData = data.data;
+              const storeType = storeData.type || 'grocery'; // Default to grocery if type not specified
+              
+              const newStore = {
+                id: incomingStoreId,
+                name: storeData.name || 'Selected Store',
+                address: storeData.address || '',
+                type: storeType,
+                pincode: params.pincode as string | undefined
+              };
+              
+              console.log('🏪 Setting store from deep link:', newStore);
+              setSelectedStore(newStore);
+              
+              if (isAuthenticated) {
+                saveLastVisitedStore(newStore);
+              }
+            }
+          } else {
+            console.log('⚠️ Store fetch failed, using default type');
+            // Fallback to default behavior
+            const incomingType = (params.type as 'grocery' | 'pharma' | undefined) ?? 'grocery';
+            const newStore = { id: incomingStoreId, name: 'Selected Store', address: '', type: incomingType, pincode: params.pincode as string | undefined };
+            setSelectedStore(newStore);
+            if (isAuthenticated) {
+              saveLastVisitedStore(newStore);
+            }
+          }
+        } catch (error) {
+          console.error('❌ Error fetching store details for deep link:', error);
+          // Fallback to default behavior
+          const incomingType = (params.type as 'grocery' | 'pharma' | undefined) ?? 'grocery';
+          const newStore = { id: incomingStoreId, name: 'Selected Store', address: '', type: incomingType, pincode: params.pincode as string | undefined };
+          setSelectedStore(newStore);
+          if (isAuthenticated) {
+            saveLastVisitedStore(newStore);
+          }
         }
+      };
+      
+      if (!selectedStore || selectedStore.id !== incomingStoreId) {
+        fetchStoreDetails();
       }
     }
   }, [route.params, selectedStore, setSelectedStore, isAuthenticated, saveLastVisitedStore]);
@@ -472,6 +538,8 @@ const HomeScreen = () => {
       right: 0,
       bottom: 0,
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
+      zIndex: 1000,
+      elevation: 1000,
     },
     searchPlaceholder: {
       flex: 1,
@@ -532,11 +600,13 @@ const HomeScreen = () => {
     return allProducts;
   };
 
-  const toggleDrawer = () => setIsDrawerVisible(!isDrawerVisible);
+  const toggleDrawer = React.useCallback(() => {
+    setIsDrawerVisible(prev => !prev);
+  }, []);
 
-  const handleOverlayPress = () => {
+  const handleOverlayPress = React.useCallback(() => {
     setIsDrawerVisible(false);
-  };
+  }, []);
 
   const tabBarStyle = {
     ...themedStyles.tabBar,
@@ -574,6 +644,8 @@ const HomeScreen = () => {
     navigation.navigate('ProductDetail', { product });
   };
 
+
+
   // If you need a loading delay, re-enable this. For now, render immediately to avoid stuck loading.
   // useEffect(() => {
   //   setTimeout(() => {
@@ -590,20 +662,22 @@ const HomeScreen = () => {
   }
 
   return (
-    <SafeAreaView style={themedStyles.container} edges={['top']}>
-      <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.surface} />
-      <Header onProfilePress={toggleDrawer} themedStyles={themedStyles} />
-      <View>
-        <SearchBar
-          onSearch={() => {}}
-          placeholder={isPharmacyStore ? "Search medicines..." : "Search products..."}
-        />
-        <TouchableOpacity
-          style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate('SearchScreen')}
-        />
-      </View>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={themedStyles.container} edges={['top']}>
+        <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.surface} />
+        
+        <Header onProfilePress={toggleDrawer} themedStyles={themedStyles} isDrawerVisible={isDrawerVisible} />
+        <View>
+          <SearchBar
+            onSearch={() => {}}
+            placeholder={isPharmacyStore ? "Search medicines..." : "Search products..."}
+          />
+          <TouchableOpacity
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate('SearchScreen')}
+          />
+        </View>
       
       <View style={themedStyles.contentContainer}>
         {searchQuery.length > 0 ? (
@@ -646,7 +720,8 @@ const HomeScreen = () => {
                 </TouchableOpacity>
               </View>
             </View>
-            <View style={themedStyles.section}>
+            {/* Shop by Brands Section - HIDDEN */}
+            {/* <View style={themedStyles.section}>
               <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>
                 {isPharmacyStore ? 'Pharmacy Brands' : 'Shop by Brands'}
               </Text>
@@ -656,7 +731,7 @@ const HomeScreen = () => {
                   <Text style={[themedStyles.viewAll, {color: theme.colors.primary}]}>View All</Text>
                 </TouchableOpacity>
               </View>
-            </View>
+            </View> */}
             {/* Some products below brands - same UI as Recently Bought */}
             <View style={themedStyles.section}>
               <View style={themedStyles.sectionHeaderRow}>
@@ -667,8 +742,8 @@ const HomeScreen = () => {
                 itemsOverride={homeProducts.map(p => ({...p, category: isPharmacyStore ? 'pharma' : 'grocery'}))}
               />
             </View>
-            {/* Recently Bought Section */}
-            <View style={themedStyles.section}>
+            {/* Recently Bought Section - HIDDEN */}
+            {/* <View style={themedStyles.section}>
               <View style={themedStyles.sectionHeaderRow}>
                 <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>
                   {isPharmacyStore ? 'Recently Bought Medicines' : 'Recently Bought'}
@@ -678,9 +753,9 @@ const HomeScreen = () => {
                 </TouchableOpacity>
               </View>
               <HorizontallyScrollableSection title={isPharmacyStore ? "Recently Bought Medicines" : "Recently Bought"} />
-            </View>
-            {/* Great Offers Section */}
-            <View style={themedStyles.section}>
+            </View> */}
+            {/* Great Offers Section - HIDDEN */}
+            {/* <View style={themedStyles.section}>
               <View style={themedStyles.sectionHeaderRow}>
                 <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>
                   {isPharmacyStore ? 'Medicine Offers' : 'Great Offers'}
@@ -690,18 +765,23 @@ const HomeScreen = () => {
                 </TouchableOpacity>
               </View>
               <HorizontallyScrollableSection title={isPharmacyStore ? "Medicine Offers" : "Great Offers"} />
-            </View>
+            </View> */}
           </ScrollView>
         )}
       </View>
 
-      {isDrawerVisible && (
-        <TouchableOpacity style={themedStyles.drawerOverlay} onPress={handleOverlayPress} activeOpacity={1}>
-          <View style={{ flex: 1 }} />
-          <Drawer onClose={toggleDrawer} />
-        </TouchableOpacity>
-      )}
-    </SafeAreaView>
+        {isDrawerVisible && (
+          <View style={themedStyles.drawerOverlay}>
+            <TouchableOpacity 
+              style={{ flex: 1 }} 
+              onPress={handleOverlayPress} 
+              activeOpacity={1}
+            />
+            <Drawer onClose={toggleDrawer} />
+          </View>
+        )}
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 };
 

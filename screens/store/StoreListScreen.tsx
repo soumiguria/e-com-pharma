@@ -380,7 +380,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Platform, TouchableOpacity, Image, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, Platform, TouchableOpacity, Image, ActivityIndicator, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text, Button } from 'react-native-paper';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -404,6 +404,7 @@ interface Store {
   distance: string;
   rating: number;
   image?: string;
+  mobile?: string;
   totalItems?: number;
 }
 
@@ -464,6 +465,13 @@ const StoreListScreen = () => {
     });    
   };
 
+  const handleCallStore = (phoneNumber: string) => {
+    const phoneUrl = `tel:${phoneNumber}`;
+    Linking.openURL(phoneUrl).catch(err => {
+      console.error('Failed to open phone dialer:', err);
+    });
+  };
+
   // Helper: map backend shape to UI Store shape
   const mapStore = (raw: any): Store => {
     const type = (raw.type || raw.storeType || activeTab) as 'grocery' | 'pharma';
@@ -475,6 +483,7 @@ const StoreListScreen = () => {
       distance: raw.distance ? `${parseFloat(raw.distance).toFixed(1)} km` : '—',
       rating: Number(raw.rating ?? raw.avgRating ?? 4.2),
       image: raw.image || raw.logo || undefined,
+      mobile: raw.mobile,
       // totalItems: raw.totalItems || raw.itemCount || 0,
     } as Store;
   };
@@ -616,7 +625,9 @@ const StoreListScreen = () => {
                     />
                     <Text style={styles.storeName}>{store.name}</Text>
                   </View>
-                  <MaterialIcons name="call" size={20} color={colors.primary} />
+                  <TouchableOpacity onPress={() => store.mobile && handleCallStore(store.mobile)}>
+                    <MaterialIcons name="call" size={20} color={colors.primary} />
+                  </TouchableOpacity>
                 </View>
                 <Text style={styles.storeAddress}>{store.address}</Text>
                 {/* <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>

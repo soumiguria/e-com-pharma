@@ -931,7 +931,7 @@ import {
   FlatList,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -947,6 +947,10 @@ const { width, height } = Dimensions.get('window');
 const LocationPickerScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<LocationPickerScreenNavigationProp>();
+  const route = useRoute();
+  
+  // Check if this is being used for address creation
+  const isForAddressCreation = (route.params as any)?.forAddress === true;
   
   const [currentLocation, setCurrentLocation] = useState({
     latitude: 28.6139,
@@ -1131,11 +1135,23 @@ const LocationPickerScreen = () => {
   };
 
   const handleConfirmLocation = () => {
-    navigation.navigate('StoreList' as any, {
-      latitude: selectedLocation.latitude,
-      longitude: selectedLocation.longitude,
-      address: selectedLocation.address
-    });
+    if (isForAddressCreation) {
+      // Navigate to AddAddress with location data
+      navigation.navigate('AddAddress' as any, {
+        location: {
+          latitude: selectedLocation.latitude,
+          longitude: selectedLocation.longitude,
+          address: selectedLocation.address
+        }
+      });
+    } else {
+      // Navigate to StoreList for store selection
+      navigation.navigate('StoreList' as any, {
+        latitude: selectedLocation.latitude,
+        longitude: selectedLocation.longitude,
+        address: selectedLocation.address
+      });
+    }
   };
 
   const testGoogleMapsAPI = async () => {

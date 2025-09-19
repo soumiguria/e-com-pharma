@@ -51,7 +51,7 @@ const ProductDetailScreen = () => {
   const { product } = route.params;
   const extendedProduct = product as ExtendedProduct & { images?: string[], availableQty?: number };
   const { theme, section } = useTheme();
-  const { addToGroceryCart, removeFromCart } = useCart();
+  const { addToGroceryCart, addToPharmacyCart, removeFromCart, updateQuantity, groceryItems, pharmacyItems } = useCart();
   const { showToast } = useToast();
   const { selectedStore } = useAppContext();
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
@@ -60,8 +60,19 @@ const ProductDetailScreen = () => {
   const fadeAnim = new Animated.Value(0);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [detailsExpanded, setDetailsExpanded] = useState(false);
-  const [variantQuantities, setVariantQuantities] = useState<{ [variantId: string]: number }>({});
   const [productDetails, setProductDetails] = useState<any>(extendedProduct);
+  
+  // Use original product ID for cart operations (consistent with ProductCard)
+  const originalProductId = extendedProduct.id;
+  
+  // Debug product IDs
+  console.log('🔍 ProductDetailScreen IDs:', {
+    originalProductId: originalProductId,
+    extendedProductId: extendedProduct.id,
+    productDetailsId: productDetails.id,
+    selectedVariantId: selectedVariant?.id,
+    category: productDetails.category
+  });
   const [loading, setLoading] = useState(false);
 
   // Fetch product details from API if store is selected
@@ -124,6 +135,13 @@ const ProductDetailScreen = () => {
     { id: '3', name: 'Large (1kg)', price: productDetails.price * 3.2, stock: 8 },
   ];
 
+  // Set first variant as default when component loads
+  useEffect(() => {
+    if (variants.length > 0 && !selectedVariant) {
+      setSelectedVariant(variants[0]);
+    }
+  }, [variants, selectedVariant]);
+
   // 1. Add state for similar products (mock data for now)
   const similarProducts = [
     { id: '101', name: 'Amul Milk 1L', price: 65, originalPrice: 80, image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg' },
@@ -133,9 +151,38 @@ const ProductDetailScreen = () => {
     { id: '105', name: 'Cadbury Dairy Milk', price: 45, originalPrice: 50, image: 'https://blinkit.com/images/products/400/cadbury-dairy-milk-chocolate.jpg' },
   ];
 
+  const addToCorrectCart = (itemToAdd: any) => {
+    // Add to appropriate cart based on product category
+    console.log('🛒 Adding to cart:', { itemToAdd, category: productDetails.category });
+    if (productDetails.category === 'pharma') {
+      addToPharmacyCart(itemToAdd);
+    } else {
+      addToGroceryCart(itemToAdd);
+    }
+  };
+
+  // Get actual cart quantity for a product/variant
+  const getCartQuantity = (productId: string, variantId?: string) => {
+    const itemId = variantId ? `${productId}-${variantId}` : productId;
+    const cartItems = productDetails.category === 'pharma' ? pharmacyItems : groceryItems;
+    const cartItem = cartItems.find(item => item.id === itemId);
+    const quantity = cartItem ? cartItem.quantity : 0;
+    console.log('🔍 getCartQuantity:', { 
+      productId, 
+      variantId, 
+      itemId, 
+      category: productDetails.category, 
+      quantity, 
+      cartItems: cartItems.length,
+      allCartItemIds: cartItems.map(item => item.id),
+      foundItem: cartItem
+    });
+    return quantity;
+  };
+
   const handleAddToCart = () => {
     const itemToAdd = {
-      id: selectedVariant ? `${productDetails.id}-${selectedVariant.id}` : productDetails.id,
+      id: selectedVariant ? `${originalProductId}-${selectedVariant.id}` : originalProductId,
       name: productDetails.name,
       price: selectedVariant ? selectedVariant.price : productDetails.price,
       image: productDetails.image || '',
@@ -145,7 +192,8 @@ const ProductDetailScreen = () => {
         unit: selectedVariant.name.split(' ')[1].replace(/[()]/g, '')
       } : undefined
     };
-    addToGroceryCart(itemToAdd);
+    
+    addToCorrectCart(itemToAdd);
   };
 
   const styles = StyleSheet.create({
@@ -437,28 +485,21 @@ const ProductDetailScreen = () => {
                 </View>
                 <Text style={{ fontSize: 15, color: theme.colors.primary, fontWeight: 'bold' }}>₹{variant.price.toFixed(2)}</Text>
               </View>
-              {variantQuantities[variant.id] > 0 ? (
+              {getCartQuantity(originalProductId, variant.id) > 0 ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, borderWidth: 1.5, borderColor: '#27ae60', height: 34, minWidth: 80, paddingHorizontal: 6, margin: 0, shadowColor: '#27ae60', shadowOpacity: 0.08, shadowRadius: 4 }}>
                   <TouchableOpacity onPress={() => {
-                    setVariantQuantities(q => {
-                      const newQty = Math.max(0, (q[variant.id] || 1) - 1);
-                      if (newQty === 0) {
-                        removeFromCart(`${extendedProduct.id}-${variant.id}`, 'grocery');
-                        const { [variant.id]: _, ...rest } = q;
-                        return rest;
-                      }
-                      removeFromCart(`${extendedProduct.id}-${variant.id}`, 'grocery');
-                      return { ...q, [variant.id]: newQty };
-                    });
+                    const currentQty = getCartQuantity(originalProductId, variant.id);
+                    const newQty = Math.max(0, currentQty - 1);
+                    const itemId = `${originalProductId}-${variant.id}`;
+                    const category = productDetails.category || 'grocery';
+                    console.log('🛒 Variant decrement:', { itemId, currentQty, newQty, category });
+                    updateQuantity(itemId, newQty, category);
                   }} style={{ width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>-</Text>
                   </TouchableOpacity>
-                  <Text style={{ width: 28, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>{variantQuantities[variant.id]}</Text>
+                  <Text style={{ width: 28, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>{getCartQuantity(originalProductId, variant.id)}</Text>
                   <TouchableOpacity onPress={() => {
-                    setVariantQuantities(q => {
-                      addToGroceryCart({ id: `${extendedProduct.id}-${variant.id}`, name: extendedProduct.name, price: variant.price, image: extendedProduct.image || '', variant: { name: variant.name, unit: variant.name.split(' ')[1].replace(/[()]/g, '') } });
-                      return { ...q, [variant.id]: (q[variant.id] || 0) + 1 };
-                    });
+                    addToCorrectCart({ id: `${originalProductId}-${variant.id}`, name: productDetails.name, price: variant.price, image: productDetails.image || '', variant: { name: variant.name, unit: variant.name.split(' ')[1].replace(/[()]/g, '') } });
                   }} style={{ width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}>
                     <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>+</Text>
                   </TouchableOpacity>
@@ -514,29 +555,23 @@ const ProductDetailScreen = () => {
       {/* Fixed Bottom Bar with Add to Cart +1/-1 counter for selected variant */}
       <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', elevation: 12, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12 }}>
         {selectedVariant ? (
-          variantQuantities[selectedVariant.id] > 0 ? (
+          getCartQuantity(originalProductId, selectedVariant.id) > 0 ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 6, borderWidth: 1.5, borderColor: '#27ae60', height: 40, minWidth: 100, paddingHorizontal: 8 }}>
               <TouchableOpacity onPress={() => {
-                setVariantQuantities(q => {
-                  if (!selectedVariant) return q;
-                  const newQty = Math.max(0, (q[selectedVariant.id] || 1) - 1);
-                  if (newQty === 0) {
-                    removeFromCart(`${extendedProduct.id}-${selectedVariant.id}`, 'grocery');
-                    const { [selectedVariant.id]: _, ...rest } = q;
-                    return rest;
-                  }
-                  removeFromCart(`${extendedProduct.id}-${selectedVariant.id}`, 'grocery');
-                  return { ...q, [selectedVariant.id]: newQty };
-                });
+                if (!selectedVariant) return;
+                const currentQty = getCartQuantity(originalProductId, selectedVariant.id);
+                const newQty = Math.max(0, currentQty - 1);
+                const itemId = `${originalProductId}-${selectedVariant.id}`;
+                const category = productDetails.category || 'grocery';
+                console.log('🛒 Bottom bar decrement:', { itemId, currentQty, newQty, category });
+                updateQuantity(itemId, newQty, category);
               }} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
                 <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>-</Text>
               </TouchableOpacity>
-              <Text style={{ width: 32, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 20 }}>{variantQuantities[selectedVariant.id]}</Text>
+              <Text style={{ width: 32, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 20 }}>{getCartQuantity(originalProductId, selectedVariant.id)}</Text>
               <TouchableOpacity onPress={() => {
-                setVariantQuantities(q => {
-                  addToGroceryCart({ id: `${extendedProduct.id}-${selectedVariant.id}`, name: extendedProduct.name, price: selectedVariant.price, image: extendedProduct.image || '', variant: { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1].replace(/[()]/g, '') } });
-                  return { ...q, [selectedVariant.id]: (q[selectedVariant.id] || 0) + 1 };
-                });
+                if (!selectedVariant) return;
+                addToCorrectCart({ id: `${originalProductId}-${selectedVariant.id}`, name: productDetails.name, price: selectedVariant.price, image: productDetails.image || '', variant: { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1].replace(/[()]/g, '') } });
               }} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
                 <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>+</Text>
               </TouchableOpacity>
@@ -544,10 +579,10 @@ const ProductDetailScreen = () => {
           ) : (
             <TouchableOpacity
               style={{ backgroundColor: theme.colors.primary, borderRadius: 8, paddingHorizontal: 40, paddingVertical: 12, alignSelf: 'center' }}
-              onPress={() => setVariantQuantities(q => {
-                addToGroceryCart({ id: `${extendedProduct.id}-${selectedVariant.id}`, name: extendedProduct.name, price: selectedVariant.price, image: extendedProduct.image || '', variant: { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1].replace(/[()]/g, '') } });
-                return { ...q, [selectedVariant.id]: 1 };
-              })}
+              onPress={() => {
+                if (!selectedVariant) return;
+                addToCorrectCart({ id: `${originalProductId}-${selectedVariant.id}`, name: productDetails.name, price: selectedVariant.price, image: productDetails.image || '', variant: { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1].replace(/[()]/g, '') } });
+              }}
             >
               <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>Add</Text>
             </TouchableOpacity>

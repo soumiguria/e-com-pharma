@@ -41,12 +41,28 @@
           "action": "VIEW",
           "data": [
             {
-              "scheme": "ecomm"
+              "scheme": "ecomm",
+              "host": "*"
             },
             {
               "scheme": "https",
               "host": "stores.yourdomain.com",
               "pathPrefix": "/store"
+            },
+            {
+              "scheme": "https",
+              "host": "ecomm-stores.com",
+              "pathPrefix": "/store"
+            },
+            {
+              "scheme": "https",
+              "host": "qr.ecomm.com",
+              "pathPrefix": "/s"
+            },
+            {
+              "scheme": "https",
+              "host": "marg-api.thelocalsandbox.dev",
+              "pathPrefix": "/dl"
             }
           ],
           "category": [

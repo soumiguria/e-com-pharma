@@ -19,6 +19,12 @@ export type Store = {
   isOpen: boolean;
   deliveryTime?: string;
   minimumOrder?: number;
+  email?: string;
+  mobile?: number | string;
+  storeId?: string;
+  distance?: number;
+  isActive?: boolean;
+  status?: string;
 };
 
 export class StoreService {
@@ -46,6 +52,11 @@ export class StoreService {
   // Get store details
   async getStoreDetails(storeId: string): Promise<ApiResponse<StoreDetail>> {
     return apiClient.get<StoreDetail>(`/stores/${storeId}`);
+  }
+
+  // Get store by ID (alias for getStoreDetails for deep linking)
+  async getStoreById(storeId: string): Promise<ApiResponse<StoreDetail>> {
+    return this.getStoreDetails(storeId);
   }
 
   // Get nearby stores

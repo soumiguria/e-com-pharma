@@ -28,7 +28,6 @@ export interface OrderListItem {
     };
   }>;
   storeDiscount: string;
-  couponDiscount: string;
   shippingAmount: string;
   taxAmount: string;
   subtotalAmount: string;

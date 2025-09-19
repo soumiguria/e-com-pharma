@@ -51,9 +51,17 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [user, setUser] = useState<User | null>(null);
 
-  // Load last visited store on app start
+  // Load last visited store on app start and set it as selected store
   useEffect(() => {
-    loadLastVisitedStore();
+    const initializeStore = async () => {
+      const lastStore = await loadLastVisitedStore();
+      if (lastStore && !selectedStore) {
+        console.log('🔄 Auto-setting last visited store as selected store:', lastStore);
+        setSelectedStore(lastStore);
+      }
+    };
+    
+    initializeStore();
   }, []);
 
   const saveLastVisitedStore = async (store: Store) => {

@@ -125,7 +125,10 @@ const UploadPrescriptionScreen = () => {
     },
     content: {
       flex: 1,
+    },
+    scrollContent: {
       padding: 16,
+      paddingBottom: 100, // Extra padding to ensure upload button is visible
     },
     actionButtonsContainer: {
       flexDirection: 'row',
@@ -322,7 +325,11 @@ const UploadPrescriptionScreen = () => {
         <Text style={themedStyles.headerTitle}>Upload Prescription</Text>
       </View>
 
-      <ScrollView style={themedStyles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={themedStyles.content} 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={themedStyles.scrollContent}
+      >
         {/* Action Buttons */}
         <View style={themedStyles.actionButtonsContainer}>
           <TouchableOpacity style={themedStyles.actionButton} onPress={handleTakePhoto}>
