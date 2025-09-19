@@ -17,6 +17,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { Card, Chip, Button } from 'react-native-paper';
 import { Ionicons } from '@expo/vector-icons';
 import orderListService from '../../services/api/orderListService';
+import orderService from '../../services/api/orderService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface Order {
@@ -100,6 +101,24 @@ const OrdersScreen = () => {
     }, [])
   );
 
+  const checkPaymentStatus = async (orderNo: string) => {
+    try {
+      console.log('🔍 Checking payment status for order:', orderNo);
+      const response = await orderService.getPaymentStatus(orderNo);
+      
+      if (response.success && response.data) {
+        console.log('✅ Payment status for', orderNo, ':', response.data.status);
+        return response.data.status;
+      } else {
+        console.log('⚠️ Could not get payment status for', orderNo);
+        return 'pending';
+      }
+    } catch (error) {
+      console.error('❌ Error checking payment status for', orderNo, ':', error);
+      return 'pending';
+    }
+  };
+
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
@@ -107,8 +126,20 @@ const OrdersScreen = () => {
 
       const response = await orderListService.getOrders();
       if (response.success && response.data) {
+        // First, get all orders and check payment status for those with paymentId
+        const ordersWithPaymentStatus = await Promise.all(
+          (response.data || []).map(async (order: any) => {
+            // Only check payment status for orders with paymentId (likely online payments)
+            if (order.paymentId && order.paymentId !== '22' && order.paymentId !== 'offline') {
+              const actualPaymentStatus = await checkPaymentStatus(order.orderNo);
+              return { ...order, actualPaymentStatus };
+            }
+            return { ...order, actualPaymentStatus: 'pending' };
+          })
+        );
+        
         // Transform API data to match UI format safely
-        const transformedOrders = (response.data || []).map((order: any) => {
+        const transformedOrders = ordersWithPaymentStatus.map((order: any) => {
           const itemsArray = Array.isArray(order.orderItems)
             ? order.orderItems
             : Array.isArray(order.products)
@@ -122,20 +153,70 @@ const OrdersScreen = () => {
             type: 'grocery' as const,
           }));
 
-          const paymentStatus = (order.payment?.status || '').toLowerCase();
+          // Use actual payment status if available, otherwise fallback to payment object status
+          const paymentStatus = (order.actualPaymentStatus || order.payment?.status || '').toLowerCase();
           console.log('🔍 Order payment status:', order.orderNo, paymentStatus, order.payment);
           
-          // Use the actual status from backend - no forced changes
-          const uiStatus: 'pending' | 'paid' | 'completed' | 'cancelled' =
-            paymentStatus === 'success' || paymentStatus === 'completed'
-              ? 'paid'
-              : paymentStatus === 'cancelled'
-                ? 'cancelled'
-                : 'pending';
+          // Determine payment method based on what user actually selected
+          // Check the paymentData field first, then fallback to other methods
+          let paymentMethod: 'online' | 'offline';
+          
+          // First, check if payment object exists with mode
+          if (order.payment?.mode) {
+            paymentMethod = order.payment.mode === 'online' ? 'online' : 'offline';
+          } 
+          // Check paymentData field for the original payment method
+          else if (order.paymentData?.paymentMethod) {
+            paymentMethod = order.paymentData.paymentMethod === 'online' ? 'online' : 'offline';
+          }
+          // Check if deliveryMethod is 'store' (usually offline) vs 'home' (usually online)
+          else if (order.deliveryMethod === 'store') {
+            paymentMethod = 'offline'; // Store pickup is typically offline
+          }
+          // Fallback: check paymentId patterns
+          else if (order.paymentId === '22' || order.paymentId === 'offline' || !order.paymentId) {
+            paymentMethod = 'offline';
+          } else {
+            // Has a real paymentId but no other indicators = likely online
+            paymentMethod = 'online';
+          }
+          
+          // Determine UI status based on payment completion
+          let uiStatus: 'pending' | 'paid' | 'completed' | 'cancelled';
+          
+          // Check if payment was verified successfully
+          if (paymentStatus === 'success' || paymentStatus === 'completed' || paymentStatus === 'paid' || paymentStatus === 'verified') {
+            uiStatus = 'paid'; // Payment verified successfully
+          } else if (paymentStatus === 'cancelled' || paymentStatus === 'failed' || paymentStatus === 'rejected') {
+            uiStatus = 'cancelled'; // Payment failed or cancelled
+          } else {
+            // Since backend is not returning payment.status, we need to infer from other indicators
+            // Check if we have paymentId and it's not the default offline paymentId
+            if (order.paymentId && order.paymentId !== '22' && order.paymentId !== 'offline') {
+              // Has a real paymentId - this could be a completed payment
+              // For now, assume it's pending until we can verify with backend
+              uiStatus = 'pending';
+              console.log('⚠️ Has paymentId but no status from backend, defaulting to pending for:', order.orderNo);
+            } else {
+              // No paymentId or default offline paymentId
+              uiStatus = 'pending';
+              console.log('⚠️ No paymentId or default offline paymentId, defaulting to pending for:', order.orderNo);
+            }
+          }
                 
           console.log('🔍 Mapped UI status:', order.orderNo, uiStatus, 'backend status:', paymentStatus);
-
-          const paymentMethod: 'online' | 'offline' = (order.payment?.mode === 'online') ? 'online' : 'offline';
+                
+          console.log('🔍 Payment method detection for', order.orderNo, ':', {
+            'payment.mode': order.payment?.mode,
+            'paymentData.paymentMethod': order.paymentData?.paymentMethod,
+            'deliveryMethod': order.deliveryMethod,
+            'paymentId': order.paymentId,
+            'detectedMethod': paymentMethod,
+            'payment.status': order.payment?.status,
+            'actualPaymentStatus': order.actualPaymentStatus,
+            'payment.object': order.payment,
+            'finalUIStatus': uiStatus
+          });
 
           return {
             id: String(order.orderId || order._id || order.orderNo),
