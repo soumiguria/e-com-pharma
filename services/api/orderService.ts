@@ -224,6 +224,7 @@ class OrderService {
       
       // Transform the new API response to match our interface
       const apiData = response.data.data || response.data; // Handle nested data structure
+      console.log('🔍 API Response data structure:', JSON.stringify(apiData, null, 2));
       const transformedData: PlaceOrderResponse = {
         orderId: apiData.orderId || Math.floor(Math.random() * 1000),
         orderNo: apiData.orderNo || `ORD_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,

@@ -173,7 +173,7 @@ const PaymentMethodsScreen = () => {
         ...(isStoreDelivery ? {} : {
           shippingAddress: selectedAddress || getShippingAddress(),
           billingSameAsShipping: true,
-          billingAddress: selectedAddress || getShippingAddress(), // Same as shipping address
+          billingAddress: getAddressString(selectedAddress), // Convert to string format
           storeDiscount: billDetails.productDiscount,
           couponDiscount: billDetails.couponDiscount,
           shippingAmount: billDetails.shipping,
@@ -286,6 +286,16 @@ const PaymentMethodsScreen = () => {
       pincode: '110001',
       country: 'India',
     };
+  };
+
+  const getAddressString = (address?: Address | null) => {
+    if (address) {
+      return `${address.firstName} ${address.lastName}, ${address.line1}${address.line2 ? ', ' + address.line2 : ''}, ${address.city}, ${address.state} - ${address.pincode}, ${address.country}`;
+    }
+    const addressObj = getShippingAddress();
+    // Handle both Address type and fallback object type
+    const name = 'firstName' in addressObj ? `${addressObj.firstName} ${addressObj.lastName}` : addressObj.name;
+    return `${name}, ${addressObj.line1}, ${addressObj.city}, ${addressObj.state} - ${addressObj.pincode}, ${addressObj.country}`;
   };
 
   const handleAddressChange = () => {

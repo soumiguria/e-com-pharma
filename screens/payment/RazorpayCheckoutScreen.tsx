@@ -809,7 +809,7 @@ const RazorpayCheckoutScreen = () => {
           paymentDataFromOrder = initiatePaymentResponse.data;
           orderResponseData = {
             orderNo: orderNo,
-            totalAmount: amount,
+            totalAmount: initiatePaymentResponse.data.amount || amount,
             paymentId: initiatePaymentResponse.data.paymentId,
           };
         } else {
@@ -825,7 +825,7 @@ const RazorpayCheckoutScreen = () => {
         console.log('📦 Cart items:', cartItems);
 
         // Calculate bill details (you can customize these calculations)
-        const subtotal = amount;
+        const subtotal = cartItems.reduce((total, item) => total + (item.price * item.quantity), 0);
         const productDiscount = Math.round(subtotal * 0.1); // 10% product discount
         const shippingAmount = isStoreDelivery ? 0 : 0; // Free shipping for now
         const taxAmount = 0; // No tax for now
@@ -841,7 +841,7 @@ const RazorpayCheckoutScreen = () => {
           ...(isStoreDelivery ? {} : {
             shippingAddress: getShippingAddress(addressToUse),
             billingSameAsShipping: true,
-            billingAddress: getShippingAddress(addressToUse), // Same as shipping for now
+            billingAddress: getAddressString(addressToUse), // Convert to string format
             storeDiscount: productDiscount,
             couponDiscount: couponDiscount,
             shippingAmount: shippingAmount,
@@ -852,6 +852,7 @@ const RazorpayCheckoutScreen = () => {
         };
 
         console.log('💰 Bill details calculated:');
+        console.log('  - Cart Items Count:', cartItems.length);
         console.log('  - Subtotal:', subtotal);
         console.log('  - Product Discount:', productDiscount);
         console.log('  - Shipping Amount:', shippingAmount);
@@ -875,6 +876,10 @@ const RazorpayCheckoutScreen = () => {
       }
 
       console.log('💳 Payment data from order:', JSON.stringify(paymentDataFromOrder, null, 2));
+      console.log('💳 Payment data check:');
+      console.log('  - paymentDataFromOrder exists:', !!paymentDataFromOrder);
+      console.log('  - pgKey exists:', !!paymentDataFromOrder?.pgKey);
+      console.log('  - pgReferenceId exists:', !!paymentDataFromOrder?.pgReferenceId);
 
       if (paymentDataFromOrder && paymentDataFromOrder.pgKey && paymentDataFromOrder.pgReferenceId) {
         const transformedData: InitiatePaymentResponse = {
@@ -943,6 +948,11 @@ const RazorpayCheckoutScreen = () => {
       pincode: '110001',
       country: 'India',
     };
+  };
+
+  const getAddressString = (address?: Address | null) => {
+    const addressObj = getShippingAddress(address);
+    return `${addressObj.name}, ${addressObj.address}, ${addressObj.city}, ${addressObj.state} - ${addressObj.pincode}, ${addressObj.country}`;
   };
 
   const handlePaymentSuccess = async (razorpayPaymentId: string, razorpayOrderId: string, razorpaySignature: string) => {

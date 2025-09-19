@@ -475,7 +475,7 @@ const StoreListScreen = () => {
       distance: raw.distance ? `${parseFloat(raw.distance).toFixed(1)} km` : '—',
       rating: Number(raw.rating ?? raw.avgRating ?? 4.2),
       image: raw.image || raw.logo || undefined,
-      totalItems: raw.totalItems || raw.itemCount || 0,
+      // totalItems: raw.totalItems || raw.itemCount || 0,
     } as Store;
   };
 
