@@ -146,10 +146,10 @@ const OrderDetailScreen = () => {
           console.log('📦 Setting API order data:', JSON.stringify(res.data, null, 2));
           setApiOrder(res.data);
         } else {
-          console.log('❌ Failed to fetch order details:', res.error);
+          console.log('  Failed to fetch order details:', res.error);
         }
       } catch (error) {
-        console.error('❌ Error fetching order details:', error);
+        console.error('  Error fetching order details:', error);
       } finally {
         setLoading(false);
       }

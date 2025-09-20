@@ -125,14 +125,14 @@ const OrdersScreen = () => {
       const response = await orderService.getPaymentStatus(orderNo);
       
       if (response.success && response.data) {
-        console.log('✅ Payment status for', orderNo, ':', response.data.status);
+        console.log(' Payment status for', orderNo, ':', response.data.status);
         return response.data.status;
       } else {
         console.log('⚠️ Could not get payment status for', orderNo);
         return 'pending';
       }
     } catch (error) {
-      console.error('❌ Error checking payment status for', orderNo, ':', error);
+      console.error('  Error checking payment status for', orderNo, ':', error);
       return 'pending';
     }
   };

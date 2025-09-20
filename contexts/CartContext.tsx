@@ -175,10 +175,10 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
         // Just clear cart data
         await AsyncStorage.removeItem('grocery_cart');
         await AsyncStorage.removeItem('pharmacy_cart');
-        console.log('✅ Cart cleared from context and AsyncStorage');
+        console.log(' Cart cleared from context and AsyncStorage');
       }
     } catch (error) {
-      console.error('❌ Error clearing cart:', error);
+      console.error('  Error clearing cart:', error);
     }
   };
 
@@ -193,10 +193,10 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
       setGroceryItems([]);
       setPharmacyItems([]);
       
-      console.log('✅ All app contexts reset successfully');
+      console.log(' All app contexts reset successfully');
       
     } catch (error) {
-      console.error('❌ Error resetting all contexts:', error);
+      console.error('  Error resetting all contexts:', error);
     }
   };
 

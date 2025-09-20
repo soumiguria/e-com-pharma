@@ -19,18 +19,18 @@ export class BannerService {
     console.log('🖼️ Fetching banners for store:', storeId);
     
     if (!isApiEnabled('USE_REAL_BANNERS')) {
-      console.log('📊 API disabled, using fallback mock data for banners');
+      console.log('   API disabled, using fallback mock data for banners');
       throw new Error('API_DISABLED');
     }
     
     try {
       const url = buildApiUrl(API_CONFIG.ENDPOINTS.BANNERS, { storeId });
       const response = await apiClient.get<Banner[]>(url);
-      console.log('✅ Banners API response:', response);
+      console.log(' Banners API response:', response);
       return response;
     } catch (error) {
-      console.log('❌ Banners API error:', error);
-      console.log('📊 Using fallback mock data for banners');
+      console.log('  Banners API error:', error);
+      console.log('   Using fallback mock data for banners');
       throw error;
     }
   }
@@ -39,17 +39,17 @@ export class BannerService {
     console.log('🖼️ Fetching banner by ID:', bannerId);
     
     if (!isApiEnabled('USE_REAL_BANNERS')) {
-      console.log('📊 API disabled, using fallback mock data for banner details');
+      console.log('   API disabled, using fallback mock data for banner details');
       throw new Error('API_DISABLED');
     }
     
     try {
       const response = await apiClient.get<Banner>(`/banners/${bannerId}`);
-      console.log('✅ Banner details API response:', response);
+      console.log(' Banner details API response:', response);
       return response;
     } catch (error) {
-      console.log('❌ Banner details API error:', error);
-      console.log('📊 Using fallback mock data for banner details');
+      console.log('  Banner details API error:', error);
+      console.log('   Using fallback mock data for banner details');
       throw error;
     }
   }

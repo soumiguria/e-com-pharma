@@ -45,16 +45,17 @@ const CategoryGrid = () => {
     const { theme, section } = useTheme();
     const navigation = useNavigation<NavigationProp>();
     const { selectedStore } = useAppContext();
-    const [categories, setCategories] = useState<any[]>(section === 'pharma' ? pharmacyCategories : groceryCategories);
+    const [categories, setCategories] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [tapLoadingId, setTapLoadingId] = useState<string | null>(null);
 
-    // Lazy loading: Start with fallback data, then fetch API data in background
+    // Fetch categories from API only - no hardcoded data
     useEffect(() => {
         const fetchCategories = async () => {
             if (!selectedStore?.id) {
-                console.log('📊 No store selected, using fallback mock data for categories');
-                return; // Keep fallback data
+                console.log('   No store selected, showing empty categories');
+                setCategories([]);
+                return;
             }
 
             try {
@@ -64,34 +65,32 @@ const CategoryGrid = () => {
                 if (section === 'pharma') {
                     const response = await storeProductService.getPharmaCategories(selectedStore.id);
                     if (response.success && response.data) {
-                        console.log('✅ Pharma categories loaded from API');
+                        console.log('Pharma categories loaded from API');
                         setCategories(response.data);
                     } else {
-                        console.log('📊 Pharma API failed, keeping fallback mock data');
+                        console.log('   Pharma API failed, showing empty categories');
+                        setCategories([]);
                     }
                 } else {
                     const response = await storeProductService.getGroceryCategories(selectedStore.id);
                     if (response.success && response.data) {
-                        console.log('✅ Grocery categories loaded from API');
+                        console.log('Grocery categories loaded from API');
                         setCategories(response.data);
                     } else {
-                        console.log('📊 Grocery API failed, keeping fallback mock data');
+                        console.log('   Grocery API failed, showing empty categories');
+                        setCategories([]);
                     }
                 }
             } catch (error) {
-                console.log(`❌ Error fetching ${section} categories:`, error);
-                console.log('📊 Keeping fallback mock data');
+                console.log(`  Error fetching ${section} categories:`, error);
+                console.log('   Showing empty categories');
+                setCategories([]);
             } finally {
                 setLoading(false);
             }
         };
 
-        // Add a small delay to let the screen render first
-        const timer = setTimeout(() => {
-            fetchCategories();
-        }, 100);
-
-        return () => clearTimeout(timer);
+        fetchCategories();
     }, [selectedStore?.id, section]);
 
     const renderItem = ({ item }: { item: typeof categories[0] }) => (

@@ -65,12 +65,12 @@ const MyAddressesScreen = React.memo(() => {
       const response = await addressService.getAddresses();
       
       if (response.success && response.data) {
-        console.log('✅ Addresses loaded successfully:', response.data);
+        console.log(' Addresses loaded successfully:', response.data);
         
         // Handle nested response structure: { status: "success", data: [] }
         const responseData = response.data as any;
         const actualAddresses = responseData.data || responseData || [];
-        console.log('✅ Actual addresses array:', actualAddresses);
+        console.log(' Actual addresses array:', actualAddresses);
         
         setAddresses(actualAddresses);
         
@@ -80,7 +80,7 @@ const MyAddressesScreen = React.memo(() => {
           setDefaultAddressId(defaultAddress._id || null);
         }
       } else {
-        console.log('❌ Failed to load addresses:', response.error);
+        console.log('  Failed to load addresses:', response.error);
         setAddresses([]);
       }
     } catch (error) {
@@ -96,9 +96,9 @@ const MyAddressesScreen = React.memo(() => {
     setRefreshing(true);
     try {
       await loadAddresses();
-      console.log('✅ Pull to refresh completed');
+      console.log(' Pull to refresh completed');
     } catch (error) {
-      console.error('❌ Pull to refresh failed:', error);
+      console.error('  Pull to refresh failed:', error);
     } finally {
       setRefreshing(false);
     }
@@ -147,11 +147,11 @@ const MyAddressesScreen = React.memo(() => {
             try {
               const response = await addressService.deleteAddress(addressId);
               if (response.success) {
-                console.log('✅ Address deleted successfully');
+                console.log(' Address deleted successfully');
                 // Refresh addresses list
                 await loadAddresses();
               } else {
-                console.log('❌ Failed to delete address:', response.error);
+                console.log('  Failed to delete address:', response.error);
                 Alert.alert('Error', response.error || 'Failed to delete address');
               }
             } catch (error) {
@@ -168,12 +168,12 @@ const MyAddressesScreen = React.memo(() => {
     try {
       const response = await addressService.setDefaultAddress(addressId);
       if (response.success) {
-        console.log('✅ Default address set successfully');
+        console.log(' Default address set successfully');
         setDefaultAddressId(addressId);
         // Refresh addresses list
         await loadAddresses();
       } else {
-        console.log('❌ Failed to set default address:', response.error);
+        console.log('  Failed to set default address:', response.error);
         Alert.alert('Error', response.error || 'Failed to set default address');
       }
     } catch (error) {

@@ -48,7 +48,7 @@ const DeepLinkHandler: React.FC<DeepLinkHandlerProps> = ({ children }) => {
         }
       }
     } catch (error) {
-      console.error('❌ Error handling initial deep link:', error);
+      console.error('  Error handling initial deep link:', error);
     }
   };
 
@@ -57,7 +57,7 @@ const DeepLinkHandler: React.FC<DeepLinkHandlerProps> = ({ children }) => {
       console.log('🔗 DeepLinkHandler: Processing deep link:', url);
       await processDeepLink(url);
     } catch (error) {
-      console.error('❌ DeepLinkHandler: Error handling deep link:', error);
+      console.error('  DeepLinkHandler: Error handling deep link:', error);
     }
   };
 
@@ -88,7 +88,7 @@ const DeepLinkHandler: React.FC<DeepLinkHandlerProps> = ({ children }) => {
         );
       }
     } catch (error) {
-      console.error('❌ Error processing deep link:', error);
+      console.error('  Error processing deep link:', error);
       Alert.alert(
         'Error',
         'Failed to process the link. Please try again.',
@@ -103,22 +103,55 @@ const DeepLinkHandler: React.FC<DeepLinkHandlerProps> = ({ children }) => {
     try {
       console.log('🏪 Processing store deep link:', params);
 
-      // Navigate directly to AboutStore with storeId
-      navigation.reset({
-        index: 0,
-        routes: [
-          { name: 'Main' },
-          { 
-            name: 'AboutStore', 
-            params: { 
-              storeId: params.storeId,
-              fromDeepLink: true
-            } 
-          }
-        ],
-      });
+      // First fetch store details to get proper store information
+      const storeDetails = await fetchStoreDetails(params.storeId);
+      
+      if (storeDetails) {
+        console.log('✅ Store details fetched, navigating to HomeScreen with store:', storeDetails);
+        console.log('🏪 Passing storeName to HomeScreen:', storeDetails.name || params.storeName);
+        
+        // Navigate directly to HomeScreen (Main tab) with store data
+        navigation.reset({
+          index: 0,
+          routes: [
+            { 
+              name: 'Main',
+              params: {
+                screen: 'HomeRoot',
+                params: {
+                  storeId: params.storeId,
+                  storeType: storeDetails.type || params.storeType,
+                  storeName: storeDetails.name || params.storeName,
+                  pincode: storeDetails.pincode
+                }
+              }
+            }
+          ],
+        });
+      } else {
+        console.log('⚠️ Store details not found, using fallback navigation');
+        console.log('🏪 Passing fallback storeName to HomeScreen:', params.storeName || 'Selected Store');
+        
+        // Fallback: Navigate to HomeScreen with basic store info
+        navigation.reset({
+          index: 0,
+          routes: [
+            { 
+              name: 'Main',
+              params: {
+                screen: 'HomeRoot',
+                params: {
+                  storeId: params.storeId,
+                  storeType: params.storeType || 'grocery',
+                  storeName: params.storeName || 'Selected Store'
+                }
+              }
+            }
+          ],
+        });
+      }
 
-      console.log('✅ Navigated to AboutStore with storeId:', params.storeId);
+      console.log('🏠 Navigated to HomeScreen with storeId:', params.storeId);
 
     } catch (error) {
       console.error('❌ Error handling store deep link:', error);
@@ -140,14 +173,14 @@ const DeepLinkHandler: React.FC<DeepLinkHandlerProps> = ({ children }) => {
     try {
       console.log('🔍 Fetching store details for ID:', storeId);
       
-      // Try to get store details from the store service
-      const response = await storeService.getStoreById(storeId);
+      // Try to get store details from the deep linking service
+      const response = await deepLinkingService.fetchStoreDetails(storeId);
       
       if (response.success && response.data) {
         console.log('✅ Store details fetched:', response.data);
         return response.data;
       } else {
-        console.log('❌ Store not found or error fetching store details');
+        console.log('⚠️ Store not found or error fetching store details:', response.error);
         return null;
       }
     } catch (error) {

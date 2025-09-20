@@ -182,7 +182,7 @@ class ApiClient {
       const defaultHeaders = await this.getDefaultHeaders();
       const requestHeaders = { ...defaultHeaders, ...customHeaders };
 
-      console.log('🌐 API Request:', {
+      console.log('  API Request:', {
         method,
         url: fullURL,
         headers: requestHeaders,
@@ -212,7 +212,7 @@ class ApiClient {
 
         // Handle HTTP errors
         if (response.status >= 400) {
-          console.log('❌ API Error Response:', response.data);
+          console.log('  API Error Response:', response.data);
           throw {
             response: {
               status: response.status,
@@ -223,7 +223,7 @@ class ApiClient {
 
         // Handle successful response
         const responseData = response.data;
-        console.log('✅ API Success Response:', responseData);
+        console.log(' API Success Response:', responseData);
         
         // Handle token refresh if needed
         if (response.headers['x-new-token']) {

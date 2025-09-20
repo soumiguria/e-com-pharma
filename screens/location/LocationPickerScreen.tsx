@@ -231,13 +231,13 @@
 //       console.log('🧪 Google Maps API Test Result:', data);
       
 //       if (data.status === 'OK') {
-//         Alert.alert('✅ Google Maps API', 'API is working correctly!');
+//         Alert.alert(' Google Maps API', 'API is working correctly!');
 //       } else {
-//         Alert.alert('❌ Google Maps API', `API Error: ${data.status} - ${data.error_message || 'Unknown error'}`);
+//         Alert.alert('  Google Maps API', `API Error: ${data.status} - ${data.error_message || 'Unknown error'}`);
 //       }
 //     } catch (error) {
 //       console.error('🧪 Google Maps API Test Error:', error);
-//       Alert.alert('❌ Google Maps API', `Failed to connect: ${error instanceof Error ? error.message : 'Unknown error'}`);
+//       Alert.alert('  Google Maps API', `Failed to connect: ${error instanceof Error ? error.message : 'Unknown error'}`);
 //     }
 //   };
 
@@ -1166,13 +1166,13 @@ const LocationPickerScreen = () => {
       console.log('🧪 Google Maps API Test Result:', data);
       
       if (data.status === 'OK') {
-        Alert.alert('✅ Google Maps API', 'API is working correctly!');
+        Alert.alert(' Google Maps API', 'API is working correctly!');
       } else {
-        Alert.alert('❌ Google Maps API', `API Error: ${data.status} - ${data.error_message || 'Unknown error'}`);
+        Alert.alert('  Google Maps API', `API Error: ${data.status} - ${data.error_message || 'Unknown error'}`);
       }
     } catch (error) {
       console.error('🧪 Google Maps API Test Error:', error);
-      Alert.alert('❌ Google Maps API', `Failed to connect: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      Alert.alert('  Google Maps API', `Failed to connect: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
 

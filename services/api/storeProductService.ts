@@ -90,7 +90,7 @@ export class StoreProductService {
     console.log('🛒 Fetching grocery categories for store:', storeId);
     
     if (!isApiEnabled('USE_REAL_CATEGORIES')) {
-      console.log('📊 API disabled, using fallback mock data for grocery categories');
+      console.log('   API disabled, using fallback mock data for grocery categories');
       throw new Error('API_DISABLED');
     }
     
@@ -99,11 +99,11 @@ export class StoreProductService {
       const response = await apiClient.get<any>(url);
       const raw = response.data;
       const mapped = Array.isArray(raw?.data) ? raw.data.map(mapCategory) : [];
-      console.log('✅ Grocery categories API mapped:', mapped.length);
+      console.log(' Grocery categories API mapped:', mapped.length);
       return { success: true, data: mapped } as ApiResponse<Category[]>;
     } catch (error) {
-      console.log('❌ Grocery categories API error:', error);
-      console.log('📊 Using fallback mock data for grocery categories');
+      console.log('  Grocery categories API error:', error);
+      console.log('   Using fallback mock data for grocery categories');
       throw error;
     }
   }
@@ -112,7 +112,7 @@ export class StoreProductService {
     console.log('🛒 Fetching grocery subcategories for store:', storeId);
     
     if (!isApiEnabled('USE_REAL_CATEGORIES')) {
-      console.log('📊 API disabled, using fallback mock data for grocery subcategories');
+      console.log('   API disabled, using fallback mock data for grocery subcategories');
       throw new Error('API_DISABLED');
     }
     
@@ -121,11 +121,11 @@ export class StoreProductService {
       const response = await apiClient.get<any>(url);
       const raw = response.data;
       const mapped = Array.isArray(raw?.data) ? raw.data.map(mapSubCategory) : [];
-      console.log('✅ Grocery subcategories API mapped:', mapped.length);
+      console.log(' Grocery subcategories API mapped:', mapped.length);
       return { success: true, data: mapped } as ApiResponse<SubCategory[]>;
     } catch (error) {
-      console.log('❌ Grocery subcategories API error:', error);
-      console.log('📊 Using fallback mock data for grocery subcategories');
+      console.log('  Grocery subcategories API error:', error);
+      console.log('   Using fallback mock data for grocery subcategories');
       throw error;
     }
   }
@@ -134,7 +134,7 @@ export class StoreProductService {
     console.log('🛒 Fetching grocery products for store:', storeId);
     
     if (!isApiEnabled('USE_REAL_PRODUCTS')) {
-      console.log('📊 API disabled, using fallback mock data for grocery products');
+      console.log('   API disabled, using fallback mock data for grocery products');
       throw new Error('API_DISABLED');
     }
     
@@ -143,11 +143,11 @@ export class StoreProductService {
       const response = await apiClient.get<any>(url);
       const raw = response.data;
       const mapped = Array.isArray(raw?.data) ? raw.data.map((p: any) => mapProduct(p, 'grocery')) : [];
-      console.log('✅ Grocery products API mapped:', mapped.length);
+      console.log(' Grocery products API mapped:', mapped.length);
       return { success: true, data: mapped } as ApiResponse<Product[]>;
     } catch (error) {
-      console.log('❌ Grocery products API error:', error);
-      console.log('📊 Using fallback mock data for grocery products');
+      console.log('  Grocery products API error:', error);
+      console.log('   Using fallback mock data for grocery products');
       throw error;
     }
   }
@@ -156,7 +156,7 @@ export class StoreProductService {
     console.log('🛒 Fetching grocery product details:', { storeId, productId });
     
     if (!isApiEnabled('USE_REAL_PRODUCTS')) {
-      console.log('📊 API disabled, using fallback mock data for grocery product details');
+      console.log('   API disabled, using fallback mock data for grocery product details');
       throw new Error('API_DISABLED');
     }
     
@@ -165,11 +165,11 @@ export class StoreProductService {
       const response = await apiClient.get<any>(url);
       const raw = response.data?.data || response.data;
       const mapped = mapExtendedProduct(raw, 'grocery');
-      console.log('✅ Grocery product details API mapped');
+      console.log(' Grocery product details API mapped');
       return { success: true, data: mapped } as ApiResponse<ExtendedProduct>;
     } catch (error) {
-      console.log('❌ Grocery product details API error:', error);
-      console.log('📊 Using fallback mock data for grocery product details');
+      console.log('  Grocery product details API error:', error);
+      console.log('   Using fallback mock data for grocery product details');
       throw error;
     }
   }
@@ -179,7 +179,7 @@ export class StoreProductService {
     console.log('💊 Fetching pharma categories for store:', storeId);
     
     if (!isApiEnabled('USE_REAL_CATEGORIES')) {
-      console.log('📊 API disabled, using fallback mock data for pharma categories');
+      console.log('   API disabled, using fallback mock data for pharma categories');
       throw new Error('API_DISABLED');
     }
     
@@ -188,11 +188,11 @@ export class StoreProductService {
       const response = await apiClient.get<any>(url);
       const raw = response.data;
       const mapped = Array.isArray(raw?.data) ? raw.data.map(mapCategory) : [];
-      console.log('✅ Pharma categories API mapped:', mapped.length);
+      console.log(' Pharma categories API mapped:', mapped.length);
       return { success: true, data: mapped } as ApiResponse<Category[]>;
     } catch (error) {
-      console.log('❌ Pharma categories API error:', error);
-      console.log('📊 Using fallback mock data for pharma categories');
+      console.log('  Pharma categories API error:', error);
+      console.log('   Using fallback mock data for pharma categories');
       throw error;
     }
   }
@@ -201,7 +201,7 @@ export class StoreProductService {
     console.log('💊 Fetching pharma subcategories for store:', storeId);
     
     if (!isApiEnabled('USE_REAL_CATEGORIES')) {
-      console.log('📊 API disabled, using fallback mock data for pharma subcategories');
+      console.log('   API disabled, using fallback mock data for pharma subcategories');
       throw new Error('API_DISABLED');
     }
     
@@ -210,11 +210,11 @@ export class StoreProductService {
       const response = await apiClient.get<any>(url);
       const raw = response.data;
       const mapped = Array.isArray(raw?.data) ? raw.data.map(mapSubCategory) : [];
-      console.log('✅ Pharma subcategories API mapped:', mapped.length);
+      console.log(' Pharma subcategories API mapped:', mapped.length);
       return { success: true, data: mapped } as ApiResponse<SubCategory[]>;
     } catch (error) {
-      console.log('❌ Pharma subcategories API error:', error);
-      console.log('📊 Using fallback mock data for pharma subcategories');
+      console.log('  Pharma subcategories API error:', error);
+      console.log('   Using fallback mock data for pharma subcategories');
       throw error;
     }
   }
@@ -223,7 +223,7 @@ export class StoreProductService {
     console.log('💊 Fetching pharma products for store:', storeId);
     
     if (!isApiEnabled('USE_REAL_PRODUCTS')) {
-      console.log('📊 API disabled, using fallback mock data for pharma products');
+      console.log('   API disabled, using fallback mock data for pharma products');
       throw new Error('API_DISABLED');
     }
     
@@ -232,11 +232,11 @@ export class StoreProductService {
       const response = await apiClient.get<any>(url);
       const raw = response.data;
       const mapped = Array.isArray(raw?.data) ? raw.data.map((p: any) => mapProduct(p, 'pharma')) : [];
-      console.log('✅ Pharma products API mapped:', mapped.length);
+      console.log(' Pharma products API mapped:', mapped.length);
       return { success: true, data: mapped } as ApiResponse<Product[]>;
     } catch (error) {
-      console.log('❌ Pharma products API error:', error);
-      console.log('📊 Using fallback mock data for pharma products');
+      console.log('  Pharma products API error:', error);
+      console.log('   Using fallback mock data for pharma products');
       throw error;
     }
   }
@@ -245,7 +245,7 @@ export class StoreProductService {
     console.log('💊 Fetching pharma product details:', { storeId, productId });
     
     if (!isApiEnabled('USE_REAL_PRODUCTS')) {
-      console.log('📊 API disabled, using fallback mock data for pharma product details');
+      console.log('   API disabled, using fallback mock data for pharma product details');
       throw new Error('API_DISABLED');
     }
     
@@ -254,11 +254,11 @@ export class StoreProductService {
       const response = await apiClient.get<any>(url);
       const raw = response.data?.data || response.data;
       const mapped = mapExtendedProduct(raw, 'pharma');
-      console.log('✅ Pharma product details API mapped');
+      console.log(' Pharma product details API mapped');
       return { success: true, data: mapped } as ApiResponse<ExtendedProduct>;
     } catch (error) {
-      console.log('❌ Pharma product details API error:', error);
-      console.log('📊 Using fallback mock data for pharma product details');
+      console.log('  Pharma product details API error:', error);
+      console.log('   Using fallback mock data for pharma product details');
       throw error;
     }
   }
@@ -267,7 +267,7 @@ export class StoreProductService {
     console.log('💊 Fetching pharma products for subcategory:', { storeId, subcategoryId });
 
     if (!isApiEnabled('USE_REAL_PRODUCTS')) {
-      console.log('📊 API disabled, using fallback mock data for pharma products');
+      console.log('   API disabled, using fallback mock data for pharma products');
       throw new Error('API_DISABLED');
     }
 
@@ -276,11 +276,11 @@ export class StoreProductService {
       const response = await apiClient.get<any>(url);
       const raw = response.data;
       const mapped = Array.isArray(raw?.data) ? raw.data.map((p: any) => mapProduct(p, 'pharma')) : [];
-      console.log('✅ Pharma products API mapped:', mapped.length);
+      console.log(' Pharma products API mapped:', mapped.length);
       return { success: true, data: mapped } as ApiResponse<Product[]>;
     } catch (error) {
-      console.log('❌ Pharma products API error:', error);
-      console.log('📊 Using fallback mock data for pharma products');
+      console.log('  Pharma products API error:', error);
+      console.log('   Using fallback mock data for pharma products');
       throw error;
     }
   }

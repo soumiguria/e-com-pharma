@@ -79,7 +79,7 @@ const ProductDetailScreen = () => {
   useEffect(() => {
     const fetchProductDetails = async () => {
       if (!selectedStore?.id) {
-        console.log('📊 No store selected, using fallback mock data');
+        console.log('   No store selected, using fallback mock data');
         return;
       }
 
@@ -90,23 +90,23 @@ const ProductDetailScreen = () => {
         if (section === 'pharma') {
           const response = await storeProductService.getPharmaProductDetails(selectedStore.id, extendedProduct.id);
           if (response.success && response.data) {
-            console.log('✅ Pharma product details loaded from API');
+            console.log(' Pharma product details loaded from API');
             setProductDetails(response.data);
           } else {
-            console.log('📊 Pharma API failed, using fallback mock data');
+            console.log('   Pharma API failed, using fallback mock data');
           }
         } else {
           const response = await storeProductService.getGroceryProductDetails(selectedStore.id, extendedProduct.id);
           if (response.success && response.data) {
-            console.log('✅ Grocery product details loaded from API');
+            console.log(' Grocery product details loaded from API');
             setProductDetails(response.data);
           } else {
-            console.log('📊 Grocery API failed, using fallback mock data');
+            console.log('   Grocery API failed, using fallback mock data');
           }
         }
       } catch (error) {
-        console.log(`❌ Error fetching ${section} product details:`, error);
-        console.log('📊 Using fallback mock data');
+        console.log(`  Error fetching ${section} product details:`, error);
+        console.log('   Using fallback mock data');
       } finally {
         setLoading(false);
       }

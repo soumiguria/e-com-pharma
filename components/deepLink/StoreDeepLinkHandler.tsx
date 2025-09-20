@@ -29,7 +29,7 @@ const StoreDeepLinkHandler: React.FC<StoreDeepLinkHandlerProps> = ({ children })
         console.log('🏪 StoreDeepLinkHandler: Processing store ID:', params.storeId);
         handleStoreDeepLink(params.storeId);
       } else {
-        console.log('❌ No storeId found in params:', params);
+        console.log('  No storeId found in params:', params);
       }
     }
   }, [route]);
@@ -42,7 +42,7 @@ const StoreDeepLinkHandler: React.FC<StoreDeepLinkHandlerProps> = ({ children })
       const response = await storeService.getStoreById(storeId);
       
       if (response.success && response.data) {
-        console.log('✅ Store details fetched:', response.data);
+        console.log(' Store details fetched:', response.data);
         
         // Navigate to AboutStore with full store data
         navigation.setParams({
@@ -57,7 +57,7 @@ const StoreDeepLinkHandler: React.FC<StoreDeepLinkHandlerProps> = ({ children })
           [{ text: 'OK' }]
         );
       } else {
-        console.log('❌ Store not found or error fetching store details');
+        console.log('  Store not found or error fetching store details');
         Alert.alert(
           'Store Not Found',
           'The store you\'re looking for could not be found. Please check the link and try again.',
@@ -71,7 +71,7 @@ const StoreDeepLinkHandler: React.FC<StoreDeepLinkHandlerProps> = ({ children })
         );
       }
     } catch (error) {
-      console.error('❌ Error handling store deep link:', error);
+      console.error('  Error handling store deep link:', error);
       Alert.alert(
         'Error',
         'Failed to load the store. Please check your internet connection and try again.',

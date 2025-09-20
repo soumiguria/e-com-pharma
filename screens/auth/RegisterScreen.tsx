@@ -67,14 +67,14 @@ const RegisterScreen = () => {
       console.log('📡 Register API Response:', JSON.stringify(response, null, 2));
 
       if (!response.success || !response.data?.otpKey) {
-        console.log('❌ Registration failed:', response.error);
+        console.log('  Registration failed:', response.error);
         Alert.alert('Error', response.error || 'Registration failed. Please try again.');
         setIsLoading(false);
         return;
       }
 
       const otpKey = response.data.otpKey;
-      console.log('✅ Registration successful, otpKey received:', otpKey);
+      console.log(' Registration successful, otpKey received:', otpKey);
 
       // Navigate to OTP verification with otpKey
       console.log('🔄 Navigating to OTP verification...');

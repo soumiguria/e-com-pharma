@@ -142,12 +142,12 @@ const CategoriesScreen = () => {
   const [subCategoryMap, setSubCategoryMap] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
 
-  // Fetch categories (and subcategories for pharmacy) from API
+  // Fetch categories (and subcategories for pharmacy) from API only - no hardcoded data
   useEffect(() => {
     const fetchCategories = async () => {
       if (!selectedStore?.id) {
-        console.log('📊 No store selected, using fallback mock data');
-        setCategories(section === 'pharma' ? pharmacyCategorySections.flatMap(s => s.categories) : categorySections.flatMap(s => s.categories));
+        console.log('   No store selected, showing empty categories');
+        setCategories([]);
         setLoading(false);
         return;
       }
@@ -173,23 +173,23 @@ const CategoriesScreen = () => {
             map[parentId].push(sc);
           });
 
-          console.log('✅ Pharma categories:', cats.length, 'subcategories:', subs.length);
+          console.log(' Pharma categories:', cats.length, 'subcategories:', subs.length);
           setSubCategoryMap(map);
           setCategories(cats);
         } else {
           const response = await storeProductService.getGroceryCategories(selectedStore.id);
           if (response.success && response.data) {
-            console.log('✅ Grocery categories loaded from API');
+            console.log(' Grocery categories loaded from API');
             setCategories(response.data);
           } else {
-            console.log('📊 Grocery API failed, using fallback mock data');
-            setCategories(categorySections.flatMap(s => s.categories));
+            console.log('   Grocery API failed, showing empty categories');
+            setCategories([]);
           }
         }
       } catch (error) {
-        console.log(`❌ Error fetching ${section} categories:`, error);
-        console.log('📊 Using fallback mock data');
-        setCategories(section === 'pharma' ? pharmacyCategorySections.flatMap(s => s.categories) : categorySections.flatMap(s => s.categories));
+        console.log(`  Error fetching ${section} categories:`, error);
+        console.log('   Showing empty categories');
+        setCategories([]);
       } finally {
         setLoading(false);
       }
@@ -253,10 +253,8 @@ const CategoriesScreen = () => {
     </View>
   );
 
-  // Build sections for UI rendering
-  const computedSections = section === 'pharma'
-    ? [{ id: 'pharma', title: 'Pharmacy Categories', categories }]
-    : categorySections;
+  // Build sections for UI rendering - only show API data
+  const computedSections = [{ id: section, title: section === 'pharma' ? 'Pharmacy Categories' : 'Grocery Categories', categories }];
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>

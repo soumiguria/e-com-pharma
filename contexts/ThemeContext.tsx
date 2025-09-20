@@ -1,6 +1,7 @@
 import React, { createContext, useState, useMemo, useContext, useEffect } from 'react';
 import { lightTheme, darkTheme, Theme } from '../theme/theme';
 import { useStorage } from './StorageContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ThemeMode = 'light' | 'dark';
 type AppSection = 'grocery' | 'pharma';
@@ -20,8 +21,34 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const { appSection, setAppSection } = useStorage();
   const [themeMode, setThemeMode] = useState<ThemeMode>('light');
 
+  // Load theme mode from local storage
+  useEffect(() => {
+    const loadThemeMode = async () => {
+      try {
+        const savedThemeMode = await AsyncStorage.getItem('themeMode');
+        if (savedThemeMode && (savedThemeMode === 'light' || savedThemeMode === 'dark')) {
+          setThemeMode(savedThemeMode);
+        }
+      } catch (error) {
+        console.error('Error loading theme mode:', error);
+      }
+    };
+    loadThemeMode();
+  }, []);
+
+  // Save theme mode to local storage
+  const saveThemeMode = async (mode: ThemeMode) => {
+    try {
+      await AsyncStorage.setItem('themeMode', mode);
+    } catch (error) {
+      console.error('Error saving theme mode:', error);
+    }
+  };
+
   const toggleTheme = () => {
-    setThemeMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
+    const newMode = themeMode === 'light' ? 'dark' : 'light';
+    setThemeMode(newMode);
+    saveThemeMode(newMode);
   };
 
   const theme = useMemo(() => {

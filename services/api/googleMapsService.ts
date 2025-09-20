@@ -156,14 +156,14 @@ class GoogleMapsService {
       const data = await response.json();
       
       if (data.status === 'OK') {
-        console.log('✅ Places search successful:', data.results.length, 'results');
+        console.log(' Places search successful:', data.results.length, 'results');
         return data.results;
       } else {
-        console.error('❌ Places search failed:', data.status, data.error_message);
+        console.error('  Places search failed:', data.status, data.error_message);
         return [];
       }
     } catch (error) {
-      console.error('❌ Places search error:', error);
+      console.error('  Places search error:', error);
       return [];
     }
   }

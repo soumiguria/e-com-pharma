@@ -146,12 +146,12 @@
 
 //       const orderNo = placeOrderResponse.data.orderNo;
 //       setOrderNumber(orderNo);
-//       console.log('✅ Order placed successfully:', orderNo);
+//       console.log(' Order placed successfully:', orderNo);
 
 //       // Clear cart immediately after order placement
 //       console.log('🧹 Clearing cart immediately after order placement...');
 //       await clearCart();
-//       console.log('✅ Cart cleared after order placement');
+//       console.log(' Cart cleared after order placement');
 
 //       // Step 2: Get payment data from place order response
 //       console.log('💳 Getting payment data from place order response...');
@@ -175,7 +175,7 @@
 
 //       // Use the actual payment data from the response
 //       if (paymentDataFromOrder && paymentDataFromOrder.pgKey && paymentDataFromOrder.pgReferenceId) {
-//         console.log('✅ Using payment data from order response');
+//         console.log(' Using payment data from order response');
 //         const transformedData: InitiatePaymentResponse = {
 //           razorpay_order_id: paymentDataFromOrder.pgReferenceId,
 //           razorpay_key_id: paymentDataFromOrder.pgKey,
@@ -188,7 +188,7 @@
 //         console.log('🔍 Transformed payment data from order:', JSON.stringify(transformedData, null, 2));
 //         setPaymentData(transformedData);
 //         setBackendPaymentId(rawResponse.paymentId || orderNo);
-//         console.log('✅ Payment data set from order response');
+//         console.log(' Payment data set from order response');
 //       } else {
 //         console.log('⚠️ No valid payment data in order response, using fallback');
 //         // Create fallback payment data with correct amount
@@ -202,11 +202,11 @@
 //         };
 //         setPaymentData(fallbackPaymentData);
 //         setBackendPaymentId(rawResponse.paymentId || orderNo);
-//         console.log('✅ Using fallback payment data:', JSON.stringify(fallbackPaymentData, null, 2));
+//         console.log(' Using fallback payment data:', JSON.stringify(fallbackPaymentData, null, 2));
 //       }
 
 //     } catch (error: any) {
-//       console.error('❌ Payment initialization failed:', error);
+//       console.error('  Payment initialization failed:', error);
 //       setError(error.message || 'Failed to initialize payment');
 //       Alert.alert('Error', error.message || 'Failed to initialize payment', [
 //         { text: 'OK', onPress: () => navigation.goBack() }
@@ -275,7 +275,7 @@
 //       // Step 3: Clear cart and redirect to Thank You page
 //       console.log('🧹 Clearing cart after payment...');
 //       await clearCart();
-//       console.log('✅ Cart cleared successfully');
+//       console.log(' Cart cleared successfully');
 
 //       // Small delay to ensure cart state is updated
 //       await new Promise(resolve => setTimeout(resolve, 100));
@@ -291,13 +291,13 @@
 //         }
 //       });
 //     } catch (error: any) {
-//       console.error('❌ Payment verification failed:', error);
+//       console.error('  Payment verification failed:', error);
 //       Alert.alert('Payment Verification Failed', error.message || 'Failed to verify payment');
 //     }
 //   };
 
 //   const handlePaymentError = (error: any) => {
-//     console.error('❌ Payment failed:', error);
+//     console.error('  Payment failed:', error);
 //     handledRef.current = true;
 //     if (timeoutRef.current) clearTimeout(timeoutRef.current);
 //     navigation.navigate('PaymentMethods' as any, { paymentStatus: 'failed' });
@@ -318,20 +318,20 @@
 //       // Return to Payment Methods with cancelled status
 //       navigation.navigate('PaymentMethods' as any, { paymentStatus: 'cancelled', orderNo: orderNumber });
 //     } catch (error) {
-//       console.error('❌ Error handling payment cancellation:', error);
+//       console.error('  Error handling payment cancellation:', error);
 //       navigation.goBack();
 //     }
 //   };
 
 //   const generateRazorpayHTML = () => {
 //     if (!paymentData) {
-//       console.error('❌ No payment data available');
+//       console.error('  No payment data available');
 //       return '<html><body><div>No payment data available</div></body></html>';
 //     }
 
 //     // Validate required fields
 //     if (!paymentData.razorpay_key_id || !paymentData.razorpay_order_id) {
-//       console.error('❌ Missing required payment data:', {
+//       console.error('  Missing required payment data:', {
 //         key_id: paymentData.razorpay_key_id,
 //         order_id: paymentData.razorpay_order_id,
 //         amount: paymentData.amount
@@ -378,7 +378,7 @@
 //             },
 //             "modal": {
 //               "ondismiss": function () {
-//                 console.log('❌ Payment modal dismissed');
+//                 console.log('  Payment modal dismissed');
 //                 window.ReactNativeWebView.postMessage(JSON.stringify({
 //                   type: "PAYMENT_CANCELLED"
 //                 }));
@@ -410,19 +410,19 @@
 //         case 'PAYMENT_SUCCESS':
 //           console.log('🎉 PAYMENT_SUCCESS message received from WebView');
 //           if (message.data && message.data.razorpay_payment_id) {
-//             console.log('✅ Valid payment success data, calling handlePaymentSuccess');
+//             console.log(' Valid payment success data, calling handlePaymentSuccess');
 //             handlePaymentSuccess(
 //               message.data.razorpay_payment_id,
 //               message.data.razorpay_order_id,
 //               message.data.razorpay_signature
 //             );
 //           } else {
-//             console.error('❌ Invalid payment success data:', message.data);
+//             console.error('  Invalid payment success data:', message.data);
 //             handlePaymentError('Invalid payment response');
 //           }
 //           break;
 //         case 'PAYMENT_FAILED':
-//           console.error('❌ Payment failed from WebView:', message.error);
+//           console.error('  Payment failed from WebView:', message.error);
 //           handlePaymentError(message.error || 'Payment failed');
 //           break;
 //         case 'PAYMENT_CANCELLED':
@@ -433,8 +433,8 @@
 //           console.log('Unknown message type:', message.type);
 //       }
 //     } catch (error) {
-//       console.error('❌ Error parsing WebView message:', error);
-//       console.error('❌ Raw message:', event.nativeEvent.data);
+//       console.error('  Error parsing WebView message:', error);
+//       console.error('  Raw message:', event.nativeEvent.data);
 //       handlePaymentError('Failed to process payment response');
 //     }
 //   };
@@ -756,12 +756,12 @@ const RazorpayCheckoutScreen = () => {
         
         return selectedAddr;
       } else {
-        console.log('❌ Failed to load addresses:', response.error);
+        console.log('  Failed to load addresses:', response.error);
         setSelectedAddress(null);
         return null;
       }
     } catch (error) {
-      console.error('❌ Error loading addresses:', error);
+      console.error('  Error loading addresses:', error);
       setSelectedAddress(null);
       return null;
     }
@@ -797,11 +797,11 @@ const RazorpayCheckoutScreen = () => {
 
       // Check if home delivery is selected but no address is available
       if (deliveryMethod !== 'Store Pickup' && !addressToUse && !isExistingOrder) {
-        console.log('❌ Address validation failed - no address available');
+        console.log('  Address validation failed - no address available');
         throw new Error('Please select a delivery address to continue');
       }
       
-      console.log('✅ Address validation passed');
+      console.log(' Address validation passed');
 
       let orderNo: string;
       let orderResponseData: any;
@@ -884,7 +884,7 @@ const RazorpayCheckoutScreen = () => {
 
         orderNo = placeOrderResponse.data.orderNo;
         setOrderNumber(orderNo);
-        console.log('✅ Order placed successfully:', orderNo);
+        console.log(' Order placed successfully:', orderNo);
 
         orderResponseData = placeOrderResponse.data;
         paymentDataFromOrder = orderResponseData.paymentData;
@@ -927,13 +927,13 @@ const RazorpayCheckoutScreen = () => {
         console.log('📦 Razorpay Order ID:', transformedData.razorpay_order_id);
         setPaymentData(transformedData);
         setBackendPaymentId(orderResponseData?.paymentId || orderNo);
-        console.log('✅ Payment data set successfully');
+        console.log(' Payment data set successfully');
       } else {
         throw new Error('Invalid payment data received from server');
       }
 
     } catch (error: any) {
-      console.error('❌ Payment initialization failed:', error);
+      console.error('  Payment initialization failed:', error);
       setError(error.message || 'Failed to initialize payment');
     } finally {
       setIsLoading(false);
@@ -1026,11 +1026,11 @@ const RazorpayCheckoutScreen = () => {
         razorpaySignature: razorpaySignature,
       });
 
-      console.log('✅ Payment verification response:', verifyResponse);
+      console.log(' Payment verification response:', verifyResponse);
 
       // Clear cart after successful payment
       await clearCart();
-      console.log('✅ Cart cleared successfully');
+      console.log(' Cart cleared successfully');
       
       // Optional: Reset all app contexts (uncomment if needed)
       // await resetAllContexts();
@@ -1048,7 +1048,7 @@ const RazorpayCheckoutScreen = () => {
       });
 
     } catch (error: any) {
-      console.error('❌ Payment verification failed:', error);
+      console.error('  Payment verification failed:', error);
       handledRef.current = false;
       setIsProcessing(false);
       
@@ -1082,7 +1082,7 @@ const RazorpayCheckoutScreen = () => {
       clearTimeout(timeoutRef.current);
     }
 
-    console.error('❌ Payment failed:', error);
+    console.error('  Payment failed:', error);
     
     Alert.alert(
       'Payment Failed',
@@ -1125,7 +1125,7 @@ const RazorpayCheckoutScreen = () => {
       // Don't clear cart on cancellation - let user try again
       navigation.goBack();
     } catch (error) {
-      console.error('❌ Error handling payment cancellation:', error);
+      console.error('  Error handling payment cancellation:', error);
       navigation.goBack();
     }
   };
@@ -1211,7 +1211,7 @@ const RazorpayCheckoutScreen = () => {
             if (window.ReactNativeWebView) {
                 window.ReactNativeWebView.postMessage(JSON.stringify(message));
             } else {
-                console.error('❌ ReactNativeWebView not available');
+                console.error('  ReactNativeWebView not available');
             }
         }
 
@@ -1276,7 +1276,7 @@ const RazorpayCheckoutScreen = () => {
                 
                 // Handle payment failures
                 razorpayInstance.on('payment.failed', function(response) {
-                    console.error('❌ Payment failed:', response.error);
+                    console.error('  Payment failed:', response.error);
                     updateStatus('Payment failed. Please try again.', true);
                     
                     postMessage('PAYMENT_FAILED', {
@@ -1292,7 +1292,7 @@ const RazorpayCheckoutScreen = () => {
                 razorpayInstance.open();
                 
             } catch (error) {
-                console.error('❌ Error initializing payment:', error);
+                console.error('  Error initializing payment:', error);
                 updateStatus('Failed to initialize payment', true);
                 
                 postMessage('PAYMENT_FAILED', {
@@ -1345,7 +1345,7 @@ const RazorpayCheckoutScreen = () => {
           break;
 
         case 'PAYMENT_FAILED':
-          console.log('❌ Payment failed message received!');
+          console.log('  Payment failed message received!');
           handlePaymentError(message.data || 'Payment failed');
           break;
 
@@ -1358,7 +1358,7 @@ const RazorpayCheckoutScreen = () => {
           console.log('ℹ️ Unknown message type:', message.type);
       }
     } catch (error) {
-      console.error('❌ Error parsing WebView message:', error);
+      console.error('  Error parsing WebView message:', error);
       console.error('📄 Raw message:', event.nativeEvent.data);
       // Don't treat parsing errors as payment failures
     }
@@ -1589,7 +1589,7 @@ const RazorpayCheckoutScreen = () => {
                       // Use the address directly instead of relying on state
                       await initializePayment(address);
                     } catch (error) {
-                      console.error('❌ Error re-placing order with new address:', error);
+                      console.error('  Error re-placing order with new address:', error);
                       setError('Failed to update order with new address');
                       setIsLoading(false);
                     }
@@ -1663,12 +1663,12 @@ const RazorpayCheckoutScreen = () => {
           )}
           onError={(syntheticEvent) => {
             const { nativeEvent } = syntheticEvent;
-            console.error('❌ WebView error:', nativeEvent);
+            console.error('  WebView error:', nativeEvent);
             setError('Failed to load payment gateway');
           }}
           onHttpError={(syntheticEvent) => {
             const { nativeEvent } = syntheticEvent;
-            console.error('❌ WebView HTTP error:', nativeEvent);
+            console.error('  WebView HTTP error:', nativeEvent);
           }}
         />
       )}

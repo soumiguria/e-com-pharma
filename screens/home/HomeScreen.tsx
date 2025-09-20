@@ -120,6 +120,12 @@ const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { 
 
   // Show last visited store name if user is logged in and no store is currently selected
   const displayStore = selectedStore || (isAuthenticated ? lastVisitedStore : null);
+  
+  // Debug logging for store display
+  console.log('🏪 Header - selectedStore:', selectedStore);
+  console.log('🏪 Header - lastVisitedStore:', lastVisitedStore);
+  console.log('🏪 Header - displayStore:', displayStore);
+  console.log('🏪 Header - displayStore.name:', displayStore?.name);
 
   return (
     <Animated.View style={[themedStyles.header]}>
@@ -140,18 +146,20 @@ const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { 
           />
         </TouchableOpacity>
         
-        <TouchableOpacity onPress={() => navigation.navigate('EditProfile' as any)} style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-          <MaterialCommunityIcons 
-            name="account-circle" 
-            size={28} 
-            color={theme.colors.text} 
-          />
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+          <TouchableOpacity onPress={() => navigation.navigate('EditProfile' as any)}>
+            <MaterialCommunityIcons 
+              name="account-circle" 
+              size={28} 
+              color={theme.colors.text} 
+            />
+          </TouchableOpacity>
           {displayStore && (
             <Text style={[themedStyles.storeName, {color: theme.colors.text, marginLeft: 10, fontWeight: 'bold', fontSize: 17}]} numberOfLines={1}>
               {displayStore.name}
             </Text>
           )}
-        </TouchableOpacity>
+        </View>
       </View>
       <View style={themedStyles.headerRight}>
         {/* <TouchableOpacity 
@@ -268,7 +276,10 @@ const HomeScreen = () => {
     const params = route.params as any;
     const incomingStoreId = params?.storeId;
     if (incomingStoreId && incomingStoreId !== 'default') {
+      console.log('🏠 HomeScreen: Deep link params received:', params);
       console.log('🏠 HomeScreen: Deep link storeId received:', incomingStoreId);
+      console.log('🏠 HomeScreen: Deep link storeName received:', params?.storeName);
+      console.log('🏠 HomeScreen: Deep link storeType received:', params?.storeType);
       
       // Fetch store details to get proper store type and info
       const fetchStoreDetails = async () => {
@@ -278,23 +289,41 @@ const HomeScreen = () => {
           
           if (response.ok) {
             const data = await response.json();
-            console.log('✅ Store details fetched for deep link:', data);
+            console.log(' Store details fetched for deep link:', data);
             
             if (data.success && data.data) {
               const storeData = data.data;
-              const storeType = storeData.type || 'grocery'; // Default to grocery if type not specified
+              const storeType = storeData.type || params.storeType || 'grocery'; // Use API data, fallback to params, then default to grocery
               
               const newStore = {
                 id: incomingStoreId,
-                name: storeData.name || 'Selected Store',
+                name: storeData.name || params.storeName || 'Selected Store',
                 address: storeData.address || '',
                 type: storeType,
                 pincode: params.pincode as string | undefined
               };
               
-              console.log('🏪 Setting store from deep link:', newStore);
+              console.log('🏪 Setting store from deep link (API data):', newStore);
+              console.log('🏪 Store name being set:', newStore.name);
               setSelectedStore(newStore);
               
+              if (isAuthenticated) {
+                saveLastVisitedStore(newStore);
+              }
+            } else {
+              console.log('⚠️ API returned no data, using params fallback');
+              // Use parameters passed from DeepLinkHandler
+              const incomingType = (params.storeType as 'grocery' | 'pharma' | undefined) ?? 'grocery';
+              const newStore = { 
+                id: incomingStoreId, 
+                name: params.storeName || 'Selected Store', 
+                address: '', 
+                type: incomingType, 
+                pincode: params.pincode as string | undefined 
+              };
+              console.log('🏪 Setting store from deep link (params fallback):', newStore);
+              console.log('🏪 Store name being set (fallback):', newStore.name);
+              setSelectedStore(newStore);
               if (isAuthenticated) {
                 saveLastVisitedStore(newStore);
               }
@@ -302,18 +331,34 @@ const HomeScreen = () => {
           } else {
             console.log('⚠️ Store fetch failed, using default type');
             // Fallback to default behavior
-            const incomingType = (params.type as 'grocery' | 'pharma' | undefined) ?? 'grocery';
-            const newStore = { id: incomingStoreId, name: 'Selected Store', address: '', type: incomingType, pincode: params.pincode as string | undefined };
+            const incomingType = (params.storeType as 'grocery' | 'pharma' | undefined) ?? 'grocery';
+            const newStore = { 
+              id: incomingStoreId, 
+              name: params.storeName || 'Selected Store', 
+              address: '', 
+              type: incomingType, 
+              pincode: params.pincode as string | undefined 
+            };
+            console.log('🏪 Setting store from deep link (fetch failed fallback):', newStore);
+            console.log('🏪 Store name being set (fetch failed):', newStore.name);
             setSelectedStore(newStore);
             if (isAuthenticated) {
               saveLastVisitedStore(newStore);
             }
           }
         } catch (error) {
-          console.error('❌ Error fetching store details for deep link:', error);
+          console.error('  Error fetching store details for deep link:', error);
           // Fallback to default behavior
-          const incomingType = (params.type as 'grocery' | 'pharma' | undefined) ?? 'grocery';
-          const newStore = { id: incomingStoreId, name: 'Selected Store', address: '', type: incomingType, pincode: params.pincode as string | undefined };
+          const incomingType = (params.storeType as 'grocery' | 'pharma' | undefined) ?? 'grocery';
+          const newStore = { 
+            id: incomingStoreId, 
+            name: params.storeName || 'Selected Store', 
+            address: '', 
+            type: incomingType, 
+            pincode: params.pincode as string | undefined 
+          };
+          console.log('🏪 Setting store from deep link (error fallback):', newStore);
+          console.log('🏪 Store name being set (error):', newStore.name);
           setSelectedStore(newStore);
           if (isAuthenticated) {
             saveLastVisitedStore(newStore);

@@ -87,7 +87,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose }) => {
         );
       }
     } catch (error) {
-      console.error('❌ Error processing QR code:', error);
+      console.error('  Error processing QR code:', error);
       Alert.alert(
         'Error',
         'Failed to process QR code. Please try again.',
@@ -105,7 +105,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose }) => {
       
       // Handle direct store ID
       if (data.match(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i)) {
-        console.log('✅ Direct store ID found');
+        console.log(' Direct store ID found');
         return data;
       }
       
@@ -113,7 +113,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose }) => {
       if (data.startsWith('ecomm://store/')) {
         const storeId = data.replace('ecomm://store/', '');
         if (storeId && storeId.length > 10) {
-          console.log('✅ ecomm:// store ID found:', storeId);
+          console.log(' ecomm:// store ID found:', storeId);
           return storeId;
         }
       }
@@ -122,7 +122,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose }) => {
       if (data.includes('/store/')) {
         const match = data.match(/\/store\/([^/?]+)/);
         if (match && match[1]) {
-          console.log('✅ HTTPS store ID found:', match[1]);
+          console.log(' HTTPS store ID found:', match[1]);
           return match[1];
         }
       }
@@ -131,7 +131,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose }) => {
       if (data.includes('/s/')) {
         const match = data.match(/\/s\/([^/?]+)/);
         if (match && match[1]) {
-          console.log('✅ QR domain store ID found:', match[1]);
+          console.log(' QR domain store ID found:', match[1]);
           return match[1];
         }
       }
@@ -140,15 +140,15 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose }) => {
       if (data.includes('/dl/')) {
         const match = data.match(/\/dl\/([^/?]+)/);
         if (match && match[1]) {
-          console.log('✅ API domain store ID found:', match[1]);
+          console.log(' API domain store ID found:', match[1]);
           return match[1];
         }
       }
       
-      console.log('❌ No valid store ID found in QR data');
+      console.log('  No valid store ID found in QR data');
       return null;
     } catch (error) {
-      console.error('❌ Error extracting store ID from QR:', error);
+      console.error('  Error extracting store ID from QR:', error);
       return null;
     }
   };

@@ -419,7 +419,7 @@ const OrderConfirmationScreen = () => {
           {orderDetails.discount > 0 && (
             <View style={styles.billRow}>
               <Text style={styles.billLabel}>Discount</Text>
-              <Text style={[styles.billValue, { color: theme.colors.success }]}>
+              <Text style={[styles.billValue, { color: '#4CAF50' }]}>
                 -₹{orderDetails.discount.toFixed(2)}
               </Text>
             </View>

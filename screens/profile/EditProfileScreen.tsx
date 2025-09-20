@@ -68,7 +68,7 @@ const EditProfileScreen = () => {
         anniversary: '',
       });
       setIsDataLoaded(true);
-      console.log('✅ User data loaded into form (first time only):', {
+      console.log(' User data loaded into form (first time only):', {
         firstName: user.firstName,
         lastName: user.lastName,
         email: user.email,
@@ -100,11 +100,11 @@ const EditProfileScreen = () => {
       console.log('💾 Saving profile data locally:', profileData);
       
       // Just go back without API call
-      console.log('✅ Profile saved locally, going back...');
+      console.log(' Profile saved locally, going back...');
       navigation.goBack();
       
     } catch (error) {
-      console.error('❌ Error saving profile:', error);
+      console.error('  Error saving profile:', error);
       Alert.alert('Error', 'Failed to save profile. Please try again.');
     } finally {
       setIsSaving(false);

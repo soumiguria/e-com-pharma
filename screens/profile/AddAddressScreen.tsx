@@ -108,7 +108,7 @@ const AddAddressScreen = () => {
       const addressResult = await googleMapsService.reverseGeocode(latitude, longitude);
       
       if (addressResult) {
-        console.log('✅ Address auto-filled from Google Maps:', addressResult);
+        console.log(' Address auto-filled from Google Maps:', addressResult);
         setFormData(prev => ({
           ...prev,
           city: addressResult.city || prev.city,
@@ -119,7 +119,7 @@ const AddAddressScreen = () => {
         }));
       }
     } catch (error) {
-      console.error('❌ Error auto-filling address:', error);
+      console.error('  Error auto-filling address:', error);
     }
   };
 
@@ -130,7 +130,7 @@ const AddAddressScreen = () => {
       const response = await addressService.getAddressById(id);
       
       if (response.success && response.data) {
-        console.log('✅ Address data loaded for editing:', response.data);
+        console.log(' Address data loaded for editing:', response.data);
         
         // Handle nested response structure
         const addressData = response.data as any;
@@ -150,7 +150,7 @@ const AddAddressScreen = () => {
           country: actualAddress.country || 'India',
         });
       } else {
-        console.log('❌ Failed to load address data:', response.error);
+        console.log('  Failed to load address data:', response.error);
         Alert.alert('Error', response.error || 'Failed to load address data');
       }
     } catch (error) {
@@ -246,7 +246,7 @@ const AddAddressScreen = () => {
       if (isEditMode) {
         const response = await addressService.updateAddress(addressId!, addressData);
         if (response.success && response.data) {
-          console.log('✅ Address updated successfully:', response.data);
+          console.log(' Address updated successfully:', response.data);
           Alert.alert(
             'Success',
             'Address updated successfully!',
@@ -261,13 +261,13 @@ const AddAddressScreen = () => {
             ]
           );
         } else {
-          console.log('❌ Failed to update address:', response.error);
+          console.log('  Failed to update address:', response.error);
           Alert.alert('Error', response.error || 'Failed to update address. Please try again.');
         }
       } else {
         const response = await addressService.createAddress(addressData);
         if (response.success && response.data) {
-          console.log('✅ Address saved successfully:', response.data);
+          console.log(' Address saved successfully:', response.data);
     Alert.alert(
       'Success',
       'Address saved successfully!',
@@ -282,7 +282,7 @@ const AddAddressScreen = () => {
       ]
     );
         } else {
-          console.log('❌ Failed to save address:', response.error);
+          console.log('  Failed to save address:', response.error);
           Alert.alert('Error', response.error || 'Failed to save address. Please try again.');
         }
       }

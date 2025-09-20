@@ -23,10 +23,10 @@ const AboutStoreScreen = () => {
   useEffect(() => {
     if (storeId) {
       console.log('🏪 AboutStoreScreen: Store ID from params:', storeId);
-      console.log('🏪 AboutStoreScreen: Store data from params:', params.store);
+      console.log('🏪 AboutStoreScreen: Store data from params:', params?.store);
       
       // If we have store data from deep link, use it
-      if (params.store) {
+      if (params?.store) {
         console.log('🏪 AboutStoreScreen: Using store data from deep link');
         setStoreData(params.store);
       } else {
@@ -35,7 +35,7 @@ const AboutStoreScreen = () => {
         fetchStoreDetails(storeId);
       }
     }
-  }, [storeId, params.store]);
+  }, [storeId, params?.store]);
 
   const fetchStoreDetails = async (storeId: string) => {
     setLoading(true);
@@ -57,7 +57,7 @@ const AboutStoreScreen = () => {
         );
       }
     } catch (error) {
-      console.error('❌ Error fetching store details for deep link:', error);
+      console.error('💥 Error fetching store details for deep link:', error);
       Alert.alert(
         'Error',
         'Failed to load store details.',

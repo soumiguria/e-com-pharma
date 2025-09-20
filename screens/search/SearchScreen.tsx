@@ -17,6 +17,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ProductCard from '../../components/product/ProductCard';
 import SearchBar from '../../components/ui/SearchBar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SearchScreen'>;
 
@@ -105,25 +106,55 @@ const SearchScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<SearchScreenNavigationProp>();
   const [searchQuery, setSearchQuery] = useState('');
-  const [recentSearches, setRecentSearches] = useState(mockRecentSearches);
+  const [recentSearches, setRecentSearches] = useState<string[]>([]);
+
+  // Load search history from local storage
+  useEffect(() => {
+    const loadSearchHistory = async () => {
+      try {
+        const savedSearches = await AsyncStorage.getItem('searchHistory');
+        if (savedSearches) {
+          setRecentSearches(JSON.parse(savedSearches));
+        }
+      } catch (error) {
+        console.error('Error loading search history:', error);
+      }
+    };
+    loadSearchHistory();
+  }, []);
+
+  // Save search history to local storage
+  const saveSearchHistory = async (searches: string[]) => {
+    try {
+      await AsyncStorage.setItem('searchHistory', JSON.stringify(searches));
+    } catch (error) {
+      console.error('Error saving search history:', error);
+    }
+  };
 
   const handleSearch = (query: string) => {
     if (query.trim()) {
+      const trimmedQuery = query.trim().toLowerCase();
       // Add to recent searches if not already present
-      if (!recentSearches.includes(query.toLowerCase())) {
-        setRecentSearches([query.toLowerCase(), ...recentSearches.slice(0, 4)]);
+      if (!recentSearches.includes(trimmedQuery)) {
+        const newSearches = [trimmedQuery, ...recentSearches.slice(0, 4)];
+        setRecentSearches(newSearches);
+        saveSearchHistory(newSearches);
       }
       // Navigate to search results
       navigation.navigate('SearchResults' as any, { query });
     }
   };
 
-  const clearRecentSearches = () => {
+  const clearRecentSearches = async () => {
     setRecentSearches([]);
+    await saveSearchHistory([]);
   };
 
-  const removeRecentSearch = (search: string) => {
-    setRecentSearches(recentSearches.filter(s => s !== search));
+  const removeRecentSearch = async (search: string) => {
+    const newSearches = recentSearches.filter(s => s !== search);
+    setRecentSearches(newSearches);
+    await saveSearchHistory(newSearches);
   };
 
   const handleProductPress = (product: any) => {

@@ -34,8 +34,6 @@ const OTPVerificationScreen = () => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [otpKey, setOtpKey] = useState<string>(routeOtpKey || '');
-  const [showChangeMobile, setShowChangeMobile] = useState(false);
-  const [newMobile, setNewMobile] = useState('');
   const [autoVerifyAttempted, setAutoVerifyAttempted] = useState(false);
   const inputRefs = useRef<Array<any>>([]);
 
@@ -46,7 +44,7 @@ const OTPVerificationScreen = () => {
   useEffect(() => {
     const checkForOTP = async () => {
       try {
-        const hasSMSPermission = await SMS.hasSMSPermissionAsync();
+        const hasSMSPermission = await SMS.isAvailableAsync();
         if (hasSMSPermission) {
           // Check for OTP in SMS after a short delay
           setTimeout(async () => {
@@ -107,51 +105,6 @@ const OTPVerificationScreen = () => {
     }
   };
 
-  // Handle change mobile number
-  const handleChangeMobile = async () => {
-    if (!newMobile.trim()) {
-      Alert.alert('Error', 'Please enter a valid mobile number');
-      return;
-    }
-    
-    if (newMobile.length !== 10) {
-      Alert.alert('Error', 'Please enter a valid 10-digit mobile number');
-      return;
-    }
-
-    setIsLoading(true);
-    try {
-      console.log('🔄 Changing mobile number to:', newMobile);
-      
-      let response;
-      if (isRegistration) {
-        response = await authService.registerUser({
-          mobile: newMobile,
-          firstName: userData?.firstName || '',
-          lastName: userData?.lastName || '',
-          email: userData?.email || '',
-        });
-      } else {
-        response = await authService.sendOTP(newMobile);
-      }
-
-      if (response.success && response.data?.otpKey) {
-        const newOtpKey = response.data.otpKey;
-        setOtpKey(newOtpKey);
-        setShowChangeMobile(false);
-        setNewMobile('');
-        setOtp(['', '', '', '', '', '']);
-        Alert.alert('Success', `OTP sent to +91 ${newMobile}`);
-      } else {
-        Alert.alert('Error', response.error || 'Failed to send OTP to new number');
-      }
-    } catch (error) {
-      console.error('Error changing mobile:', error);
-      Alert.alert('Error', 'Failed to change mobile number');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   // Main OTP verification logic
   const handleVerifyOTP = async () => {
@@ -165,11 +118,11 @@ const OTPVerificationScreen = () => {
     try {
       console.log('🔐 Starting OTP verification...');
       console.log('📱 Phone Number:', actualPhoneNumber);
-      console.log('🔑 OTP Key:', otpKey);
+      console.log('  OTP Key:', otpKey);
       console.log('🔢 OTP Entered:', otpString);
       console.log('📝 Is Registration:', isRegistration);
       console.log('👤 User Data:', userData);
-      console.log('🔑 Route OTP Key:', routeOtpKey);
+      console.log('  Route OTP Key:', routeOtpKey);
       
       // Check if otpKey looks like it's from login or registration
       if (otpKey && otpKey.includes('-login')) {
@@ -187,12 +140,12 @@ const OTPVerificationScreen = () => {
       const loginResult = await login(actualPhoneNumber, otpString, otpKey);
       
       if (loginResult.success) {
-        console.log('✅ Login successful, redirecting to home screen...');
+        console.log(' Login successful, redirecting to home screen...');
         
         // Auto-navigate without showing alert
         navigation.replace('Main', undefined as any);
       } else {
-        console.log('❌ Login failed:', loginResult.error);
+        console.log('  Login failed:', loginResult.error);
         // Only show alert if not auto-verifying
         if (!autoVerifyAttempted) {
           Alert.alert('Error', loginResult.error || 'Failed to verify OTP. Please try again.');
@@ -210,7 +163,7 @@ const OTPVerificationScreen = () => {
   const handleResendOTP = async () => {
     setIsLoading(true);
     try {
-      console.log('🔄 Resending OTP...');
+      console.log('  Resending OTP...');
       console.log('📱 Phone Number:', actualPhoneNumber);
       console.log('📝 Is Registration:', isRegistration);
       
@@ -218,7 +171,7 @@ const OTPVerificationScreen = () => {
       
       if (isRegistration) {
         // For registration, call register API again to get new otpKey
-        console.log('🔄 Registration flow - calling register API for new otpKey...');
+        console.log('  Registration flow - calling register API for new otpKey...');
         if (!userData) {
           Alert.alert('Error', 'User data not found. Please go back and try again.');
           setIsLoading(false);
@@ -233,7 +186,7 @@ const OTPVerificationScreen = () => {
         });
       } else {
         // For login, call sendOTP API
-        console.log('🔄 Login flow - calling sendOTP API...');
+        console.log('  Login flow - calling sendOTP API...');
         response = await authService.sendOTP(actualPhoneNumber);
       }
 
@@ -241,11 +194,11 @@ const OTPVerificationScreen = () => {
 
       if (response.success && response.data?.otpKey) {
         const newOtpKey = response.data.otpKey;
-        console.log('✅ New OTP Key received:', newOtpKey);
+        console.log(' New OTP Key received:', newOtpKey);
         setOtpKey(newOtpKey);
         Alert.alert('Success', 'OTP has been resent successfully!');
       } else {
-        console.log('❌ Resend OTP failed:', response.error);
+        console.log('  Resend OTP failed:', response.error);
         Alert.alert('Error', response.error || 'Failed to resend OTP. Please try again.');
       }
     } catch (error) {
@@ -341,61 +294,6 @@ const OTPVerificationScreen = () => {
       fontSize: 12,
       textAlign: 'center',
     },
-    changeMobileContainer: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: theme.borderRadius.md,
-      padding: theme.spacing.lg,
-      marginBottom: theme.spacing.lg,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-    },
-    changeMobileTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-      marginBottom: theme.spacing.md,
-    },
-    mobileInput: {
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      borderRadius: theme.borderRadius.md,
-      padding: theme.spacing.md,
-      fontSize: 16,
-      color: theme.colors.text,
-      backgroundColor: theme.colors.surface,
-      marginBottom: theme.spacing.md,
-    },
-    changeMobileButtons: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-    },
-    cancelButton: {
-      flex: 1,
-      paddingVertical: theme.spacing.sm,
-      marginRight: theme.spacing.sm,
-      borderRadius: theme.borderRadius.md,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      alignItems: 'center',
-    },
-    confirmButton: {
-      flex: 1,
-      paddingVertical: theme.spacing.sm,
-      marginLeft: theme.spacing.sm,
-      borderRadius: theme.borderRadius.md,
-      backgroundColor: theme.colors.primary,
-      alignItems: 'center',
-    },
-    cancelButtonText: {
-      color: theme.colors.text,
-      fontSize: 14,
-      fontWeight: '500',
-    },
-    confirmButtonText: {
-      color: '#fff',
-      fontSize: 14,
-      fontWeight: 'bold',
-    },
   });
 
   return (
@@ -446,47 +344,14 @@ const OTPVerificationScreen = () => {
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.changeMobileButton} 
-              onPress={() => setShowChangeMobile(!showChangeMobile)}
+              onPress={() => navigation.replace('PhoneAuth', { cartType: cartType || 'grocery' })}
             >
               <Text style={styles.changeMobileButtonText}>
-                {showChangeMobile ? 'Cancel' : 'Change Mobile Number'}
+                Change Mobile Number
               </Text>
             </TouchableOpacity>
           </View>
 
-          {/* Change Mobile Number Section */}
-          {showChangeMobile && (
-            <View style={styles.changeMobileContainer}>
-              <Text style={styles.changeMobileTitle}>Change Mobile Number</Text>
-              <TextInput
-                style={styles.mobileInput}
-                placeholder="Enter new mobile number"
-                placeholderTextColor={theme.colors.secondary}
-                value={newMobile}
-                onChangeText={setNewMobile}
-                keyboardType="numeric"
-                maxLength={10}
-              />
-              <View style={styles.changeMobileButtons}>
-                <TouchableOpacity 
-                  style={styles.cancelButton}
-                  onPress={() => {
-                    setShowChangeMobile(false);
-                    setNewMobile('');
-                  }}
-                >
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
-                  style={styles.confirmButton}
-                  onPress={handleChangeMobile}
-                  disabled={isLoading}
-                >
-                  <Text style={styles.confirmButtonText}>Send OTP</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          )}
         </View>
       </KeyboardAvoidingView>
 

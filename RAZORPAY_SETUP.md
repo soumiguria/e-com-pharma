@@ -51,26 +51,26 @@ Cart → PaymentMethods → Razorpay Gateway → OrderConfirmation
 
 ### 5. Features Implemented
 
-✅ **Dynamic Bill Calculation**
+ **Dynamic Bill Calculation**
 - Subtotal from cart items
 - 10% product discount
 - Express delivery fee (₹49)
 - Fixed coupon discount (₹20)
 - Final total calculation
 
-✅ **User Pre-fill**
+ **User Pre-fill**
 - Email from user profile
 - Mobile number from user profile
 - Name from user profile
 
-✅ **Order Details**
+ **Order Details**
 - Order ID generation
 - Cart type (grocery/pharmacy)
 - Delivery method
 - Time slot
 - Theme color matching app
 
-✅ **Error Handling**
+ **Error Handling**
 - Payment cancellation
 - Payment failure
 - Network errors

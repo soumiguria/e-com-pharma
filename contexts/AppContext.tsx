@@ -70,7 +70,7 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       await AsyncStorage.setItem('last_visited_store', JSON.stringify(store));
       setLastVisitedStore(store);
     } catch (error) {
-      console.error('❌ Error saving last visited store:', error);
+      console.error('  Error saving last visited store:', error);
     }
   };
 
@@ -80,14 +80,14 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
       const storeData = await AsyncStorage.getItem('last_visited_store');
       if (storeData) {
         const store = JSON.parse(storeData);
-        console.log('✅ Loaded last visited store:', store);
+        console.log(' Loaded last visited store:', store);
         setLastVisitedStore(store);
         return store;
       }
       console.log('ℹ️ No last visited store found');
       return null;
     } catch (error) {
-      console.error('❌ Error loading last visited store:', error);
+      console.error('  Error loading last visited store:', error);
       return null;
     }
   };

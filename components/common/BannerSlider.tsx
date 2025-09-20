@@ -54,7 +54,7 @@ const BannerSlider = () => {
   useEffect(() => {
     const fetchBanners = async () => {
       if (!selectedStore?.id) {
-        console.log('📊 No store selected, keeping fallback mock data for banners');
+        console.log('   No store selected, keeping fallback mock data for banners');
         return;
       }
 
@@ -64,14 +64,14 @@ const BannerSlider = () => {
         
         const response = await bannerService.getBanners(selectedStore.id);
         if (response.success && response.data) {
-          console.log('✅ Banners loaded from API');
+          console.log('Banners loaded from API');
           setBanners(response.data);
         } else {
-          console.log('📊 Banners API failed, keeping fallback mock data');
+          console.log('   Banners API failed, keeping fallback mock data');
         }
       } catch (error) {
-        console.log('❌ Error fetching banners:', error);
-        console.log('📊 Keeping fallback mock data');
+        console.log('  Error fetching banners:', error);
+        console.log('   Keeping fallback mock data');
       } finally {
         setLoading(false);
       }

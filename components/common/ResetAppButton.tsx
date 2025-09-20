@@ -54,7 +54,7 @@ export const ResetAppButton: React.FC<ResetAppButtonProps> = ({
         Alert.alert("Success", "Cart has been cleared!");
       }
     } catch (error) {
-      console.error('❌ Error during reset:', error);
+      console.error('  Error during reset:', error);
       Alert.alert("Error", "Failed to reset. Please try again.");
     }
   };

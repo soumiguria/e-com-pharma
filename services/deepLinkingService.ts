@@ -89,7 +89,7 @@ class DeepLinkingService {
       };
 
     } catch (error) {
-      console.error('❌ Error parsing deep link:', error);
+      console.error('  Error parsing deep link:', error);
       return {
         type: 'unknown',
         originalUrl: url
@@ -120,7 +120,7 @@ class DeepLinkingService {
 
       return undefined;
     } catch (error) {
-      console.error('❌ Error extracting store type:', error);
+      console.error('  Error extracting store type:', error);
       return undefined;
     }
   }
@@ -133,7 +133,7 @@ class DeepLinkingService {
       const urlObj = new URL(url);
       return urlObj.searchParams.get('name') || undefined;
     } catch (error) {
-      console.error('❌ Error extracting store name:', error);
+      console.error('  Error extracting store name:', error);
       return undefined;
     }
   }
@@ -161,7 +161,7 @@ class DeepLinkingService {
         await WebBrowser.openBrowserAsync(this.createGenericAppDownloadPage());
       }
     } catch (error) {
-      console.error('❌ Error handling app not installed:', error);
+      console.error('  Error handling app not installed:', error);
       // Fallback to generic app store
       await WebBrowser.openBrowserAsync(this.playStoreUrl);
     }
@@ -220,7 +220,7 @@ class DeepLinkingService {
       console.log('🔗 Initial deep link URL:', url);
       return url;
     } catch (error) {
-      console.error('❌ Error getting initial URL:', error);
+      console.error('  Error getting initial URL:', error);
       return null;
     }
   }
@@ -242,14 +242,14 @@ class DeepLinkingService {
 
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Store details fetched:', data);
+        console.log(' Store details fetched:', data);
         return { success: true, data: data.data };
       } else {
-        console.error('❌ Store fetch failed:', response.status, response.statusText);
+        console.error('  Store fetch failed:', response.status, response.statusText);
         return { success: false, error: `HTTP ${response.status}` };
       }
     } catch (error) {
-      console.error('❌ Error fetching store details:', error);
+      console.error('  Error fetching store details:', error);
       return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
     }
   }

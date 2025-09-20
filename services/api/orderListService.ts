@@ -94,7 +94,7 @@ class OrderListService {
         headers,
       });
 
-      console.log('📊 Orders API response:', response.data);
+      console.log('   Orders API response:', response.data);
 
       if (!response.data || !response.data.data) {
         console.log('⚠️ Orders API returned null data, creating mock response');

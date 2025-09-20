@@ -40,10 +40,10 @@ class AddressService {
     try {
       console.log('📡 Fetching addresses from /v1/customer/address...');
       const response = await apiClient.get<Address[]>('/v1/customer/address');
-      console.log('✅ Get addresses response:', JSON.stringify(response, null, 2));
+      console.log(' Get addresses response:', JSON.stringify(response, null, 2));
       return response;
     } catch (error: any) {
-      console.log('❌ Get addresses error:', error.response?.data || error.message);
+      console.log('  Get addresses error:', error.response?.data || error.message);
       return { 
         success: false, 
         error: 'Failed to fetch addresses. Please try again.', 
@@ -57,10 +57,10 @@ class AddressService {
     try {
       console.log('📡 Creating address with data:', JSON.stringify(addressData, null, 2));
       const response = await apiClient.post<Address>('/v1/customer/address', addressData);
-      console.log('✅ Create address response:', JSON.stringify(response, null, 2));
+      console.log(' Create address response:', JSON.stringify(response, null, 2));
       return response;
     } catch (error: any) {
-      console.log('❌ Create address error:', error.response?.data || error.message);
+      console.log('  Create address error:', error.response?.data || error.message);
       return { 
         success: false, 
         error: 'Failed to create address. Please try again.', 
@@ -74,10 +74,10 @@ class AddressService {
     try {
       console.log('📡 Fetching address by ID:', addressId);
       const response = await apiClient.get<Address>(`/v1/customer/address/${addressId}`);
-      console.log('✅ Get address by ID response:', JSON.stringify(response, null, 2));
+      console.log(' Get address by ID response:', JSON.stringify(response, null, 2));
       return response;
     } catch (error: any) {
-      console.log('❌ Get address by ID error:', error.response?.data || error.message);
+      console.log('  Get address by ID error:', error.response?.data || error.message);
       return { 
         success: false, 
         error: 'Failed to fetch address. Please try again.', 
@@ -91,10 +91,10 @@ class AddressService {
     try {
       console.log('📡 Updating address:', addressId, 'with data:', JSON.stringify(addressData, null, 2));
       const response = await apiClient.patch<Address>(`/v1/customer/address/${addressId}`, addressData);
-      console.log('✅ Update address response:', JSON.stringify(response, null, 2));
+      console.log(' Update address response:', JSON.stringify(response, null, 2));
       return response;
     } catch (error: any) {
-      console.log('❌ Update address error:', error.response?.data || error.message);
+      console.log('  Update address error:', error.response?.data || error.message);
       return { 
         success: false, 
         error: 'Failed to update address. Please try again.', 
@@ -108,10 +108,10 @@ class AddressService {
     try {
       console.log('📡 Deleting address:', addressId);
       const response = await apiClient.delete<boolean>(`/v1/customer/address/${addressId}`);
-      console.log('✅ Delete address response:', JSON.stringify(response, null, 2));
+      console.log(' Delete address response:', JSON.stringify(response, null, 2));
       return response;
     } catch (error: any) {
-      console.log('❌ Delete address error:', error.response?.data || error.message);
+      console.log('  Delete address error:', error.response?.data || error.message);
       return { 
         success: false, 
         error: 'Failed to delete address. Please try again.', 
@@ -125,10 +125,10 @@ class AddressService {
     try {
       console.log('📡 Setting address as default:', addressId);
       const response = await apiClient.patch<Address>(`/v1/customer/address/${addressId}/default`, {});
-      console.log('✅ Set default address response:', JSON.stringify(response, null, 2));
+      console.log(' Set default address response:', JSON.stringify(response, null, 2));
       return response;
     } catch (error: any) {
-      console.log('❌ Set default address error:', error.response?.data || error.message);
+      console.log('  Set default address error:', error.response?.data || error.message);
       return { 
         success: false, 
         error: 'Failed to set default address. Please try again.', 

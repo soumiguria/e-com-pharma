@@ -111,7 +111,7 @@ adb shell am start -W -a android.intent.action.VIEW -d "ecomm://store/test123" c
 🔗 NavigationContainer: Initial URL: ecomm://store/test123
 🏪 StoreDeepLinkHandler: Processing store ID: test123
 🔍 Fetching store details for ID: test123
-✅ Store details fetched: {store data}
+ Store details fetched: {store data}
 ```
 
 #### **Store Not Found:**
@@ -119,7 +119,7 @@ adb shell am start -W -a android.intent.action.VIEW -d "ecomm://store/test123" c
 🔗 NavigationContainer: Deep link received: ecomm://store/invalid-id
 🏪 StoreDeepLinkHandler: Processing store ID: invalid-id
 🔍 Fetching store details for ID: invalid-id
-❌ Store not found or error fetching store details
+  Store not found or error fetching store details
 ```
 
 #### **Network Error:**
@@ -127,7 +127,7 @@ adb shell am start -W -a android.intent.action.VIEW -d "ecomm://store/test123" c
 🔗 NavigationContainer: Deep link received: ecomm://store/test123
 🏪 StoreDeepLinkHandler: Processing store ID: test123
 🔍 Fetching store details for ID: test123
-❌ Error handling store deep link: [error details]
+  Error handling store deep link: [error details]
 ```
 
 ### **Step 7: Test Different URL Formats**
@@ -206,18 +206,18 @@ adb shell am start -W -a android.intent.action.VIEW -d "ecomm://store/test123" c
 
 ### **Step 10: Success Criteria**
 
-#### **✅ Deep Link Working:**
+#### ** Deep Link Working:**
 1. App opens to correct store page
 2. Store details loaded from backend
 3. "Store Found!" alert shown
 4. Console logs show successful processing
 
-#### **✅ Error Handling:**
+#### ** Error Handling:**
 1. Invalid store shows "Store Not Found" alert
 2. Network error shows "Error" alert
 3. Both have "Browse Stores" fallback option
 
-#### **✅ App Store Fallback:**
+#### ** App Store Fallback:**
 1. When app not installed, web page opens
 2. Download buttons for Play Store/App Store
 3. Store information displayed

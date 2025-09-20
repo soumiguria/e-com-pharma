@@ -5,13 +5,13 @@ This guide explains how to implement and use deep linking for store-specific QR 
 
 ## Features Implemented
 
-### ✅ Core Deep Linking
+###  Core Deep Linking
 - **Custom Scheme**: `ecomm://store/{storeId}`
 - **HTTPS URLs**: `https://stores.yourdomain.com/store/{storeId}`
 - **QR Code URLs**: `https://qr.ecomm.com/s/{storeId}` (shortened)
 - **App Store Fallback**: Automatic redirect to Play Store/App Store when app not installed
 
-### ✅ URL Formats Supported
+###  URL Formats Supported
 ```
 Custom Scheme:
 ecomm://store/abc123

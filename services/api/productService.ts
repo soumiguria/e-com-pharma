@@ -20,10 +20,10 @@ export class ProductService {
     console.log('🛒 Fetching grocery categories for store:', storeId);
     try {
       const response = await apiClient.get<Category[]>(`/v1/store/${storeId}/category/grocery`);
-      console.log('✅ Grocery categories API response:', response);
+      console.log(' Grocery categories API response:', response);
       return response;
     } catch (error) {
-      console.log('❌ Grocery categories API error:', error);
+      console.log('  Grocery categories API error:', error);
       throw error;
     }
   }
@@ -32,10 +32,10 @@ export class ProductService {
     console.log('🛒 Fetching grocery subcategories for store:', storeId);
     try {
       const response = await apiClient.get<SubCategory[]>(`/v1/store/${storeId}/subcategory/grocery`);
-      console.log('✅ Grocery subcategories API response:', response);
+      console.log(' Grocery subcategories API response:', response);
       return response;
     } catch (error) {
-      console.log('❌ Grocery subcategories API error:', error);
+      console.log('  Grocery subcategories API error:', error);
       throw error;
     }
   }
@@ -44,10 +44,10 @@ export class ProductService {
     console.log('🛒 Fetching grocery products for store:', storeId);
     try {
       const response = await apiClient.get<Product[]>(`/v1/store/${storeId}/product/grocery`);
-      console.log('✅ Grocery products API response:', response);
+      console.log(' Grocery products API response:', response);
       return response;
     } catch (error) {
-      console.log('❌ Grocery products API error:', error);
+      console.log('  Grocery products API error:', error);
       throw error;
     }
   }
@@ -56,10 +56,10 @@ export class ProductService {
     console.log('🛒 Fetching grocery product details:', { storeId, productId });
     try {
       const response = await apiClient.get<ExtendedProduct>(`/v1/store/${storeId}/product/grocery/${productId}`);
-      console.log('✅ Grocery product details API response:', response);
+      console.log(' Grocery product details API response:', response);
       return response;
     } catch (error) {
-      console.log('❌ Grocery product details API error:', error);
+      console.log('  Grocery product details API error:', error);
       throw error;
     }
   }
@@ -69,10 +69,10 @@ export class ProductService {
     console.log('💊 Fetching pharma categories for store:', storeId);
     try {
       const response = await apiClient.get<Category[]>(`/v1/store/${storeId}/category/pharma`);
-      console.log('✅ Pharma categories API response:', response);
+      console.log(' Pharma categories API response:', response);
       return response;
     } catch (error) {
-      console.log('❌ Pharma categories API error:', error);
+      console.log('  Pharma categories API error:', error);
       throw error;
     }
   }
@@ -81,10 +81,10 @@ export class ProductService {
     console.log('💊 Fetching pharma subcategories for store:', storeId);
     try {
       const response = await apiClient.get<SubCategory[]>(`/v1/store/${storeId}/subcategory/pharma`);
-      console.log('✅ Pharma subcategories API response:', response);
+      console.log(' Pharma subcategories API response:', response);
       return response;
     } catch (error) {
-      console.log('❌ Pharma subcategories API error:', error);
+      console.log('  Pharma subcategories API error:', error);
       throw error;
     }
   }
@@ -93,10 +93,10 @@ export class ProductService {
     console.log('💊 Fetching pharma products for store:', storeId);
     try {
       const response = await apiClient.get<Product[]>(`/v1/store/${storeId}/product/pharma`);
-      console.log('✅ Pharma products API response:', response);
+      console.log(' Pharma products API response:', response);
       return response;
     } catch (error) {
-      console.log('❌ Pharma products API error:', error);
+      console.log('  Pharma products API error:', error);
       throw error;
     }
   }
@@ -105,10 +105,10 @@ export class ProductService {
     console.log('💊 Fetching pharma product details:', { storeId, productId });
     try {
       const response = await apiClient.get<ExtendedProduct>(`/v1/store/${storeId}/product/pharma/${productId}`);
-      console.log('✅ Pharma product details API response:', response);
+      console.log(' Pharma product details API response:', response);
       return response;
     } catch (error) {
-      console.log('❌ Pharma product details API error:', error);
+      console.log('  Pharma product details API error:', error);
       throw error;
     }
   }

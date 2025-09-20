@@ -49,16 +49,16 @@ const ContactStoreScreen = () => {
       
       if (response.success && response.data) {
         console.log('✅ Store details fetched:', response.data);
-        console.log('📧 Store email:', response.data.email);
-        console.log('📱 Store mobile:', response.data.mobile);
+        console.log('📧 Store email:', (response.data as any).email);
+        console.log('📱 Store mobile:', (response.data as any).mobile);
         setStoreDetails(response.data);
       } else {
         console.log('❌ Failed to fetch store details:', response.error);
         // Fallback to selectedStore data
         if (selectedStore) {
           console.log('🔄 Using selectedStore as fallback:', selectedStore);
-          console.log('📧 Fallback email:', selectedStore.email);
-          console.log('📱 Fallback mobile:', selectedStore.mobile);
+        console.log('📧 Fallback email:', (selectedStore as any).email);
+        console.log('📱 Fallback mobile:', (selectedStore as any).mobile);
           setStoreDetails(selectedStore);
         } else {
           Alert.alert('Error', 'Unable to fetch store details');
@@ -69,8 +69,8 @@ const ContactStoreScreen = () => {
       // Fallback to selectedStore data
       if (selectedStore) {
         console.log('🔄 Using selectedStore as fallback (catch):', selectedStore);
-        console.log('📧 Fallback email (catch):', selectedStore.email);
-        console.log('📱 Fallback mobile (catch):', selectedStore.mobile);
+        console.log('📧 Fallback email (catch):', (selectedStore as any).email);
+        console.log('📱 Fallback mobile (catch):', (selectedStore as any).mobile);
         setStoreDetails(selectedStore);
       } else {
         Alert.alert('Error', 'Unable to fetch store details');

@@ -116,7 +116,15 @@ export type RootStackParamList = {
 };
 
 export type HomeTabParamList = {
-  Home: { screen: 'HomeRoot', params: { storeId: string, pincode?: string }};
+  Home: { 
+    screen: 'HomeRoot', 
+    params: { 
+      storeId: string; 
+      pincode?: string;
+      storeType?: 'grocery' | 'pharma';
+      storeName?: string;
+    }
+  };
   'Order Again': undefined;
   Categories: undefined;
   Pharmacy: undefined;
@@ -124,7 +132,12 @@ export type HomeTabParamList = {
 };
 
 export type HomeStackParamList = {
-  HomeRoot: { storeId: string, pincode?: string };
+  HomeRoot: { 
+    storeId: string; 
+    pincode?: string; 
+    storeType?: 'grocery' | 'pharma';
+    storeName?: string;
+  };
   ProductDetail: { product: any };
   CategoryDetail: { category: any };
   GreatOffersScreen: undefined;

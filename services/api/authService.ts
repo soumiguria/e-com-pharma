@@ -16,7 +16,7 @@ export class AuthService {
     try {
       console.log('📤 Sending OTP Request with:', request);
       const response = await apiClient.post<any>('/v1/customer/login', request);
-      console.log('✅ OTP API Response:', JSON.stringify(response, null, 2));
+      console.log(' OTP API Response:', JSON.stringify(response, null, 2));
       
       // Handle nested response structure
       if (response.success && response.data) {
@@ -35,7 +35,7 @@ export class AuthService {
       
       return response;
     } catch (error: any) {
-      console.log('❌ OTP API Error:', error.response?.data || error.message);
+      console.log('  OTP API Error:', error.response?.data || error.message);
       return {
         success: false,
         error: 'Failed to send OTP. Please check your mobile number.',
@@ -79,7 +79,7 @@ export class AuthService {
     try {
       console.log('📤 Verifying OTP with:', request);
       const response = await apiClient.post<any>('/v1/customer/verify-otp', request);
-      console.log('✅ Verify OTP Response:', JSON.stringify(response, null, 2));
+      console.log(' Verify OTP Response:', JSON.stringify(response, null, 2));
       
       // Handle the actual API response structure
       if (response.success && response.data) {
@@ -110,7 +110,7 @@ export class AuthService {
       
       return response;
     } catch (error: any) {
-      console.log('❌ Verify OTP Error:', error.response?.data || error.message);
+      console.log('  Verify OTP Error:', error.response?.data || error.message);
       return {
         success: false,
         error: 'Failed to verify OTP. Please try again.',
@@ -141,7 +141,7 @@ export class AuthService {
     try {
       console.log('📤 Registering user with:', request);
       const response = await apiClient.post<any>('/v1/customer/register', request);
-      console.log('✅ Register Response:', JSON.stringify(response, null, 2));
+      console.log(' Register Response:', JSON.stringify(response, null, 2));
       
       // Handle nested response structure
       if (response.success && response.data) {
@@ -160,7 +160,7 @@ export class AuthService {
       
       return response;
     } catch (error: any) {
-      console.log('❌ Register Error:', error.response?.data || error.message);
+      console.log('  Register Error:', error.response?.data || error.message);
       return {
         success: false,
         error: 'Failed to register user. Please try again.',
@@ -197,7 +197,7 @@ export class AuthService {
         data: { exists: response.success },
       };
     } catch (error: any) {
-      console.log('❌ Check phone exists error:', error.response?.data || error.message);
+      console.log('  Check phone exists error:', error.response?.data || error.message);
       return {
         success: false,
         data: { exists: false },

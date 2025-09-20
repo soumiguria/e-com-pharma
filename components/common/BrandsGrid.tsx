@@ -39,7 +39,7 @@ const BrandsGrid = () => {
     // For now, we'll use fallback data since there's no specific brands API
     // In the future, you can add API integration here
     useEffect(() => {
-        console.log('📊 Using fallback brands data for section:', section);
+        console.log('   Using fallback brands data for section:', section);
         setBrands(section === 'pharma' ? pharmacyBrands : groceryBrands);
     }, [section]);
 

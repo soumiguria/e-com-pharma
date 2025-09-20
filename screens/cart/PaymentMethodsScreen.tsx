@@ -118,14 +118,14 @@ const PaymentMethodsScreen = () => {
           }
         }
       } else {
-        console.log('❌ Failed to load addresses:', response.error);
+        console.log('  Failed to load addresses:', response.error);
         setAddresses([]);
         if (!selectedAddress) {
           setSelectedAddress(null);
         }
       }
     } catch (error) {
-      console.error('❌ Error loading addresses:', error);
+      console.error('  Error loading addresses:', error);
       setAddresses([]);
       if (!selectedAddress) {
         setSelectedAddress(null);
@@ -204,7 +204,7 @@ const PaymentMethodsScreen = () => {
       const response = await orderService.placeOrder(orderData);
       
       if (response.success && response.data) {
-        console.log('✅ Offline order placed successfully:', response.data.orderNo);
+        console.log(' Offline order placed successfully:', response.data.orderNo);
         
         // Clear cart
         await clearCart();
@@ -235,7 +235,7 @@ const PaymentMethodsScreen = () => {
         throw new Error(response.error || 'Failed to place order');
       }
     } catch (error: any) {
-      console.error('❌ Error placing offline order:', error);
+      console.error('  Error placing offline order:', error);
       Alert.alert('Order Failed', error.message || 'Failed to place order. Please try again.');
     } finally {
       setIsLoading(false);
@@ -271,7 +271,7 @@ const PaymentMethodsScreen = () => {
         reorderItems: reorderItems,
       });
     } catch (error: any) {
-      console.error('❌ Error opening Razorpay checkout:', error);
+      console.error('  Error opening Razorpay checkout:', error);
       Alert.alert('Payment Error', 'Failed to open payment gateway. Please try again.');
     } finally {
       setIsProcessingPayment(false);

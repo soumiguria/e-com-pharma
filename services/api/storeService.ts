@@ -230,10 +230,10 @@ export class StoreService {
         headers: { 'x-pincode': pincode }
       });
 
-      console.log('✅ Stores API Response:', JSON.stringify(response, null, 2));
+      console.log(' Stores API Response:', JSON.stringify(response, null, 2));
       return response;
     } catch (error: any) {
-      console.log('❌ Stores API Error:', error.response?.data || error.message);
+      console.log('  Stores API Error:', error.response?.data || error.message);
       return {
         success: false,
         error: 'Failed to fetch stores. Please try again.',
@@ -252,10 +252,10 @@ export class StoreService {
         ...(type ? { type } : {}) 
       });
 
-      console.log('✅ Stores Location API Response:', JSON.stringify(response, null, 2));
+      console.log(' Stores Location API Response:', JSON.stringify(response, null, 2));
       return response;
     } catch (error: any) {
-      console.log('❌ Stores Location API Error:', error.response?.data || error.message);
+      console.log('  Stores Location API Error:', error.response?.data || error.message);
       return {
         success: false,
         error: 'Failed to fetch stores. Please try again.',

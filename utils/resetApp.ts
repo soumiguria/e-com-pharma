@@ -68,7 +68,7 @@ export const resetApp = async (): Promise<void> => {
     for (const key of keysToRemove) {
       try {
         await AsyncStorage.removeItem(key);
-        console.log(`✅ Removed key: ${key}`);
+        console.log(` Removed key: ${key}`);
       } catch (error) {
         console.log(`⚠️ Could not remove key ${key}:`, error);
       }
@@ -77,7 +77,7 @@ export const resetApp = async (): Promise<void> => {
     // Nuclear option: Clear all AsyncStorage
     try {
       await AsyncStorage.clear();
-      console.log('✅ Cleared all AsyncStorage completely');
+      console.log(' Cleared all AsyncStorage completely');
     } catch (error) {
       console.log('⚠️ Could not clear all AsyncStorage:', error);
     }
@@ -90,7 +90,7 @@ export const resetApp = async (): Promise<void> => {
     // BackHandler.exitApp();
     
   } catch (error) {
-    console.error('❌ Error during app reset:', error);
+    console.error('  Error during app reset:', error);
     throw error;
   }
 };
@@ -113,15 +113,15 @@ export const resetCart = async (): Promise<void> => {
     for (const key of cartKeys) {
       try {
         await AsyncStorage.removeItem(key);
-        console.log(`✅ Removed cart key: ${key}`);
+        console.log(` Removed cart key: ${key}`);
       } catch (error) {
         console.log(`⚠️ Could not remove cart key ${key}:`, error);
       }
     }
     
-    console.log('✅ Cart data reset complete');
+    console.log(' Cart data reset complete');
   } catch (error) {
-    console.error('❌ Error resetting cart:', error);
+    console.error('  Error resetting cart:', error);
     throw error;
   }
 };
@@ -145,15 +145,15 @@ export const resetUser = async (): Promise<void> => {
     for (const key of userKeys) {
       try {
         await AsyncStorage.removeItem(key);
-        console.log(`✅ Removed user key: ${key}`);
+        console.log(` Removed user key: ${key}`);
       } catch (error) {
         console.log(`⚠️ Could not remove user key ${key}:`, error);
       }
     }
     
-    console.log('✅ User data reset complete');
+    console.log(' User data reset complete');
   } catch (error) {
-    console.error('❌ Error resetting user data:', error);
+    console.error('  Error resetting user data:', error);
     throw error;
   }
 };

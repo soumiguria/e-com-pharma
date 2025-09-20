@@ -122,7 +122,7 @@ class OrderService {
   private async getAuthToken(): Promise<string> {
     try {
       const token = await AsyncStorage.getItem('auth_token');
-      console.log('🔑 Retrieved token:', token ? 'Token found' : 'No token found');
+      console.log('  Retrieved token:', token ? 'Token found' : 'No token found');
       return token || '';
     } catch (error) {
       console.error('Error getting auth token:', error);
@@ -197,7 +197,7 @@ class OrderService {
             billingAddress: orderData.billingAddress || {},
             products: orderData.products || [],
             storeDiscount: (orderData.storeDiscount ?? 0).toString(),
-            couponDiscount: (orderData.couponDiscount ?? 0).toString(),
+            couponDiscount: '0',
             shippingAmount: (orderData.shippingAmount ?? 0).toString(),
             taxAmount: (orderData.taxAmount ?? 0).toString(),
             subtotalAmount: (orderData.subtotalAmount ?? 0).toString(),
@@ -233,7 +233,7 @@ class OrderService {
         billingAddress: orderData.billingAddress || {},
         products: orderData.products || [],
         storeDiscount: (orderData.storeDiscount ?? 0).toString(),
-        couponDiscount: (orderData.couponDiscount ?? 0).toString(),
+        couponDiscount: '0',
         shippingAmount: (orderData.shippingAmount ?? 0).toString(),
         taxAmount: (orderData.taxAmount ?? 0).toString(),
         subtotalAmount: (orderData.subtotalAmount ?? 0).toString(),
@@ -272,7 +272,7 @@ class OrderService {
       console.error(' Request data:', error.config?.data);
       
       // If API fails, return mock data as fallback
-      console.log('🔄 API failed, returning mock order data as fallback');
+      console.log('  API failed, returning mock order data as fallback');
       return {
         success: true,
         data: {
@@ -285,7 +285,7 @@ class OrderService {
           billingAddress: orderData.deliveryMethod === 'home' ? (orderData.billingAddress || {}) : {},
           products: orderData.products || [],
           storeDiscount: (orderData.storeDiscount ?? 0).toString(),
-          couponDiscount: (orderData.couponDiscount ?? 0).toString(),
+          couponDiscount: '0',
           shippingAmount: (orderData.shippingAmount ?? 0).toString(),
           taxAmount: (orderData.taxAmount ?? 0).toString(),
           subtotalAmount: (orderData.subtotalAmount ?? 0).toString(),
@@ -396,8 +396,8 @@ class OrderService {
       } as const;
       
       console.log('🔍 VERIFY PAYMENT - Input Data:', JSON.stringify(paymentData, null, 2));
-      console.log('🔑 Token retrieved:', token ? `${token.substring(0, 20)}...` : 'No token');
-      console.log('🌐 Making request to: https://marg-api.thelocalsandbox.dev/v1/store/checkout/payment/verify');
+      console.log('  Token retrieved:', token ? `${token.substring(0, 20)}...` : 'No token');
+      console.log('  Making request to: https://marg-api.thelocalsandbox.dev/v1/store/checkout/payment/verify');
       
       // Use paymentId as orderNo for verify API
       const verifyPayload = {
@@ -414,8 +414,8 @@ class OrderService {
         headers,
       });
 
-      console.log('✅ VERIFY PAYMENT - Response Status:', response.status);
-      console.log('✅ VERIFY PAYMENT - Response Data:', JSON.stringify(response.data, null, 2));
+      console.log(' VERIFY PAYMENT - Response Status:', response.status);
+      console.log(' VERIFY PAYMENT - Response Data:', JSON.stringify(response.data, null, 2));
       
       // Handle case where API returns null or empty data
       if (!response.data) {
@@ -437,10 +437,10 @@ class OrderService {
         data: response.data as VerifyPaymentResponse,
       };
     } catch (error: any) {
-      console.error('❌ VERIFY PAYMENT - Error:', error.message);
-      console.error('❌ VERIFY PAYMENT - Error Response:', JSON.stringify(error.response?.data, null, 2));
-      console.error('❌ VERIFY PAYMENT - Error Status:', error.response?.status);
-      console.error('❌ VERIFY PAYMENT - Request URL:', error.config?.url);
+      console.error('  VERIFY PAYMENT - Error:', error.message);
+      console.error('  VERIFY PAYMENT - Error Response:', JSON.stringify(error.response?.data, null, 2));
+      console.error('  VERIFY PAYMENT - Error Status:', error.response?.status);
+      console.error('  VERIFY PAYMENT - Request URL:', error.config?.url);
       return {
         success: false,
         error: error.response?.data?.message || error.message || 'Failed to verify payment',

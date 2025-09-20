@@ -83,10 +83,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       if (userData && token) {
         const parsedUser = JSON.parse(userData);
-        console.log('✅ Parsed user data:', parsedUser);
+        console.log(' Parsed user data:', parsedUser);
         // Extract actual user object if nested
         const actualUserData = extractUserObject(parsedUser);
-        console.log('✅ Actual user data:', actualUserData);
+        console.log(' Actual user data:', actualUserData);
         const userPayload: UserPayload = {
           _id: actualUserData._id || actualUserData.id || '',
           firstName: actualUserData.firstName || '',
@@ -105,11 +105,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         };
         setUser(userPayload);
         setToken(token);
-        console.log('✅ User loaded from storage successfully');
+        console.log(' User loaded from storage successfully');
       }
       setIsLoading(false);
     } catch (error) {
-      console.error('❌ Error loading user from storage:', error);
+      console.error('  Error loading user from storage:', error);
       setIsLoading(false);
     }
   };
@@ -208,15 +208,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               const refreshedUser = extractUserObject(refreshResponse.data);
               setUser(refreshedUser as UserPayload);
               await AsyncStorage.setItem('user_data', JSON.stringify(refreshedUser));
-              console.log('✅ User data refreshed after login:', refreshedUser);
+              console.log(' User data refreshed after login:', refreshedUser);
             }
           } catch (refreshError) {
             console.log('⚠️ Could not refresh user data, using token data:', refreshError);
           }
-          console.log('✅ User logged in successfully');
+          console.log(' User logged in successfully');
           return { success: true };
         } catch (decodeError) {
-          console.error('❌ Error decoding token:', decodeError);
+          console.error('  Error decoding token:', decodeError);
           return { success: false, error: 'Invalid token format' };
         }
       } else {
@@ -276,11 +276,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       if (response.success && response.data) {
         // Extract actual user object if nested
         const actualUser = extractUserObject(response.data);
-        console.log('✅ User data refreshed:', actualUser);
+        console.log(' User data refreshed:', actualUser);
         setUser(actualUser as UserPayload);
         await AsyncStorage.setItem('user_data', JSON.stringify(actualUser));
       } else {
-        console.log('❌ Failed to refresh user data:', response.error);
+        console.log('  Failed to refresh user data:', response.error);
         await logout();
       }
     } catch (error) {
