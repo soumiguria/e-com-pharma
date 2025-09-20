@@ -50,7 +50,8 @@
     "react-native-tab-view": "^3.5.2",
     "react-native-toast-message": "^2.3.0",
     "react-native-vector-icons": "10.1.0",
-    "react-native-webview": "13.8.6"
+    "react-native-webview": "13.8.6",
+    "expo-modules-core": "~1.12.26"
   },
   "devDependencies": {
     "@babel/core": "^7.24.0",

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, Alert, BackHandler } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TextInput, Button, Text, Divider } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../contexts/ThemeContext';
 import { RootStackParamList } from '../../navigation/types';
@@ -63,6 +63,21 @@ const PincodeScreen = () => {
   useEffect(() => {
     checkLocationPermission();
   }, []);
+
+  // Handle back button to close app when on pincode screen
+  useFocusEffect(
+    React.useCallback(() => {
+      const onBackPress = () => {
+        // Close the app when back button is pressed on pincode screen
+        BackHandler.exitApp();
+        return true; // Prevent default back action
+      };
+
+      const subscription = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+
+      return () => subscription.remove();
+    }, [])
+  );
 
   const handleUseCurrentLocation = async () => {
     if (!currentLocation) {
