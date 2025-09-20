@@ -15,6 +15,8 @@ interface CartItem {
     name: string;
     unit: string;
   };
+  // Store the actual product ID that the API expects for order placement
+  productId?: string;
 }
 
 interface CartContextType {

@@ -14,7 +14,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAppContext } from '../../contexts/AppContext';
-import { storeService } from '../../services/api/storeService';
+import { storeService, formatStoreAddress } from '../../services/api/storeService';
 
 type ContactStoreScreenNavigationProp = any;
 
@@ -24,6 +24,7 @@ const ContactStoreScreen = () => {
   const navigation = useNavigation<ContactStoreScreenNavigationProp>();
   const route = useRoute();
   const [storeDetails, setStoreDetails] = useState<any>(null);
+  const [formattedStoreAddress, setFormattedStoreAddress] = useState<string>('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,13 +46,21 @@ const ContactStoreScreen = () => {
 
       console.log('📞 Fetching store details for contact:', storeId);
       
-      const response = await storeService.getStoreById(storeId);
+      const response = await storeService.getStoreDetailsById(storeId);
       
       if (response.success && response.data) {
         console.log('✅ Store details fetched:', response.data);
-        console.log('📧 Store email:', (response.data as any).email);
-        console.log('📱 Store mobile:', (response.data as any).mobile);
-        setStoreDetails(response.data);
+        const storeData = (response.data as any).data || response.data;
+        console.log('📧 Store email:', storeData.email);
+        console.log('📱 Store mobile:', storeData.mobile);
+        setStoreDetails(storeData);
+        
+        // Format the address with coordinates if available
+        const coordinates = storeData.location?.coordinates;
+        if (storeData.address || coordinates) {
+          const formattedAddress = formatStoreAddress(storeData.address || {}, coordinates);
+          setFormattedStoreAddress(formattedAddress);
+        }
       } else {
         console.log('❌ Failed to fetch store details:', response.error);
         // Fallback to selectedStore data
@@ -262,9 +271,9 @@ const ContactStoreScreen = () => {
                   <Text style={[styles.contactOptionTitle, { color: theme.colors.text }]}>
                     Store Address
                   </Text>
-                  <Text style={[styles.contactOptionSubtitle, { color: theme.colors.secondary }]}>
-                    {storeDetails.address}
-                  </Text>
+               <Text style={[styles.contactOptionSubtitle, { color: theme.colors.secondary }]}>
+                 {formattedStoreAddress || 'Store address not available'}
+               </Text>
                 </View>
               </View>
             </View>

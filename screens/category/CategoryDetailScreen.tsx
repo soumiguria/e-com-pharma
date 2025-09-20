@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -21,6 +21,8 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ThemedButton from '../../components/ui/ThemedButton';
 import { useCart } from '../../contexts/CartContext';
+import { useAppContext } from '../../contexts/AppContext';
+import { storeService } from '../../services/api/storeService';
 
 const { width, height } = Dimensions.get('window');
 const LEFT_COLUMN_WIDTH = 90;
@@ -279,12 +281,85 @@ const CategoryDetailScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { theme } = useTheme();
   const { addToGroceryCart, addToPharmacyCart, removeFromCart } = useCart();
+  const { selectedStore } = useAppContext();
   const { category } = route.params;
+  
+  // State for API data
+  const [apiSubCategories, setApiSubCategories] = useState<any[]>([]);
+  const [apiProducts, setApiProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  
   const subCategories = Array.isArray(category.subCategories) && category.subCategories.length > 0
     ? category.subCategories
-    : DUMMY_CATEGORY_DATA[category.id] || DUMMY_SUBCATEGORIES;
-  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(subCategories[0]?.id);
+    : apiSubCategories.length > 0 
+      ? apiSubCategories
+      : DUMMY_CATEGORY_DATA[category.id] || DUMMY_SUBCATEGORIES;
+  
+  // Use pre-selected subcategory if provided, otherwise use first subcategory
+  const initialSubCategoryId = category.selectedSubcategoryId || subCategories[0]?.id;
+  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(initialSubCategoryId);
   const [sortBy, setSortBy] = useState<'relevance' | 'price_low_high' | 'price_high_low' | 'a_z' | 'z_a'>('relevance');
+
+  // Fetch subcategories and products when component mounts
+  useEffect(() => {
+    const fetchCategoryData = async () => {
+      if (!selectedStore?.id || !category.id) return;
+      
+      setLoading(true);
+      try {
+        console.log('🔍 CategoryDetailScreen: Fetching subcategories for category:', category.id);
+        
+        // Fetch subcategories for this category
+        const subcategoriesResponse = await storeService.getCategorySubcategories(category.id, 'pharma');
+        console.log('🔍 CategoryDetailScreen: Subcategories response:', JSON.stringify(subcategoriesResponse, null, 2));
+        
+        if (subcategoriesResponse.success && subcategoriesResponse.data) {
+          const subcategoriesData = subcategoriesResponse.data.data || subcategoriesResponse.data;
+          const transformedSubcategories = Array.isArray(subcategoriesData) 
+            ? subcategoriesData.map((sc: any) => ({
+                id: sc.subcategoryId,
+                name: sc.name,
+                products: [], // Will be fetched separately for each subcategory
+                brands: []
+              }))
+            : [];
+          
+          setApiSubCategories(transformedSubcategories);
+          console.log('🔍 CategoryDetailScreen: Transformed subcategories:', transformedSubcategories);
+        }
+      } catch (error) {
+        console.error('🔍 CategoryDetailScreen: Error fetching subcategories:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategoryData();
+  }, [selectedStore?.id, category.id]);
+
+  // Fetch products for the selected subcategory
+  useEffect(() => {
+    const fetchSubcategoryProducts = async () => {
+      if (!selectedStore?.id || !selectedSubCategoryId) return;
+      
+      try {
+        console.log('🔍 CategoryDetailScreen: Fetching products for subcategory:', selectedSubCategoryId);
+        
+        // For now, we'll use the existing products from the subcategory
+        // In the future, we can add a specific API endpoint for subcategory products
+        const selectedSubCategory = subCategories.find((sc: any) => sc.id === selectedSubCategoryId);
+        if (selectedSubCategory && Array.isArray(selectedSubCategory.products)) {
+          setApiProducts(selectedSubCategory.products);
+          console.log('🔍 CategoryDetailScreen: Products for subcategory:', selectedSubCategory.products.length);
+        }
+      } catch (error) {
+        console.error('🔍 CategoryDetailScreen: Error fetching products:', error);
+      }
+    };
+
+    fetchSubcategoryProducts();
+  }, [selectedStore?.id, selectedSubCategoryId, subCategories]);
+
   const [filter, setFilter] = useState<string | null>(null);
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
@@ -307,8 +382,15 @@ const CategoryDetailScreen = () => {
   // Add state for product quantities
   const [productQuantities, setProductQuantities] = useState<{ [productId: string]: number }>({});
 
-  const selectedSubCategory = subCategories.find((sc: SubCategory) => sc.id === selectedSubCategoryId);
-  let products: Product[] = selectedSubCategory ? selectedSubCategory.products : [];
+  const selectedSubCategory = Array.isArray(subCategories) 
+    ? subCategories.find((sc: SubCategory) => sc.id === selectedSubCategoryId)
+    : undefined;
+  // Use API products if available, otherwise use subcategory products
+  let products: Product[] = apiProducts.length > 0 
+    ? apiProducts 
+    : (selectedSubCategory && Array.isArray(selectedSubCategory.products) 
+        ? selectedSubCategory.products 
+        : []);
   if (sortBy === 'price_low_high') {
     products = [...products].sort((a: Product, b: Product) => a.price - b.price);
   } else if (sortBy === 'price_high_low') {
@@ -342,7 +424,13 @@ const CategoryDetailScreen = () => {
   // Collect all brands from products in the selected subcategory
   const allBrands = useMemo(() => {
     const brandsSet = new Set<string>();
-    subCategories.forEach((sc: SubCategory) => sc.products.forEach((p: Product) => p.brand && brandsSet.add(p.brand)));
+    if (Array.isArray(subCategories)) {
+      subCategories.forEach((sc: SubCategory) => {
+        if (sc.products && Array.isArray(sc.products)) {
+          sc.products.forEach((p: Product) => p.brand && brandsSet.add(p.brand));
+        }
+      });
+    }
     return Array.from(brandsSet);
   }, [subCategories]);
 

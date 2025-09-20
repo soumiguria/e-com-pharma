@@ -391,7 +391,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useAppContext } from '../../contexts/AppContext';
 import { useAuth } from '../../contexts/AuthContext';
-import storeService from '../../services/api/storeService';
+import storeService, { formatStoreAddress } from '../../services/api/storeService';
 
 type NavigationProp = StackNavigationProp<RootStackParamList, 'StoreList'>;
 type StoreListRouteProp = RouteProp<RootStackParamList, 'StoreList'>;
@@ -488,6 +488,30 @@ const StoreListScreen = () => {
     } as Store;
   };
 
+  // Helper: fetch detailed store information and update address
+  const fetchStoreDetails = async (store: Store): Promise<Store> => {
+    try {
+      console.log('🏪 Fetching detailed store info for:', store.id);
+      const response = await storeService.getStoreDetailsById(store.id);
+      if (response.success && response.data) {
+        const detailedStore = response.data;
+        const coordinates = detailedStore.location?.coordinates;
+        const formattedAddress = detailedStore.address 
+          ? formatStoreAddress(detailedStore.address, coordinates) 
+          : store.address;
+        console.log('🏪 Store address updated:', formattedAddress);
+        return {
+          ...store,
+          address: formattedAddress,
+          mobile: String(detailedStore.mobile || store.mobile || ''),
+        };
+      }
+    } catch (error) {
+      console.error('❌ Error fetching store details for', store.id, ':', error);
+    }
+    return store;
+  };
+
   // Fetch data from API based on active tab (type)
   useEffect(() => {
     let cancelled = false;
@@ -509,8 +533,14 @@ const StoreListScreen = () => {
         const raw: any = response.data;
         const list: any[] = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
         const mapped: Store[] = (list as any[]).map(mapStore).filter((s: Store) => s.type === activeTab);
+        
+        // Fetch detailed store information for each store to get proper addresses
+        const storesWithDetails = await Promise.all(
+          mapped.map(store => fetchStoreDetails(store))
+        );
+        
         if (!cancelled) {
-          setStores(mapped.length > 0 ? mapped : mockedStores.filter(s => s.type === activeTab));
+          setStores(storesWithDetails.length > 0 ? storesWithDetails : mockedStores.filter(s => s.type === activeTab));
         }
       } catch (error) {
         console.error('Error fetching stores:', error);

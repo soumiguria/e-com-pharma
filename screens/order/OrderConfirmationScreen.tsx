@@ -16,6 +16,7 @@ import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useCart } from '../../contexts/CartContext';
+import storeService, { formatStoreAddress } from '../../services/api/storeService';
 
 type OrderConfirmationNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderConfirmation'>;
 type OrderConfirmationRouteProp = RouteProp<RootStackParamList, 'OrderConfirmation'>;
@@ -26,6 +27,8 @@ const OrderConfirmationScreen = () => {
   const route = useRoute<OrderConfirmationRouteProp>();
   const { clearCart } = useCart();
   const [buttonPressed, setButtonPressed] = useState<string | null>(null);
+  const [storeDetails, setStoreDetails] = useState<any>(null);
+  const [formattedStoreAddress, setFormattedStoreAddress] = useState<string>('');
   const logoScale = useRef(new Animated.Value(0)).current;
   const logoOpacity = useRef(new Animated.Value(0)).current;
 
@@ -50,17 +53,48 @@ const OrderConfirmationScreen = () => {
     orderId,
     totalAmount,
     items: [
-      { name: 'Organic Apples', quantity: 2, price: 120 },
-      { name: 'Fresh Milk', quantity: 1, price: 65 },
-      { name: 'Whole Grain Bread', quantity: 1, price: 45 },
+      { id: '1', name: 'Sample Product 1', price: 200, quantity: 2, image: 'https://via.placeholder.com/50' },
+      { id: '2', name: 'Sample Product 2', price: 150, quantity: 1, image: 'https://via.placeholder.com/50' },
     ],
-    shippingAddress: '123 Main Street, Apartment 4B, New Delhi, Delhi 110001',
+    shippingAddress: '123 Main St, City, State - 12345',
     deliveryMethod: 'Home Delivery',
-    deliveryFee: 30,
-    discount: 0,
-    itemTotal: 230,
+    deliveryFee: 50,
+    discount: 20,
+    itemTotal: 400,
     paymentData: paymentData,
   };
+
+  // Fetch store details for store address display
+  useEffect(() => {
+    const fetchStoreDetails = async () => {
+      // Try to get store ID from order data or route params
+      const storeId = routeOrderData?.storeId || route.params?.storeId;
+      if (storeId && !storeDetails && orderDetails.deliveryMethod === 'Store Pickup') {
+        console.log('🏪 Fetching store details for confirmation screen, store ID:', storeId);
+             try {
+               const response = await storeService.getStoreDetailsById(storeId);
+               if (response.success && response.data) {
+                 console.log('🏪 Store details fetched successfully for confirmation:', response.data);
+                 const storeData = (response.data as any).data || response.data;
+                 setStoreDetails(storeData);
+                 
+                 // Format the address with coordinates if available
+                 const coordinates = storeData.location?.coordinates;
+                 if (storeData.address || coordinates) {
+                   const formattedAddress = formatStoreAddress(storeData.address || {}, coordinates);
+                   setFormattedStoreAddress(formattedAddress);
+                 }
+               } else {
+            console.log('⚠️ Failed to fetch store details for confirmation:', response.error);
+          }
+        } catch (error) {
+          console.error('❌ Error fetching store details for confirmation:', error);
+        }
+      }
+    };
+
+    fetchStoreDetails();
+  }, [routeOrderData, route.params?.storeId, storeDetails, orderDetails.deliveryMethod]);
 
   // Debug logging
   console.log('🎉 OrderConfirmation route params:', { paymentData, routeOrderId, routeAmount, routeOrderData });
@@ -447,15 +481,17 @@ const OrderConfirmationScreen = () => {
           {orderDetails.deliveryMethod === 'Store Pickup' ? (
             <View style={styles.addressSection}>
               <Text style={styles.addressLabel}>Store Pickup</Text>
-              <Text style={styles.addressText}>
-                Please visit the store to collect your order. Order ID: {orderDetails.orderId}
-              </Text>
+           <Text style={styles.addressText}>
+             {formattedStoreAddress || 'Please visit the store to collect your order. Order ID: ' + orderDetails.orderId}
+           </Text>
             </View>
           ) : (
             <View style={styles.addressSection}>
               <Text style={styles.addressLabel}>Delivery Address</Text>
               <Text style={styles.addressText}>
-                {orderDetails.shippingAddress || 'Address not available'}
+                {typeof orderDetails.shippingAddress === 'string' 
+                  ? orderDetails.shippingAddress 
+                  : 'Address not available'}
               </Text>
             </View>
           )}

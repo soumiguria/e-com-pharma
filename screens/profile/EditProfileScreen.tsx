@@ -18,6 +18,7 @@ import { StackNavigationProp } from '@react-navigation/stack';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useCallback } from 'react';
 import userService from '../../services/api/userService';
+import customerService from '../../services/api/customerService';
 
 type EditProfileScreenNavigationProp = StackNavigationProp<RootStackParamList, 'EditProfile'>;
 
@@ -57,28 +58,66 @@ const EditProfileScreen = () => {
 
   // Load user data only once when component mounts and user is available
   useEffect(() => {
-    if (user && !isDataLoaded) {
-      setProfileData({
-        firstName: user.firstName || '',
-        lastName: user.lastName || '',
-        mobileNumber: `+91 ${user.mobile || ''}`,
-        email: user.email || '',
-        alternateNumber: '',
-        birthday: '',
-        anniversary: '',
-      });
-      setIsDataLoaded(true);
-      console.log(' User data loaded into form (first time only):', {
-        firstName: user.firstName,
-        lastName: user.lastName,
-        email: user.email,
-        mobile: user.mobile
-      });
-    } else if (isAuthenticated && !user && !isDataLoaded) {
-      // If authenticated but no user data, refresh it
-      console.log('🔄 Refreshing user data in EditProfileScreen...');
-      refreshUser();
-    }
+    const loadProfileData = async () => {
+      if (user && !isDataLoaded) {
+        // First try to fetch latest customer data from API
+        try {
+          console.log('📱 Fetching latest customer data from API...');
+          const response = await customerService.getCustomerSelf();
+          
+          if (response.success && response.data) {
+            console.log('✅ Latest customer data fetched:', response.data);
+            setProfileData({
+              firstName: response.data.firstName || '',
+              lastName: response.data.lastName || '',
+              mobileNumber: `+91 ${response.data.mobile || ''}`,
+              email: response.data.email || '',
+              alternateNumber: '',
+              birthday: '',
+              anniversary: '',
+            });
+          } else {
+            // Fallback to user data from AuthContext
+            console.log('⚠️ API fetch failed, using AuthContext data');
+            setProfileData({
+              firstName: user.firstName || '',
+              lastName: user.lastName || '',
+              mobileNumber: `+91 ${user.mobile || ''}`,
+              email: user.email || '',
+              alternateNumber: '',
+              birthday: '',
+              anniversary: '',
+            });
+          }
+        } catch (error) {
+          console.error('❌ Error fetching customer data:', error);
+          // Fallback to user data from AuthContext
+          setProfileData({
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            mobileNumber: `+91 ${user.mobile || ''}`,
+            email: user.email || '',
+            alternateNumber: '',
+            birthday: '',
+            anniversary: '',
+          });
+        }
+        
+        setIsDataLoaded(true);
+        console.log('📱 User data loaded into form (first time only):', {
+          firstName: user.firstName,
+          lastName: user.lastName,
+          email: user.email,
+          mobile: user.mobile
+        });
+      } else if (isAuthenticated && !user && !isDataLoaded) {
+        // If authenticated but no user data, refresh it
+        console.log('🔄 Refreshing user data in EditProfileScreen...');
+        refreshUser();
+      }
+    };
+    
+    loadProfileData();
   }, [user, isAuthenticated, refreshUser, isDataLoaded]);
 
   // Refresh user data when screen comes into focus (e.g., after login)
@@ -97,14 +136,40 @@ const EditProfileScreen = () => {
     try {
       setIsSaving(true);
       
-      console.log('💾 Saving profile data locally:', profileData);
+      console.log('💾 Saving profile data to API:', profileData);
       
-      // Just go back without API call
-      console.log(' Profile saved locally, going back...');
-      navigation.goBack();
+      // Prepare update data for API (exclude mobile as it's not allowed to be updated)
+      const updateData = {
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        email: profileData.email,
+        // Note: mobile is not allowed to be updated as per API documentation
+      };
+      
+      // Call Customer Self API to update profile
+      const response = await customerService.updateCustomerSelf(updateData);
+      
+      if (response.success && response.data) {
+        console.log('✅ Profile updated successfully:', response.data);
+        
+        // Update local user data in AuthContext
+        if (refreshUser) {
+          await refreshUser();
+        }
+        
+        Alert.alert('Success', 'Profile updated successfully!', [
+          {
+            text: 'OK',
+            onPress: () => navigation.goBack(),
+          },
+        ]);
+      } else {
+        console.error('❌ Failed to update profile:', response.error);
+        Alert.alert('Error', response.error || 'Failed to update profile. Please try again.');
+      }
       
     } catch (error) {
-      console.error('  Error saving profile:', error);
+      console.error('❌ Error saving profile:', error);
       Alert.alert('Error', 'Failed to save profile. Please try again.');
     } finally {
       setIsSaving(false);
@@ -180,6 +245,11 @@ const EditProfileScreen = () => {
       fontSize: 16,
       color: theme.colors.text,
       backgroundColor: theme.colors.surface,
+    },
+    disabledInput: {
+      backgroundColor: theme.colors.border,
+      color: '#000000',
+      opacity: 0.8,
     },
     centerContainer: {
       flex: 1,
@@ -277,10 +347,10 @@ const EditProfileScreen = () => {
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Mobile Number</Text>
               <TextInput
-                style={styles.input}
+                style={[styles.input, styles.disabledInput]}
                 value={profileData.mobileNumber}
-                onChangeText={(text) => setProfileData({...profileData, mobileNumber: text})}
-                placeholder="Enter mobile number"
+                editable={false}
+                placeholder="Mobile number cannot be changed"
                 placeholderTextColor={theme.colors.secondary}
                 keyboardType="phone-pad"
               />
@@ -301,6 +371,8 @@ const EditProfileScreen = () => {
               />
             </View>
 
+            {/* Hidden fields - Alternate Number, Birthday, Anniversary */}
+            {/* 
             <View style={styles.inputContainer}>
               <Text style={styles.inputLabel}>Alternate Number</Text>
               <TextInput
@@ -334,6 +406,7 @@ const EditProfileScreen = () => {
                 placeholderTextColor={theme.colors.secondary}
               />
             </View>
+            */}
           </View>
 
         </ScrollView>

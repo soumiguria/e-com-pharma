@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,8 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Image,
+  ActivityIndicator,
+  ScrollView,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -14,54 +16,133 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ProductCard from '../../components/product/ProductCard';
+import { useAppContext } from '../../contexts/AppContext';
+import storeService from '../../services/api/storeService';
 
 type SearchResultsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SearchResults'>;
 
-// Mock search results data
-const mockSearchResults = [
-  {
-    id: '1',
-    name: 'Organic Apples',
-    price: 2.99,
-    image: 'https://images.pexels.com/photos/2093087/pexels-photo-2093087.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '2',
-    name: 'Fresh Milk',
-    price: 3.49,
-    image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '3',
-    name: 'Whole Grain Bread',
-    price: 1.99,
-    image: 'https://images.pexels.com/photos/1721934/pexels-photo-1721934.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '4',
-    name: 'Fresh Vegetables',
-    price: 4.99,
-    image: 'https://images.pexels.com/photos/2518893/pexels-photo-2518893.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-];
+interface SearchResult {
+  categories: any[];
+  subcategories: any[];
+  products: any[];
+}
+
+interface Product {
+  _id: string;
+  name: string;
+  productMasterId: string;
+  productMasterERPId: string;
+  hsnCode: string;
+  introduction?: string;
+  description?: string;
+  drugType?: string;
+  packing?: string;
+  manufacturer?: string;
+  type?: string;
+  categories: string[];
+  status: string;
+  storeId: string;
+}
+
+interface Category {
+  _id: string;
+  categoryERPId: string;
+  name: string;
+  description?: string;
+  image?: string;
+  status: string;
+  categoryId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Subcategory {
+  _id: string;
+  subcategoryERPId: string;
+  categoryId: string;
+  categoryERPId: string;
+  name: string;
+  description?: string;
+  image?: string;
+  status: string;
+  subcategoryId: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 const SearchResultsScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<SearchResultsScreenNavigationProp>();
   const route = useRoute();
+  const { selectedStore } = useAppContext();
   const { query } = route.params as { query: string };
+  
+  const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Filter results based on query
-  const filteredResults = mockSearchResults.filter(product =>
-    product.name.toLowerCase().includes(query.toLowerCase())
-  );
+  // Fetch search results from API
+  useEffect(() => {
+    const fetchSearchResults = async () => {
+      if (!selectedStore?.id) {
+        setError('No store selected');
+        setLoading(false);
+        return;
+      }
 
-  const handleProductPress = (product: any) => {
-    navigation.navigate('ProductDetail', { product });
+      try {
+        setLoading(true);
+        setError(null);
+        console.log('🔍 Searching for:', query, 'in store:', selectedStore.id);
+        
+        const response = await storeService.searchStoreProducts(selectedStore.id, query);
+        
+        if (response.success && response.data) {
+          console.log('🔍 Search results:', response.data);
+          setSearchResults(response.data);
+        } else {
+          console.error('❌ Search failed:', response.error);
+          setError(response.error || 'Search failed');
+        }
+      } catch (error) {
+        console.error('❌ Search error:', error);
+        setError('Failed to search products');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchSearchResults();
+  }, [query, selectedStore?.id]);
+
+  const handleProductPress = (product: Product) => {
+    // Transform API product to expected format
+    const transformedProduct = {
+      id: product._id,
+      name: product.name,
+      price: 0, // Price not available in search results
+      image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
+      category: selectedStore?.type || 'grocery',
+      description: product.description || '',
+      productId: product.productMasterId,
+    };
+    navigation.navigate('ProductDetail', { product: transformedProduct });
+  };
+
+  const handleCategoryPress = (category: Category) => {
+    // Navigate to category screen
+    navigation.navigate('CategoryProducts' as any, { 
+      categoryId: category.categoryId,
+      categoryName: category.name 
+    });
+  };
+
+  const handleSubcategoryPress = (subcategory: Subcategory) => {
+    // Navigate to subcategory screen
+    navigation.navigate('SubcategoryProducts' as any, { 
+      subcategoryId: subcategory.subcategoryId,
+      subcategoryName: subcategory.name 
+    });
   };
 
   const styles = StyleSheet.create({
@@ -94,10 +175,63 @@ const SearchResultsScreen = () => {
       flex: 1,
       padding: 16,
     },
+    loadingContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    loadingText: {
+      fontSize: 16,
+      color: theme.colors.secondary,
+      marginTop: 12,
+    },
+    errorContainer: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+    },
+    errorText: {
+      fontSize: 16,
+      color: theme.colors.error,
+      textAlign: 'center',
+      marginTop: 12,
+    },
     resultsCount: {
       fontSize: 14,
       color: theme.colors.secondary,
       marginBottom: 16,
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      color: theme.colors.text,
+      marginBottom: 12,
+      marginTop: 16,
+    },
+    categoryItem: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      padding: 12,
+      backgroundColor: theme.colors.surface,
+      borderRadius: 8,
+      marginBottom: 8,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+    },
+    categoryIcon: {
+      width: 40,
+      height: 40,
+      borderRadius: 20,
+      backgroundColor: theme.colors.primary,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginRight: 12,
+    },
+    categoryText: {
+      flex: 1,
+      fontSize: 16,
+      color: theme.colors.text,
+      fontWeight: '500',
     },
     productsGrid: {
       flexDirection: 'row',
@@ -106,7 +240,19 @@ const SearchResultsScreen = () => {
     },
     productCard: {
       width: '48%',
-      marginBottom: 12,
+      minHeight: 220,
+      backgroundColor: '#fff',
+      borderRadius: 18,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: '#f0f0f0',
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOpacity: 0.08,
+      shadowRadius: 6,
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      marginBottom: 16,
     },
     noResultsContainer: {
       flex: 1,
@@ -119,32 +265,55 @@ const SearchResultsScreen = () => {
       textAlign: 'center',
       marginTop: 16,
     },
-    addButton: {
-      position: 'absolute',
-      bottom: 8,
-      right: 8,
-      minWidth: 54,
-      height: 28,
-      borderRadius: 6,
-      borderWidth: 1.5,
-      borderColor: '#27ae60',
-      backgroundColor: '#fff',
-      justifyContent: 'center',
-      alignItems: 'center',
-      paddingHorizontal: 12,
-      shadowColor: 'rgba(39, 174, 96, 0.08)',
-      shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.08,
-      shadowRadius: 2,
-      elevation: 1,
-    },
-    addButtonText: {
-      color: '#27ae60',
-      fontWeight: 'bold',
-      fontSize: 14,
-      letterSpacing: 0.5,
-    },
   });
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+            >
+              <MaterialIcons name="arrow-back" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Search Results</Text>
+          </View>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <Text style={styles.loadingText}>Searching for "{query}"...</Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity
+              onPress={() => navigation.goBack()}
+              style={styles.backButton}
+            >
+              <MaterialIcons name="arrow-back" size={24} color={theme.colors.text} />
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>Search Results</Text>
+          </View>
+          <View style={styles.errorContainer}>
+            <MaterialIcons name="error-outline" size={64} color={theme.colors.error} />
+            <Text style={styles.errorText}>{error}</Text>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  const totalResults = (searchResults?.categories?.length || 0) + 
+                      (searchResults?.subcategories?.length || 0) + 
+                      (searchResults?.products?.length || 0);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -159,48 +328,91 @@ const SearchResultsScreen = () => {
           <Text style={styles.headerTitle}>Search Results</Text>
         </View>
 
-        <View style={styles.content}>
+        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <Text style={styles.resultsCount}>
-            {filteredResults.length} results for "{query}"
+            {totalResults} results for "{query}"
           </Text>
           
-          {filteredResults.length === 0 ? (
+          {totalResults === 0 ? (
             <View style={styles.noResultsContainer}>
               <MaterialIcons name="search-off" size={64} color={theme.colors.secondary} />
-              <Text style={styles.noResultsText}>No products found for "{query}"</Text>
+              <Text style={styles.noResultsText}>No results found for "{query}"</Text>
             </View>
           ) : (
-            <View style={styles.productsGrid}>
-              {filteredResults.map((product) => (
-                <TouchableOpacity
-                  key={product.id}
-                  style={{
-                    width: '48%',
-                    minHeight: 220,
-                    backgroundColor: '#fff',
-                    borderRadius: 18,
-                    padding: 14,
-                    borderWidth: 1,
-                    borderColor: '#f0f0f0',
-                    elevation: 2,
-                    shadowColor: '#000',
-                    shadowOpacity: 0.08,
-                    shadowRadius: 6,
-                    alignItems: 'center',
-                    justifyContent: 'flex-start',
-                    marginBottom: 16,
-                  }}
-                  onPress={() => handleProductPress(product)}
-                  activeOpacity={0.88}
-                >
-                  <Image source={{ uri: product.image }} style={{ width: 90, height: 90, borderRadius: 12, marginBottom: 10, backgroundColor: '#f7f7f7' }} />
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, marginBottom: 6, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>{product.name}</Text>
-                  <Text style={{ fontSize: 16, color: theme.colors.primary, fontWeight: 'bold', textAlign: 'center', marginBottom: 4 }}>₹{product.price.toFixed(2)}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+            <>
+              {/* Categories */}
+              {searchResults?.categories && searchResults.categories.length > 0 && (
+                <>
+                  <Text style={styles.sectionTitle}>Categories</Text>
+                  {searchResults.categories.map((category: Category) => (
+                    <TouchableOpacity
+                      key={category._id}
+                      style={styles.categoryItem}
+                      onPress={() => handleCategoryPress(category)}
+                    >
+                      <View style={styles.categoryIcon}>
+                        <MaterialIcons name="category" size={20} color="#fff" />
+                      </View>
+                      <Text style={styles.categoryText}>{category.name}</Text>
+                      <MaterialIcons name="chevron-right" size={24} color={theme.colors.secondary} />
+                    </TouchableOpacity>
+                  ))}
+                </>
+              )}
+
+              {/* Subcategories */}
+              {searchResults?.subcategories && searchResults.subcategories.length > 0 && (
+                <>
+                  <Text style={styles.sectionTitle}>Subcategories</Text>
+                  {searchResults.subcategories.map((subcategory: Subcategory) => (
+                    <TouchableOpacity
+                      key={subcategory._id}
+                      style={styles.categoryItem}
+                      onPress={() => handleSubcategoryPress(subcategory)}
+                    >
+                      <View style={styles.categoryIcon}>
+                        <MaterialIcons name="subdirectory-arrow-right" size={20} color="#fff" />
+                      </View>
+                      <Text style={styles.categoryText}>{subcategory.name}</Text>
+                      <MaterialIcons name="chevron-right" size={24} color={theme.colors.secondary} />
+                    </TouchableOpacity>
+                  ))}
+                </>
+              )}
+
+              {/* Products */}
+              {searchResults?.products && searchResults.products.length > 0 && (
+                <>
+                  <Text style={styles.sectionTitle}>Products</Text>
+                  <View style={styles.productsGrid}>
+                    {searchResults.products.map((product: Product) => (
+                      <TouchableOpacity
+                        key={product._id}
+                        style={styles.productCard}
+                        onPress={() => handleProductPress(product)}
+                        activeOpacity={0.88}
+                      >
+                        <Image 
+                          source={{ uri: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center' }} 
+                          style={{ width: 90, height: 90, borderRadius: 12, marginBottom: 10, backgroundColor: '#f7f7f7' }} 
+                        />
+                        <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, marginBottom: 6, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>
+                          {product.name}
+                        </Text>
+                        <Text style={{ fontSize: 12, color: theme.colors.secondary, textAlign: 'center', marginBottom: 4 }}>
+                          {product.manufacturer || 'Generic'}
+                        </Text>
+                        <Text style={{ fontSize: 14, color: theme.colors.primary, fontWeight: 'bold', textAlign: 'center' }}>
+                          View Details
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </>
+              )}
+            </>
           )}
-        </View>
+        </ScrollView>
       </View>
     </SafeAreaView>
   );

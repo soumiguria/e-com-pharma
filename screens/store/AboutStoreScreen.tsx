@@ -4,12 +4,14 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import deepLinkingService from '../../services/deepLinkingService';
+import storeService, { formatStoreAddress } from '../../services/api/storeService';
 
 const AboutStoreScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
   const [storeData, setStoreData] = useState<any>(null);
+  const [formattedStoreAddress, setFormattedStoreAddress] = useState<string>('');
   const [loading, setLoading] = useState(false);
   
   // Debug route parameters
@@ -41,12 +43,20 @@ const AboutStoreScreen = () => {
     setLoading(true);
     try {
       console.log('🔍 Fetching store details for deep link storeId:', storeId);
-      const response = await deepLinkingService.fetchStoreDetails(storeId);
+      const response = await storeService.getStoreDetailsById(storeId);
       
-      if (response.success && response.data) {
-        console.log('✅ Store details fetched for deep link:', response.data);
-        setStoreData(response.data);
-      } else {
+           if (response.success && response.data) {
+             console.log('✅ Store details fetched for deep link:', response.data);
+             const storeData = (response.data as any).data || response.data;
+             setStoreData(storeData);
+             
+             // Format the address with coordinates if available
+             const coordinates = storeData.location?.coordinates;
+             if (storeData.address || coordinates) {
+               const formattedAddress = formatStoreAddress(storeData.address || {}, coordinates);
+               setFormattedStoreAddress(formattedAddress);
+             }
+           } else {
         console.log('❌ Store not found for deep link storeId:', storeId);
         Alert.alert(
           'Store Not Found',
@@ -94,11 +104,11 @@ const AboutStoreScreen = () => {
               <Text style={[styles.description, { color: theme.colors.text }]}>
                 {storeData?.description || 'Welcome to our store! We are committed to providing fresh, high-quality products to our customers.'}
               </Text>
-              {storeData?.address && (
-                <Text style={[styles.description, { color: theme.colors.text, marginTop: 10 }]}>
-                  📍 Address: {storeData.address}
-                </Text>
-              )}
+       {(formattedStoreAddress || storeData?.address) && (
+         <Text style={[styles.description, { color: theme.colors.text, marginTop: 10 }]}>
+           📍 Address: {formattedStoreAddress || 'Address not available'}
+         </Text>
+       )}
               {storeData?.phone && (
                 <Text style={[styles.description, { color: theme.colors.text, marginTop: 5 }]}>
                   📞 Phone: {storeData.phone}

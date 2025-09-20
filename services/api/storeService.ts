@@ -74,6 +74,33 @@ export class StoreService {
     return apiClient.get<Store[]>('/stores/search', params);
   }
 
+  // Search products within a store
+  async searchStoreProducts(storeId: string, searchTerm: string): Promise<ApiResponse<{
+    categories: any[];
+    subcategories: any[];
+    products: any[];
+  }>> {
+    return apiClient.get(`/v1/store/${storeId}/search`, { searchTerm });
+  }
+
+  async getCategoryDetails(storeId: string, categoryId: string): Promise<ApiResponse<{
+    subcategories: any[];
+    products: any[];
+  }>> {
+    // Try the original endpoint first
+    return apiClient.get(`/v1/store/${storeId}/category/${categoryId}`);
+  }
+
+  // Get all categories for a store
+  async getStoreCategories(storeId: string, type: 'pharma' | 'grocery'): Promise<ApiResponse<any[]>> {
+    return apiClient.get(`/v1/store/${storeId}/category/${type}`);
+  }
+
+  // Get subcategories for a specific category
+  async getCategorySubcategories(categoryId: string, type: 'pharma' | 'grocery' = 'pharma'): Promise<ApiResponse<any[]>> {
+    return apiClient.get(`/v1/store/${categoryId}/subcategory/${type}`);
+  }
+
   // Get stores with pagination
   async getStores(params: PaginationParams & { category?: 'grocery' | 'pharma' }): Promise<ApiResponse<PaginatedResponse<Store>>> {
     return apiClient.get<PaginatedResponse<Store>>('/stores', params);
@@ -89,10 +116,6 @@ export class StoreService {
     return apiClient.post<{ message: string }>(`/stores/${storeId}/reviews`, { rating, comment });
   }
 
-  // Get store categories
-  async getStoreCategories(storeId: string): Promise<ApiResponse<string[]>> {
-    return apiClient.get<string[]>(`/stores/${storeId}/categories`);
-  }
 
   // Get store working hours
   async getStoreWorkingHours(storeId: string): Promise<ApiResponse<StoreDetail['workingHours']>> {
@@ -263,7 +286,155 @@ export class StoreService {
       };
     }
   }
+
+  // Get store details by store ID using the correct API endpoint
+  async getStoreDetailsById(storeId: string): Promise<ApiResponse<{
+    storeERPId: string;
+    name: string;
+    email: string;
+    mobile: number;
+    type: 'pharma' | 'grocery';
+    isActive: boolean;
+    status: string;
+    storeId: string;
+    createdAt: string;
+    updatedAt: string;
+    location: {
+      type: string;
+      coordinates: [number, number];
+    };
+    config: {
+      deliveryMethods: {
+        storePickup: boolean;
+        homeDelivery: boolean;
+      };
+      paymentMethods: {
+        online: boolean;
+        offline: boolean;
+      };
+    };
+    address: {
+      address1: string;
+      address2: string;
+      city: string;
+      state: string;
+      pincode: string;
+      country: string;
+    };
+  }>> {
+    try {
+      console.log('🏪 Fetching store details for ID:', storeId);
+      
+      const response = await apiClient.get<{
+        storeERPId: string;
+        name: string;
+        email: string;
+        mobile: number;
+        type: 'pharma' | 'grocery';
+        isActive: boolean;
+        status: string;
+        storeId: string;
+        createdAt: string;
+        updatedAt: string;
+        location: {
+          type: string;
+          coordinates: [number, number];
+        };
+        config: {
+          deliveryMethods: {
+            storePickup: boolean;
+            homeDelivery: boolean;
+          };
+          paymentMethods: {
+            online: boolean;
+            offline: boolean;
+          };
+        };
+        address: {
+          address1: string;
+          address2: string;
+          city: string;
+          state: string;
+          pincode: string;
+          country: string;
+        };
+      }>(`/v1/store/${storeId}/details`);
+
+      console.log('🏪 Store details API Response:', JSON.stringify(response, null, 2));
+      return response;
+    } catch (error: any) {
+      console.log('❌ Store details API Error:', error.response?.data || error.message);
+      return {
+        success: false,
+        error: 'Failed to fetch store details. Please try again.',
+        data: null as any,
+      };
+    }
+  }
 }
+
+// Utility function to create a readable address from coordinates
+export const createAddressFromCoordinates = (latitude: number, longitude: number): string => {
+  console.log('🗺️ Creating address from coordinates:', { latitude, longitude });
+  
+  // For now, we'll create a more user-friendly location description
+  // In a real app, you would use a proper geocoding service
+  const lat = latitude.toFixed(6);
+  const lng = longitude.toFixed(6);
+  
+  // You can customize this based on your needs
+  return `Store Location (${lat}, ${lng})`;
+};
+
+// Utility function to format store address
+export const formatStoreAddress = (address: {
+  address1: string;
+  address2: string;
+  city: string;
+  state: string;
+  pincode: string;
+  country: string;
+}, coordinates?: [number, number]): string => {
+  const addressParts = [];
+  
+  if (address.address1 && address.address1.trim()) {
+    addressParts.push(address.address1.trim());
+  }
+  
+  if (address.address2 && address.address2.trim()) {
+    addressParts.push(address.address2.trim());
+  }
+  
+  if (address.city && address.city.trim()) {
+    addressParts.push(address.city.trim());
+  }
+  
+  if (address.state && address.state.trim()) {
+    addressParts.push(address.state.trim());
+  }
+  
+  if (address.pincode && address.pincode.trim()) {
+    addressParts.push(address.pincode.trim());
+  }
+  
+  if (address.country && address.country.trim()) {
+    addressParts.push(address.country.trim());
+  }
+  
+  // If we have a complete address, return it
+  if (addressParts.length > 0) {
+    return addressParts.join(', ');
+  }
+  
+  // If no address but we have coordinates, create a readable location
+  if (coordinates && coordinates.length === 2) {
+    const [latitude, longitude] = coordinates;
+    console.log('🗺️ No address found, creating location from coordinates:', { latitude, longitude });
+    return createAddressFromCoordinates(latitude, longitude);
+  }
+  
+  return 'Store address not available';
+};
 
 // Create singleton instance
 export const storeService = new StoreService();

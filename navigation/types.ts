@@ -14,7 +14,7 @@ export type RootStackParamList = {
   };
   Main: NavigatorScreenParams<HomeTabParamList>;
   ProductDetail: { product: any };
-  CategoryDetail: { category: any };
+  CategoryDetail: { category: any & { selectedSubcategoryId?: string } };
   MedicineDetail: { medicine: any };
   Cart: undefined;
   Checkout: { type: 'grocery' | 'pharma' };
@@ -41,6 +41,7 @@ export type RootStackParamList = {
   Profile: undefined;
   Orders: undefined;
   OrderDetail: { order: any };
+  OrderSummary: { orderData: any };
   PaymentMethods: { 
     selectedAddress?: any;
     reorderItems?: any[];
@@ -139,7 +140,7 @@ export type HomeStackParamList = {
     storeName?: string;
   };
   ProductDetail: { product: any };
-  CategoryDetail: { category: any };
+  CategoryDetail: { category: any & { selectedSubcategoryId?: string } };
   GreatOffersScreen: undefined;
   Cart: undefined;
   RecentlyBoughtScreen: undefined;
@@ -149,13 +150,13 @@ export type HomeStackParamList = {
 
 export type CategoriesStackParamList = {
   CategoriesRoot: undefined;
-  CategoryDetail: { category: any };
+  CategoryDetail: { category: any & { selectedSubcategoryId?: string } };
 };
 
 export type PharmacyStackParamList = {
   PharmacyRoot: { storeId: string, pincode: string };
   ProductDetail: { product: any };
-  CategoryDetail: { category: any };
+  CategoryDetail: { category: any & { selectedSubcategoryId?: string } };
   GreatOffersScreen: undefined;
   Cart: undefined;
   RecentlyBoughtScreen: undefined;

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   View,
+  Text,
   TextInput,
   TouchableOpacity,
   StyleSheet,
@@ -14,28 +15,52 @@ import { useVoiceRecognition } from '../../hooks/useVoiceRecognition';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
+  onSubmit?: (query: string) => void;
   placeholder?: string;
   autoFocus?: boolean;
   onInputFocus?: () => void;
+  value?: string;
 }
 
 export const SearchBar: React.FC<SearchBarProps> = ({
   onSearch,
+  onSubmit,
   placeholder = 'Search products...',
   autoFocus = false,
   onInputFocus,
+  value,
 }) => {
   const { createStyles, colors } = useAppTheme();
-  const [searchQuery, setSearchQuery] = useState('');
-  const { isListening, transcript, error, startListening, stopListening } = useVoiceRecognition();
+  const [searchQuery, setSearchQuery] = useState(value || '');
+  const { isListening, transcript, error, startListening, stopListening, isAvailable } = useVoiceRecognition();
   const [animation] = useState(new Animated.Value(0));
+  const [voiceDisabled, setVoiceDisabled] = useState(false);
 
   useEffect(() => {
     if (transcript) {
+      console.log('🎤 Voice transcript received:', transcript);
       setSearchQuery(transcript);
       onSearch(transcript);
+      // Auto-submit voice search
+      if (onSubmit) {
+        onSubmit(transcript);
+      }
     }
-  }, [transcript, onSearch]);
+  }, [transcript, onSearch, onSubmit]);
+
+  // Disable voice recognition if not available or there are errors
+  useEffect(() => {
+    if (!isAvailable || error) {
+      console.log('🎤 Voice recognition not available or error, disabling:', { isAvailable, error });
+      setVoiceDisabled(true);
+    }
+  }, [isAvailable, error]);
+
+  useEffect(() => {
+    if (value !== undefined) {
+      setSearchQuery(value);
+    }
+  }, [value]);
 
   useEffect(() => {
     if (isListening) {
@@ -92,10 +117,22 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   }));
 
   const handleVoicePress = async () => {
-    if (isListening) {
-      await stopListening();
-    } else {
-      await startListening();
+    if (voiceDisabled) {
+      console.log('🎤 Voice recognition is disabled due to errors');
+      return;
+    }
+    
+    try {
+      if (isListening) {
+        console.log('🎤 Stopping voice recognition...');
+        await stopListening();
+      } else {
+        console.log('🎤 Starting voice recognition...');
+        setSearchQuery(''); // Clear current search when starting voice
+        await startListening();
+      }
+    } catch (error) {
+      console.error('🎤 Voice recognition error:', error);
     }
   };
 
@@ -121,11 +158,19 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           placeholderTextColor={`${colors.text}80`}
           value={searchQuery}
           onChangeText={(text) => {
+            console.log('🔍 SearchBar onChangeText:', text);
             setSearchQuery(text);
+            onSearch(text);
           }}
           autoFocus={autoFocus}
           returnKeyType="search"
-          onSubmitEditing={() => onSearch(searchQuery)}
+          onSubmitEditing={() => {
+            if (onSubmit) {
+              onSubmit(searchQuery);
+            } else {
+              onSearch(searchQuery);
+            }
+          }}
           onFocus={onInputFocus}
         />
         <View style={styles.rightContainer}>
@@ -134,16 +179,27 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               <Ionicons name="close-circle" size={22} color={colors.text} />
             </TouchableOpacity>
           )}
-          <TouchableOpacity onPress={handleVoicePress} style={styles.iconButton}>
+          <TouchableOpacity 
+            onPress={handleVoicePress} 
+            style={[styles.iconButton, voiceDisabled && { opacity: 0.3 }]}
+            disabled={voiceDisabled}
+          >
             <Animated.View style={isListening ? pulseStyle : undefined}>
               <MaterialCommunityIcons
                 name={isListening ? 'microphone' : 'microphone-outline'}
                 size={24}
-                color={isListening ? colors.primary : colors.text}
+                color={voiceDisabled ? colors.disabled : (isListening ? colors.primary : colors.text)}
               />
             </Animated.View>
           </TouchableOpacity>
         </View>
+        {error && !voiceDisabled && (
+          <View style={{ paddingHorizontal: 16, paddingTop: 4 }}>
+            <Text style={{ color: colors.error, fontSize: 12 }}>
+              Voice error: {error}
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );

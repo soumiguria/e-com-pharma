@@ -14,7 +14,9 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import orderListService from '../../services/api/orderListService';
+import storeService, { formatStoreAddress } from '../../services/api/storeService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useCart } from '../../contexts/CartContext';
 
 type OrderDetailScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderDetail'>;
 
@@ -22,26 +24,94 @@ const OrderDetailScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<OrderDetailScreenNavigationProp>();
   const route = useRoute();
+  const { addToGroceryCart, addToPharmacyCart, groceryItems, pharmacyItems } = useCart();
   const params = route.params as any;
   const passedOrder = params?.order;
   const passedOrderId = params?.orderId as string | undefined;
   const [loading, setLoading] = useState<boolean>(false);
   const [apiOrder, setApiOrder] = useState<any>(null);
+  const [storeDetails, setStoreDetails] = useState<any>(null);
+  const [formattedStoreAddress, setFormattedStoreAddress] = useState<string>('');
+  
+  // Import orderListService to fetch order details
+  const orderListService = require('../../services/api/orderListService').default;
 
   // Use API data if available, otherwise fallback to passed order
   const order = apiOrder || passedOrder;
 
-  // Add default values to prevent undefined errors
+  // Fetch order details from API to get proper product information
+  useEffect(() => {
+    const fetchOrderDetails = async () => {
+      if (passedOrderId && !apiOrder) {
+        console.log('📦 Fetching order details for reorder:', passedOrderId);
+        setLoading(true);
+        try {
+          const response = await orderListService.getOrderById(passedOrderId);
+          if (response.success && response.data) {
+            console.log('📦 Order details fetched successfully:', response.data);
+            setApiOrder(response.data);
+          } else {
+            console.log('⚠️ Failed to fetch order details, using passed order');
+          }
+        } catch (error) {
+          console.error('❌ Error fetching order details:', error);
+        } finally {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchOrderDetails();
+  }, [passedOrderId, apiOrder]);
+
+  // Fetch store details for store address display
+  useEffect(() => {
+    const fetchStoreDetails = async () => {
+      const currentOrder = apiOrder || passedOrder;
+      if (currentOrder?.storeId && !storeDetails) {
+        console.log('🏪 Fetching store details for store ID:', currentOrder.storeId);
+        try {
+          const response = await storeService.getStoreDetailsById(currentOrder.storeId);
+          if (response.success && response.data) {
+            console.log('🏪 Store details fetched successfully:', response.data);
+            const storeData = (response.data as any).data || response.data;
+            setStoreDetails(storeData);
+            
+            // Format the address with coordinates if available
+            const coordinates = storeData.location?.coordinates;
+            if (storeData.address || coordinates) {
+              const formattedAddress = formatStoreAddress(storeData.address || {}, coordinates);
+              setFormattedStoreAddress(formattedAddress);
+            }
+          } else {
+            console.log('⚠️ Failed to fetch store details:', response.error);
+          }
+        } catch (error) {
+          console.error('❌ Error fetching store details:', error);
+        }
+      }
+    };
+
+    fetchStoreDetails();
+  }, [apiOrder, passedOrder, storeDetails]);
+
+    // Add default values to prevent undefined errors
   const orderData = {
     id: order?.orderNo || order?.orderNumber || order?.id || 'N/A',
-    items: (order?.orderItems || order?.items || []).map((it: any) => ({
-      id: it.productId || it.product_id || it.id || it._id || `product_${Math.random().toString(36).substr(2, 9)}`,
-      name: it.name || it.productName || it.product_name || 'Product',
-      price: Number(it.actual ?? it.price ?? it.sp ?? it.selling_price ?? 0),
-      originalPrice: Number(it.mrp ?? it.original_price ?? 0),
-      quantity: Number(it.quantity ?? 1),
-      image: it.images?.primary || it.signedImages?.primary || it.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
-    })),
+    items: (order?.orderItems || order?.items || order?.products || []).map((it: any) => {
+      // Try multiple possible product ID fields from different API response structures
+      const productId = it.productId || it.product_id || it.id || it._id || it.productERPId || it.productNumber || `product_${Math.random().toString(36).substr(2, 9)}`;
+      
+      return {
+        id: productId,
+        productId: productId, // Store actual product ID for reordering
+        name: it.name || it.productName || it.product_name || 'Product',
+        price: Number(it.actual ?? it.price ?? it.sp ?? it.selling_price ?? 0),
+        originalPrice: Number(it.mrp ?? it.original_price ?? 0),
+        quantity: Number(it.quantity ?? 1),
+        image: it.images?.primary || it.signedImages?.primary || it.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
+      };
+    }),
     itemTotal: Number(order?.subtotalAmount || order?.itemTotal || order?.total || 0),
     deliveryFee: Number(order?.shippingAmount || order?.deliveryFee || 0),
     discount: Number(order?.storeDiscount || order?.discount || 0),
@@ -68,22 +138,109 @@ const OrderDetailScreen = () => {
   };
 
   const handleReorder = () => {
-    console.log('🔄 Reordering items:', orderData.items);
-    console.log('🔄 Reorder items structure:', JSON.stringify(orderData.items, null, 2));
+    // Show under development popup
+    Alert.alert(
+      'Under Development',
+      'Reorder functionality is currently under development. It will be available soon!',
+      [{ text: 'OK', style: 'default' }]
+    );
+    return;
     
-    // Calculate total amount for reorder
-    const itemTotal = orderData.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
-    const totalAmount = itemTotal + (orderData.deliveryFee || 0) - (orderData.discount || 0);
+    console.log('🔄 ===== REORDER FUNCTION CALLED =====');
+    console.log('🔄 Order object:', order);
+    console.log('🔄 API Order data:', apiOrder);
     
-    console.log('🔄 Reorder totals:', { itemTotal, totalAmount });
-    
-    // Navigate directly to payment methods with reorder items
-    navigation.navigate('PaymentMethods' as any, {
-      reorderItems: orderData.items,
-      reorderTotal: totalAmount,
-      isReorder: true,
-      reorderMessage: 'Reordering your previous order items'
-    });
+    try {
+      // Use API order data if available, otherwise fallback to order
+      const sourceOrder = apiOrder || order;
+      const sourceItems = sourceOrder?.orderItems || sourceOrder?.items || [];
+      
+      console.log('🔄 Using source order:', sourceOrder ? 'Available' : 'None');
+      console.log('🔄 Source items:', sourceItems);
+      
+      if (!sourceItems || sourceItems.length === 0) {
+        console.error('❌ No items found to reorder');
+        Alert.alert('Error', 'No items found to reorder.');
+        return;
+      }
+      
+      // Determine store type
+      const storeType = sourceOrder?.type || sourceOrder?.store?.type || 'grocery';
+      const isPharmacyStore = storeType === 'pharma';
+      
+      console.log('🔄 Store type:', storeType);
+      console.log('🔄 Is pharmacy store:', isPharmacyStore);
+      
+      // Process each item
+      sourceItems.forEach((item: any, index: number) => {
+        console.log(`🔄 Processing item ${index + 1}:`, item);
+        
+        // Get product ID - try multiple fields
+        const productId = item.productId || item.productMasterId || item.id || item._id || `reorder_${index}`;
+        
+        console.log('🔍 Product ID:', productId);
+        
+        const productData = {
+          id: productId,
+          name: item.productName || item.name || 'Unknown Product',
+          price: item.sp || item.price || item.mrp || 0,
+          image: item.productImage || item.image || 'https://via.placeholder.com/150',
+          description: item.productDescription || item.description || '',
+          unit: item.unit || 'piece',
+          mrp: item.mrp || item.price || 0,
+          discount: item.discountAmount || item.discount || 0,
+          category: item.category || (isPharmacyStore ? 'pharma' : 'grocery'),
+          brand: item.brand || '',
+          weight: item.weight || '',
+          expiryDate: item.expiryDate || '',
+          manufacturer: item.manufacturer || '',
+          productId: productId
+        };
+        
+        console.log('🔄 Product data:', productData);
+        
+        // Add to appropriate cart
+        for (let i = 0; i < (item.quantity || 1); i++) {
+          if (isPharmacyStore) {
+            console.log('🔄 Adding to pharmacy cart');
+            addToPharmacyCart(productData);
+          } else {
+            console.log('🔄 Adding to grocery cart');
+            addToGroceryCart(productData);
+          }
+        }
+      });
+      
+      console.log('✅ Items added to cart');
+      
+      // Navigate to OrderSummaryScreen for reorder
+      console.log('🔄 Navigating to OrderSummary...');
+      navigation.navigate('OrderSummary' as any, {
+        orderData: {
+          orderId: sourceOrder?.orderId || sourceOrder?.id || 'N/A',
+          orderNo: sourceOrder?.orderNo || sourceOrder?.orderNumber || `#${sourceOrder?.orderId || sourceOrder?.id}`,
+          items: sourceItems.map((item: any, index: number) => ({
+            id: item.productId || item.productMasterId || item.id || item._id || `reorder_${index}`,
+            name: item.productName || item.name || 'Unknown Product',
+            price: parseFloat(item.sp || item.price || item.mrp || '0'),
+            quantity: parseInt(item.quantity || '1'),
+            image: item.productImage || item.image || 'https://via.placeholder.com/150',
+            productId: item.productId || item.productMasterId || item.id || item._id || `reorder_${index}`,
+          })),
+          total: sourceOrder?.totalAmount || sourceOrder?.grandTotal || 0,
+          deliveryMethod: sourceOrder?.deliveryMethod || 'Store Pickup',
+          deliveryAddress: sourceOrder?.shippingAddress || sourceOrder?.address,
+          orderDate: sourceOrder?.createdAt || sourceOrder?.orderDate || new Date().toISOString(),
+          status: sourceOrder?.status || 'completed',
+          storeId: sourceOrder?.storeId,
+          type: storeType
+        }
+      });
+      
+    } catch (error) {
+      console.error('❌ Error in reorder:', error);
+      Alert.alert('Error', 'Failed to reorder items. Please try again.');
+    }
   };
 
   const handlePayNow = () => {
@@ -542,9 +699,10 @@ const OrderDetailScreen = () => {
               </Text>
               <Text style={styles.orderDetailValue} numberOfLines={2}>
                 {orderData.orderType === 'Store Pickup' 
-                  ? (order?.storeAddress || order?.store?.address || 'Store pickup location not available')
+                  ? (formattedStoreAddress || (order?.storeAddress || order?.store?.address || 'Store pickup location not available'))
                   : (orderData.address || 'N/A')
                 }
+                {/* console.log('🏪 Formatted store address:', formattedStoreAddress); */}
               </Text>
             </View>
             <View style={styles.orderDetailRow}>

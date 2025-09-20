@@ -50,6 +50,8 @@ export interface OrderListItem {
   updatedAt: string | null;
   deletedAt: string | null;
   deletedBy: string | null;
+  // Add type field to determine if order is pharmacy or grocery
+  type?: 'pharma' | 'grocery';
   payment?: {
     paymentId: number;
     type: string;
@@ -79,7 +81,7 @@ class OrderListService {
     }
   }
 
-  async getOrders(): Promise<ApiResponse<OrderListItem[]>> {
+  async getOrders(filterType?: 'pharma' | 'grocery'): Promise<ApiResponse<OrderListItem[]>> {
     try {
       const token = await this.getAuthToken();
       const headers = {
@@ -89,8 +91,15 @@ class OrderListService {
 
       console.log('📋 Fetching orders...');
       console.log('🔑 Token retrieved:', token ? `${token.substring(0, 20)}...` : 'No token');
+      console.log('📋 Filter type:', filterType || 'all');
 
-      const response = await axios.get('https://marg-api.thelocalsandbox.dev/v1/customer/order?page=1&limit=10&orders[createdAt]=desc', {
+      // Build URL with optional filter
+      let url = 'https://marg-api.thelocalsandbox.dev/v1/customer/order?page=1&limit=10&orders[createdAt]=desc';
+      if (filterType) {
+        url += `&filters[type]=${filterType}`;
+      }
+
+      const response = await axios.get(url, {
         headers,
       });
 

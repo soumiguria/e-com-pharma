@@ -39,6 +39,7 @@ interface Order {
   deliveryMethod: 'store_pickup' | 'home_delivery';
   address?: string;
   storeName?: string; // Added store name property
+  storeType?: 'pharma' | 'grocery'; // Added store type from API response
   // Amount breakdown from backend
   subtotalAmount?: number;
   storeDiscount?: number;
@@ -137,12 +138,12 @@ const OrdersScreen = () => {
     }
   };
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (filterType?: 'pharma' | 'grocery') => {
     setIsLoading(true);
     try {
       // No local payment tracking - use backend status only
 
-      const response = await orderListService.getOrders();
+      const response = await orderListService.getOrders(filterType);
       if (response.success && response.data) {
         // First, get all orders and check payment status for those with paymentId
         const ordersWithPaymentStatus = await Promise.all(
@@ -164,11 +165,14 @@ const OrdersScreen = () => {
               ? order.products
               : [];
 
+          // Use the order type from API response to determine item types
+          const orderType = order.type || 'grocery'; // Default to grocery if type not specified
+          
           const mappedItems = itemsArray.map((item: any) => ({
             name: item.name || item.productName || 'Item',
             quantity: Number(item.quantity) || 1,
             price: Number(item.actual ?? item.price ?? item.sp ?? 0),
-            type: 'grocery' as const,
+            type: orderType as 'grocery' | 'pharma',
             image: item.images?.primary || item.signedImages?.primary || item.image,
           }));
 
@@ -265,6 +269,7 @@ const OrdersScreen = () => {
             deliveryMethod: (order.deliveryMethod === 'store' ? 'store_pickup' : 'home_delivery') as 'store_pickup' | 'home_delivery',
             address: order.shippingAddress?.address || 'Store Pickup',
             storeName: order.storeName || order.store?.name,
+            storeType: order.type || 'grocery', // Use order type from API response
             // Amount breakdown from backend - no dummy data
             subtotalAmount: Number(order.subtotalAmount ?? 0),
             storeDiscount: Number(order.storeDiscount ?? 0),
@@ -333,18 +338,32 @@ const OrdersScreen = () => {
     return method === 'store_pickup' ? 'Store Pickup' : 'Home Delivery';
   };
 
-  // Filter orders based on active tab
+  // Handle tab change and fetch orders with filter
+  const handleTabChange = async (tabName: 'ALL' | 'Grocery' | 'Pharmacy') => {
+    setActiveTab(tabName);
+    
+    // Fetch orders with appropriate filter
+    if (tabName === 'ALL') {
+      await fetchOrders(); // No filter for all orders
+    } else if (tabName === 'Grocery') {
+      await fetchOrders('grocery');
+    } else if (tabName === 'Pharmacy') {
+      await fetchOrders('pharma');
+    }
+  };
+
+  // Filter orders based on active tab (fallback for local filtering)
   const getFilteredOrders = () => {
     if (activeTab === 'ALL') {
       return orders;
     }
     
     return orders.filter(order => {
-      // Check if order has items of the selected category
+      // Use the order type from API response for filtering
       if (activeTab === 'Grocery') {
-        return order.items.some(item => item.type === 'grocery');
+        return order.storeType === 'grocery' || order.items.some(item => item.type === 'grocery');
       } else if (activeTab === 'Pharmacy') {
-        return order.items.some(item => item.type === 'pharma');
+        return order.storeType === 'pharma' || order.items.some(item => item.type === 'pharma');
       }
       return true;
     });
@@ -360,7 +379,7 @@ const OrdersScreen = () => {
           borderColor: theme.colors.primary,
         }
       ]}
-      onPress={() => setActiveTab(tabName)}
+      onPress={() => handleTabChange(tabName)}
     >
       <Text
         style={[

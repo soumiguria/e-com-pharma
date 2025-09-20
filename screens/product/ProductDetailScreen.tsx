@@ -190,7 +190,10 @@ const ProductDetailScreen = () => {
       variant: selectedVariant ? {
         name: selectedVariant.name,
         unit: selectedVariant.name.split(' ')[1].replace(/[()]/g, '')
-      } : undefined
+      } : undefined,
+      // Store the actual product ID that the API expects
+      // Use the productId from API response if available, otherwise use originalProductId
+      productId: productDetails.productId || originalProductId
     };
     
     addToCorrectCart(itemToAdd);

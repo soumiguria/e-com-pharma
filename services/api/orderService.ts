@@ -18,6 +18,8 @@ export interface PlaceOrderRequest {
   paymentMethod: 'online' | 'offline';
   expressDelivery?: boolean;
   timeslot?: string;
+  type?: 'pharma' | 'grocery'; // Add type field to specify order type
+  storeId?: string; // Add storeId field
 }
 
 export interface PlaceOrderResponse {
@@ -140,13 +142,14 @@ class OrderService {
       
       // Prepare the base request body
       const baseRequestBody = {
-        storeId: "c4defa9f-0bf2-4226-a4b9-6b578e737714", // Updated storeId as per your requirement
+        storeId: orderData.storeId || "c4defa9f-0bf2-4226-a4b9-6b578e737714", // Use provided storeId or fallback
         products: orderData.products.map((item: any) => ({
           productId: item.productId,
           quantity: item.quantity
         })),
         paymentMethod: orderData.paymentMethod,
         deliveryMethod: orderData.deliveryMethod,
+        type: orderData.type || 'grocery', // Add type field for order filtering
       };
 
       // Add additional fields based on delivery method

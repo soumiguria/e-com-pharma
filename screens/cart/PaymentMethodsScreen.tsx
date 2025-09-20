@@ -13,6 +13,8 @@ import { orderService } from '../../services/api';
 import { addressService } from '../../services/api/addressService';
 import { PlaceOrderRequest } from '../../services/api/orderService';
 import { Address } from '../../services/api/addressService';
+import storeService from '../../services/api/storeService';
+import { useAppContext } from '../../contexts/AppContext';
 import { Ionicons } from '@expo/vector-icons';
 
 const deliveryMethods = [
@@ -28,6 +30,7 @@ const paymentMethods = [
 const PaymentMethodsScreen = () => {
   const { theme } = useTheme();
   const { isAuthenticated, user } = useAuth();
+  const { selectedStore } = useAppContext();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const route = useRoute();
   const { clearCart, groceryItems, pharmacyItems, groceryTotal, pharmacyTotal } = useCart();
@@ -36,6 +39,8 @@ const PaymentMethodsScreen = () => {
   const reorderItems = (route.params as any)?.reorderItems;
   const reorderTotal = (route.params as any)?.reorderTotal;
   const isReorder = (route.params as any)?.isReorder;
+  
+  // Remove payment hook - use original working logic
   
   // Debug reorder data
   console.log('🔄 PaymentMethods reorder check:', { isReorder, reorderItems, reorderTotal });
@@ -61,11 +66,95 @@ const PaymentMethodsScreen = () => {
   const [selectedAddress, setSelectedAddress] = useState<Address | null>(null);
   const [addresses, setAddresses] = useState<Address[]>([]);
   const [addressLoading, setAddressLoading] = useState(true);
+  const [storeDetails, setStoreDetails] = useState<any>(null);
+  const [availablePaymentMethods, setAvailablePaymentMethods] = useState<any[]>([]);
+  const [availableDeliveryMethods, setAvailableDeliveryMethods] = useState<any[]>([]);
 
   // Load addresses on component mount
   useEffect(() => {
     loadAddresses();
   }, []);
+
+  // Load store details and payment methods
+  useEffect(() => {
+    const fetchStoreDetails = async () => {
+      if (selectedStore?.id) {
+        try {
+          console.log('🏪 Fetching store details for payment methods, store ID:', selectedStore.id);
+          const response = await storeService.getStoreDetailsById(selectedStore.id);
+          if (response.success && response.data) {
+            console.log('🏪 Store details fetched for payment methods:', response.data);
+            setStoreDetails(response.data);
+            
+            // Set up available payment methods based on store config
+            const storeConfig = response.data.config;
+            const paymentMethods = [];
+            const deliveryMethods = [];
+            
+            if (storeConfig?.paymentMethods?.online) {
+              paymentMethods.push({ id: 'online', label: 'Online Payment', description: 'Pay now with Razorpay' });
+            }
+            
+            if (storeConfig?.paymentMethods?.offline) {
+              paymentMethods.push({ id: 'offline', label: 'Offline Payment', description: 'Pay at store or delivery' });
+            }
+            
+            if (storeConfig?.deliveryMethods?.storePickup) {
+              deliveryMethods.push({ id: '1', label: 'Store Pickup' });
+            }
+            
+            if (storeConfig?.deliveryMethods?.homeDelivery) {
+              deliveryMethods.push({ id: '2', label: 'Home Delivery' });
+            }
+            
+            // Fallback to default methods if store config is not available
+            if (paymentMethods.length === 0) {
+              paymentMethods.push(
+                { id: 'offline', label: 'Offline Payment', description: 'Pay at store or delivery' },
+                { id: 'online', label: 'Online Payment', description: 'Pay now with Razorpay' }
+              );
+            }
+            
+            if (deliveryMethods.length === 0) {
+              deliveryMethods.push(
+                { id: '1', label: 'Store Pickup' },
+                { id: '2', label: 'Home Delivery' }
+              );
+            }
+            
+            setAvailablePaymentMethods(paymentMethods);
+            setAvailableDeliveryMethods(deliveryMethods);
+            
+            // Set default payment method to the first available one
+            if (paymentMethods.length > 0) {
+              setSelectedPaymentMethod(paymentMethods[0].id);
+            }
+            
+            // Set default delivery method to the first available one
+            if (deliveryMethods.length > 0) {
+              setSelectedDeliveryMethod(deliveryMethods[0].id);
+            }
+          } else {
+            console.log('⚠️ Failed to fetch store details for payment methods:', response.error);
+            // Use default payment methods
+            setAvailablePaymentMethods(paymentMethods);
+            setAvailableDeliveryMethods(deliveryMethods);
+          }
+        } catch (error) {
+          console.error('❌ Error fetching store details for payment methods:', error);
+          // Use default payment methods
+          setAvailablePaymentMethods(paymentMethods);
+          setAvailableDeliveryMethods(deliveryMethods);
+        }
+      } else {
+        // No store selected, use default payment methods
+        setAvailablePaymentMethods(paymentMethods);
+        setAvailableDeliveryMethods(deliveryMethods);
+      }
+    };
+
+    fetchStoreDetails();
+  }, [selectedStore?.id]);
 
   // Handle screen focus - reload addresses and check for selected address
   useEffect(() => {
@@ -187,6 +276,8 @@ const PaymentMethodsScreen = () => {
         products: productsToOrder,
         deliveryMethod: isStoreDelivery ? 'store' : 'home',
         paymentMethod: 'offline' as const,
+        type: cartType as 'pharma' | 'grocery', // Pass the cart type to specify order type
+        storeId: selectedStore?.id, // Pass the selected store ID
         // Only include address and billing details for home delivery
         ...(isStoreDelivery ? {} : {
           shippingAddress: selectedAddress || getShippingAddress(),
@@ -204,32 +295,30 @@ const PaymentMethodsScreen = () => {
       const response = await orderService.placeOrder(orderData);
       
       if (response.success && response.data) {
-        console.log(' Offline order placed successfully:', response.data.orderNo);
+        console.log('✅ Offline order placed successfully:', response.data.orderNo);
         
-        // Clear cart
+        // Clear cart after successful order
         await clearCart();
         
-        // Prepare order data for confirmation screen
-        const confirmationOrderData = {
-          items: productsToOrder.map((item: any) => ({
-            id: item.productId,
-            name: item.name,
-            price: item.price,
-            quantity: item.quantity,
-          })),
-          itemTotal: billDetails.mrp,
-          deliveryFee: billDetails.shipping,
-          discount: 0, // No discount for now
-          grandTotal: billDetails.total,
-          deliveryMethod: isStoreDelivery ? 'Store Pickup' : 'Home Delivery',
-          shippingAddress: isStoreDelivery ? undefined : getAddressString(selectedAddress),
-        };
-
-        // Navigate to order confirmation
+        // Navigate to order confirmation screen
+        const cartItems = getCartItems();
         navigation.navigate('OrderConfirmation', {
-          orderId: response.data.orderId.toString(),
-          amount: billDetails.total,
-          orderData: confirmationOrderData,
+          orderId: String(response.data.orderId),
+          orderData: {
+            items: cartItems.map((item: any) => ({
+              id: item.productId || item.id,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+              image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center'
+            })),
+            itemTotal: currentItemTotal,
+            deliveryFee: 0,
+            discount: 0,
+            grandTotal: currentGrandTotal,
+            deliveryMethod: selectedDeliveryMethod === '1' ? 'Store Pickup' : 'Home Delivery',
+            shippingAddress: selectedDeliveryMethod === '2' ? getAddressString(selectedAddress) : undefined
+          }
         });
       } else {
         throw new Error(response.error || 'Failed to place order');
@@ -253,6 +342,13 @@ const PaymentMethodsScreen = () => {
       console.log('💳 Opening Razorpay Checkout...');
       console.log('💰 Amount:', totalAmount, '₹');
       
+      // Check if cart is empty
+      if (totalAmount <= 0) {
+        Alert.alert('Empty Cart', 'Your cart is empty. Please add items before placing an order.');
+        setIsProcessingPayment(false);
+        return;
+      }
+      
       // Navigate to RazorpayCheckoutScreen
       navigation.navigate('RazorpayCheckout', {
         amount: totalAmount,
@@ -268,7 +364,7 @@ const PaymentMethodsScreen = () => {
         cartType: cartType,
         deliveryMethod: selectedDeliveryMethod === '1' ? 'Store Pickup' : 'Home Delivery',
         isReorder: isReorder,
-        reorderItems: reorderItems,
+        reorderItems: reorderItems
       });
     } catch (error: any) {
       console.error('  Error opening Razorpay checkout:', error);
@@ -301,12 +397,25 @@ const PaymentMethodsScreen = () => {
   const getCartItems = () => {
     const items = cartType === 'grocery' ? groceryItems : pharmacyItems;
     // Only include items with quantity > 0
-    return items.filter(item => item.quantity > 0).map(item => ({
-      productId: item.id,
-      quantity: item.quantity,
-      price: item.price,
-      name: item.name,
-    }));
+    return items.filter(item => item.quantity > 0).map(item => {
+      // Use the stored productId if available, otherwise extract base ID from item.id
+      let actualProductId = item.productId;
+      
+      // If no productId stored, extract base product ID from item.id
+      // item.id might have variant suffix like "productId-variantId", we need just "productId"
+      if (!actualProductId) {
+        // Remove only the last part after the last dash (variant ID)
+        const lastDashIndex = item.id.lastIndexOf('-');
+        actualProductId = lastDashIndex !== -1 ? item.id.substring(0, lastDashIndex) : item.id;
+      }
+      
+      return {
+        productId: actualProductId, // Use base product ID for API (without variant suffix)
+        quantity: item.quantity,
+        price: item.price,
+        name: item.name,
+      };
+    });
   };
 
   const getShippingAddress = () => {
@@ -593,7 +702,7 @@ const PaymentMethodsScreen = () => {
         {/* Delivery Method */}
         <Text style={styles.sectionTitle}>Delivery Method</Text>
         <View style={styles.row}>
-          {deliveryMethods.map((method) => (
+          {availableDeliveryMethods.map((method) => (
             <TouchableOpacity
               key={method.id}
               style={[styles.chip, selectedDeliveryMethod === method.id && styles.chipSelected]}
@@ -607,7 +716,7 @@ const PaymentMethodsScreen = () => {
         {/* Payment Method */}
         <Text style={styles.sectionTitle}>Payment Method</Text>
         <View style={styles.paymentMethodContainer}>
-          {paymentMethods.map((method) => (
+          {availablePaymentMethods.map((method) => (
             <TouchableOpacity
               key={method.id}
               style={[

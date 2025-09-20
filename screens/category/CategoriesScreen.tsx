@@ -8,6 +8,7 @@ import {
   Image,
   SafeAreaView,
   ScrollView,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
@@ -15,6 +16,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { Appbar } from 'react-native-paper';
 import { useAppContext } from '../../contexts/AppContext';
+import storeService from '../../services/api/storeService';
 import { storeProductService } from '../../services/api/storeProductService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -155,36 +157,57 @@ const CategoriesScreen = () => {
       try {
         console.log(`🔄 Fetching ${section} categories for store:`, selectedStore.id);
         
-        if (section === 'pharma') {
-          const [catRes, subRes] = await Promise.all([
-            storeProductService.getPharmaCategories(selectedStore.id),
-            storeProductService.getPharmaSubcategories(selectedStore.id),
-          ]);
-
-          const cats = (catRes.success && Array.isArray(catRes.data)) ? catRes.data : [];
-          const subs = (subRes.success && Array.isArray(subRes.data)) ? subRes.data : [];
-
-          // Build map: categoryId -> subcategories[]
-          const map: Record<string, any[]> = {};
-          subs.forEach((sc: any) => {
-            const parentId = sc.parentCategoryId || sc.categoryId || sc.category?.categoryId;
-            if (!parentId) return;
-            if (!map[parentId]) map[parentId] = [];
-            map[parentId].push(sc);
-          });
-
-          console.log(' Pharma categories:', cats.length, 'subcategories:', subs.length);
-          setSubCategoryMap(map);
-          setCategories(cats);
-        } else {
-          const response = await storeProductService.getGroceryCategories(selectedStore.id);
-          if (response.success && response.data) {
-            console.log(' Grocery categories loaded from API');
-            setCategories(response.data);
+        // Fetch categories from the new API endpoint
+        const response = await storeService.getStoreCategories(selectedStore.id, section);
+        
+        console.log(`🔍 ${section} API response:`, JSON.stringify(response, null, 2));
+        
+        if (response.success && response.data) {
+          // Handle nested data structure: response.data.data or response.data
+          const categoriesData = response.data.data || response.data;
+          
+          if (Array.isArray(categoriesData)) {
+            console.log(`✅ ${section} categories loaded from API:`, categoriesData.length);
+            console.log(`📊 Categories data:`, JSON.stringify(categoriesData, null, 2));
+            setCategories(categoriesData);
           } else {
-            console.log('   Grocery API failed, showing empty categories');
+            console.log(`❌ ${section} API returned non-array data:`, typeof categoriesData);
             setCategories([]);
           }
+          
+          // For pharmacy, also fetch subcategories
+          if (section === 'pharma') {
+            try {
+              const subRes = await storeService.getCategorySubcategories('pharma', section);
+              console.log('🔍 Subcategories API response:', JSON.stringify(subRes, null, 2));
+              
+              if (subRes.success && subRes.data) {
+                // Handle nested data structure for subcategories too
+                const subcategoriesData = subRes.data.data || subRes.data;
+                
+                if (Array.isArray(subcategoriesData)) {
+                  // Build map: categoryId -> subcategories[]
+                  const map: Record<string, any[]> = {};
+                  subcategoriesData.forEach((sc: any) => {
+                    const parentId = sc.categoryId;
+                    if (!parentId) return;
+                    if (!map[parentId]) map[parentId] = [];
+                    map[parentId].push(sc);
+                  });
+                  setSubCategoryMap(map);
+                  console.log('✅ Subcategories loaded:', Object.keys(map).length, 'categories with subcategories');
+                  console.log('📊 Subcategories map:', JSON.stringify(map, null, 2));
+                } else {
+                  console.log('❌ Subcategories API returned non-array data');
+                }
+              }
+            } catch (error) {
+              console.log('⚠️ Error fetching subcategories:', error);
+            }
+          }
+        } else {
+          console.log(`❌ ${section} API failed, showing empty categories`);
+          setCategories([]);
         }
       } catch (error) {
         console.log(`  Error fetching ${section} categories:`, error);
@@ -198,7 +221,7 @@ const CategoriesScreen = () => {
     fetchCategories();
   }, [selectedStore?.id, section]);
 
-  const renderCategoryItem = ({ item }: { item: typeof categorySections[0]['categories'][0] }) => (
+  const renderCategoryItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={[
         styles.card,
@@ -207,13 +230,65 @@ const CategoriesScreen = () => {
           borderColor: theme.colors.border,
         },
       ]}
-      onPress={() => {
-        const subCats = subCategoryMap[item.id] || [];
-        navigation.navigate('CategoryDetail', { category: { ...item, subCategories: subCats } });
+      onPress={async () => {
+        try {
+          console.log('🔍 Category clicked:', item.name, 'ID:', item.categoryId);
+          
+          // Fetch category details from API
+          const categoryResponse = await storeService.getCategoryDetails(selectedStore?.id || '', item.categoryId);
+          console.log('🔍 Category details API response:', JSON.stringify(categoryResponse, null, 2));
+          
+          if (categoryResponse.success && categoryResponse.data) {
+            // Handle nested data structure: response.data.data or response.data
+            const categoryData = categoryResponse.data.data || categoryResponse.data;
+            console.log('✅ Category details fetched:', JSON.stringify(categoryData, null, 2));
+            
+            navigation.navigate('CategoryDetail', { 
+              category: { 
+                id: item.categoryId,
+                name: item.name,
+                description: item.description,
+                image: item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
+                subCategories: categoryData.subcategories || [],
+                products: categoryData.products || []
+              } 
+            });
+          } else {
+            // Fallback to local data
+            const subCats = subCategoryMap[item.categoryId] || [];
+            navigation.navigate('CategoryDetail', { 
+              category: { 
+                id: item.categoryId,
+                name: item.name,
+                description: item.description,
+                image: item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
+                subCategories: subCats 
+              } 
+            });
+          }
+        } catch (error) {
+          console.error('❌ Error fetching category details:', error);
+          // Fallback to local data
+          const subCats = subCategoryMap[item.categoryId] || [];
+          navigation.navigate('CategoryDetail', { 
+            category: { 
+              id: item.categoryId,
+              name: item.name,
+              description: item.description,
+              image: item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
+              subCategories: subCats 
+            } 
+          });
+        }
       }}
       activeOpacity={0.8}
     >
-      <Image source={{ uri: item.image }} style={styles.image} />
+      <Image 
+        source={{ 
+          uri: item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center' 
+        }} 
+        style={styles.image} 
+      />
       <Text style={[styles.name, { color: theme.colors.text }]} numberOfLines={2}>
         {item.name}
       </Text>
@@ -255,6 +330,37 @@ const CategoriesScreen = () => {
 
   // Build sections for UI rendering - only show API data
   const computedSections = [{ id: section, title: section === 'pharma' ? 'Pharmacy Categories' : 'Grocery Categories', categories }];
+
+  if (loading) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <Appbar.Header style={{ backgroundColor: theme.colors.card, elevation: 0 }}>
+          <Appbar.BackAction onPress={() => navigation.goBack()} color={theme.colors.text} />
+          <Appbar.Content title="All Categories" titleStyle={{ color: theme.colors.text, fontWeight: 'bold', fontSize: 20 }} />
+        </Appbar.Header>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={theme.colors.primary} />
+          <Text style={{ marginTop: 16, color: theme.colors.text }}>Loading categories...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (categories.length === 0) {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+        <Appbar.Header style={{ backgroundColor: theme.colors.card, elevation: 0 }}>
+          <Appbar.BackAction onPress={() => navigation.goBack()} color={theme.colors.text} />
+          <Appbar.Content title="All Categories" titleStyle={{ color: theme.colors.text, fontWeight: 'bold', fontSize: 20 }} />
+        </Appbar.Header>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+          <Text style={{ color: theme.colors.text, fontSize: 16, textAlign: 'center' }}>
+            No categories available for this store.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>

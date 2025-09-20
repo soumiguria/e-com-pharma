@@ -589,6 +589,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
+import { useAppContext } from '../../contexts/AppContext';
 import { orderService } from '../../services/api';
 import { addressService } from '../../services/api/addressService';
 import { PlaceOrderRequest, InitiatePaymentResponse } from '../../services/api/orderService';
@@ -602,6 +603,7 @@ const RazorpayCheckoutScreen = () => {
   const route = useRoute<RazorpayCheckoutRouteProp>();
   const { theme } = useTheme();
   const { user } = useAuth();
+  const { selectedStore } = useAppContext();
   const { groceryItems, pharmacyItems, clearCart, resetAllContexts } = useCart();
 
   const [isLoading, setIsLoading] = useState(true);
@@ -809,12 +811,13 @@ const RazorpayCheckoutScreen = () => {
 
       console.log('🔍 Checking order type:', {
         'isExistingOrder': isExistingOrder,
+        'isReorder': isReorder,
         'orderId': orderId,
-        'willProcessExisting': isExistingOrder && orderId,
-        'willProcessNew': !isExistingOrder || !orderId
+        'willProcessExisting': isExistingOrder && orderId && !isReorder,
+        'willProcessNew': !isExistingOrder || !orderId || isReorder
       });
 
-      if (isExistingOrder && orderId) {
+      if (isExistingOrder && orderId && !isReorder) {
         // For existing orders, get payment data from the order
         console.log('🔄 Processing existing order payment...');
         
@@ -844,6 +847,7 @@ const RazorpayCheckoutScreen = () => {
         const cartItems = getCartItems();
         
         console.log('📦 Cart items:', cartItems);
+        console.log('📦 Cart items detailed:', JSON.stringify(cartItems, null, 2));
 
         // Calculate bill details (you can customize these calculations)
         const subtotal = cartItems.reduce((total: number, item: any) => total + (item.price * item.quantity), 0);
@@ -855,6 +859,8 @@ const RazorpayCheckoutScreen = () => {
           products: cartItems,
           deliveryMethod: isStoreDelivery ? 'store' : 'home',
           paymentMethod: 'online',
+          type: cartType as 'pharma' | 'grocery', // Pass the cart type to specify order type
+          storeId: selectedStore?.id, // Pass the selected store ID
           subtotalAmount: subtotal,
           totalAmount: totalAmount,
           ...(isStoreDelivery ? {} : {
@@ -868,6 +874,9 @@ const RazorpayCheckoutScreen = () => {
           }),
         };
 
+        console.log('🛒 Order data prepared:', JSON.stringify(orderData, null, 2));
+        console.log('🛒 Order type being sent:', orderData.type);
+        console.log('🛒 Products being sent:', JSON.stringify(orderData.products, null, 2));
         console.log('💰 Bill details calculated:');
         console.log('  - Cart Items Count:', cartItems.length);
         console.log('  - Subtotal:', subtotal);
@@ -910,7 +919,10 @@ const RazorpayCheckoutScreen = () => {
       console.log('💳 Payment data check:');
       console.log('  - paymentDataFromOrder exists:', !!paymentDataFromOrder);
       console.log('  - pgKey exists:', !!paymentDataFromOrder?.pgKey);
+      console.log('  - pgKey value:', paymentDataFromOrder?.pgKey);
       console.log('  - pgReferenceId exists:', !!paymentDataFromOrder?.pgReferenceId);
+      console.log('  - pgReferenceId value:', paymentDataFromOrder?.pgReferenceId);
+      console.log('  - paymentDataFromOrder keys:', Object.keys(paymentDataFromOrder || {}));
 
       if (paymentDataFromOrder && paymentDataFromOrder.pgKey && paymentDataFromOrder.pgReferenceId) {
         const transformedData: InitiatePaymentResponse = {
@@ -945,7 +957,7 @@ const RazorpayCheckoutScreen = () => {
     if (isReorder && reorderItems) {
       console.log('🔄 Using reorder items:', reorderItems);
       const mappedItems = reorderItems.map((item: any) => ({
-        productId: item.id,
+        productId: item.productId || item.id, // Use stored productId or fallback to id
         quantity: item.quantity,
         price: item.price,
         name: item.name,
@@ -956,7 +968,7 @@ const RazorpayCheckoutScreen = () => {
     
     const items = cartType === 'grocery' ? groceryItems : pharmacyItems;
     return items.map(item => ({
-      productId: item.id,
+      productId: item.productId || item.id, // Use stored productId or fallback to id
       quantity: item.quantity,
       price: item.price,
       name: item.name,
