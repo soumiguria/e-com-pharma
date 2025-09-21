@@ -309,23 +309,26 @@ const CategoryDetailScreen = () => {
       try {
         console.log('🔍 CategoryDetailScreen: Fetching subcategories for category:', category.id);
         
-        // Fetch subcategories for this category
+        // Fetch subcategories for this specific category only
         const subcategoriesResponse = await storeService.getCategorySubcategories(category.id, 'pharma');
-        console.log('🔍 CategoryDetailScreen: Subcategories response:', JSON.stringify(subcategoriesResponse, null, 2));
+        console.log('🔍 CategoryDetailScreen: Subcategories response for category', category.id, ':', JSON.stringify(subcategoriesResponse, null, 2));
         
         if (subcategoriesResponse.success && subcategoriesResponse.data) {
           const subcategoriesData = subcategoriesResponse.data.data || subcategoriesResponse.data;
-          const transformedSubcategories = Array.isArray(subcategoriesData) 
-            ? subcategoriesData.map((sc: any) => ({
-                id: sc.subcategoryId,
-                name: sc.name,
-                products: [], // Will be fetched separately for each subcategory
-                brands: []
-              }))
+          // Filter subcategories to only include those belonging to this specific category
+          const filteredSubcategories = Array.isArray(subcategoriesData) 
+            ? subcategoriesData
+                .filter((sc: any) => sc.categoryId === category.id) // Only include subcategories for this category
+                .map((sc: any) => ({
+                  id: sc.subcategoryId,
+                  name: sc.name,
+                  products: [], // Will be fetched separately for each subcategory
+                  brands: []
+                }))
             : [];
           
-          setApiSubCategories(transformedSubcategories);
-          console.log('🔍 CategoryDetailScreen: Transformed subcategories:', transformedSubcategories);
+          setApiSubCategories(filteredSubcategories);
+          console.log('🔍 CategoryDetailScreen: Filtered subcategories for category', category.id, ':', filteredSubcategories.length);
         }
       } catch (error) {
         console.error('🔍 CategoryDetailScreen: Error fetching subcategories:', error);

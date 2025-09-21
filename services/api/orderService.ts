@@ -283,6 +283,9 @@ class OrderService {
           orderNo: `MOCK_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           customerId: '3',
           paymentId: '22',
+          // Add payment gateway data for mock fallback
+          pgKey: 'rzp_test_1DP5mmOlF5G5ag',
+          pgReferenceId: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
           deliveryMethod: orderData.deliveryMethod,
           shippingAddress: orderData.deliveryMethod === 'home' ? (orderData.shippingAddress || {}) : {},
           billingAddress: orderData.deliveryMethod === 'home' ? (orderData.billingAddress || {}) : {},

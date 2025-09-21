@@ -141,7 +141,6 @@ const CategoriesScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const { selectedStore } = useAppContext();
   const [categories, setCategories] = useState<any[]>([]);
-  const [subCategoryMap, setSubCategoryMap] = useState<Record<string, any[]>>({});
   const [loading, setLoading] = useState(true);
 
   // Fetch categories (and subcategories for pharmacy) from API only - no hardcoded data
@@ -164,7 +163,7 @@ const CategoriesScreen = () => {
         
         if (response.success && response.data) {
           // Handle nested data structure: response.data.data or response.data
-          const categoriesData = response.data.data || response.data;
+          const categoriesData = Array.isArray(response.data) ? response.data : ((response.data as any)?.data || response.data);
           
           if (Array.isArray(categoriesData)) {
             console.log(`✅ ${section} categories loaded from API:`, categoriesData.length);
@@ -175,36 +174,8 @@ const CategoriesScreen = () => {
             setCategories([]);
           }
           
-          // For pharmacy, also fetch subcategories
-          if (section === 'pharma') {
-            try {
-              const subRes = await storeService.getCategorySubcategories('pharma', section);
-              console.log('🔍 Subcategories API response:', JSON.stringify(subRes, null, 2));
-              
-              if (subRes.success && subRes.data) {
-                // Handle nested data structure for subcategories too
-                const subcategoriesData = subRes.data.data || subRes.data;
-                
-                if (Array.isArray(subcategoriesData)) {
-                  // Build map: categoryId -> subcategories[]
-                  const map: Record<string, any[]> = {};
-                  subcategoriesData.forEach((sc: any) => {
-                    const parentId = sc.categoryId;
-                    if (!parentId) return;
-                    if (!map[parentId]) map[parentId] = [];
-                    map[parentId].push(sc);
-                  });
-                  setSubCategoryMap(map);
-                  console.log('✅ Subcategories loaded:', Object.keys(map).length, 'categories with subcategories');
-                  console.log('📊 Subcategories map:', JSON.stringify(map, null, 2));
-                } else {
-                  console.log('❌ Subcategories API returned non-array data');
-                }
-              }
-            } catch (error) {
-              console.log('⚠️ Error fetching subcategories:', error);
-            }
-          }
+          // Note: Subcategories will be fetched individually when user clicks on a category
+          // This avoids fetching all subcategories upfront as requested
         } else {
           console.log(`❌ ${section} API failed, showing empty categories`);
           setCategories([]);
@@ -240,7 +211,7 @@ const CategoriesScreen = () => {
           
           if (categoryResponse.success && categoryResponse.data) {
             // Handle nested data structure: response.data.data or response.data
-            const categoryData = categoryResponse.data.data || categoryResponse.data;
+            const categoryData = Array.isArray(categoryResponse.data) ? categoryResponse.data : ((categoryResponse.data as any)?.data || categoryResponse.data);
             console.log('✅ Category details fetched:', JSON.stringify(categoryData, null, 2));
             
             navigation.navigate('CategoryDetail', { 
@@ -254,29 +225,27 @@ const CategoriesScreen = () => {
               } 
             });
           } else {
-            // Fallback to local data
-            const subCats = subCategoryMap[item.categoryId] || [];
+            // Fallback - navigate with empty subcategories, CategoryDetailScreen will fetch them
             navigation.navigate('CategoryDetail', { 
               category: { 
                 id: item.categoryId,
                 name: item.name,
                 description: item.description,
                 image: item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
-                subCategories: subCats 
+                subCategories: [] // Empty - CategoryDetailScreen will fetch subcategories for this specific category
               } 
             });
           }
         } catch (error) {
           console.error('❌ Error fetching category details:', error);
-          // Fallback to local data
-          const subCats = subCategoryMap[item.categoryId] || [];
+          // Fallback - navigate with empty subcategories, CategoryDetailScreen will fetch them
           navigation.navigate('CategoryDetail', { 
             category: { 
               id: item.categoryId,
               name: item.name,
               description: item.description,
               image: item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
-              subCategories: subCats 
+              subCategories: [] // Empty - CategoryDetailScreen will fetch subcategories for this specific category
             } 
           });
         }

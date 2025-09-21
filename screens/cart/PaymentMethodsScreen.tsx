@@ -125,9 +125,10 @@ const PaymentMethodsScreen = () => {
             setAvailablePaymentMethods(paymentMethods);
             setAvailableDeliveryMethods(deliveryMethods);
             
-            // Set default payment method to the first available one
+            // Set default payment method - prefer offline if available
             if (paymentMethods.length > 0) {
-              setSelectedPaymentMethod(paymentMethods[0].id);
+              const offlineMethod = paymentMethods.find(m => m.id === 'offline');
+              setSelectedPaymentMethod(offlineMethod ? 'offline' : paymentMethods[0].id);
             }
             
             // Set default delivery method to the first available one
@@ -139,17 +140,29 @@ const PaymentMethodsScreen = () => {
             // Use default payment methods
             setAvailablePaymentMethods(paymentMethods);
             setAvailableDeliveryMethods(deliveryMethods);
+            
+            // Set default payment method - prefer offline if available
+            const offlineMethod = paymentMethods.find(m => m.id === 'offline');
+            setSelectedPaymentMethod(offlineMethod ? 'offline' : paymentMethods[0].id);
           }
         } catch (error) {
           console.error('❌ Error fetching store details for payment methods:', error);
           // Use default payment methods
           setAvailablePaymentMethods(paymentMethods);
           setAvailableDeliveryMethods(deliveryMethods);
+          
+          // Set default payment method - prefer offline if available
+          const offlineMethod = paymentMethods.find(m => m.id === 'offline');
+          setSelectedPaymentMethod(offlineMethod ? 'offline' : paymentMethods[0].id);
         }
       } else {
         // No store selected, use default payment methods
         setAvailablePaymentMethods(paymentMethods);
         setAvailableDeliveryMethods(deliveryMethods);
+        
+        // Set default payment method - prefer offline if available
+        const offlineMethod = paymentMethods.find(m => m.id === 'offline');
+        setSelectedPaymentMethod(offlineMethod ? 'offline' : paymentMethods[0].id);
       }
     };
 
@@ -404,9 +417,15 @@ const PaymentMethodsScreen = () => {
       // If no productId stored, extract base product ID from item.id
       // item.id might have variant suffix like "productId-variantId", we need just "productId"
       if (!actualProductId) {
-        // Remove only the last part after the last dash (variant ID)
-        const lastDashIndex = item.id.lastIndexOf('-');
-        actualProductId = lastDashIndex !== -1 ? item.id.substring(0, lastDashIndex) : item.id;
+        // Check if the item.id ends with a variant pattern like "-1", "-2", "-3"
+        const variantPattern = /-\d+$/;
+        if (variantPattern.test(item.id)) {
+          // Remove the variant suffix (e.g., "-1", "-2", "-3")
+          actualProductId = item.id.replace(variantPattern, '');
+        } else {
+          // No variant suffix, use the full ID
+          actualProductId = item.id;
+        }
       }
       
       return {

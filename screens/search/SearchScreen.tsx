@@ -352,61 +352,23 @@ const SearchScreen = () => {
           }
         });
       } else {
-        // Fallback if API fails - try to get subcategories from the subcategories endpoint
-        console.log('⚠️ Category details API failed, trying subcategories endpoint...');
-        try {
-          const subRes = await storeService.getCategorySubcategories(category.categoryId, 'pharma');
-          console.log('🔍 Subcategories fallback response:', JSON.stringify(subRes, null, 2));
-          
-          let fallbackSubcategories = [];
-          if (subRes.success && subRes.data) {
-            const subcategoriesData = subRes.data.data || subRes.data;
-            if (Array.isArray(subcategoriesData)) {
-              // Filter subcategories for this specific category and transform to expected format
-              fallbackSubcategories = subcategoriesData
-                .filter((sc: any) => sc.categoryId === category.categoryId)
-                .map((sc: any) => ({
-                  id: sc.subcategoryId,
-                  name: sc.name,
-                  products: [], // Empty products array for now
-                  brands: []
-                }));
-            }
+        // Fallback if API fails - navigate with empty subcategories
+        console.log('⚠️ Category details API failed, navigating with empty subcategories...');
+        navigation.navigate('CategoryDetail', { 
+          category: {
+            id: category.categoryId,
+            name: category.name,
+            description: category.description,
+            image: category.image,
+            _id: category._id,
+            categoryERPId: category.categoryERPId,
+            status: category.status,
+            createdAt: category.createdAt,
+            updatedAt: category.updatedAt,
+            subCategories: [], // Empty - CategoryDetailScreen will fetch only this category's subcategories
+            products: [] // Empty - CategoryDetailScreen will fetch only this category's products
           }
-          
-          navigation.navigate('CategoryDetail', { 
-            category: {
-              id: category.categoryId,
-              name: category.name,
-              description: category.description,
-              image: category.image,
-              _id: category._id,
-              categoryERPId: category.categoryERPId,
-              status: category.status,
-              createdAt: category.createdAt,
-              updatedAt: category.updatedAt,
-              subCategories: fallbackSubcategories,
-              products: []
-            }
-          });
-        } catch (error) {
-          console.log('❌ Subcategories fallback also failed:', error);
-          navigation.navigate('CategoryDetail', { 
-            category: {
-              id: category.categoryId,
-              name: category.name,
-              description: category.description,
-              image: category.image,
-              _id: category._id,
-              categoryERPId: category.categoryERPId,
-              status: category.status,
-              createdAt: category.createdAt,
-              updatedAt: category.updatedAt,
-              subCategories: [],
-              products: []
-            }
-          });
-        }
+        });
       }
     } catch (error) {
       console.error('🔍 Error fetching category details:', error);

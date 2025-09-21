@@ -956,23 +956,60 @@ const RazorpayCheckoutScreen = () => {
     // Use reorder items if this is a reorder, otherwise use cart items
     if (isReorder && reorderItems) {
       console.log('🔄 Using reorder items:', reorderItems);
-      const mappedItems = reorderItems.map((item: any) => ({
-        productId: item.productId || item.id, // Use stored productId or fallback to id
-        quantity: item.quantity,
-        price: item.price,
-        name: item.name,
-      }));
+      const mappedItems = reorderItems.map((item: any) => {
+        // Use the stored productId if available, otherwise extract base ID from item.id
+        let actualProductId = item.productId;
+        
+        // If no productId stored, extract base product ID from item.id
+        if (!actualProductId) {
+          // Check if the item.id ends with a variant pattern like "-1", "-2", "-3"
+          const variantPattern = /-\d+$/;
+          if (variantPattern.test(item.id)) {
+            // Remove the variant suffix (e.g., "-1", "-2", "-3")
+            actualProductId = item.id.replace(variantPattern, '');
+          } else {
+            // No variant suffix, use the full ID
+            actualProductId = item.id;
+          }
+        }
+        
+        return {
+          productId: actualProductId, // Use base product ID for API (without variant suffix)
+          quantity: item.quantity,
+          price: item.price,
+          name: item.name,
+        };
+      });
       console.log('🔄 Mapped reorder items:', mappedItems);
       return mappedItems;
     }
     
     const items = cartType === 'grocery' ? groceryItems : pharmacyItems;
-    return items.map(item => ({
-      productId: item.productId || item.id, // Use stored productId or fallback to id
-      quantity: item.quantity,
-      price: item.price,
-      name: item.name,
-    }));
+    return items.map(item => {
+      // Use the stored productId if available, otherwise extract base ID from item.id
+      let actualProductId = item.productId;
+      
+      // If no productId stored, extract base product ID from item.id
+      // item.id might have variant suffix like "productId-variantId", we need just "productId"
+      if (!actualProductId) {
+        // Check if the item.id ends with a variant pattern like "-1", "-2", "-3"
+        const variantPattern = /-\d+$/;
+        if (variantPattern.test(item.id)) {
+          // Remove the variant suffix (e.g., "-1", "-2", "-3")
+          actualProductId = item.id.replace(variantPattern, '');
+        } else {
+          // No variant suffix, use the full ID
+          actualProductId = item.id;
+        }
+      }
+      
+      return {
+        productId: actualProductId, // Use base product ID for API (without variant suffix)
+        quantity: item.quantity,
+        price: item.price,
+        name: item.name,
+      };
+    });
   };
 
   const getShippingAddress = (address?: Address | null) => {
