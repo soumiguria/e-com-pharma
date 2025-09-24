@@ -165,8 +165,8 @@ const SearchScreen = () => {
         
         if (response.success && response.data) {
           console.log('🔍 Search results data:', JSON.stringify(response.data, null, 2));
-          // Handle both direct data and nested data structure
-          const searchData = response.data.data || response.data;
+          // Support both shapes: { data: {...} } and { data: { data: {...} } }
+          const searchData = (response as any)?.data?.data ?? response.data;
           console.log('🔍 Processed search data:', JSON.stringify(searchData, null, 2));
           
           // Log detailed breakdown
@@ -332,8 +332,8 @@ const SearchScreen = () => {
         console.log('🔍 Category details API response:', JSON.stringify(categoryResponse, null, 2));
         
         if (categoryResponse.success && categoryResponse.data) {
-          // Handle nested data structure: response.data.data or response.data
-          const categoryData = categoryResponse.data.data || categoryResponse.data;
+          // Support both shapes
+          const categoryData = (categoryResponse as any)?.data?.data ?? categoryResponse.data;
           console.log('🔍 Category details fetched:', JSON.stringify(categoryData, null, 2));
         
         navigation.navigate('CategoryDetail', { 
@@ -480,11 +480,7 @@ const SearchScreen = () => {
       justifyContent: 'space-between',
       marginBottom: 12,
     },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-    },
+    
     clearButton: {
       padding: 4,
     },
@@ -521,9 +517,19 @@ const SearchScreen = () => {
     },
     productCard: {
       width: '48%',
-      marginBottom: 20, // Ensure add button is visible
-      minHeight: 180, // Ensure enough height for ProductCard
-      overflow: 'visible', // Prevent clipping
+      minHeight: 220,
+      backgroundColor: '#fff',
+      borderRadius: 18,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: '#f0f0f0',
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOpacity: 0.08,
+      shadowRadius: 6,
+      alignItems: 'center',
+      justifyContent: 'flex-start',
+      marginBottom: 16,
     },
     viewAllButton: {
       alignItems: 'center',
@@ -549,6 +555,7 @@ const SearchScreen = () => {
       marginBottom: 16,
       fontWeight: '500',
     },
+    // Keep a single definition of sectionTitle
     sectionTitle: {
       fontSize: 18,
       fontWeight: 'bold',
@@ -581,27 +588,7 @@ const SearchScreen = () => {
       color: theme.colors.text,
       fontWeight: '500',
     },
-    productsGrid: {
-      flexDirection: 'row',
-      flexWrap: 'wrap',
-      justifyContent: 'space-between',
-    },
-    productCard: {
-      width: '48%',
-      minHeight: 220,
-      backgroundColor: '#fff',
-      borderRadius: 18,
-      padding: 14,
-      borderWidth: 1,
-      borderColor: '#f0f0f0',
-      elevation: 2,
-      shadowColor: '#000',
-      shadowOpacity: 0.08,
-      shadowRadius: 6,
-      alignItems: 'center',
-      justifyContent: 'flex-start',
-      marginBottom: 16,
-    },
+    // Remove duplicate keys below; keep a single productsGrid/productCard definition
     loadingContainer: {
       padding: 20,
       alignItems: 'center',

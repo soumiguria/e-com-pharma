@@ -313,25 +313,7 @@ const PincodeScreen = () => {
               Choose from Map
             </Button>
 
-            {/* Test Google Maps Integration */}
-            <Button
-              mode="outlined"
-              onPress={async () => {
-                if (pincode.length === 6) {
-                  console.log('🧪 Testing Google Maps geocoding for:', pincode);
-                  const result = await googleMapsService.geocodePincode(pincode);
-                  console.log('🧪 Test result:', result);
-                  Alert.alert('Test Result', result ? `Found: ${result.formattedAddress}` : 'No results found');
-                } else {
-                  Alert.alert('Test', 'Please enter a 6-digit pincode first');
-                }
-              }}
-              disabled={!pincode || pincode.length !== 6}
-              style={[styles.button, { marginTop: spacing.sm }]}
-              theme={{ roundness: borderRadius.md }}
-            >
-              Test Google Maps
-            </Button>
+            
           </View>
         </LinearGradient>
       </KeyboardAvoidingView>

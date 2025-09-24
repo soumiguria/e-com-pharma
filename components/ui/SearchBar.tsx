@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -36,16 +36,20 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const { isListening, transcript, error, startListening, stopListening, isAvailable } = useVoiceRecognition();
   const [animation] = useState(new Animated.Value(0));
   const [voiceDisabled, setVoiceDisabled] = useState(false);
+  const lastTranscriptRef = useRef('');
 
   useEffect(() => {
-    if (transcript) {
+    if (transcript && transcript !== lastTranscriptRef.current) {
       console.log('🎤 Voice transcript received:', transcript);
       setSearchQuery(transcript);
       // Only update the search query, don't auto-submit
       // Let user see the transcribed text and decide whether to search
       onSearch(transcript);
+      lastTranscriptRef.current = transcript;
+      // Stop listening after first successful transcript to avoid re-listening loops
+      stopListening();
     }
-  }, [transcript, onSearch]);
+  }, [transcript, onSearch, stopListening]);
 
   // Disable voice recognition if not available or there are errors
   useEffect(() => {
@@ -192,7 +196,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               <MaterialCommunityIcons
                 name={isListening ? 'microphone' : 'microphone-outline'}
                 size={24}
-                color={voiceDisabled ? colors.disabled : (isListening ? colors.primary : colors.text)}
+                color={voiceDisabled ? colors.text : (isListening ? colors.primary : colors.text)}
               />
             </Animated.View>
           </TouchableOpacity>
