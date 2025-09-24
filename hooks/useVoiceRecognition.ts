@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Platform, Alert } from 'react-native';
 
 // Gemini API configuration
-const GEMINI_API_KEY = 'AIzaSyBqJhQJhQJhQJhQJhQJhQJhQJhQJhQJhQJhQ'; // Replace with your actual API key
+const GEMINI_API_KEY = 'AIzaSyAN-U0ZUSqm1ZKnDgH8JuD8bvy4vpZ4qk8';
 const GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 export const useVoiceRecognition = () => {
@@ -59,10 +59,8 @@ export const useVoiceRecognition = () => {
       setTranscript('');
       setAudioChunks([]);
       
-      // Get microphone access
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       
-      // Create MediaRecorder
       const recorder = new MediaRecorder(stream, {
         mimeType: 'audio/webm;codecs=opus'
       });

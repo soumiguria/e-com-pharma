@@ -114,7 +114,8 @@ const UploadPrescriptionScreen = () => {
       return;
     }
     if (!orderId) {
-      Alert.alert('Missing Order', 'Order ID is missing. Open this screen from an order context.');
+      // Alert.alert('Missing Order', 'Order ID is missing. Open this screen from an order context.');
+      Alert.alert('This feature is not available in this version.');
       return;
     }
     

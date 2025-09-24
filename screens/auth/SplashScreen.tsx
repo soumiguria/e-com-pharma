@@ -1,7 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Image, StyleSheet, Dimensions, Animated, Easing } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { LinearGradient } from 'expo-linear-gradient';
+import { View, Image, StyleSheet, Animated, Easing } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -11,14 +9,13 @@ import { useAppContext } from '../../contexts/AppContext';
 
 type SplashScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
 
-const { width, height } = Dimensions.get('window');
-
 const SplashScreen = () => {
   const { theme } = useTheme();
   const { isAuthenticated, isLoading } = useAuth();
   const { lastVisitedStore } = useAppContext();
   const navigation = useNavigation<SplashScreenNavigationProp>();
-  const { colors, typography, spacing } = theme;
+  const { colors } = theme;
+
   
   // Animation values
   const scaleValue = useRef(new Animated.Value(0.8)).current;
@@ -75,7 +72,7 @@ const SplashScreen = () => {
         // Fallback navigation
         navigation.replace('Pincode');
       }
-    }, 2500); // Slightly longer to allow animations to complete
+    }, 2000); // Reduced time for faster navigation
     
     return () => clearTimeout(timer);
   }, [navigation, isAuthenticated, isLoading, lastVisitedStore]);
@@ -91,40 +88,6 @@ const SplashScreen = () => {
       justifyContent: 'center',
       alignItems: 'center',
       backgroundColor: colors.background, // Fallback background
-    },
-    gradient: {
-      width,
-      height,
-      justifyContent: 'center',
-      alignItems: 'center',
-    },
-    logoContainer: {
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    logo: {
-      width: width * 0.5,
-      height: width * 0.5,
-      resizeMode: 'contain',
-    },
-    title: {
-      ...typography.h1,
-      color: colors.text, // Using standard text color instead of inverted
-      marginTop: spacing.lg,
-      textShadowColor: 'rgba(0, 0, 0, 0.2)',
-      textShadowOffset: { width: 1, height: 1 },
-      textShadowRadius: 3,
-    },
-    tagline: {
-      ...typography.body1, // Changed from body to body1
-      color: colors.text, // Using standard text color
-      marginTop: spacing.sm,
-      opacity: 0.8,
-    },
-    particles: {
-      position: 'absolute',
-      width: '100%',
-      height: '100%',
     },
   });
 

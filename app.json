@@ -1,16 +1,11 @@
 {
   "expo": {
-    "name": "e-comm-expo",
+    "name": "Paas Ki Dukaan",
     "slug": "e-comm-expo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "scheme": "ecomm",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
-    },
+    "icon": "./assets/paas-ki-dukaan-icon.png",
+    "scheme": "paaskidukaan",
     "updates": {
       "fallbackToCacheTimeout": 0
     },
@@ -19,7 +14,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourcompany.ecommexpo",
+      "bundleIdentifier": "com.paaskidukaan.app",
       "buildNumber": "1.0.0",
       "config": {
         "googleMapsApiKey": "AIzaSyAVXxFLtJn-hLmeLAreKFdON1rzuHtNBDc"
@@ -35,17 +30,17 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#FFFFFF"
+        "foregroundImage": "./assets/paas-ki-dukaan-adaptive-foreground.png",
+        "backgroundColor": "#000000"
       },
-      "package": "com.yourcompany.ecommexpo",
+      "package": "com.paaskidukaan.app",
       "versionCode": 1,
       "intentFilters": [
         {
           "action": "VIEW",
           "data": [
             {
-              "scheme": "ecomm",
+              "scheme": "paaskidukaan",
               "host": "*"
             },
             {
@@ -117,7 +112,7 @@
           "photosPermission": "The app accesses your photos to let you share them.",
           "cameraPermission": "The app accesses your camera to let you take photos of prescriptions."
         }
-      ]
+      ],
     ]
   }
 }
