@@ -150,6 +150,11 @@ class OrderService {
         paymentMethod: orderData.paymentMethod,
         deliveryMethod: orderData.deliveryMethod,
         type: orderData.type || 'grocery', // Add type field for order filtering
+        // Add required fields for payment processing
+        totalAmount: orderData.totalAmount || 0,
+        subtotalAmount: orderData.subtotalAmount || 0,
+        shippingAmount: orderData.shippingAmount || 0,
+        taxAmount: orderData.taxAmount || 0,
       };
 
       // Add additional fields based on delivery method
@@ -177,6 +182,17 @@ class OrderService {
       console.log(' Token retrieved:', token ? `${token.substring(0, 20)}...` : 'No token');
       console.log(' Headers being sent:', headers);
       console.log(' Making request to:', 'https://marg-api.thelocalsandbox.dev/v1/store/checkout/placeorder');
+      
+      // Validate required fields before making the request
+      if (!requestBody.storeId) {
+        throw new Error('Store ID is required');
+      }
+      if (!requestBody.products || requestBody.products.length === 0) {
+        throw new Error('Products are required');
+      }
+      if (!requestBody.paymentMethod) {
+        throw new Error('Payment method is required');
+      }
       
       const response = await axios.post('https://marg-api.thelocalsandbox.dev/v1/store/checkout/placeorder', requestBody, {
         headers,
@@ -530,6 +546,43 @@ class OrderService {
       console.error(' Error updating payment status:', error);
       // For test mode, always return success
       return { success: true, data: { status: 'updated' } };
+    }
+  }
+
+  // Upload prescription image for an order
+  async uploadPrescription(orderId: string, fileUri: string): Promise<ApiResponse<{ signedPresciptionUrl: string }>> {
+    try {
+      const token = await this.getAuthToken();
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const url = `https://marg-api.thelocalsandbox.dev/v1/customer/order/${orderId}/upload-prescription`;
+
+      const formData = new FormData();
+      const filename = fileUri.split('/').pop() || `prescription_${Date.now()}.jpg`;
+      const file: any = {
+        uri: fileUri,
+        name: filename,
+        type: 'image/jpeg',
+      };
+      formData.append('file', file);
+
+      const headers = {
+        'marg-customer-token': `Bearer ${token}`,
+        // Let axios set proper multipart boundary
+      } as const;
+
+      const response = await axios.post(url, formData, { headers });
+      const data = response.data?.data || response.data;
+      return { success: true, data };
+    } catch (error: any) {
+      console.error(' Error uploading prescription:', error);
+      return {
+        success: false,
+        error: error.response?.data?.message || error.message || 'Failed to upload prescription',
+        data: null as any,
+      };
     }
   }
 }

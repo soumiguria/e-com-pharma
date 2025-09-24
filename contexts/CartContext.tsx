@@ -202,15 +202,15 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
     }
   };
 
-  const groceryTotal = groceryItems.reduce(
+  const groceryTotal = Math.round(groceryItems.reduce(
     (total, item) => total + (item.quantity > 0 ? item.price * item.quantity : 0),
     0
-  );
+  ) * 100) / 100;
 
-  const pharmacyTotal = pharmacyItems.reduce(
+  const pharmacyTotal = Math.round(pharmacyItems.reduce(
     (total, item) => total + (item.quantity > 0 ? item.price * item.quantity : 0),
     0
-  );
+  ) * 100) / 100;
 
   const totalItems = groceryItems.reduce(
     (count, item) => count + (item.quantity > 0 ? item.quantity : 0),

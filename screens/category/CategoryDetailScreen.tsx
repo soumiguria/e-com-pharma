@@ -57,204 +57,7 @@ interface Category {
   subCategories: SubCategory[];
 }
 
-// Dummy data for multiple categories
-const DUMMY_CATEGORY_DATA: Record<string, SubCategory[]> = {
-  '1': [ // Fruits
-    {
-      id: 'sub1',
-      name: 'Citrus',
-      products: [
-        {
-          id: 'prod1',
-          name: 'Orange',
-          price: 60,
-          image: 'https://images.pexels.com/photos/42059/orange-fruit-vitamins-healthy-eating-42059.jpeg',
-          brand: 'Fresh Farms',
-          availableQty: 30,
-        },
-        {
-          id: 'prod2',
-          name: 'Lemon',
-          price: 40,
-          image: 'https://images.pexels.com/photos/162806/lemon-yellow-citrus-fruit-162806.jpeg',
-          brand: 'Fresh Farms',
-          availableQty: 20,
-        },
-      ],
-    },
-    {
-      id: 'sub2',
-      name: 'Berries',
-      products: [
-        {
-          id: 'prod3',
-          name: 'Strawberry',
-          price: 120,
-          image: 'https://images.pexels.com/photos/461382/pexels-photo-461382.jpeg',
-          brand: 'Berry Good',
-          availableQty: 10,
-        },
-      ],
-    },
-  ],
-  '2': [ // Vegetables
-    {
-      id: 'sub1',
-      name: 'Leafy',
-      products: [
-        {
-          id: 'prod1',
-          name: 'Spinach',
-          price: 30,
-          image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg',
-          brand: 'Green Leaf',
-          availableQty: 25,
-        },
-      ],
-    },
-    {
-      id: 'sub2',
-      name: 'Root',
-      products: [
-        {
-          id: 'prod2',
-          name: 'Carrot',
-          price: 40,
-          image: 'https://images.pexels.com/photos/65174/pexels-photo-65174.jpeg',
-          brand: 'Rooty',
-          availableQty: 18,
-        },
-      ],
-    },
-  ],
-  '3': [ // Dairy
-    {
-      id: 'sub1',
-      name: 'Milk',
-      products: [
-        {
-          id: 'prod1',
-          name: 'Amul Milk 1L',
-          price: 65,
-          image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg',
-          brand: 'Amul',
-          availableQty: 20,
-          variants: [
-            { id: 'v1', name: '1L', price: 65, stock: 20 },
-            { id: 'v2', name: '500ml', price: 35, stock: 10 },
-          ],
-        },
-      ],
-    },
-    {
-      id: 'sub2',
-      name: 'Paneer',
-      products: [
-        {
-          id: 'prod2',
-          name: 'Amul Paneer 200g',
-          price: 85,
-          image: 'https://blinkit.com/images/products/400/amul-paneer.jpg',
-          brand: 'Amul',
-          availableQty: 8,
-        },
-      ],
-    },
-  ],
-  '4': [ // Meat
-    {
-      id: 'sub1',
-      name: 'Chicken',
-      products: [
-        {
-          id: 'prod1',
-          name: 'Chicken Breast',
-          price: 220,
-          image: 'https://images.pexels.com/photos/65175/pexels-photo-65175.jpeg',
-          brand: 'Meaty',
-          availableQty: 12,
-        },
-      ],
-    },
-    {
-      id: 'sub2',
-      name: 'Fish',
-      products: [
-        {
-          id: 'prod2',
-          name: 'Rohu Fish',
-          price: 350,
-          image: 'https://images.pexels.com/photos/128388/pexels-photo-128388.jpeg',
-          brand: 'Fishy',
-          availableQty: 6,
-        },
-      ],
-    },
-  ],
-  // ...add more for other ids if desired
-};
-
-const DUMMY_SUBCATEGORIES: SubCategory[] = [
-  {
-    id: 'sub1',
-    name: 'Popular',
-    products: [
-      {
-        id: 'prod1',
-        name: 'Amul Milk 1L',
-        price: 65,
-        image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg',
-        brand: 'Amul',
-        availableQty: 20,
-        variants: [
-          { id: 'v1', name: '1L', price: 65, stock: 20 },
-          { id: 'v2', name: '500ml', price: 35, stock: 10 },
-        ],
-      },
-      {
-        id: 'prod2',
-        name: 'Mother Dairy Curd',
-        price: 30,
-        image: 'https://blinkit.com/images/products/400/mother-dairy-dahi.jpg',
-        brand: 'Mother Dairy',
-        availableQty: 15,
-      },
-    ],
-  },
-  {
-    id: 'sub2',
-    name: 'Paneer',
-    products: [
-      {
-        id: 'prod3',
-        name: 'Amul Paneer 200g',
-        price: 85,
-        image: 'https://blinkit.com/images/products/400/amul-paneer.jpg',
-        brand: 'Amul',
-        availableQty: 8,
-      },
-    ],
-  },
-  {
-    id: 'sub3',
-    name: 'Butter & Cheese',
-    products: [
-      {
-        id: 'prod4',
-        name: 'Britannia Cheese Slices',
-        price: 120,
-        image: 'https://blinkit.com/images/products/400/britannia-cheese-slices.jpg',
-        brand: 'Britannia',
-        availableQty: 12,
-      },
-    ],
-  },
-  {
-    id: 'sub4',
-    name: 'Yogurt',
-    products: [],
-  },
-];
+// Dummy data removed
 
 const priceOptions = [
   { key: 'below_50', label: 'Below ₹50', min: 0, max: 50 },
@@ -289,18 +92,13 @@ const CategoryDetailScreen = () => {
   const [apiProducts, setApiProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   
-  const subCategories = Array.isArray(category.subCategories) && category.subCategories.length > 0
-    ? category.subCategories
-    : apiSubCategories.length > 0 
-      ? apiSubCategories
-      : DUMMY_CATEGORY_DATA[category.id] || DUMMY_SUBCATEGORIES;
+  const subCategories = apiSubCategories;
   
-  // Use pre-selected subcategory if provided, otherwise use first subcategory
-  const initialSubCategoryId = category.selectedSubcategoryId || subCategories[0]?.id;
-  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState(initialSubCategoryId);
+  // Use pre-selected subcategory if provided, otherwise set from API when loaded
+  const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string | undefined>(category.selectedSubcategoryId);
   const [sortBy, setSortBy] = useState<'relevance' | 'price_low_high' | 'price_high_low' | 'a_z' | 'z_a'>('relevance');
 
-  // Fetch subcategories and products when component mounts
+  // Fetch subcategories when component mounts
   useEffect(() => {
     const fetchCategoryData = async () => {
       if (!selectedStore?.id || !category.id) return;
@@ -314,7 +112,8 @@ const CategoryDetailScreen = () => {
         console.log('🔍 CategoryDetailScreen: Subcategories response for category', category.id, ':', JSON.stringify(subcategoriesResponse, null, 2));
         
         if (subcategoriesResponse.success && subcategoriesResponse.data) {
-          const subcategoriesData = subcategoriesResponse.data.data || subcategoriesResponse.data;
+          const payload: any = subcategoriesResponse.data;
+          const subcategoriesData: any[] = Array.isArray(payload) ? payload : (Array.isArray(payload?.data) ? payload.data : []);
           // Filter subcategories to only include those belonging to this specific category
           const filteredSubcategories = Array.isArray(subcategoriesData) 
             ? subcategoriesData
@@ -329,6 +128,9 @@ const CategoryDetailScreen = () => {
           
           setApiSubCategories(filteredSubcategories);
           console.log('🔍 CategoryDetailScreen: Filtered subcategories for category', category.id, ':', filteredSubcategories.length);
+          if (!category.selectedSubcategoryId && !selectedSubCategoryId && filteredSubcategories.length > 0) {
+            setSelectedSubCategoryId(filteredSubcategories[0].id);
+          }
         }
       } catch (error) {
         console.error('🔍 CategoryDetailScreen: Error fetching subcategories:', error);
@@ -340,21 +142,14 @@ const CategoryDetailScreen = () => {
     fetchCategoryData();
   }, [selectedStore?.id, category.id]);
 
-  // Fetch products for the selected subcategory
+  // Fetch products for the selected subcategory (placeholder until API is available)
   useEffect(() => {
     const fetchSubcategoryProducts = async () => {
       if (!selectedStore?.id || !selectedSubCategoryId) return;
       
       try {
         console.log('🔍 CategoryDetailScreen: Fetching products for subcategory:', selectedSubCategoryId);
-        
-        // For now, we'll use the existing products from the subcategory
-        // In the future, we can add a specific API endpoint for subcategory products
-        const selectedSubCategory = subCategories.find((sc: any) => sc.id === selectedSubCategoryId);
-        if (selectedSubCategory && Array.isArray(selectedSubCategory.products)) {
-          setApiProducts(selectedSubCategory.products);
-          console.log('🔍 CategoryDetailScreen: Products for subcategory:', selectedSubCategory.products.length);
-        }
+        setApiProducts([]);
       } catch (error) {
         console.error('🔍 CategoryDetailScreen: Error fetching products:', error);
       }
@@ -388,12 +183,8 @@ const CategoryDetailScreen = () => {
   const selectedSubCategory = Array.isArray(subCategories) 
     ? subCategories.find((sc: SubCategory) => sc.id === selectedSubCategoryId)
     : undefined;
-  // Use API products if available, otherwise use subcategory products
-  let products: Product[] = apiProducts.length > 0 
-    ? apiProducts 
-    : (selectedSubCategory && Array.isArray(selectedSubCategory.products) 
-        ? selectedSubCategory.products 
-        : []);
+  // Use only API products
+  let products: Product[] = apiProducts;
   if (sortBy === 'price_low_high') {
     products = [...products].sort((a: Product, b: Product) => a.price - b.price);
   } else if (sortBy === 'price_high_low') {

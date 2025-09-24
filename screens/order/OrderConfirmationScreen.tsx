@@ -413,7 +413,9 @@ const OrderConfirmationScreen = () => {
 
         {/* Order ID Section */}
         <View style={styles.orderIdSection}>
-          <Text style={styles.orderIdLabel}>Order ID</Text>
+          <Text style={styles.orderIdLabel}>
+            {paymentData ? 'Order Number' : 'Order ID'}
+          </Text>
           <Text style={styles.orderId}>{orderDetails.orderId}</Text>
         </View>
 

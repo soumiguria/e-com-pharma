@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Animated,
   Platform,
+  Alert,
 } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../hooks/useAppTheme';
@@ -40,13 +41,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     if (transcript) {
       console.log('🎤 Voice transcript received:', transcript);
       setSearchQuery(transcript);
+      // Only update the search query, don't auto-submit
+      // Let user see the transcribed text and decide whether to search
       onSearch(transcript);
-      // Auto-submit voice search
-      if (onSubmit) {
-        onSubmit(transcript);
-      }
     }
-  }, [transcript, onSearch, onSubmit]);
+  }, [transcript, onSearch]);
 
   // Disable voice recognition if not available or there are errors
   useEffect(() => {
@@ -119,6 +118,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const handleVoicePress = async () => {
     if (voiceDisabled) {
       console.log('🎤 Voice recognition is disabled due to errors');
+      Alert.alert(
+        'Voice Recognition',
+        'Voice recognition is not available on mobile devices in Expo Go. Please type your search or use the web version for voice search.',
+        [{ text: 'OK' }]
+      );
       return;
     }
     

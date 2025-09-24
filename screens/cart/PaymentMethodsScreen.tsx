@@ -243,9 +243,9 @@ const PaymentMethodsScreen = () => {
   const total = isReorder ? currentGrandTotal : (subtotal + shipping);
 
   const billDetails = {
-    mrp: subtotal,
-    shipping,
-    total: Math.max(0, total), // Ensure total is not negative
+    mrp: Math.round(subtotal * 100) / 100, // Round to 2 decimal places
+    shipping: Math.round(shipping * 100) / 100, // Round to 2 decimal places
+    total: Math.max(0, Math.round(total * 100) / 100), // Ensure total is not negative and rounded
   };
 
   const handlePlaceOrder = async () => {
@@ -258,7 +258,7 @@ const PaymentMethodsScreen = () => {
     // User is logged in, check payment method
     if (selectedPaymentMethod === 'online') {
       // Show Pay Now modal first
-      setPendingOrderAmount(billDetails.total);
+      setPendingOrderAmount(Math.round(billDetails.total * 100) / 100);
       setPaymentSuccess(null);
       setShowPaymentModal(true);
     } else {
@@ -350,7 +350,7 @@ const PaymentMethodsScreen = () => {
       setIsProcessingPayment(true);
       
       // Use calculated total from bill details
-      const totalAmount = billDetails.total;
+      const totalAmount = Math.round(billDetails.total * 100) / 100;
       
       console.log('💳 Opening Razorpay Checkout...');
       console.log('💰 Amount:', totalAmount, '₹');
@@ -767,11 +767,11 @@ const PaymentMethodsScreen = () => {
 
         {/* Bill Details */}
         <Text style={styles.sectionTitle}>Bill Details</Text>
-        <View style={styles.billRow}><Text>MRP Total</Text><Text>₹{billDetails.mrp}</Text></View>
-        <View style={styles.billRow}><Text>Shipping</Text><Text>₹{billDetails.shipping}</Text></View>
+        <View style={styles.billRow}><Text>MRP Total</Text><Text>₹{Number(billDetails.mrp).toFixed(2)}</Text></View>
+        <View style={styles.billRow}><Text>Shipping</Text><Text>₹{Number(billDetails.shipping).toFixed(2)}</Text></View>
         <View style={[styles.billRow, { borderTopWidth: 1, borderTopColor: theme.colors.surface, marginTop: 8, paddingTop: 8 }]}>
           <Text style={{ fontWeight: 'bold' }}>Total</Text>
-          <Text style={{ fontWeight: 'bold' }}>₹{billDetails.total}</Text>
+          <Text style={{ fontWeight: 'bold' }}>₹{Number(billDetails.total).toFixed(2)}</Text>
         </View>
 
 
@@ -798,7 +798,7 @@ const PaymentMethodsScreen = () => {
             </Text>
             {paymentSuccess === null && (
               <>
-                <Text style={{ color: theme.colors.secondary, marginBottom: 16 }}>Amount payable: ₹{pendingOrderAmount}</Text>
+                <Text style={{ color: theme.colors.secondary, marginBottom: 16 }}>Amount payable: ₹{Number(pendingOrderAmount).toFixed(2)}</Text>
                 <ThemedButton title="Pay Now" onPress={openRazorpayCheckout} />
                 <TouchableOpacity onPress={() => setShowPaymentModal(false)} style={{ marginTop: 12, alignSelf: 'center' }}>
                   <Text style={{ color: theme.colors.primary }}>Not now</Text>

@@ -504,9 +504,13 @@ const OrdersScreen = () => {
                 </View>
 
                 {/* Order Details */}
-                <View style={styles.orderDetails}>
-                  <Text style={[styles.detailLabel, { color: theme.colors.secondary }]}>Order ID</Text>
-                  <Text style={[styles.detailValue, { color: theme.colors.text }]}>{order.orderNumber}</Text>
+                <View style={styles.orderIdContainer}>
+                  <Text style={[styles.detailLabel, { color: theme.colors.secondary }]}>
+                    {order.status === 'pending' ? 'Order ID' : 'Order Number'}
+                  </Text>
+                  <Text style={[styles.orderIdValue, { color: theme.colors.text }]} numberOfLines={2}>
+                    {order.status === 'pending' ? order.id : order.orderNumber}
+                  </Text>
                 </View>
 
                 <View style={styles.orderDetails}>
@@ -519,9 +523,9 @@ const OrdersScreen = () => {
                   <Text style={[styles.detailValue, { color: theme.colors.text }]}>{order.items.reduce((sum, item) => sum + item.quantity, 0)}</Text>
                 </View>
 
-                      <View style={styles.orderDetails}>
+                      <View style={styles.storeNameContainer}>
                         <Text style={[styles.detailLabel, { color: theme.colors.secondary }]}>Store Name</Text>
-                        <Text style={[styles.detailValue, { color: theme.colors.text }]}>
+                        <Text style={[styles.storeNameValue, { color: theme.colors.text }]} numberOfLines={2}>
                           {order.storeName || (order.items.some(item => item.type === 'pharma') ? 'Pharmacy Store' : 'Grocery Store')}
                         </Text>
                       </View>
@@ -625,23 +629,27 @@ const OrdersScreen = () => {
     orderCard: {
       marginBottom: 20,
       marginHorizontal: 4,
-      elevation: 4,
+      elevation: 6,
       shadowColor: '#000',
       shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.15,
-      shadowRadius: 8,
-      borderRadius: 16,
+      shadowOpacity: 0.12,
+      shadowRadius: 12,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: 'rgba(0,0,0,0.08)',
     },
     cardContent: {
-      paddingVertical: 20,
-      paddingHorizontal: 16,
+      paddingVertical: 24,
+      paddingHorizontal: 20,
     },
     orderTopRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 20,
-      paddingVertical: 8,
+      marginBottom: 24,
+      paddingBottom: 16,
+      borderBottomWidth: 1,
+      borderBottomColor: 'rgba(0,0,0,0.06)',
     },
     itemImagesContainer: {
       flexDirection: 'row',
@@ -649,13 +657,18 @@ const OrdersScreen = () => {
       flex: 1,
     },
     itemImage: {
-      width: 50,
-      height: 50,
-      borderRadius: 12,
-      marginRight: 10,
+      width: 56,
+      height: 56,
+      borderRadius: 16,
+      marginRight: 12,
       backgroundColor: '#f8f9fa',
-      borderWidth: 1,
+      borderWidth: 1.5,
       borderColor: '#e9ecef',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.08,
+      shadowRadius: 4,
+      elevation: 2,
     },
     moreItemsContainer: {
       backgroundColor: '#6c757d',
@@ -670,43 +683,92 @@ const OrdersScreen = () => {
       color: '#fff',
     },
     statusChip: {
-      height: 32,
-      paddingHorizontal: 12,
-      borderRadius: 16,
+      height: 36,
+      paddingHorizontal: 16,
+      borderRadius: 18,
+      elevation: 2,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 1 },
+      shadowOpacity: 0.1,
+      shadowRadius: 2,
     },
     orderDetails: {
       flexDirection: 'row',
       justifyContent: 'space-between',
       alignItems: 'center',
-      marginBottom: 12,
-      paddingVertical: 4,
+      marginBottom: 16,
+      paddingVertical: 8,
+      paddingHorizontal: 4,
+      backgroundColor: 'rgba(0,0,0,0.02)',
+      borderRadius: 12,
+      borderLeftWidth: 3,
+      borderLeftColor: 'rgba(0,0,0,0.1)',
     },
     detailLabel: {
-      fontSize: 15,
-      fontWeight: '500',
+      fontSize: 14,
+      fontWeight: '600',
       color: '#6c757d',
+      letterSpacing: 0.3,
     },
     detailValue: {
-      fontSize: 15,
+      fontSize: 16,
       fontWeight: '700',
+      color: '#2c3e50',
+      letterSpacing: 0.2,
+    },
+    orderIdContainer: {
+      marginBottom: 16,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      backgroundColor: 'rgba(0,0,0,0.03)',
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: 'rgba(0,0,0,0.08)',
+    },
+    orderIdValue: {
+      fontSize: 16,
+      fontWeight: '700',
+      marginTop: 6,
+      lineHeight: 22,
+      flexWrap: 'wrap',
+      color: '#2c3e50',
+      letterSpacing: 0.3,
+    },
+    storeNameContainer: {
+      marginBottom: 16,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      backgroundColor: 'rgba(0,0,0,0.03)',
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: 'rgba(0,0,0,0.08)',
+    },
+    storeNameValue: {
+      fontSize: 16,
+      fontWeight: '700',
+      marginTop: 6,
+      lineHeight: 22,
+      flexWrap: 'wrap',
+      color: '#2c3e50',
+      letterSpacing: 0.3,
     },
     actionButtonsContainer: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      marginTop: 20,
+      marginTop: 24,
       gap: 16,
     },
     actionButton: {
       flex: 1,
-      paddingVertical: 14,
-      borderRadius: 12,
+      paddingVertical: 16,
+      borderRadius: 16,
       alignItems: 'center',
       justifyContent: 'center',
-      elevation: 2,
+      elevation: 3,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.15,
+      shadowRadius: 6,
     },
     reorderButton: {
       borderWidth: 2,
@@ -716,8 +778,9 @@ const OrdersScreen = () => {
       // backgroundColor will be set dynamically
     },
     actionButtonText: {
-      fontSize: 15,
+      fontSize: 16,
       fontWeight: '700',
+      letterSpacing: 0.3,
     },
   });
 

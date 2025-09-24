@@ -498,6 +498,17 @@ const OrderDetailScreen = () => {
       fontWeight: '600',
       color: theme.colors.text,
     },
+    addressRow: {
+      marginBottom: 8,
+    },
+    addressValue: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginTop: 4,
+      lineHeight: 20,
+      flexWrap: 'wrap',
+    },
     statusContainer: {
       flexDirection: 'row',
       alignItems: 'center',
@@ -604,10 +615,9 @@ const OrderDetailScreen = () => {
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Order ID */}
+          {/* Item Details Header */}
           <View style={styles.orderIdRow}>
             <Text style={styles.orderIdText}>Item Details</Text>
-            <Text style={styles.orderId}>{orderData.id}</Text>
           </View>
 
           {/* Items Section */}
@@ -693,11 +703,11 @@ const OrderDetailScreen = () => {
               <Text style={styles.orderDetailLabel}>Order Type</Text>
               <Text style={styles.orderDetailValue}>{orderData.orderType || 'N/A'}</Text>
             </View>
-            <View style={styles.orderDetailRow}>
+            <View style={styles.addressRow}>
               <Text style={styles.orderDetailLabel}>
                 {orderData.orderType === 'Store Pickup' ? 'Store Address' : 'Delivery Address'}
               </Text>
-              <Text style={styles.orderDetailValue} numberOfLines={2}>
+              <Text style={styles.addressValue} numberOfLines={3}>
                 {orderData.orderType === 'Store Pickup' 
                   ? (formattedStoreAddress || (order?.storeAddress || order?.store?.address || 'Store pickup location not available'))
                   : (orderData.address || 'N/A')

@@ -9,28 +9,84 @@ import {
   Alert,
   Image,
   Platform,
+  Linking,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-// Image picker functionality removed - expo-image-picker uninstalled
+import * as ImagePicker from 'expo-image-picker';
 import { LinearGradient } from 'expo-linear-gradient';
+import orderService from '../../services/api/orderService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'UploadPrescription'>;
+type RouteProp = { params: { orderId: string } };
 
 const UploadPrescriptionScreen = () => {
   const navigation = useNavigation<NavigationProp>();
+  const route = useRoute() as unknown as RouteProp;
+  const orderId = route.params?.orderId;
   const { theme } = useTheme();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  // Voice recognition removed from this screen; available on Search only
+
+  const requestPermissions = async () => {
+    if (Platform.OS !== 'web') {
+      const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
+      const { status: mediaLibraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (cameraStatus !== 'granted' || mediaLibraryStatus !== 'granted') {
+        Alert.alert(
+          'Permissions Required',
+          'Camera and photo library permissions are required to upload prescriptions.',
+          [{ text: 'OK' }]
+        );
+        return false;
+      }
+    }
+    return true;
+  };
 
   const handleTakePhoto = async () => {
-    Alert.alert('Camera Feature', 'Camera functionality is temporarily disabled. Please use gallery option instead.');
+    const hasPermissions = await requestPermissions();
+    if (!hasPermissions) return;
+
+    try {
+      const result = await ImagePicker.launchCameraAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error taking photo:', error);
+      Alert.alert('Error', 'Failed to take photo. Please try again.');
+    }
   };
 
   const handleChooseFromGallery = async () => {
-    Alert.alert('Gallery Feature', 'Gallery functionality is temporarily disabled. Image picker features will be restored in a future update.');
+    const hasPermissions = await requestPermissions();
+    if (!hasPermissions) return;
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        allowsEditing: true,
+        aspect: [4, 3],
+        quality: 0.8,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        setSelectedImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      console.error('Error choosing from gallery:', error);
+      Alert.alert('Error', 'Failed to select image from gallery. Please try again.');
+    }
   };
 
   const handleCallPharmacist = () => {
@@ -40,26 +96,45 @@ const UploadPrescriptionScreen = () => {
       [
         { text: 'Cancel', style: 'cancel' },
         { text: 'Call', onPress: () => {
-          // In a real app, you would use Linking to make a phone call
-          Alert.alert('Call Pharmacist', 'Phone call functionality would be implemented here');
+          const phoneNumber = 'tel:+1234567890'; // Replace with actual pharmacist number
+          Linking.openURL(phoneNumber).catch(err => {
+            console.error('Error opening phone dialer:', err);
+            Alert.alert('Error', 'Unable to open phone dialer. Please call manually.');
+          });
         }}
       ]
     );
   };
 
-  const handleUpload = () => {
+  // No voice handlers here
+
+  const handleUpload = async () => {
     if (!selectedImage) {
       Alert.alert('No Image', 'Please select an image before uploading');
       return;
     }
+    if (!orderId) {
+      Alert.alert('Missing Order', 'Order ID is missing. Open this screen from an order context.');
+      return;
+    }
     
-    Alert.alert(
-      'Upload Prescription',
-      'Your prescription has been uploaded successfully! Our pharmacist will review it and contact you soon.',
-      [
+    setIsUploading(true);
+    
+    try {
+      const res = await orderService.uploadPrescription(orderId, selectedImage);
+      if (!res.success) throw new Error(res.error || 'Upload failed');
+
+      const signedUrl = (res.data as any)?.signedPresciptionUrl || (res.data as any)?.signedPrescriptionUrl;
+
+      Alert.alert('Upload Prescription', 'Uploaded successfully.', [
         { text: 'OK', onPress: () => navigation.goBack() }
-      ]
-    );
+      ]);
+    } catch (error) {
+      console.error('Upload error:', error);
+      Alert.alert('Upload Failed', 'Failed to upload prescription. Please try again.');
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const themedStyles = StyleSheet.create({
@@ -235,11 +310,16 @@ const UploadPrescriptionScreen = () => {
       alignItems: 'center',
       marginTop: 16,
     },
+    uploadButtonDisabled: {
+      backgroundColor: theme.colors.border,
+      opacity: 0.6,
+    },
     uploadButtonText: {
       color: theme.colors.surface,
       fontSize: 16,
       fontWeight: 'bold',
     },
+    // voice-related styles removed from this screen
     divider: {
       height: 1,
       backgroundColor: theme.colors.border,
@@ -310,6 +390,8 @@ const UploadPrescriptionScreen = () => {
           </TouchableOpacity>
         </View>
 
+        {/* Voice input is only on Search screen */}
+
         {/* Selected Image */}
         {selectedImage && (
           <View style={themedStyles.selectedImageContainer}>
@@ -378,8 +460,14 @@ const UploadPrescriptionScreen = () => {
 
         {/* Upload Button */}
         {selectedImage && (
-          <TouchableOpacity style={themedStyles.uploadButton} onPress={handleUpload}>
-            <Text style={themedStyles.uploadButtonText}>Upload Prescription</Text>
+          <TouchableOpacity 
+            style={[themedStyles.uploadButton, isUploading && themedStyles.uploadButtonDisabled]} 
+            onPress={handleUpload}
+            disabled={isUploading}
+          >
+            <Text style={themedStyles.uploadButtonText}>
+              {isUploading ? 'Uploading...' : 'Upload Prescription'}
+            </Text>
           </TouchableOpacity>
         )}
       </ScrollView>

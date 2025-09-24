@@ -28,7 +28,9 @@
         "NSLocationWhenInUseUsageDescription": "This app needs access to location to show nearby stores and delivery options.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to location to show nearby stores and delivery options.",
         "NSMicrophoneUsageDescription": "This app needs access to microphone for voice search functionality.",
-        "NSSpeechRecognitionUsageDescription": "This app uses speech recognition to convert your voice to text for search."
+        "NSSpeechRecognitionUsageDescription": "This app uses speech recognition to convert your voice to text for search.",
+        "NSCameraUsageDescription": "This app needs access to camera to take photos of prescriptions.",
+        "NSPhotoLibraryUsageDescription": "This app needs access to photo library to select prescription images."
       }
     },
     "android": {
@@ -79,7 +81,10 @@
         "ACCESS_FINE_LOCATION",
         "ACCESS_COARSE_LOCATION",
         "RECORD_AUDIO",
-        "MODIFY_AUDIO_SETTINGS"
+        "MODIFY_AUDIO_SETTINGS",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE",
+        "WRITE_EXTERNAL_STORAGE"
       ],
       "config": {
         "googleMaps": {
@@ -104,6 +109,13 @@
         "expo-location",
         {
           "locationAlwaysAndWhenInUsePermission": "This app needs access to location to show nearby stores and delivery options."
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to let you share them.",
+          "cameraPermission": "The app accesses your camera to let you take photos of prescriptions."
         }
       ]
     ]
