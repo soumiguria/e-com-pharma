@@ -743,7 +743,7 @@ const HomeScreen = () => {
               <View style={themedStyles.section}>
                 <TouchableOpacity 
                   style={[themedStyles.prescriptionButton, { backgroundColor: theme.colors.primary }]}
-                  onPress={() => navigation.navigate('UploadPrescription' as any)}
+                  onPress={() => navigation.navigate('OrderSelection' as any)}
                 >
                   <MaterialIcons name="upload-file" size={24} color="white" />
                   <Text style={themedStyles.prescriptionButtonText}>Order with Prescription</Text>

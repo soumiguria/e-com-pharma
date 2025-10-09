@@ -23,7 +23,7 @@ type OrderConfirmationRouteProp = RouteProp<RootStackParamList, 'OrderConfirmati
 
 const OrderConfirmationScreen = () => {
   const { theme } = useTheme();
-  const navigation = useNavigation<OrderConfirmationNavigationProp>();
+  const navigation = useNavigation<any>();
   const route = useRoute<OrderConfirmationRouteProp>();
   const { clearCart } = useCart();
   const [buttonPressed, setButtonPressed] = useState<string | null>(null);
@@ -33,7 +33,9 @@ const OrderConfirmationScreen = () => {
   const logoOpacity = useRef(new Animated.Value(0)).current;
 
   // Get order details from route params or use defaults
-  const { paymentData, orderId: routeOrderId, amount: routeAmount, orderData: routeOrderData } = route.params || {};
+  const routeParams: any = route.params || {};
+  const { paymentData, orderId: routeOrderId, amount: routeAmount, orderData: routeOrderData } = routeParams;
+  const routeStoreId = routeParams.storeId;
   const orderId = routeOrderId || `ORD${Date.now().toString().slice(-8)}`;
   const totalAmount = routeAmount || 460;
 
@@ -68,7 +70,7 @@ const OrderConfirmationScreen = () => {
   useEffect(() => {
     const fetchStoreDetails = async () => {
       // Try to get store ID from order data or route params
-      const storeId = routeOrderData?.storeId || route.params?.storeId;
+      const storeId = (routeOrderData as any)?.storeId || routeStoreId;
       if (storeId && !storeDetails && orderDetails.deliveryMethod === 'Store Pickup') {
         console.log('🏪 Fetching store details for confirmation screen, store ID:', storeId);
              try {
@@ -94,7 +96,7 @@ const OrderConfirmationScreen = () => {
     };
 
     fetchStoreDetails();
-  }, [routeOrderData, route.params?.storeId, storeDetails, orderDetails.deliveryMethod]);
+  }, [routeOrderData, routeStoreId, storeDetails, orderDetails.deliveryMethod]);
 
   // Debug logging
   console.log('🎉 OrderConfirmation route params:', { paymentData, routeOrderId, routeAmount, routeOrderData });
@@ -432,7 +434,7 @@ const OrderConfirmationScreen = () => {
           </View>
           
           {/* Individual Items */}
-          {orderDetails.items.map((item, index) => (
+          {orderDetails.items.map((item: any, index: number) => (
             <View key={index} style={[styles.billRow, { marginLeft: 16, marginBottom: 4 }]}>
               <Text style={[styles.billLabel, { fontSize: 14, color: theme.colors.secondary }]}>
                 {item.name} x{item.quantity}

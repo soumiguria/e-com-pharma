@@ -10,7 +10,7 @@ const mapCategory = (raw: any): Category => {
   return {
     id: raw.categoryId || raw.id || String(raw.categoryERPId || raw.subcategoryERPId || Math.random()),
     name: raw.name || raw.title || 'Category',
-    image: raw.image || PLACEHOLDER_IMAGE,
+    image: raw.signedImage || raw.image || PLACEHOLDER_IMAGE,
     description: raw.description || undefined,
     isActive: raw.status ? String(raw.status).toLowerCase() === 'active' : true,
     subCategories: [],
@@ -21,7 +21,7 @@ const mapSubCategory = (raw: any): SubCategory => {
   return {
     id: raw.subcategoryId || raw.id || String(raw.subcategoryERPId || Math.random()),
     name: raw.name || 'Subcategory',
-    image: raw.image || PLACEHOLDER_IMAGE,
+    image: raw.signedImage || raw.image || PLACEHOLDER_IMAGE,
     description: raw.description || undefined,
     parentCategoryId: raw.categoryId || raw.category?.categoryId,
     products: [],
@@ -45,17 +45,25 @@ const pickPrice = (raw: any): number => {
 };
 
 const pickImage = (raw: any): string => {
-  return raw.image || (Array.isArray(raw.images) && raw.images.length > 0 ? raw.images[0] : PLACEHOLDER_IMAGE);
+  // Priority: signedImage > signedImages[0] > image > images[0] > placeholder
+  if (raw.signedImage) return raw.signedImage;
+  if (Array.isArray(raw.signedImages) && raw.signedImages.length > 0) return raw.signedImages[0];
+  if (raw.image) return raw.image;
+  if (Array.isArray(raw.images) && raw.images.length > 0) return raw.images[0];
+  return PLACEHOLDER_IMAGE;
 };
 
 const mapProduct = (raw: any, category: 'grocery' | 'pharma'): Product => {
+  // Handle images array: prefer signedImages, fallback to images
+  const imagesArray = raw.signedImages || raw.images || undefined;
+  
   return {
     id: raw.productId || raw.id || String(Math.random()),
     name: raw.name || raw.productName || 'Product',
     price: pickPrice(raw),
     originalPrice: (() => { const n = toNumber(raw.mrp); return n > 0 ? n : undefined; })(),
     image: pickImage(raw),
-    images: raw.images || undefined,
+    images: imagesArray,
     description: raw.description || undefined,
     brand: raw.brand || raw.brandName || undefined,
     category,

@@ -3,6 +3,7 @@ import axios from 'axios';
 import apiClient from './client';
 import { ApiResponse } from './types';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform } from 'react-native';
 
 export interface PlaceOrderRequest {
   products: any;
@@ -559,28 +560,113 @@ class OrderService {
 
       const url = `https://marg-api.thelocalsandbox.dev/v1/customer/order/${orderId}/upload-prescription`;
 
-      const formData = new FormData();
-      const filename = fileUri.split('/').pop() || `prescription_${Date.now()}.jpg`;
-      const file: any = {
-        uri: fileUri,
-        name: filename,
-        type: 'image/jpeg',
+      // Best-effort MIME type detection from filename extension
+      const guessMimeType = (filename: string): string => {
+        const lower = filename.toLowerCase();
+        if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+        if (lower.endsWith('.png')) return 'image/png';
+        if (lower.endsWith('.webp')) return 'image/webp';
+        if (lower.endsWith('.heic') || lower.endsWith('.heif')) return 'image/heic';
+        if (lower.endsWith('.gif')) return 'image/gif';
+        if (lower.endsWith('.bmp')) return 'image/bmp';
+        if (lower.endsWith('.tiff') || lower.endsWith('.tif')) return 'image/tiff';
+        // Fallback (works for most cases; server only needs file bytes)
+        return 'application/octet-stream';
       };
-      formData.append('file', file);
+
+      const formData = new FormData();
+      const rawFilename = fileUri.split('/').pop() || `prescription_${Date.now()}.jpg`;
+      const filename = rawFilename.includes('.') ? rawFilename : `${rawFilename}.jpg`;
+      const type = guessMimeType(filename);
+
+      // Handle different URI formats for React Native
+      let normalizedUri = fileUri;
+      if (Platform.OS === 'ios' && !fileUri.startsWith('file://')) {
+        normalizedUri = `file://${fileUri}`;
+      } else if (Platform.OS === 'android') {
+        // Android needs file:// prefix for FormData
+        if (!fileUri.startsWith('file://')) {
+          normalizedUri = `file://${fileUri}`;
+        }
+      }
+      
+      const file: any = {
+        uri: normalizedUri,
+        name: filename,
+        type,
+      };
+      // Use 'prescription' as the field name as per API documentation
+      formData.append('prescription', file);
 
       const headers = {
+        // Some gateways expect Authorization, some expect a custom header
+        'Authorization': `Bearer ${token}`,
         'marg-customer-token': `Bearer ${token}`,
-        // Let axios set proper multipart boundary
+        'Accept': 'application/json',
+        // In React Native it's safe to set multipart; RN will attach the boundary
+        'Content-Type': 'multipart/form-data',
       } as const;
 
-      const response = await axios.post(url, formData, { headers });
-      const data = response.data?.data || response.data;
-      return { success: true, data };
+      console.log('📄 Upload details:', {
+        url,
+        filename,
+        type,
+        normalizedUri,
+        platform: Platform.OS,
+        hasToken: !!token
+      });
+
+      // Use direct axios with proper Android file handling
+      try {
+        const response = await axios.patch(url, formData, { 
+          headers,
+          timeout: 30000, // 30 second timeout
+          maxContentLength: 50 * 1024 * 1024, // 50MB max
+          maxBodyLength: 50 * 1024 * 1024, // 50MB max
+        });
+        const data = response.data?.data || response.data;
+        return { success: true, data };
+      } catch (axiosErr: any) {
+        // Fallback to fetch() for some Android devices where axios + multipart + PATCH fails with Network Error
+        const isNetworkError = !axiosErr?.response;
+        if (isNetworkError) {
+          try {
+            console.log('📄 Axios network error, trying fetch fallback...');
+            const fetchResp = await fetch(url, {
+              method: 'PATCH',
+              headers,
+              body: formData as any,
+            } as any);
+            if (!fetchResp.ok) {
+              const text = await fetchResp.text();
+              throw new Error(text || `Request failed with status ${fetchResp.status}`);
+            }
+            const json = await fetchResp.json().catch(() => ({}));
+            const data = (json as any)?.data || json;
+            return { success: true, data };
+          } catch (fetchErr) {
+            throw axiosErr; // bubble original for unified error handling below
+          }
+        }
+        throw axiosErr;
+      }
     } catch (error: any) {
-      console.error(' Error uploading prescription:', error);
+      // Provide a clear, user-friendly error message
+      let message = 'Failed to upload prescription';
+      if (error?.response) {
+        const status = error.response.status;
+        const serverMsg = error.response.data?.message || error.response.data?.error;
+        message = serverMsg || `Request failed with status ${status}`;
+      } else if (error?.request) {
+        message = 'Network error: Unable to reach the server. Please check your internet connection and try again.';
+      } else if (error?.message) {
+        message = error.message;
+      }
+
+      console.error('📄 Error uploading prescription:', message, error);
       return {
         success: false,
-        error: error.response?.data?.message || error.message || 'Failed to upload prescription',
+        error: message,
         data: null as any,
       };
     }

@@ -28,7 +28,7 @@ const OrderDetailScreen = () => {
   const params = route.params as any;
   const passedOrder = params?.order;
   const passedOrderId = params?.orderId as string | undefined;
-  const [loading, setLoading] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true);
   const [apiOrder, setApiOrder] = useState<any>(null);
   const [storeDetails, setStoreDetails] = useState<any>(null);
   const [formattedStoreAddress, setFormattedStoreAddress] = useState<string>('');
@@ -38,31 +38,61 @@ const OrderDetailScreen = () => {
 
   // Use API data if available, otherwise fallback to passed order
   const order = apiOrder || passedOrder;
+  
+  // Extract prescription URLs - check API response directly first, then nested data
+  const prescriptionUrls = {
+    signedPresciptionUrl: apiOrder?.signedPresciptionUrl || order?.signedPresciptionUrl || order?.originalOrderData?.signedPresciptionUrl,
+    signedPrescriptionUrl: apiOrder?.signedPrescriptionUrl || order?.signedPrescriptionUrl || order?.originalOrderData?.signedPrescriptionUrl,
+    prescriptionUrl: apiOrder?.prescriptionUrl || order?.prescriptionUrl || order?.originalOrderData?.prescriptionUrl,
+  };
+  
+  // Final prescription URL with correct priority
+  const finalPrescriptionUrl = prescriptionUrls.signedPresciptionUrl || prescriptionUrls.signedPrescriptionUrl || prescriptionUrls.prescriptionUrl;
+  
+  console.log('💊 Prescription URLs extracted:', prescriptionUrls);
+  console.log('💊 Final prescription URL (PRIORITY: signedPresciptionUrl):', finalPrescriptionUrl);
 
-  // Fetch order details from API to get proper product information
+
+  // Fetch order details from API when screen loads
   useEffect(() => {
-    const fetchOrderDetails = async () => {
-      if (passedOrderId && !apiOrder) {
-        console.log('📦 Fetching order details for reorder:', passedOrderId);
-        setLoading(true);
+    const fetchOrderData = async () => {
+      // Always fetch fresh data if we have orderId
+      const orderIdToFetch = passedOrderId || passedOrder?.orderId || passedOrder?.id;
+      
+      if (orderIdToFetch) {
+        console.log('📦 ===== FETCHING ORDER DETAILS =====');
+        console.log('📦 Order ID:', orderIdToFetch);
+        
         try {
-          const response = await orderListService.getOrderById(passedOrderId);
-          if (response.success && response.data) {
-            console.log('📦 Order details fetched successfully:', response.data);
-            setApiOrder(response.data);
+          setLoading(true);
+          const res = await orderListService.getOrderById(orderIdToFetch);
+          
+          console.log('📦 ===== COMPLETE API RESPONSE =====');
+          console.log(JSON.stringify(res, null, 2));
+          console.log('📦 ===== END COMPLETE RESPONSE =====');
+          
+          if (res.success && res.data) {
+            console.log('📦 ===== PRESCRIPTION FIELDS FROM API =====');
+            console.log('signedPresciptionUrl:', res.data.signedPresciptionUrl);
+            console.log('signedPrescriptionUrl:', res.data.signedPrescriptionUrl);
+            console.log('prescriptionUrl:', res.data.prescriptionUrl);
+            console.log('📦 ===== END PRESCRIPTION FIELDS =====');
+            setApiOrder(res.data);
           } else {
-            console.log('⚠️ Failed to fetch order details, using passed order');
+            console.log('❌ Failed to fetch order details:', res.error);
           }
         } catch (error) {
           console.error('❌ Error fetching order details:', error);
         } finally {
           setLoading(false);
         }
+      } else {
+        setLoading(false);
       }
     };
 
-    fetchOrderDetails();
-  }, [passedOrderId, apiOrder]);
+    fetchOrderData();
+  }, [passedOrderId, passedOrder?.orderId, passedOrder?.id]);
 
   // Fetch store details for store address display
   useEffect(() => {
@@ -96,6 +126,21 @@ const OrderDetailScreen = () => {
   }, [apiOrder, passedOrder, storeDetails]);
 
     // Add default values to prevent undefined errors
+  // Normalize payment status/mode for consistent UI
+  const backendPayment = order?.payment || (order as any)?.paymentData || null;
+  const backendPaymentStatus = (backendPayment?.status || order?.paymentStatus || order?.status || '').toString().toLowerCase();
+  const paymentIdPresent = !!(order?.paymentId || backendPayment?.paymentId);
+  let normalizedPaymentStatus: 'paid' | 'pending' | 'cancelled' | 'failed' | 'unknown' = 'unknown';
+  if (['completed', 'success', 'paid'].includes(backendPaymentStatus)) normalizedPaymentStatus = 'paid';
+  else if (['pending', 'processing', 'initiated'].includes(backendPaymentStatus)) normalizedPaymentStatus = 'pending';
+  else if (['cancelled', 'canceled'].includes(backendPaymentStatus)) normalizedPaymentStatus = 'cancelled';
+  else if (['failed', 'failure', 'error'].includes(backendPaymentStatus)) normalizedPaymentStatus = 'failed';
+  if (normalizedPaymentStatus === 'unknown' && paymentIdPresent) normalizedPaymentStatus = 'pending';
+
+  const normalizedPaymentMode: 'online' | 'offline' | 'unknown' =
+    backendPayment?.mode === 'online' || order?.paymentMethod === 'online' ? 'online'
+      : backendPayment?.mode === 'offline' ? 'offline' : 'unknown';
+
   const orderData = {
     id: order?.orderNo || order?.orderNumber || order?.id || 'N/A',
     items: (order?.orderItems || order?.items || order?.products || []).map((it: any) => {
@@ -116,7 +161,8 @@ const OrderDetailScreen = () => {
     deliveryFee: Number(order?.shippingAmount || order?.deliveryFee || 0),
     discount: Number(order?.storeDiscount || order?.discount || 0),
     grandTotal: Number(order?.totalAmount || order?.grandTotal || order?.total || 0),
-    paymentMode: order?.payment?.mode === 'online' || order?.paymentMethod === 'online' ? 'Online' : 'Offline',
+    paymentMode: normalizedPaymentMode === 'online' ? 'Online' : normalizedPaymentMode === 'offline' ? 'Offline' : 'Unknown',
+    paymentStatus: normalizedPaymentStatus,
     orderType: order?.deliveryMethod === 'store' || order?.deliveryMethod === 'store_pickup' ? 'Store Pickup' : 'Home Delivery',
     address: order?.shippingAddress?.address || order?.address || order?.shippingAddress || 'Store Pickup',
     orderDate: order?.createdAt ? new Date(order.createdAt).toLocaleDateString() : order?.date ? new Date(order.date).toLocaleDateString() : order?.orderDate || new Date().toLocaleDateString(),
@@ -133,19 +179,51 @@ const OrderDetailScreen = () => {
     Alert.alert('Download Invoice', 'Invoice download started...');
   };
 
-  const handleCallStore = () => {
-    Alert.alert('Call Store', 'Calling store...');
+  const handleCallStore = async () => {
+    try {
+      const storeId = order?.storeId || (order as any)?.originalOrderData?.storeId;
+      if (!storeId) {
+        Alert.alert('Store Info', 'Store information not available');
+        return;
+      }
+
+      // Fetch store details to get phone number
+      const response = await storeService.getStoreDetailsById(storeId);
+      if (response.success && response.data) {
+        const storeData = (response.data as any).data || response.data;
+        const phoneNumber = storeData.mobile || storeData.phone;
+        
+        if (phoneNumber) {
+          const { Linking } = require('react-native');
+          Alert.alert(
+            'Call Store',
+            `Call ${storeData.name || 'store'} at ${phoneNumber}?`,
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { 
+                text: 'Call', 
+                onPress: () => {
+                  Linking.openURL(`tel:${phoneNumber}`).catch((err: any) => {
+                    console.error('Error opening phone dialer:', err);
+                    Alert.alert('Error', 'Unable to open phone dialer');
+                  });
+                }
+              }
+            ]
+          );
+        } else {
+          Alert.alert('Contact Info', 'Store phone number not available');
+        }
+      } else {
+        Alert.alert('Error', 'Failed to fetch store details');
+      }
+    } catch (error) {
+      console.error('Error calling store:', error);
+      Alert.alert('Error', 'Failed to initiate call');
+    }
   };
 
   const handleReorder = () => {
-    // Show under development popup
-    Alert.alert(
-      'Under Development',
-      'Reorder functionality is currently under development. It will be available soon!',
-      [{ text: 'OK', style: 'default' }]
-    );
-    return;
-    
     console.log('🔄 ===== REORDER FUNCTION CALLED =====');
     console.log('🔄 Order object:', order);
     console.log('🔄 API Order data:', apiOrder);
@@ -213,28 +291,10 @@ const OrderDetailScreen = () => {
       
       console.log('✅ Items added to cart');
       
-      // Navigate to OrderSummaryScreen for reorder
+      // Navigate to OrderSummaryScreen for reorder - pass the same API data structure
       console.log('🔄 Navigating to OrderSummary...');
       navigation.navigate('OrderSummary' as any, {
-        orderData: {
-          orderId: sourceOrder?.orderId || sourceOrder?.id || 'N/A',
-          orderNo: sourceOrder?.orderNo || sourceOrder?.orderNumber || `#${sourceOrder?.orderId || sourceOrder?.id}`,
-          items: sourceItems.map((item: any, index: number) => ({
-            id: item.productId || item.productMasterId || item.id || item._id || `reorder_${index}`,
-            name: item.productName || item.name || 'Unknown Product',
-            price: parseFloat(item.sp || item.price || item.mrp || '0'),
-            quantity: parseInt(item.quantity || '1'),
-            image: item.productImage || item.image || 'https://via.placeholder.com/150',
-            productId: item.productId || item.productMasterId || item.id || item._id || `reorder_${index}`,
-          })),
-          total: sourceOrder?.totalAmount || sourceOrder?.grandTotal || 0,
-          deliveryMethod: sourceOrder?.deliveryMethod || 'Store Pickup',
-          deliveryAddress: sourceOrder?.shippingAddress || sourceOrder?.address,
-          orderDate: sourceOrder?.createdAt || sourceOrder?.orderDate || new Date().toISOString(),
-          status: sourceOrder?.status || 'completed',
-          storeId: sourceOrder?.storeId,
-          type: storeType
-        }
+        orderData: sourceOrder, // Pass the same API data structure that prescription flow uses
       });
       
     } catch (error) {
@@ -296,17 +356,26 @@ const OrderDetailScreen = () => {
       if (!passedOrderId) return;
       try {
         setLoading(true);
-        console.log('📦 Fetching order details for ID:', passedOrderId);
+        console.log('📦 ===== FETCHING ORDER DETAILS =====');
+        console.log('📦 Order ID:', passedOrderId);
         const res = await orderListService.getOrderById(passedOrderId);
-        console.log('📦 Order detail response:', JSON.stringify(res, null, 2));
+        
+        console.log('📦 ===== COMPLETE API RESPONSE =====');
+        console.log(JSON.stringify(res, null, 2));
+        console.log('📦 ===== END COMPLETE RESPONSE =====');
+        
         if (res.success && res.data) {
-          console.log('📦 Setting API order data:', JSON.stringify(res.data, null, 2));
+          console.log('📦 ===== PRESCRIPTION FIELDS FROM API =====');
+          console.log('signedPresciptionUrl:', res.data.signedPresciptionUrl);
+          console.log('signedPrescriptionUrl:', res.data.signedPrescriptionUrl);
+          console.log('prescriptionUrl:', res.data.prescriptionUrl);
+          console.log('📦 ===== END PRESCRIPTION FIELDS =====');
           setApiOrder(res.data);
         } else {
-          console.log('  Failed to fetch order details:', res.error);
+          console.log('❌ Failed to fetch order details:', res.error);
         }
       } catch (error) {
-        console.error('  Error fetching order details:', error);
+        console.error('❌ Error fetching order details:', error);
       } finally {
         setLoading(false);
       }
@@ -394,49 +463,6 @@ const OrderDetailScreen = () => {
       shadowRadius: 8,
       elevation: 4,
     },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-      marginBottom: 12,
-    },
-    itemContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginBottom: 16,
-      paddingVertical: 8,
-      paddingHorizontal: 4,
-      backgroundColor: '#f8f9fa',
-      borderRadius: 12,
-      marginHorizontal: 4,
-    },
-    itemImage: {
-      width: 80,
-      height: 80,
-      borderRadius: 16,
-      marginRight: 16,
-      backgroundColor: '#f8f9fa',
-      borderWidth: 1,
-      borderColor: '#e9ecef',
-    },
-    itemDetails: {
-      flex: 1,
-    },
-    itemName: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: theme.colors.text,
-      marginBottom: 4,
-    },
-    itemPrice: {
-      fontSize: 14,
-      color: theme.colors.primary,
-      fontWeight: '600',
-    },
-    itemQuantity: {
-      fontSize: 14,
-      color: theme.colors.secondary,
-    },
     billRow: {
       flexDirection: 'row',
       justifyContent: 'space-between',
@@ -458,16 +484,6 @@ const OrderDetailScreen = () => {
       paddingTop: 8,
       borderTopWidth: 1,
       borderTopColor: theme.colors.border,
-    },
-    grandTotalLabel: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-    },
-    grandTotalValue: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: theme.colors.primary,
     },
     payNowButton: {
       flexDirection: 'row',
@@ -550,21 +566,183 @@ const OrderDetailScreen = () => {
       borderRadius: 8,
       marginHorizontal: 4,
     },
-    helpButtonText: {
-      color: '#fff',
-      fontSize: 14,
-      fontWeight: '600',
-      marginLeft: 8,
-    },
     loadingContainer: {
       flex: 1,
       justifyContent: 'center',
       alignItems: 'center',
     },
-    loadingText: {
-      fontSize: 16,
-      color: theme.colors.text,
-    },
+  orderInfoCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  orderInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  orderInfoLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  orderInfoValue: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  itemsCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 12,
+  },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f0f0f0',
+  },
+  itemImage: {
+    width: 60,
+    height: 60,
+    borderRadius: 8,
+    marginRight: 12,
+  },
+  itemDetails: {
+    flex: 1,
+    marginRight: 12,
+  },
+  itemName: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 4,
+  },
+  itemQuantity: {
+    fontSize: 12,
+  },
+  itemPrice: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  deliveryCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  deliveryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  deliveryText: {
+    fontSize: 14,
+    marginLeft: 8,
+  },
+  deliveryAddress: {
+    fontSize: 14,
+    marginLeft: 8,
+    flex: 1,
+  },
+  prescriptionCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  prescriptionContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  prescriptionImage: {
+    width: 200,
+    height: 150,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+  },
+  prescriptionOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  prescriptionOverlayText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  prescriptionText: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  uploadPrescriptionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    marginVertical: 8,
+  },
+  uploadPrescriptionButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
+  },
+  totalCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  totalLabel: {
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  totalAmount: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
   });
 
   if (loading) {
@@ -584,7 +762,9 @@ const OrderDetailScreen = () => {
             <View style={{ width: 24 }} />
           </View>
           <View style={styles.loadingContainer}>
-            <Text style={[styles.loadingText, { color: theme.colors.text }]}>Loading order details...</Text>
+            <Text style={{ fontSize: 16, fontWeight: '600', textAlign: 'center', color: theme.colors.text }}>
+              Loading your orders...
+            </Text>
           </View>
         </View>
       </SafeAreaView>
@@ -615,124 +795,168 @@ const OrderDetailScreen = () => {
         </View>
 
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-          {/* Item Details Header */}
-          <View style={styles.orderIdRow}>
-            <Text style={styles.orderIdText}>Item Details</Text>
-          </View>
-
-          {/* Items Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Items</Text>
-            {orderData.items.map((item: any, index: number) => (
-              <View key={item.id || `item-${index}`} style={styles.itemContainer}>
-                <Image source={{ uri: item.image }} style={styles.itemImage} />
-                <View style={styles.itemDetails}>
-                  <Text style={styles.itemName}>{item.name}</Text>
-                  <Text style={styles.itemPrice}>₹{(item.price || 0).toFixed(2)}</Text>
-                  {item.originalPrice && item.originalPrice > item.price ? (
-                    <Text style={[styles.itemPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{(item.originalPrice || 0).toFixed(2)}</Text>
-                  ) : null}
-                  {item.originalPrice && item.originalPrice > item.price ? (
-                    <Text style={[styles.itemPrice, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((item.originalPrice - item.price) / item.originalPrice) * 100)}% off</Text>
-                  ) : null}
-                  <Text style={styles.itemQuantity}>Quantity: {item.quantity || 1}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-
-          {/* Bill Details */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Bill Details</Text>
-            
-            {/* Calculate actual item total from order items */}
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Item Total</Text>
-              <Text style={styles.billValue}>
-                ₹{orderData.items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0).toFixed(2)}
+          {/* Order Info */}
+          <View style={[styles.orderInfoCard, { backgroundColor: theme.colors.surface }]}>
+            <View style={styles.orderInfoRow}>
+              <Text style={[styles.orderInfoLabel, { color: theme.colors.text }]}>
+                {orderData.paymentStatus === 'pending' ? 'Order ID:' : 'Order Number:'}
+              </Text>
+              <Text style={[styles.orderInfoValue, { color: theme.colors.primary }]}>
+                {orderData.paymentStatus === 'pending' ? order?.orderId : orderData.id}
               </Text>
             </View>
             
-            {/* Show individual item breakdown */}
+            <View style={styles.orderInfoRow}>
+              <Text style={[styles.orderInfoLabel, { color: theme.colors.text }]}>
+                Order Date:
+              </Text>
+              <Text style={[styles.orderInfoValue, { color: theme.colors.text }]}>
+                {orderData.orderDate}
+              </Text>
+            </View>
+            
+            <View style={styles.orderInfoRow}>
+              <Text style={[styles.orderInfoLabel, { color: theme.colors.text }]}>
+                Status:
+              </Text>
+              <Text style={[styles.orderInfoValue, { color: orderData.paymentStatus === 'paid' ? '#4CAF50' : orderData.paymentStatus === 'pending' ? '#FF9800' : orderData.paymentStatus === 'failed' ? '#F44336' : theme.colors.secondary }]}>
+                {orderData.paymentStatus ? orderData.paymentStatus.charAt(0).toUpperCase() + orderData.paymentStatus.slice(1) : 'Unknown'}
+              </Text>
+            </View>
+          </View>
+
+          {/* Items */}
+          <View style={[styles.itemsCard, { backgroundColor: theme.colors.surface }]}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              Items ({orderData.items.length})
+            </Text>
+            
             {orderData.items.map((item: any, index: number) => (
-              <View key={index} style={[styles.billRow, { marginLeft: 16, marginBottom: 4 }]}>
-                <Text style={[styles.billLabel, { fontSize: 12, color: theme.colors.secondary }]}>
-                  {item.name} x{item.quantity}
-                </Text>
-                <Text style={[styles.billValue, { fontSize: 12 }]}>
+              <View key={item.id || index} style={styles.itemRow}>
+                <Image
+                  source={{ uri: item.image || 'https://via.placeholder.com/60' }}
+                  style={styles.itemImage}
+                  defaultSource={{ uri: 'https://via.placeholder.com/60' }}
+                />
+                
+                <View style={styles.itemDetails}>
+                  <Text style={[styles.itemName, { color: theme.colors.text }]} numberOfLines={2}>
+                    {item.name}
+                  </Text>
+                  <Text style={[styles.itemQuantity, { color: theme.colors.secondary }]}>
+                    Qty: {item.quantity}
+                  </Text>
+                </View>
+                
+                <Text style={[styles.itemPrice, { color: theme.colors.text }]}>
                   ₹{(item.price * item.quantity).toFixed(2)}
                 </Text>
               </View>
             ))}
+          </View>
+
+          {/* Delivery / Store Info with decoded coordinates */}
+          <View style={[styles.deliveryCard, { backgroundColor: theme.colors.surface }]}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              {orderData.orderType === 'Store Pickup' ? 'Store Information' : 'Delivery Information'}
+            </Text>
             
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Delivery Fee</Text>
-              <Text style={styles.billValue}>₹{(orderData.deliveryFee || 0).toFixed(2)}</Text>
+            <View style={styles.deliveryRow}>
+              <MaterialCommunityIcons name={orderData.orderType === 'Store Pickup' ? 'store' : 'truck-delivery'} size={20} color={theme.colors.primary} />
+              <Text style={[styles.deliveryText, { color: theme.colors.text }]}>{orderData.orderType}</Text>
             </View>
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Discount</Text>
-              <Text style={styles.billValue}>-₹{(orderData.discount || 0).toFixed(2)}</Text>
-            </View>
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Payment Mode</Text>
-              <Text style={styles.billValue}>{orderData.paymentMode || 'N/A'}</Text>
-            </View>
-            <View style={styles.grandTotalRow}>
-              <Text style={styles.grandTotalLabel}>Grand Total</Text>
-              <Text style={styles.grandTotalValue}>₹{(orderData.grandTotal || 0).toFixed(2)}</Text>
+            
+            {(formattedStoreAddress || orderData.address) && (
+              <View style={styles.deliveryRow}>
+                <MaterialIcons name="location-on" size={20} color={theme.colors.secondary} />
+                <Text style={[styles.deliveryAddress, { color: theme.colors.text }]}>
+                  {formattedStoreAddress || orderData.address}
+                </Text>
+              </View>
+            )}
+          </View>
+
+          {/* Prescription Section - Always show, either uploaded or upload button */}
+          <View style={[styles.prescriptionCard, { backgroundColor: theme.colors.surface }]}>
+            <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+              Prescription
+            </Text>
+            
+            {(() => {
+              console.log('🖼️ OrderDetail - Displaying prescription:', {
+                'finalPrescriptionUrl': finalPrescriptionUrl,
+                'hasPrescription': !!finalPrescriptionUrl,
+                'orderId': order?.orderId || order?.id
+              });
+              
+              return finalPrescriptionUrl ? (
+                <>
+                  <TouchableOpacity
+                    style={styles.prescriptionContainer}
+                    onPress={() => {
+                      console.log('🖼️ Opening prescription image:', finalPrescriptionUrl);
+                      navigation.navigate('ImageViewer', { 
+                        imageUrl: finalPrescriptionUrl, 
+                        title: 'Prescription' 
+                      });
+                    }}
+                  >
+                    <Image
+                      source={{ uri: finalPrescriptionUrl }}
+                      style={styles.prescriptionImage}
+                      resizeMode="cover"
+                      onError={(error) => {
+                        console.error('🖼️ Prescription image load error:', error.nativeEvent.error);
+                      }}
+                      onLoad={() => {
+                        console.log('🖼️ Prescription image loaded successfully for:', finalPrescriptionUrl);
+                      }}
+                    />
+                    <View style={styles.prescriptionOverlay}>
+                      <MaterialIcons name="zoom-in" size={24} color="#fff" />
+                      <Text style={styles.prescriptionOverlayText}>Tap to view full size</Text>
+                    </View>
+                  </TouchableOpacity>
+                  
+                  <Text style={[styles.prescriptionText, { color: '#4CAF50' }]}>
+                    ✓ Prescription uploaded successfully
+                  </Text>
+                </>
+              ) : (
+                <TouchableOpacity
+                  style={[styles.uploadPrescriptionButton, { backgroundColor: theme.colors.primary }]}
+                  onPress={() => {
+                    const orderIdToUse = passedOrderId || order?.orderId || order?.id;
+                    const storeIdToUse = order?.storeId || (order as any)?.originalOrderData?.storeId;
+                    console.log('📤 Navigating to upload prescription for order:', orderIdToUse);
+                    navigation.navigate('UploadPrescription', { orderId: orderIdToUse, storeId: storeIdToUse } as any);
+                  }}
+                >
+                  <MaterialIcons name="upload" size={20} color="#fff" />
+                  <Text style={styles.uploadPrescriptionButtonText}>Upload Prescription</Text>
+                </TouchableOpacity>
+              );
+            })()}
+          </View>
+
+          {/* Payment Status - API driven (paid/pending/cancelled/failed) */}
+          <View style={[styles.totalCard, { backgroundColor: theme.colors.surface }]}>
+            <View style={styles.totalRow}>
+              <Text style={[styles.totalLabel, { color: theme.colors.text }]}>Payment Status:</Text>
+              <Text style={[styles.totalAmount, { color: orderData.paymentStatus === 'paid' ? '#4CAF50' : orderData.paymentStatus === 'pending' ? '#FF9800' : orderData.paymentStatus === 'failed' ? '#F44336' : theme.colors.secondary }]}>
+                {orderData.paymentStatus ? orderData.paymentStatus.toUpperCase() : 'UNKNOWN'}
+              </Text>
             </View>
           </View>
 
-          {/* Pay Now Button for Pending Orders */}
-          {orderData.status === 'pending' && orderData.paymentMode === 'Online' && (
-            <View style={styles.section}>
-              <TouchableOpacity
-                style={[styles.payNowButton, { backgroundColor: theme.colors.primary }]}
-                onPress={handlePayNow}
-              >
-                <MaterialIcons name="payment" size={20} color="#fff" />
-                <Text style={styles.payNowButtonText}>Pay Now - ₹{(orderData.grandTotal || 0).toFixed(2)}</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-
-          {/* Order Details */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Order Details</Text>
-            <View style={styles.orderDetailRow}>
-              <Text style={styles.orderDetailLabel}>Order Type</Text>
-              <Text style={styles.orderDetailValue}>{orderData.orderType || 'N/A'}</Text>
-            </View>
-            <View style={styles.addressRow}>
-              <Text style={styles.orderDetailLabel}>
-                {orderData.orderType === 'Store Pickup' ? 'Store Address' : 'Delivery Address'}
+          {/* Total */}
+          <View style={[styles.totalCard, { backgroundColor: theme.colors.surface }]}>
+            <View style={styles.totalRow}>
+              <Text style={[styles.totalLabel, { color: theme.colors.text }]}>
+                Total Amount:
               </Text>
-              <Text style={styles.addressValue} numberOfLines={3}>
-                {orderData.orderType === 'Store Pickup' 
-                  ? (formattedStoreAddress || (order?.storeAddress || order?.store?.address || 'Store pickup location not available'))
-                  : (orderData.address || 'N/A')
-                }
-                {/* console.log('🏪 Formatted store address:', formattedStoreAddress); */}
-              </Text>
-            </View>
-            <View style={styles.orderDetailRow}>
-              <Text style={styles.orderDetailLabel}>Order Placed On</Text>
-              <Text style={styles.orderDetailValue}>{orderData.orderDate || 'N/A'}</Text>
-            </View>
-            <View style={styles.statusContainer}>
-              <View
-                style={[
-                  styles.statusDot,
-                  { backgroundColor: getStatusColor(orderData.status) },
-                ]}
-              />
-              <Text
-                style={[
-                  styles.statusText,
-                  { color: getStatusColor(orderData.status) },
-                ]}
-              >
-                {orderData.status || 'Processing'}
+              <Text style={[styles.totalAmount, { color: theme.colors.primary }]}>
+                ₹{(orderData.grandTotal || 0).toFixed(2)}
               </Text>
             </View>
           </View>
@@ -746,14 +970,14 @@ const OrderDetailScreen = () => {
                 style={styles.helpButton}
               >
                 <MaterialCommunityIcons name="phone" size={20} color="#fff" />
-                <Text style={styles.helpButtonText}>Call Store</Text>
+                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', marginLeft: 8 }}>Call Store</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 onPress={handleReorder}
                 style={styles.helpButton}
               >
                 <MaterialCommunityIcons name="refresh" size={20} color="#fff" />
-                <Text style={styles.helpButtonText}>Reorder</Text>
+                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', marginLeft: 8 }}>Reorder</Text>
               </TouchableOpacity>
             </View>
           </View>

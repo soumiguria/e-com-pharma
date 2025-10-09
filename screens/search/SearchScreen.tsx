@@ -573,13 +573,11 @@ const SearchScreen = () => {
       borderWidth: 1,
       borderColor: theme.colors.border,
     },
-    categoryIcon: {
+    categoryImage: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: theme.colors.primary,
-      justifyContent: 'center',
-      alignItems: 'center',
+      backgroundColor: '#f0f0f0',
       marginRight: 12,
     },
     categoryText: {
@@ -698,15 +696,19 @@ const SearchScreen = () => {
                             <Text style={styles.sectionTitle}>Categories</Text>
                             {searchResults.categories.map((category: any, index: number) => {
                               console.log(`🔍 Rendering category ${index}:`, JSON.stringify(category, null, 2));
+                              const categoryImage = category.signedImage || category.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center';
+                              
                               return (
                                 <TouchableOpacity
                                   key={category._id || index}
                                   style={styles.categoryItem}
                                   onPress={() => handleCategoryPress(category)}
                                 >
-                                  <View style={styles.categoryIcon}>
-                                    <MaterialIcons name="category" size={20} color="#fff" />
-                                  </View>
+                                  <Image 
+                                    source={{ uri: categoryImage }} 
+                                    style={styles.categoryImage}
+                                    resizeMode="cover"
+                                  />
                                   <Text style={styles.categoryText}>{category.name}</Text>
                                   <MaterialIcons name="chevron-right" size={24} color={theme.colors.secondary} />
                                 </TouchableOpacity>
@@ -721,15 +723,19 @@ const SearchScreen = () => {
                             <Text style={styles.sectionTitle}>Subcategories</Text>
                             {searchResults.subcategories.map((subcategory: any, index: number) => {
                               console.log(`🔍 Rendering subcategory ${index}:`, JSON.stringify(subcategory, null, 2));
+                              const subcategoryImage = subcategory.signedImage || subcategory.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center';
+                              
                               return (
                                 <TouchableOpacity
                                   key={subcategory._id || index}
                                   style={styles.categoryItem}
                                   onPress={() => handleSubcategoryPress(subcategory)}
                                 >
-                                  <View style={styles.categoryIcon}>
-                                    <MaterialIcons name="subdirectory-arrow-right" size={20} color="#fff" />
-                                  </View>
+                                  <Image 
+                                    source={{ uri: subcategoryImage }} 
+                                    style={styles.categoryImage}
+                                    resizeMode="cover"
+                                  />
                                   <Text style={styles.categoryText}>{subcategory.name}</Text>
                                   <MaterialIcons name="chevron-right" size={24} color={theme.colors.secondary} />
                                 </TouchableOpacity>
@@ -745,6 +751,11 @@ const SearchScreen = () => {
                             <View style={styles.productsGrid}>
                               {searchResults.products.map((product: any, index: number) => {
                                 console.log(`🔍 Rendering product ${index}:`, JSON.stringify(product, null, 2));
+                                const productImage = product.signedImage || product.image || 
+                                  (Array.isArray(product.signedImages) && product.signedImages.length > 0 ? product.signedImages[0] : undefined) ||
+                                  (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : undefined) ||
+                                  'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center';
+                                
                                 return (
                                   <TouchableOpacity
                                     key={product._id || product.productId || index}
@@ -753,7 +764,7 @@ const SearchScreen = () => {
                                     activeOpacity={0.88}
                                   >
                                     <Image 
-                                      source={{ uri: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center' }} 
+                                      source={{ uri: productImage }} 
                                       style={{ width: 90, height: 90, borderRadius: 12, marginBottom: 10, backgroundColor: '#f7f7f7' }} 
                                     />
                                     <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, marginBottom: 6, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>

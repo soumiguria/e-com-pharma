@@ -9,7 +9,7 @@ import {
   Alert,
   SafeAreaView,
 } from 'react-native';
-import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
+import { useRoute, useNavigation, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -19,7 +19,7 @@ import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import ThemedButton from '../../components/ui/ThemedButton';
 import LoadingOverlay from '../../components/ui/LoadingOverlay';
 import { usePayment } from '../../hooks/usePayment';
-import storeService from '../../services/api/storeService';
+import storeService, { formatStoreAddress } from '../../services/api/storeService';
 
 type OrderSummaryRouteProp = RouteProp<RootStackParamList, 'OrderSummary'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -44,6 +44,11 @@ interface OrderSummary {
   status: string;
   storeId?: string;
   type?: 'grocery' | 'pharma';
+  signedPresciptionUrl?: string;
+  signedPrescriptionUrl?: string;
+  prescriptionUrl?: string;
+  paymentStatus?: 'paid' | 'pending' | 'cancelled' | 'failed' | 'unknown';
+  paymentMode?: 'online' | 'offline' | 'unknown';
 }
 
 const OrderSummaryScreen = () => {
@@ -55,6 +60,7 @@ const OrderSummaryScreen = () => {
   
   const [orderSummary, setOrderSummary] = useState<OrderSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [formattedStoreAddress, setFormattedStoreAddress] = useState<string>('');
 
   const { reorderProducts, isProcessing } = usePayment({
     onSuccess: (orderData) => {
@@ -80,27 +86,127 @@ const OrderSummaryScreen = () => {
     loadOrderSummary();
   }, []);
 
+  // Refresh data when screen comes into focus (e.g., after prescription upload)
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log('📋 OrderSummary screen focused, refreshing data...');
+      loadOrderSummary();
+    }, [])
+  );
+
   const loadOrderSummary = async () => {
     try {
       setIsLoading(true);
       const orderData = route.params?.orderData;
       
       if (orderData) {
+        // Try to fetch fresh order data from API first
+        const orderId = orderData.orderId || orderData.id;
+        let freshOrderData = orderData;
+        
+        if (orderId) {
+          try {
+            console.log('📋 Fetching fresh order data for summary:', orderId);
+            const orderListService = require('../../services/api/orderListService').default;
+            const response = await orderListService.getOrderById(orderId);
+            
+            if (response.success && response.data) {
+              console.log('📋 Fresh order data fetched successfully');
+              console.log('📋 Fresh order prescription fields:', {
+                signedPresciptionUrl: response.data.signedPresciptionUrl,
+                signedPrescriptionUrl: response.data.signedPrescriptionUrl,
+                prescriptionUrl: response.data.prescriptionUrl,
+              });
+              freshOrderData = response.data;
+            } else {
+              console.log('⚠️ Failed to fetch fresh data, using passed data');
+            }
+          } catch (apiError) {
+            console.log('⚠️ API fetch failed, using passed data:', apiError);
+          }
+        }
+        
+        // Normalize payment from multiple possible shapes
+        const backendPayment = freshOrderData.payment || freshOrderData.paymentData || null;
+        const backendPaymentStatus = (backendPayment?.status || freshOrderData.paymentStatus || freshOrderData.status || '').toString().toLowerCase();
+        const paymentIdPresent = !!(freshOrderData.paymentId || backendPayment?.paymentId);
+        let normalizedPaymentStatus: 'paid' | 'pending' | 'cancelled' | 'failed' | 'unknown' = 'unknown';
+        if (['completed', 'success', 'paid'].includes(backendPaymentStatus)) normalizedPaymentStatus = 'paid';
+        else if (['pending', 'processing', 'initiated'].includes(backendPaymentStatus)) normalizedPaymentStatus = 'pending';
+        else if (['cancelled', 'canceled'].includes(backendPaymentStatus)) normalizedPaymentStatus = 'cancelled';
+        else if (['failed', 'failure', 'error'].includes(backendPaymentStatus)) normalizedPaymentStatus = 'failed';
+        // If we have paymentId but no clear status, treat as pending
+        if (normalizedPaymentStatus === 'unknown' && paymentIdPresent) normalizedPaymentStatus = 'pending';
+
+        const normalizedPaymentMode: 'online' | 'offline' | 'unknown' =
+          backendPayment?.mode === 'online' || freshOrderData.paymentMethod === 'online' ? 'online'
+            : backendPayment?.mode === 'offline' ? 'offline' : 'unknown';
+
         // Transform order data to summary format
+        // Map orderItems from API to items array
+        const mappedItems = (freshOrderData.orderItems || freshOrderData.items || freshOrderData.products || []).map((item: any) => ({
+          id: item.productId || item.productMasterId || item.id || item._id,
+          name: item.productName || item.name || 'Unknown Product',
+          price: item.sp || item.price || item.mrp || 0,
+          quantity: item.quantity || 1,
+          image: item.productImage || item.image || 'https://via.placeholder.com/150',
+        }));
+
+        console.log('📋 Fresh order data prescription check:', {
+          signedPresciptionUrl: freshOrderData.signedPresciptionUrl,
+          signedPrescriptionUrl: freshOrderData.signedPrescriptionUrl,
+          prescriptionUrl: freshOrderData.prescriptionUrl,
+        });
+
         const summary: OrderSummary = {
-          orderId: orderData.orderId || orderData.id,
-          orderNumber: orderData.orderNo || orderData.orderNumber || `#${orderData.orderId}`,
-          items: orderData.items || orderData.products || [],
-          total: orderData.totalAmount || orderData.total || 0,
-          deliveryMethod: orderData.deliveryMethod || 'Store Pickup',
-          deliveryAddress: orderData.deliveryAddress || orderData.shippingAddress,
-          orderDate: orderData.createdAt || orderData.orderDate || new Date().toISOString(),
-          status: orderData.status || 'completed',
-          storeId: orderData.storeId || selectedStore?.id,
-          type: orderData.type || selectedStore?.type || 'grocery',
+          orderId: freshOrderData.orderId || freshOrderData.id,
+          orderNumber: freshOrderData.orderNo || freshOrderData.orderNumber || `#${freshOrderData.orderId}`,
+          items: mappedItems,
+          total: freshOrderData.totalAmount || freshOrderData.total || 0,
+          deliveryMethod: freshOrderData.deliveryMethod || 'Store Pickup',
+          deliveryAddress: freshOrderData.deliveryAddress || freshOrderData.shippingAddress,
+          orderDate: freshOrderData.createdAt || freshOrderData.orderDate || new Date().toISOString(),
+          status: freshOrderData.status || 'completed',
+          storeId: freshOrderData.storeId || selectedStore?.id,
+          type: freshOrderData.type || selectedStore?.type || 'grocery',
+          signedPresciptionUrl: freshOrderData.signedPresciptionUrl || freshOrderData.signedPrescriptionUrl,
+          signedPrescriptionUrl: freshOrderData.signedPrescriptionUrl,
+          prescriptionUrl: freshOrderData.prescriptionUrl,
+          paymentStatus: normalizedPaymentStatus,
+          paymentMode: normalizedPaymentMode,
         };
         
+        console.log('📋 Order summary with prescription:', {
+          orderId: summary.orderId,
+          orderNumber: summary.orderNumber,
+          hasPrescription: !!(summary.signedPresciptionUrl || summary.signedPrescriptionUrl || summary.prescriptionUrl),
+          prescriptionUrls: {
+            signedPresciptionUrl: summary.signedPresciptionUrl,
+            signedPrescriptionUrl: summary.signedPrescriptionUrl,
+            prescriptionUrl: summary.prescriptionUrl,
+          },
+          paymentStatus: summary.paymentStatus,
+          paymentMode: summary.paymentMode,
+          itemsCount: summary.items?.length || 0,
+        });
+        
         setOrderSummary(summary);
+        
+        // Fetch and format store address if available
+        try {
+          const storeId = freshOrderData.storeId;
+          if (storeId) {
+            const storeRes = await storeService.getStoreDetailsById(storeId);
+            if (storeRes.success && storeRes.data) {
+              const storeData = (storeRes.data as any).data || storeRes.data;
+              const coordinates = storeData.location?.coordinates;
+              const address = formatStoreAddress(storeData.address || {}, coordinates);
+              setFormattedStoreAddress(address);
+            }
+          }
+        } catch (addrErr) {
+          console.log('⚠️ Failed to fetch/format store address:', addrErr);
+        }
       } else {
         // If no order data provided, show error
         Alert.alert('Error', 'No order data available');
@@ -127,7 +233,7 @@ const OrderSummaryScreen = () => {
           },
           {
             text: 'Login',
-            onPress: () => navigation.navigate('PhoneAuth'),
+            onPress: () => navigation.navigate('PhoneAuth' as any, { cartType: 'pharma' }),
           },
         ]
       );
@@ -282,31 +388,100 @@ const OrderSummaryScreen = () => {
           ))}
         </View>
 
-        {/* Delivery Info */}
+        {/* Delivery / Store Info with decoded coordinates */}
         <View style={[styles.deliveryCard, { backgroundColor: theme.colors.surface }]}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
-            Delivery Information
+            {orderSummary.deliveryMethod === 'Store Pickup' ? 'Store Information' : 'Delivery Information'}
           </Text>
           
           <View style={styles.deliveryRow}>
-            <MaterialCommunityIcons
-              name={orderSummary.deliveryMethod === 'Store Pickup' ? 'store' : 'truck-delivery'}
-              size={20}
-              color={theme.colors.primary}
-            />
-            <Text style={[styles.deliveryText, { color: theme.colors.text }]}>
-              {orderSummary.deliveryMethod}
-            </Text>
+            <MaterialCommunityIcons name={orderSummary.deliveryMethod === 'Store Pickup' ? 'store' : 'truck-delivery'} size={20} color={theme.colors.primary} />
+            <Text style={[styles.deliveryText, { color: theme.colors.text }]}>{orderSummary.deliveryMethod}</Text>
           </View>
           
-          {orderSummary.deliveryAddress && (
+          {(formattedStoreAddress || orderSummary.deliveryAddress) && (
             <View style={styles.deliveryRow}>
               <MaterialIcons name="location-on" size={20} color={theme.colors.secondary} />
               <Text style={[styles.deliveryAddress, { color: theme.colors.text }]}>
-                {orderSummary.deliveryAddress}
+                {formattedStoreAddress || orderSummary.deliveryAddress}
               </Text>
             </View>
           )}
+        </View>
+
+        {/* Prescription Section - Always show, either uploaded or upload button */}
+        <View style={[styles.prescriptionCard, { backgroundColor: theme.colors.surface }]}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+            Prescription
+          </Text>
+          
+          {(() => {
+            // PRIORITY: signedPresciptionUrl (with typo) > signedPrescriptionUrl > prescriptionUrl
+            const finalPrescriptionUrl = orderSummary.signedPresciptionUrl || orderSummary.signedPrescriptionUrl || orderSummary.prescriptionUrl;
+            console.log('🖼️ OrderSummary - Displaying prescription:', {
+              signedPresciptionUrl: orderSummary.signedPresciptionUrl,
+              signedPrescriptionUrl: orderSummary.signedPrescriptionUrl,
+              prescriptionUrl: orderSummary.prescriptionUrl,
+              finalUrl: finalPrescriptionUrl,
+              hasPrescription: !!finalPrescriptionUrl
+            });
+            
+            return finalPrescriptionUrl ? (
+              <>
+                <TouchableOpacity
+                  style={styles.prescriptionContainer}
+                  onPress={() => {
+                    console.log('🖼️ Opening prescription image:', finalPrescriptionUrl);
+                    navigation.navigate('ImageViewer', { 
+                      imageUrl: finalPrescriptionUrl, 
+                      title: 'Prescription' 
+                    });
+                  }}
+                >
+                  <Image
+                    source={{ uri: finalPrescriptionUrl }}
+                    style={styles.prescriptionImage}
+                    resizeMode="cover"
+                    onError={(error) => {
+                      console.error('🖼️ Prescription image load error:', error.nativeEvent.error);
+                    }}
+                    onLoad={() => {
+                      console.log('🖼️ Prescription image loaded successfully for:', finalPrescriptionUrl);
+                    }}
+                  />
+                  <View style={styles.prescriptionOverlay}>
+                    <MaterialIcons name="zoom-in" size={24} color="#fff" />
+                    <Text style={styles.prescriptionOverlayText}>Tap to view full size</Text>
+                  </View>
+                </TouchableOpacity>
+                
+                <Text style={[styles.prescriptionText, { color: '#4CAF50' }]}>
+                  ✓ Prescription uploaded successfully
+                </Text>
+              </>
+            ) : (
+              <TouchableOpacity
+                style={[styles.uploadPrescriptionButton, { backgroundColor: theme.colors.primary }]}
+                onPress={() => {
+                  console.log('📤 Navigating to upload prescription for order:', orderSummary.orderId);
+                  navigation.navigate('UploadPrescription', { orderId: orderSummary.orderId, storeId: orderSummary.storeId } as any);
+                }}
+              >
+                <MaterialIcons name="upload" size={20} color="#fff" />
+                <Text style={styles.uploadPrescriptionButtonText}>Upload Prescription</Text>
+              </TouchableOpacity>
+            );
+          })()}
+        </View>
+
+        {/* Payment Status - API driven (paid/pending/cancelled/failed) */}
+        <View style={[styles.totalCard, { backgroundColor: theme.colors.surface }]}>
+          <View style={styles.totalRow}>
+            <Text style={[styles.totalLabel, { color: theme.colors.text }]}>Payment Status:</Text>
+            <Text style={[styles.totalAmount, { color: orderSummary.paymentStatus === 'paid' ? '#4CAF50' : orderSummary.paymentStatus === 'pending' ? '#FF9800' : orderSummary.paymentStatus === 'failed' ? '#F44336' : theme.colors.secondary }]}>
+              {orderSummary.paymentStatus ? orderSummary.paymentStatus.toUpperCase() : 'UNKNOWN'}
+            </Text>
+          </View>
         </View>
 
         {/* Total */}
@@ -322,14 +497,23 @@ const OrderSummaryScreen = () => {
         </View>
       </ScrollView>
 
-      {/* Reorder Button */}
+      {/* Bottom Actions */}
       <View style={[styles.bottomContainer, { backgroundColor: theme.colors.surface }]}>
-        <ThemedButton
-          title="Reorder Items"
-          onPress={handleReorder}
-          disabled={isProcessing}
-          style={styles.reorderButton}
-        />
+        {orderSummary.paymentStatus === 'pending' ? (
+          <ThemedButton
+            title={`Pay Now - ₹${orderSummary.total.toFixed(2)}`}
+            onPress={() => navigation.navigate('PaymentMethods' as any)}
+            disabled={isProcessing}
+            style={styles.reorderButton}
+          />
+        ) : (
+          <ThemedButton
+            title="Reorder Items"
+            onPress={handleReorder}
+            disabled={isProcessing}
+            style={styles.reorderButton}
+          />
+        )}
       </View>
 
       <LoadingOverlay
@@ -496,6 +680,64 @@ const styles = StyleSheet.create({
   },
   reorderButton: {
     width: '100%',
+  },
+  // Prescription styles
+  prescriptionCard: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+  },
+  prescriptionContainer: {
+    position: 'relative',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  prescriptionImage: {
+    width: 200,
+    height: 150,
+    borderRadius: 12,
+    backgroundColor: '#f0f0f0',
+  },
+  prescriptionOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  prescriptionOverlayText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 4,
+  },
+  prescriptionText: {
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  uploadPrescriptionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    marginVertical: 8,
+  },
+  uploadPrescriptionButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    marginLeft: 8,
   },
   errorContainer: {
     flex: 1,

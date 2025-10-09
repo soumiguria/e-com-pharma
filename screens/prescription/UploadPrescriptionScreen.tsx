@@ -21,12 +21,13 @@ import { LinearGradient } from 'expo-linear-gradient';
 import orderService from '../../services/api/orderService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'UploadPrescription'>;
-type RouteProp = { params: { orderId: string } };
+type RouteProp = { params: { orderId: string; storeId?: string } };
 
 const UploadPrescriptionScreen = () => {
-  const navigation = useNavigation<NavigationProp>();
+  const navigation = useNavigation<any>();
   const route = useRoute() as unknown as RouteProp;
   const orderId = route.params?.orderId;
+  const storeId = route.params?.storeId;
   const { theme } = useTheme();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -89,21 +90,48 @@ const UploadPrescriptionScreen = () => {
     }
   };
 
-  const handleCallPharmacist = () => {
-    Alert.alert(
-      'Call Pharmacist',
-      'This will open your phone dialer to call our pharmacist.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Call', onPress: () => {
-          const phoneNumber = 'tel:+1234567890'; // Replace with actual pharmacist number
-          Linking.openURL(phoneNumber).catch(err => {
-            console.error('Error opening phone dialer:', err);
-            Alert.alert('Error', 'Unable to open phone dialer. Please call manually.');
-          });
-        }}
-      ]
-    );
+  const handleCallPharmacist = async () => {
+    try {
+      if (!storeId) {
+        Alert.alert('Store Info', 'Store information not available');
+        return;
+      }
+
+      // Fetch store details to get phone number
+      const storeService = require('../../services/api/storeService').default;
+      const response = await storeService.getStoreDetailsById(storeId);
+      
+      if (response.success && response.data) {
+        const storeData = (response.data as any).data || response.data;
+        const phoneNumber = storeData.mobile || storeData.phone;
+        
+        if (phoneNumber) {
+          Alert.alert(
+            'Call Pharmacist',
+            `Call ${storeData.name || 'store'} at ${phoneNumber}?`,
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { 
+                text: 'Call', 
+                onPress: () => {
+                  Linking.openURL(`tel:${phoneNumber}`).catch(err => {
+                    console.error('Error opening phone dialer:', err);
+                    Alert.alert('Error', 'Unable to open phone dialer');
+                  });
+                }
+              }
+            ]
+          );
+        } else {
+          Alert.alert('Contact Info', 'Store phone number not available');
+        }
+      } else {
+        Alert.alert('Error', 'Failed to fetch store details');
+      }
+    } catch (error) {
+      console.error('Error calling pharmacist:', error);
+      Alert.alert('Error', 'Failed to initiate call');
+    }
   };
 
   // No voice handlers here
@@ -114,25 +142,33 @@ const UploadPrescriptionScreen = () => {
       return;
     }
     if (!orderId) {
-      // Alert.alert('Missing Order', 'Order ID is missing. Open this screen from an order context.');
-      Alert.alert('This feature is not available in this version.');
+      Alert.alert('Missing Order', 'Order ID is missing. Open this screen from an order context.');
       return;
     }
     
     setIsUploading(true);
     
     try {
+      console.log('📄 Uploading prescription for order:', orderId);
       const res = await orderService.uploadPrescription(orderId, selectedImage);
-      if (!res.success) throw new Error(res.error || 'Upload failed');
+      console.log('📄 Upload response:', res);
+      
+      if (!res.success) {
+        throw new Error(res.error || 'Upload failed');
+      }
 
+      // Handle both possible field names from API response
       const signedUrl = (res.data as any)?.signedPresciptionUrl || (res.data as any)?.signedPrescriptionUrl;
+      console.log('📄 Prescription uploaded successfully, signed URL:', signedUrl);
 
-      Alert.alert('Upload Prescription', 'Uploaded successfully.', [
-        { text: 'OK', onPress: () => navigation.goBack() }
+      Alert.alert('Upload Successful', 'Prescription uploaded successfully.', [
+        { text: 'View Order', onPress: () => navigation.navigate('OrderDetail', { orderId }) },
+        { text: 'OK', onPress: () => navigation.goBack() },
       ]);
-    } catch (error) {
-      console.error('Upload error:', error);
-      Alert.alert('Upload Failed', 'Failed to upload prescription. Please try again.');
+    } catch (error: any) {
+      const message = (error?.message as string) || 'Failed to upload prescription. Please try again.';
+      console.error('📄 Upload error:', message, error);
+      Alert.alert('Upload Failed', message);
     } finally {
       setIsUploading(false);
     }

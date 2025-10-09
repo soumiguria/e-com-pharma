@@ -42,6 +42,10 @@ interface Product {
   categories: string[];
   status: string;
   storeId: string;
+  signedImage?: string;
+  image?: string;
+  signedImages?: string[];
+  images?: string[];
 }
 
 interface Category {
@@ -50,6 +54,7 @@ interface Category {
   name: string;
   description?: string;
   image?: string;
+  signedImage?: string;
   status: string;
   categoryId: string;
   createdAt: string;
@@ -64,6 +69,7 @@ interface Subcategory {
   name: string;
   description?: string;
   image?: string;
+  signedImage?: string;
   status: string;
   subcategoryId: string;
   createdAt: string;
@@ -117,11 +123,17 @@ const SearchResultsScreen = () => {
 
   const handleProductPress = (product: Product) => {
     // Transform API product to expected format
+    const productImage = product.signedImage || product.image || 
+      (Array.isArray(product.signedImages) && product.signedImages.length > 0 ? product.signedImages[0] : undefined) ||
+      (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : undefined) ||
+      'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center';
+    
     const transformedProduct = {
       id: product._id,
       name: product.name,
       price: 0, // Price not available in search results
-      image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
+      image: productImage,
+      images: product.signedImages || product.images || undefined,
       category: selectedStore?.type || 'grocery',
       description: product.description || '',
       productId: product.productMasterId,
@@ -218,13 +230,11 @@ const SearchResultsScreen = () => {
       borderWidth: 1,
       borderColor: theme.colors.border,
     },
-    categoryIcon: {
+    categoryImage: {
       width: 40,
       height: 40,
       borderRadius: 20,
-      backgroundColor: theme.colors.primary,
-      justifyContent: 'center',
-      alignItems: 'center',
+      backgroundColor: '#f0f0f0',
       marginRight: 12,
     },
     categoryText: {
@@ -344,19 +354,25 @@ const SearchResultsScreen = () => {
               {searchResults?.categories && searchResults.categories.length > 0 && (
                 <>
                   <Text style={styles.sectionTitle}>Categories</Text>
-                  {searchResults.categories.map((category: Category) => (
-                    <TouchableOpacity
-                      key={category._id}
-                      style={styles.categoryItem}
-                      onPress={() => handleCategoryPress(category)}
-                    >
-                      <View style={styles.categoryIcon}>
-                        <MaterialIcons name="category" size={20} color="#fff" />
-                      </View>
-                      <Text style={styles.categoryText}>{category.name}</Text>
-                      <MaterialIcons name="chevron-right" size={24} color={theme.colors.secondary} />
-                    </TouchableOpacity>
-                  ))}
+                  {searchResults.categories.map((category: Category) => {
+                    const categoryImage = category.signedImage || category.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center';
+                    
+                    return (
+                      <TouchableOpacity
+                        key={category._id}
+                        style={styles.categoryItem}
+                        onPress={() => handleCategoryPress(category)}
+                      >
+                        <Image 
+                          source={{ uri: categoryImage }} 
+                          style={styles.categoryImage}
+                          resizeMode="cover"
+                        />
+                        <Text style={styles.categoryText}>{category.name}</Text>
+                        <MaterialIcons name="chevron-right" size={24} color={theme.colors.secondary} />
+                      </TouchableOpacity>
+                    );
+                  })}
                 </>
               )}
 
@@ -364,19 +380,25 @@ const SearchResultsScreen = () => {
               {searchResults?.subcategories && searchResults.subcategories.length > 0 && (
                 <>
                   <Text style={styles.sectionTitle}>Subcategories</Text>
-                  {searchResults.subcategories.map((subcategory: Subcategory) => (
-                    <TouchableOpacity
-                      key={subcategory._id}
-                      style={styles.categoryItem}
-                      onPress={() => handleSubcategoryPress(subcategory)}
-                    >
-                      <View style={styles.categoryIcon}>
-                        <MaterialIcons name="subdirectory-arrow-right" size={20} color="#fff" />
-                      </View>
-                      <Text style={styles.categoryText}>{subcategory.name}</Text>
-                      <MaterialIcons name="chevron-right" size={24} color={theme.colors.secondary} />
-                    </TouchableOpacity>
-                  ))}
+                  {searchResults.subcategories.map((subcategory: Subcategory) => {
+                    const subcategoryImage = subcategory.signedImage || subcategory.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center';
+                    
+                    return (
+                      <TouchableOpacity
+                        key={subcategory._id}
+                        style={styles.categoryItem}
+                        onPress={() => handleSubcategoryPress(subcategory)}
+                      >
+                        <Image 
+                          source={{ uri: subcategoryImage }} 
+                          style={styles.categoryImage}
+                          resizeMode="cover"
+                        />
+                        <Text style={styles.categoryText}>{subcategory.name}</Text>
+                        <MaterialIcons name="chevron-right" size={24} color={theme.colors.secondary} />
+                      </TouchableOpacity>
+                    );
+                  })}
                 </>
               )}
 
@@ -385,28 +407,35 @@ const SearchResultsScreen = () => {
                 <>
                   <Text style={styles.sectionTitle}>Products</Text>
                   <View style={styles.productsGrid}>
-                    {searchResults.products.map((product: Product) => (
-                      <TouchableOpacity
-                        key={product._id}
-                        style={styles.productCard}
-                        onPress={() => handleProductPress(product)}
-                        activeOpacity={0.88}
-                      >
-                        <Image 
-                          source={{ uri: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center' }} 
-                          style={{ width: 90, height: 90, borderRadius: 12, marginBottom: 10, backgroundColor: '#f7f7f7' }} 
-                        />
-                        <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, marginBottom: 6, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>
-                          {product.name}
-                        </Text>
-                        <Text style={{ fontSize: 12, color: theme.colors.secondary, textAlign: 'center', marginBottom: 4 }}>
-                          {product.manufacturer || 'Generic'}
-                        </Text>
-                        <Text style={{ fontSize: 14, color: theme.colors.primary, fontWeight: 'bold', textAlign: 'center' }}>
-                          View Details
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
+                    {searchResults.products.map((product: Product) => {
+                      const productImage = product.signedImage || product.image || 
+                        (Array.isArray(product.signedImages) && product.signedImages.length > 0 ? product.signedImages[0] : undefined) ||
+                        (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : undefined) ||
+                        'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center';
+                      
+                      return (
+                        <TouchableOpacity
+                          key={product._id}
+                          style={styles.productCard}
+                          onPress={() => handleProductPress(product)}
+                          activeOpacity={0.88}
+                        >
+                          <Image 
+                            source={{ uri: productImage }} 
+                            style={{ width: 90, height: 90, borderRadius: 12, marginBottom: 10, backgroundColor: '#f7f7f7' }} 
+                          />
+                          <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, marginBottom: 6, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>
+                            {product.name}
+                          </Text>
+                          <Text style={{ fontSize: 12, color: theme.colors.secondary, textAlign: 'center', marginBottom: 4 }}>
+                            {product.manufacturer || 'Generic'}
+                          </Text>
+                          <Text style={{ fontSize: 14, color: theme.colors.primary, fontWeight: 'bold', textAlign: 'center' }}>
+                            View Details
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                 </>
               )}

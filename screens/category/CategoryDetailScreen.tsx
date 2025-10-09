@@ -121,6 +121,7 @@ const CategoryDetailScreen = () => {
                 .map((sc: any) => ({
                   id: sc.subcategoryId,
                   name: sc.name,
+                  image: sc.signedImage || sc.image || undefined,
                   products: [], // Will be fetched separately for each subcategory
                   brands: []
                 }))
@@ -322,7 +323,7 @@ const CategoryDetailScreen = () => {
                 onPress={() => setSelectedSubCategoryId(item.id)}
               >
                 <Image
-                  source={{ uri: (item.products[0]?.image) || SUBCATEGORY_PLACEHOLDER_IMAGE }}
+                  source={{ uri: item.image || (item.products[0]?.image) || SUBCATEGORY_PLACEHOLDER_IMAGE }}
                   style={styles.subCategoryImage}
                 />
                 <Text style={[styles.subCategoryText, { color: theme.colors.text }]}>{item.name}</Text>

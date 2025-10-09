@@ -137,15 +137,30 @@ class OrderListService {
 
       const url = `https://marg-api.thelocalsandbox.dev/v1/customer/order/${orderId}`;
       console.log('📦 Fetching order detail:', url);
+      console.log('📦 Order ID:', orderId);
       const response = await axios.get(url, { headers });
 
       if (!response.data || !response.data.data) {
         return { success: false, error: 'No order found', data: null as any };
       }
 
-      return { success: true, data: response.data.data };
+      const orderData = response.data.data;
+      
+      // Log prescription-related fields
+      console.log('📦 ===== ORDER DETAILS API RESPONSE =====');
+      console.log('📦 Order ID:', orderData.orderId || orderData.id);
+      console.log('📦 Order No:', orderData.orderNo);
+      console.log('📦 Prescription Fields (Direct):');
+      console.log('   - signedPresciptionUrl:', orderData.signedPresciptionUrl || 'NOT PRESENT');
+      console.log('   - signedPrescriptionUrl:', orderData.signedPrescriptionUrl || 'NOT PRESENT');
+      console.log('   - prescriptionUrl:', orderData.prescriptionUrl || 'NOT PRESENT');
+      console.log('📦 Full order data keys:', Object.keys(orderData));
+      console.log('📦 Full API Response (stringified):', JSON.stringify(response.data, null, 2));
+      console.log('📦 ===== END ORDER DETAILS =====');
+
+      return { success: true, data: orderData };
     } catch (error: any) {
-      console.error(' Error fetching order detail:', error);
+      console.error('❌ Error fetching order detail:', error);
       return {
         success: false,
         error: error.response?.data?.message || 'Failed to fetch order',

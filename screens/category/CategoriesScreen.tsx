@@ -219,7 +219,7 @@ const CategoriesScreen = () => {
                 id: item.categoryId,
                 name: item.name,
                 description: item.description,
-                image: item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
+                image: item.signedImage || item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
                 subCategories: categoryData.subcategories || [],
                 products: categoryData.products || []
               } 
@@ -231,7 +231,7 @@ const CategoriesScreen = () => {
                 id: item.categoryId,
                 name: item.name,
                 description: item.description,
-                image: item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
+                image: item.signedImage || item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
                 subCategories: [] // Empty - CategoryDetailScreen will fetch subcategories for this specific category
               } 
             });
@@ -244,7 +244,7 @@ const CategoriesScreen = () => {
               id: item.categoryId,
               name: item.name,
               description: item.description,
-              image: item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
+              image: item.signedImage || item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
               subCategories: [] // Empty - CategoryDetailScreen will fetch subcategories for this specific category
             } 
           });
@@ -254,7 +254,7 @@ const CategoriesScreen = () => {
     >
       <Image 
         source={{ 
-          uri: item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center' 
+          uri: item.signedImage || item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center' 
         }} 
         style={styles.image} 
       />

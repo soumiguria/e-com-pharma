@@ -456,25 +456,32 @@ const OrdersScreen = () => {
         {renderTabButton('Pharmacy')}
       </ScrollView>
 
-      <FlatList
-        data={filteredOrders}
-        keyExtractor={(item) => item.id}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={() => (
-          <View style={styles.centerContent}>
-            <Ionicons name="receipt-outline" size={64} color={theme.colors.secondary} />
-            <Text style={[styles.emptyText, { color: theme.colors.text }]}>
-              No orders found
-            </Text>
-            <Text style={[styles.emptySubtext, { color: theme.colors.secondary }]}>
-              Your orders will appear here
-            </Text>
-          </View>
-        )}
+      {isLoading ? (
+        <View style={styles.centerContent}>
+          <Text style={[styles.loadingText, { color: theme.colors.text }]}>
+            Loading your orders...
+          </Text>
+        </View>
+      ) : (
+        <FlatList
+          data={filteredOrders}
+          keyExtractor={(item) => item.id}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={styles.listContainer}
+          ListEmptyComponent={() => (
+            <View style={styles.centerContent}>
+              <Ionicons name="receipt-outline" size={64} color={theme.colors.secondary} />
+              <Text style={[styles.emptyText, { color: theme.colors.text }]}>
+                No orders found
+              </Text>
+              <Text style={[styles.emptySubtext, { color: theme.colors.secondary }]}>
+                Your orders will appear here
+              </Text>
+            </View>
+          )}
         renderItem={({ item: order }) => (
           <Card key={order.id} style={[styles.orderCard, { backgroundColor: theme.colors.surface }]}>
             <TouchableOpacity onPress={() => handleOrderPress(order)}>
@@ -523,12 +530,25 @@ const OrdersScreen = () => {
                   <Text style={[styles.detailValue, { color: theme.colors.text }]}>{order.items.reduce((sum, item) => sum + item.quantity, 0)}</Text>
                 </View>
 
-                      <View style={styles.storeNameContainer}>
+                      <TouchableOpacity 
+                        style={styles.storeNameContainer}
+                        onPress={() => {
+                          const storeId = (order as any).originalOrderData?.storeId;
+                          if (storeId) {
+                            navigation.navigate('AboutStore' as any, { storeId });
+                          } else {
+                            Alert.alert('Store Info', 'Store information not available');
+                          }
+                        }}
+                      >
                         <Text style={[styles.detailLabel, { color: theme.colors.secondary }]}>Store Name</Text>
-                        <Text style={[styles.storeNameValue, { color: theme.colors.text }]} numberOfLines={2}>
-                          {order.storeName || (order.items.some(item => item.type === 'pharma') ? 'Pharmacy Store' : 'Grocery Store')}
-                        </Text>
-                      </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                          <Text style={[styles.storeNameValue, { color: theme.colors.text, flex: 1 }]} numberOfLines={2}>
+                            {order.storeName || (order.items.some(item => item.type === 'pharma') ? 'Pharmacy Store' : 'Grocery Store')}
+                          </Text>
+                          <Ionicons name="chevron-forward" size={20} color={theme.colors.secondary} />
+                        </View>
+                      </TouchableOpacity>
 
                 {/* Action Buttons */}
                 <View style={styles.actionButtonsContainer}>
@@ -550,7 +570,8 @@ const OrdersScreen = () => {
             </TouchableOpacity>
           </Card>
         )}
-      />
+        />
+      )}
     </SafeAreaView>
   );
   };
@@ -623,6 +644,12 @@ const OrdersScreen = () => {
     },
     emptySubtext: {
       fontSize: 14,
+      textAlign: 'center',
+    },
+    loadingText: {
+      fontSize: 16,
+      fontWeight: '600',
+      marginTop: 16,
       textAlign: 'center',
     },
     // Order card styles
