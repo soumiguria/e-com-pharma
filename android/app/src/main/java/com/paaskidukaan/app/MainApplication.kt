@@ -1,4 +1,4 @@
-package com.yourcompany.ecommexpo
+package com.paaskidukaan.app
 
 import android.app.Application
 import android.content.res.Configuration

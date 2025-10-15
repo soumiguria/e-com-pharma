@@ -10,9 +10,10 @@ import { CartProvider, useCart } from './contexts/CartContext';
 import { AppProvider } from './contexts/AppContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
+import { DeepLinkProvider } from './contexts/DeepLinkContext';
 import CustomToast from './components/ui/CustomToast';
 import ErrorBoundary from './components/ui/ErrorBoundary';
-import SimpleStoreDeepLink from './components/deepLink/SimpleStoreDeepLink';
+import DeepLinkHandler from './components/deepLink/DeepLinkHandler';
 import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { TouchableOpacity, Text } from 'react-native';
@@ -85,10 +86,12 @@ const AppContent = () => {
   const { theme } = useTheme();
   const linking = React.useMemo<LinkingOptions<RootStackParamList>>(() => ({
     prefixes: [
+      'paaskidukaan://',
       'ecomm://',
       'https://stores.yourdomain.com',
       'https://qr.ecomm.com',
-      'https://ecomm-stores.com'
+      'https://ecomm-stores.com',
+      'https://marg-api.thelocalsandbox.dev'
     ],
     config: {
       screens: {
@@ -103,46 +106,13 @@ const AppContent = () => {
         },
       },
     },
-    // Custom getStateFromPath to handle ecomm://store/{storeId}
+    // Let DeepLinkHandler handle all deep links
     getStateFromPath: (path, options) => {
       console.log('🔗 NavigationContainer: getStateFromPath called with:', path);
+      console.log('🔗 NavigationContainer: Letting DeepLinkHandler handle deep links');
       
-      // Handle ecomm://store/{storeId} format - SKIP ALL SCREENS
-      if (path.startsWith('store/')) {
-        const storeId = path.replace('store/', '');
-        console.log('🔗 NavigationContainer: Extracted storeId:', storeId);
-        console.log('🔗 NavigationContainer: SKIPPING Splash, Pincode, StoreList - Going DIRECT to Store Home Screen');
-        
-        // Determine store type based on storeId pattern
-        // For now, we'll default to GroceryHome and let the screen determine the actual type
-        // The screen will fetch store details and redirect to the correct home screen if needed
-        const targetScreen = 'GroceryHome'; // Default to grocery, will be corrected by the screen
-        
-        return {
-          routes: [
-            {
-              name: 'Main',
-              state: {
-                routes: [
-                  {
-                    name: 'Home',
-                    state: {
-                      routes: [
-                        {
-                          name: 'HomeRoot',
-                          params: { storeId },
-                        },
-                      ],
-                    },
-                  },
-                ],
-              },
-            },
-          ],
-        };
-      }
-      
-      // Fallback to default parsing
+      // Don't handle store deep links here - let DeepLinkHandler handle them
+      // This ensures DeepLinkHandler gets the URL event and can process it properly
       return undefined;
     },
   }), []);
@@ -153,12 +123,14 @@ const AppContent = () => {
           <StorageProvider>
             <CartProvider>
               <ToastProvider>
-                <ErrorBoundary>
-                  <SimpleStoreDeepLink>
-                    <AppNavigator />
-                    <FloatingCartButton />
-                  </SimpleStoreDeepLink>
-                </ErrorBoundary>
+                <DeepLinkProvider>
+                  <ErrorBoundary>
+                    <DeepLinkHandler>
+                      <AppNavigator />
+                      <FloatingCartButton />
+                    </DeepLinkHandler>
+                  </ErrorBoundary>
+                </DeepLinkProvider>
                 <CustomToast />
               </ToastProvider>
             </CartProvider>

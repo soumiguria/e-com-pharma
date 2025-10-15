@@ -24,7 +24,7 @@
         "NSLocationAlwaysAndWhenInUseUsageDescription": "This app needs access to location to show nearby stores and delivery options.",
         "NSMicrophoneUsageDescription": "This app needs access to microphone for voice search functionality.",
         "NSSpeechRecognitionUsageDescription": "This app uses speech recognition to convert your voice to text for search.",
-        "NSCameraUsageDescription": "This app needs access to camera to take photos of prescriptions.",
+        "NSCameraUsageDescription": "This app needs access to camera to scan QR codes and take photos of prescriptions.",
         "NSPhotoLibraryUsageDescription": "This app needs access to photo library to select prescription images."
       }
     },
@@ -42,6 +42,10 @@
             {
               "scheme": "paaskidukaan",
               "host": "*"
+            },
+            {
+              "scheme": "ecomm",
+              "host": "store"
             },
             {
               "scheme": "https",

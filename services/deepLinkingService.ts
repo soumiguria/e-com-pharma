@@ -30,8 +30,8 @@ class DeepLinkingService {
       const parsed = Linking.parse(url);
       console.log('🔗 Parsed URL:', parsed);
 
-      // Handle custom scheme: ecomm://store/{storeId}
-      if (parsed.scheme === 'ecomm') {
+      // Handle custom scheme: ecomm://store/{storeId} and paaskidukaan://store/{storeId}
+      if (parsed.scheme === 'ecomm' || parsed.scheme === 'paaskidukaan') {
         console.log('🔗 Custom scheme detected:', parsed);
         if (parsed.hostname === 'store' && parsed.path) {
           const storeId = parsed.path.replace('/', '');
@@ -74,6 +74,22 @@ class DeepLinkingService {
           return {
             type: 'store',
             params: { 
+              storeId,
+              storeType: this.extractStoreTypeFromUrl(url),
+              storeName: this.extractStoreNameFromUrl(url)
+            },
+            originalUrl: url
+          };
+        }
+
+        // Pattern: /dl/{storeId} (API domain deep link)
+        const dlMatch = path.match(/^\/dl\/(.+)$/);
+        if (dlMatch) {
+          const storeId = dlMatch[1];
+          console.log('🔗 Store ID extracted from API /dl path:', storeId);
+          return {
+            type: 'store',
+            params: {
               storeId,
               storeType: this.extractStoreTypeFromUrl(url),
               storeName: this.extractStoreNameFromUrl(url)

@@ -433,7 +433,7 @@ const OrderSelectionScreen = () => {
             <View style={styles.emptyContainer}>
               <MaterialIcons name="receipt" size={64} color={theme.colors.secondary} />
               <Text style={styles.emptyText}>
-                No orders found. Place an order first to upload prescription.
+                Login to view your orders.
               </Text>
             </View>
           ) : (

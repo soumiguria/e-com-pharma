@@ -6,13 +6,15 @@ import { RootStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useAppContext } from '../../contexts/AppContext';
+import { useDeepLinkContext } from '../../contexts/DeepLinkContext';
 
 type SplashScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Splash'>;
 
 const SplashScreen = () => {
   const { theme } = useTheme();
   const { isAuthenticated, isLoading } = useAuth();
-  const { lastVisitedStore } = useAppContext();
+  const { lastVisitedStore, selectedStore } = useAppContext();
+  const { isDeepLinkProcessing, hasProcessedInitialDeepLink } = useDeepLinkContext();
   const navigation = useNavigation<SplashScreenNavigationProp>();
   const { colors } = theme;
 
@@ -47,9 +49,22 @@ const SplashScreen = () => {
       }),
     ]).start();
 
-    // Navigation timer - wait for auth to load
+    // Navigation timer - wait for auth to load and deep link processing
     const timer = setTimeout(() => {
       try {
+        // Check if we're processing a deep link
+        if (isDeepLinkProcessing) {
+          console.log('🔗 Deep link is being processed, waiting...');
+          return;
+        }
+
+        // Check if deep link processing is complete and we have a selected store
+        if (hasProcessedInitialDeepLink && selectedStore) {
+          console.log('🔗 Deep link processed with store selected, navigating to Main');
+          navigation.replace('Main', undefined as any);
+          return;
+        }
+
         if (!isLoading) {
           if (isAuthenticated) {
             // User is logged in, check if they have a last visited store
@@ -75,7 +90,7 @@ const SplashScreen = () => {
     }, 2000); // Reduced time for faster navigation
     
     return () => clearTimeout(timer);
-  }, [navigation, isAuthenticated, isLoading, lastVisitedStore]);
+  }, [navigation, isAuthenticated, isLoading, lastVisitedStore, isDeepLinkProcessing, hasProcessedInitialDeepLink, selectedStore]);
 
   const rotateInterpolate = rotateValue.interpolate({
     inputRange: [0, 1],

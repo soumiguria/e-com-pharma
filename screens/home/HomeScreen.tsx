@@ -271,106 +271,8 @@ const HomeScreen = () => {
     }
   }, [selectedStore, lastVisitedStore, setSelectedStore]);
 
-  // Apply deep link params to select store on open (ignore dummy/empty values)
-  useEffect(() => {
-    const params = route.params as any;
-    const incomingStoreId = params?.storeId;
-    if (incomingStoreId && incomingStoreId !== 'default') {
-      console.log('🏠 HomeScreen: Deep link params received:', params);
-      console.log('🏠 HomeScreen: Deep link storeId received:', incomingStoreId);
-      console.log('🏠 HomeScreen: Deep link storeName received:', params?.storeName);
-      console.log('🏠 HomeScreen: Deep link storeType received:', params?.storeType);
-      
-      // Fetch store details to get proper store type and info
-      const fetchStoreDetails = async () => {
-        try {
-          console.log('🔍 Fetching store details for deep link storeId:', incomingStoreId);
-          const response = await fetch(`https://marg-api.thelocalsandbox.dev/dl/${incomingStoreId}`);
-          
-          if (response.ok) {
-            const data = await response.json();
-            console.log(' Store details fetched for deep link:', data);
-            
-            if (data.success && data.data) {
-              const storeData = data.data;
-              const storeType = storeData.type || params.storeType || 'grocery'; // Use API data, fallback to params, then default to grocery
-              
-              const newStore = {
-                id: incomingStoreId,
-                name: storeData.name || params.storeName || 'Selected Store',
-                address: storeData.address || '',
-                type: storeType,
-                pincode: params.pincode as string | undefined
-              };
-              
-              console.log('🏪 Setting store from deep link (API data):', newStore);
-              console.log('🏪 Store name being set:', newStore.name);
-              setSelectedStore(newStore);
-              
-              if (isAuthenticated) {
-                saveLastVisitedStore(newStore);
-              }
-            } else {
-              console.log('⚠️ API returned no data, using params fallback');
-              // Use parameters passed from DeepLinkHandler
-              const incomingType = (params.storeType as 'grocery' | 'pharma' | undefined) ?? 'grocery';
-              const newStore = { 
-                id: incomingStoreId, 
-                name: params.storeName || 'Selected Store', 
-                address: '', 
-                type: incomingType, 
-                pincode: params.pincode as string | undefined 
-              };
-              console.log('🏪 Setting store from deep link (params fallback):', newStore);
-              console.log('🏪 Store name being set (fallback):', newStore.name);
-              setSelectedStore(newStore);
-              if (isAuthenticated) {
-                saveLastVisitedStore(newStore);
-              }
-            }
-          } else {
-            console.log('⚠️ Store fetch failed, using default type');
-            // Fallback to default behavior
-            const incomingType = (params.storeType as 'grocery' | 'pharma' | undefined) ?? 'grocery';
-            const newStore = { 
-              id: incomingStoreId, 
-              name: params.storeName || 'Selected Store', 
-              address: '', 
-              type: incomingType, 
-              pincode: params.pincode as string | undefined 
-            };
-            console.log('🏪 Setting store from deep link (fetch failed fallback):', newStore);
-            console.log('🏪 Store name being set (fetch failed):', newStore.name);
-            setSelectedStore(newStore);
-            if (isAuthenticated) {
-              saveLastVisitedStore(newStore);
-            }
-          }
-        } catch (error) {
-          console.error('  Error fetching store details for deep link:', error);
-          // Fallback to default behavior
-          const incomingType = (params.storeType as 'grocery' | 'pharma' | undefined) ?? 'grocery';
-          const newStore = { 
-            id: incomingStoreId, 
-            name: params.storeName || 'Selected Store', 
-            address: '', 
-            type: incomingType, 
-            pincode: params.pincode as string | undefined 
-          };
-          console.log('🏪 Setting store from deep link (error fallback):', newStore);
-          console.log('🏪 Store name being set (error):', newStore.name);
-          setSelectedStore(newStore);
-          if (isAuthenticated) {
-            saveLastVisitedStore(newStore);
-          }
-        }
-      };
-      
-      if (!selectedStore || selectedStore.id !== incomingStoreId) {
-        fetchStoreDetails();
-      }
-    }
-  }, [route.params, selectedStore, setSelectedStore, isAuthenticated, saveLastVisitedStore]);
+  // Deep link handling is now done in DeepLinkHandler component
+  // HomeScreen just uses the selectedStore from AppContext
 
   // Save store as last visited when selected
   useEffect(() => {
@@ -380,17 +282,33 @@ const HomeScreen = () => {
     }
   }, [selectedStore, isAuthenticated, saveLastVisitedStore]);
 
+
   // Fetch "Some products" based on current store type
   useEffect(() => {
     const fetch = async () => {
-      if (!selectedStore?.id) return;
+      if (!selectedStore?.id) {
+        console.log('🏠 No store selected, clearing home products');
+        setHomeProducts([]);
+        return;
+      }
+      
       try {
         setHomeProductsLoading(true);
+        console.log(`🏠 Fetching ${isPharmacyStore ? 'pharma' : 'grocery'} products for store:`, selectedStore.id);
+        
         const resp = isPharmacyStore
           ? await storeProductService.getPharmaProducts(selectedStore.id)
           : await storeProductService.getGroceryProducts(selectedStore.id);
-        setHomeProducts(Array.isArray(resp.data) ? resp.data.slice(0, 8) : []);
+        
+        if (resp.success && Array.isArray(resp.data)) {
+          console.log(`🏠 Loaded ${resp.data.length} products for store`);
+          setHomeProducts(resp.data.slice(0, 8));
+        } else {
+          console.log('🏠 No products found for store');
+          setHomeProducts([]);
+        }
       } catch (e) {
+        console.log('🏠 Error fetching products for store:', e);
         setHomeProducts([]);
       } finally {
         setHomeProductsLoading(false);
@@ -700,8 +618,13 @@ const HomeScreen = () => {
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Loading...</Text>
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background }}>
+        <Text style={{ color: theme.colors.text, fontSize: 16, marginBottom: 8 }}>
+          Loading...
+        </Text>
+        <Text style={{ color: theme.colors.secondary, fontSize: 14 }}>
+          Please wait
+        </Text>
       </View>
     );
   }
@@ -723,6 +646,7 @@ const HomeScreen = () => {
             onPress={() => navigation.navigate('SearchScreen')}
           />
         </View>
+        
       
       <View style={themedStyles.contentContainer}>
         {searchQuery.length > 0 ? (
@@ -732,6 +656,29 @@ const HomeScreen = () => {
             activeTab={activeTab}
             themedStyles={themedStyles}
           />
+        ) : !selectedStore ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+            <MaterialIcons name="store" size={64} color={theme.colors.secondary} style={{ marginBottom: 16 }} />
+            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' }}>
+              No Store Selected
+            </Text>
+            <Text style={{ color: theme.colors.secondary, fontSize: 14, textAlign: 'center', marginBottom: 20 }}>
+              Please select a store to view products and categories
+            </Text>
+            <TouchableOpacity 
+              style={{ 
+                backgroundColor: theme.colors.primary, 
+                paddingHorizontal: 20, 
+                paddingVertical: 12, 
+                borderRadius: 8 
+              }}
+              onPress={() => navigation.navigate('StoreList' as any)}
+            >
+              <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
+                Browse Stores
+              </Text>
+            </TouchableOpacity>
+          </View>
         ) : (
           <ScrollView>
             <BannerSlider />
@@ -782,10 +729,24 @@ const HomeScreen = () => {
               <View style={themedStyles.sectionHeaderRow}>
                 <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>Some products</Text>
               </View>
-              <HorizontallyScrollableSection 
-                title={isPharmacyStore ? 'Recently Bought Medicines' : 'Recently Bought'}
-                itemsOverride={homeProducts.map(p => ({...p, category: isPharmacyStore ? 'pharma' : 'grocery'}))}
-              />
+              {homeProductsLoading ? (
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <Text style={{ color: theme.colors.secondary, fontSize: 14 }}>
+                    Loading products...
+                  </Text>
+                </View>
+              ) : homeProducts.length > 0 ? (
+                <HorizontallyScrollableSection 
+                  title={isPharmacyStore ? 'Recently Bought Medicines' : 'Recently Bought'}
+                  itemsOverride={homeProducts.map(p => ({...p, category: isPharmacyStore ? 'pharma' : 'grocery'}))}
+                />
+              ) : (
+                <View style={{ padding: 20, alignItems: 'center' }}>
+                  <Text style={{ color: theme.colors.secondary, fontSize: 14 }}>
+                    No products available for this store
+                  </Text>
+                </View>
+              )}
             </View>
             {/* Recently Bought Section - HIDDEN */}
             {/* <View style={themedStyles.section}>

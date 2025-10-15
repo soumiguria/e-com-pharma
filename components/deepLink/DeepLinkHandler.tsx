@@ -1,10 +1,12 @@
-import React, { useEffect, useRef } from 'react';
-import { Alert } from 'react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { Alert, Linking } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import deepLinkingService from '../../services/deepLinkingService';
 import { storeService } from '../../services/api/storeService';
+import { useAppContext } from '../../contexts/AppContext';
+import { useDeepLinkContext } from '../../contexts/DeepLinkContext';
 
 interface DeepLinkHandlerProps {
   children: React.ReactNode;
@@ -12,6 +14,8 @@ interface DeepLinkHandlerProps {
 
 const DeepLinkHandler: React.FC<DeepLinkHandlerProps> = ({ children }) => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const { setSelectedStore, saveLastVisitedStore } = useAppContext();
+  const { setIsDeepLinkProcessing, setHasProcessedInitialDeepLink } = useDeepLinkContext();
   const isProcessingRef = useRef(false);
 
   useEffect(() => {
@@ -20,7 +24,13 @@ const DeepLinkHandler: React.FC<DeepLinkHandlerProps> = ({ children }) => {
     // Handle initial deep link when app starts
     handleInitialDeepLink();
 
-    // Add listener for deep links when app is running
+    // Add direct Linking listener to bypass NavigationContainer
+    const directListener = Linking.addEventListener('url', ({ url }) => {
+      console.log('🔗 DeepLinkHandler: Direct URL listener received:', url);
+      handleDeepLink(url);
+    });
+
+    // Also add listener for deep links when app is running
     const unsubscribe = deepLinkingService.addDeepLinkListener(handleDeepLink);
     console.log('🔗 DeepLinkHandler: Deep link listener added');
 
@@ -29,9 +39,11 @@ const DeepLinkHandler: React.FC<DeepLinkHandlerProps> = ({ children }) => {
 
     return () => {
       console.log('🔗 DeepLinkHandler: Cleaning up deep link listener');
+      directListener?.remove();
       unsubscribe();
     };
   }, []);
+
 
   const handleInitialDeepLink = async () => {
     try {
@@ -42,13 +54,23 @@ const DeepLinkHandler: React.FC<DeepLinkHandlerProps> = ({ children }) => {
         // Check if it's actually a deep link we support
         const deepLinkResult = deepLinkingService.parseDeepLink(initialUrl);
         if (deepLinkResult.type !== 'unknown') {
-          await processDeepLink(initialUrl);
+          console.log('🔗 Valid deep link detected, processing...');
+          setIsDeepLinkProcessing(true);
+          await processDeepLink(initialUrl, true);
+          setHasProcessedInitialDeepLink(true);
+          setIsDeepLinkProcessing(false);
         } else {
           console.log('🔗 Ignoring unsupported initial URL:', initialUrl);
+          setHasProcessedInitialDeepLink(true);
         }
+      } else {
+        console.log('🔗 No initial deep link found');
+        setHasProcessedInitialDeepLink(true);
       }
     } catch (error) {
       console.error('  Error handling initial deep link:', error);
+      setHasProcessedInitialDeepLink(true);
+      setIsDeepLinkProcessing(false);
     }
   };
 
@@ -61,7 +83,7 @@ const DeepLinkHandler: React.FC<DeepLinkHandlerProps> = ({ children }) => {
     }
   };
 
-  const processDeepLink = async (url: string) => {
+  const processDeepLink = async (url: string, isInitial = false) => {
     // Prevent multiple simultaneous deep link processing
     if (isProcessingRef.current) {
       console.log('🔗 Deep link already being processed, ignoring:', url);
@@ -75,97 +97,120 @@ const DeepLinkHandler: React.FC<DeepLinkHandlerProps> = ({ children }) => {
       console.log('🔗 Deep link result:', deepLinkResult);
 
       if (deepLinkResult.type === 'store' && deepLinkResult.params) {
-        await handleStoreDeepLink(deepLinkResult.params);
+        await handleStoreDeepLink(deepLinkResult.params, isInitial);
       } else if (deepLinkResult.type === 'unknown') {
         console.log('🔗 Unknown deep link type, ignoring:', deepLinkResult.type);
         // Don't show alert for unknown URLs, just log and ignore
       } else {
         console.log('🔗 Unsupported deep link type:', deepLinkResult.type);
-        Alert.alert(
-          'Invalid Link',
-          'This link is not supported by the app.',
-          [{ text: 'OK' }]
-        );
+        if (!isInitial) {
+          Alert.alert(
+            'Invalid Link',
+            'This link is not supported by the app.',
+            [{ text: 'OK' }]
+          );
+        }
       }
     } catch (error) {
       console.error('  Error processing deep link:', error);
-      Alert.alert(
-        'Error',
-        'Failed to process the link. Please try again.',
-        [{ text: 'OK' }]
-      );
+      if (!isInitial) {
+        Alert.alert(
+          'Error',
+          'Failed to process the link. Please try again.',
+          [{ text: 'OK' }]
+        );
+      }
     } finally {
       isProcessingRef.current = false;
     }
   };
 
-  const handleStoreDeepLink = async (params: { storeId: string; storeType?: 'grocery' | 'pharma'; storeName?: string }) => {
+  const handleStoreDeepLink = async (params: { storeId: string; storeType?: 'grocery' | 'pharma'; storeName?: string }, isInitial = false) => {
     try {
-      console.log('🏪 Processing store deep link:', params);
+      console.log('🏪 Processing store deep link:', params, 'isInitial:', isInitial);
 
       // First fetch store details to get proper store information
       const storeDetails = await fetchStoreDetails(params.storeId);
       
       if (storeDetails) {
-        console.log('✅ Store details fetched, navigating to HomeScreen with store:', storeDetails);
-        console.log('🏪 Passing storeName to HomeScreen:', storeDetails.name || params.storeName);
+        console.log('✅ Store details fetched, setting store in context:', storeDetails);
         
-        // Navigate directly to HomeScreen (Main tab) with store data
-        navigation.reset({
-          index: 0,
-          routes: [
-            { 
-              name: 'Main',
-              params: {
-                screen: 'HomeRoot',
-                params: {
-                  storeId: params.storeId,
-                  storeType: storeDetails.type || params.storeType,
-                  storeName: storeDetails.name || params.storeName,
-                  pincode: storeDetails.pincode
-                }
-              }
-            }
-          ],
-        });
+        // Create store object and set it directly in context
+        const newStore = {
+          id: params.storeId,
+          name: storeDetails.name || params.storeName || 'Selected Store',
+          address: storeDetails.address || '',
+          type: storeDetails.type || params.storeType || 'grocery',
+          pincode: storeDetails.pincode
+        };
+        
+        console.log('🏪 Setting store in context:', newStore);
+        setSelectedStore(newStore);
+        saveLastVisitedStore(newStore);
+        
+        // Navigate to HomeScreen - use replace for initial deep links to bypass splash
+        if (isInitial) {
+          console.log('🏠 Initial deep link - navigating directly to Main');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Main' }],
+          });
+        } else {
+          console.log('🏠 Deep link while app running - navigating to Main');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Main' }],
+          });
+        }
       } else {
-        console.log('⚠️ Store details not found, using fallback navigation');
-        console.log('🏪 Passing fallback storeName to HomeScreen:', params.storeName || 'Selected Store');
+        console.log('⚠️ Store details not found, using fallback store');
         
-        // Fallback: Navigate to HomeScreen with basic store info
-        navigation.reset({
-          index: 0,
-          routes: [
-            { 
-              name: 'Main',
-              params: {
-                screen: 'HomeRoot',
-                params: {
-                  storeId: params.storeId,
-                  storeType: params.storeType || 'grocery',
-                  storeName: params.storeName || 'Selected Store'
-                }
-              }
-            }
-          ],
-        });
+        // Create fallback store object and set it directly in context
+        const fallbackStore = {
+          id: params.storeId,
+          name: params.storeName || 'Selected Store',
+          address: '',
+          type: params.storeType || 'grocery',
+          pincode: undefined
+        };
+        
+        console.log('🏪 Setting fallback store in context:', fallbackStore);
+        setSelectedStore(fallbackStore);
+        saveLastVisitedStore(fallbackStore);
+        
+        // Navigate to HomeScreen - use replace for initial deep links to bypass splash
+        if (isInitial) {
+          console.log('🏠 Initial deep link (fallback) - navigating directly to Main');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Main' }],
+          });
+        } else {
+          console.log('🏠 Deep link while app running (fallback) - navigating to Main');
+          navigation.reset({
+            index: 0,
+            routes: [{ name: 'Main' }],
+          });
+        }
       }
 
       console.log('🏠 Navigated to HomeScreen with storeId:', params.storeId);
 
     } catch (error) {
       console.error('❌ Error handling store deep link:', error);
-      Alert.alert(
-        'Error',
-        'Failed to open the store. Please try again.',
-        [
-          { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Browse Stores', 
-            onPress: () => navigation.navigate('StoreList' as any)
-          }
-        ]
-      );
+      if (!isInitial) {
+        Alert.alert(
+          'Error',
+          'Failed to open the store. Please try again.',
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { 
+              text: 'Browse Stores', 
+              onPress: () => navigation.navigate('StoreList' as any)
+            }
+          ]
+        );
+      }
     }
   };
 

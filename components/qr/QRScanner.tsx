@@ -1,40 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { View, StyleSheet, Alert, Text } from 'react-native';
-import { Camera, CameraType } from 'expo-camera';
-import { BarCodeScanner } from 'expo-barcode-scanner';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { Button } from 'react-native-paper';
 import { useTheme } from 'react-native-paper';
 import deepLinkingService from '../../services/deepLinkingService';
+import QRCodeScanner from 'react-native-qrcode-scanner';
+import { RNCamera } from 'react-native-camera';
 
 interface QRScannerProps {
   onClose?: () => void;
 }
 
 const QRScanner: React.FC<QRScannerProps> = ({ onClose }) => {
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [scanned, setScanned] = useState(false);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const theme = useTheme();
 
-  useEffect(() => {
-    const getCameraPermissions = async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-    };
-
-    getCameraPermissions();
-  }, []);
-
-  const handleBarCodeScanned = async ({ type, data }: { type: string; data: string }) => {
+  const handleQRCode = async (data: string) => {
     if (scanned) return;
     
-    setScanned(true);
-    console.log('📱 QR Code scanned:', data);
-    
     try {
+      setScanned(true);
+      console.log('📱 QR Code scanned:', data);
+      
       // Extract store ID from various QR formats
       const storeId = extractStoreIdFromQR(data);
       
@@ -45,17 +35,19 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose }) => {
         const storeResponse = await deepLinkingService.fetchStoreDetails(storeId);
         
         if (storeResponse.success && storeResponse.data) {
-          // Navigate directly to store
+          // Navigate directly to Home with store params so HomeScreen selects it
           navigation.reset({
             index: 0,
             routes: [
-              { name: 'Main' },
               { 
-                name: 'AboutStore', 
+                name: 'Main',
                 params: {
-                  store: storeResponse.data,
-                  storeId: storeId,
-                  fromQR: true
+                  screen: 'HomeRoot',
+                  params: {
+                    storeId: storeId,
+                    storeType: storeResponse.data.type,
+                    storeName: storeResponse.data.name,
+                  }
                 }
               }
             ],
@@ -87,7 +79,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose }) => {
         );
       }
     } catch (error) {
-      console.error('  Error processing QR code:', error);
+      console.error('❌ Error processing QR code:', error);
       Alert.alert(
         'Error',
         'Failed to process QR code. Please try again.',
@@ -105,7 +97,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose }) => {
       
       // Handle direct store ID
       if (data.match(/^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/i)) {
-        console.log(' Direct store ID found');
+        console.log('✅ Direct store ID found');
         return data;
       }
       
@@ -113,7 +105,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose }) => {
       if (data.startsWith('ecomm://store/')) {
         const storeId = data.replace('ecomm://store/', '');
         if (storeId && storeId.length > 10) {
-          console.log(' ecomm:// store ID found:', storeId);
+          console.log('✅ ecomm:// store ID found:', storeId);
           return storeId;
         }
       }
@@ -122,7 +114,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose }) => {
       if (data.includes('/store/')) {
         const match = data.match(/\/store\/([^/?]+)/);
         if (match && match[1]) {
-          console.log(' HTTPS store ID found:', match[1]);
+          console.log('✅ HTTPS store ID found:', match[1]);
           return match[1];
         }
       }
@@ -131,7 +123,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose }) => {
       if (data.includes('/s/')) {
         const match = data.match(/\/s\/([^/?]+)/);
         if (match && match[1]) {
-          console.log(' QR domain store ID found:', match[1]);
+          console.log('✅ QR domain store ID found:', match[1]);
           return match[1];
         }
       }
@@ -140,60 +132,42 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose }) => {
       if (data.includes('/dl/')) {
         const match = data.match(/\/dl\/([^/?]+)/);
         if (match && match[1]) {
-          console.log(' API domain store ID found:', match[1]);
+          console.log('✅ API domain store ID found:', match[1]);
           return match[1];
         }
       }
       
-      console.log('  No valid store ID found in QR data');
+      console.log('❌ No valid store ID found in QR data');
       return null;
     } catch (error) {
-      console.error('  Error extracting store ID from QR:', error);
+      console.error('❌ Error extracting store ID from QR:', error);
       return null;
     }
   };
 
-  if (hasPermission === null) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.message}>Requesting camera permission...</Text>
-      </View>
-    );
-  }
-
-  if (hasPermission === false) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.message}>No access to camera</Text>
-        <Button mode="contained" onPress={onClose}>
-          Go Back
-        </Button>
-      </View>
-    );
-  }
-
   return (
     <View style={styles.container}>
-      <BarCodeScanner
-        onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
-        style={StyleSheet.absoluteFillObject}
-      />
-      
-      <View style={styles.overlay}>
-        <View style={styles.scanArea}>
-          <Text style={styles.instruction}>
+      <QRCodeScanner
+        onRead={(e) => handleQRCode(e.data)}
+        flashMode={RNCamera.Constants.FlashMode.auto}
+        topContent={
+          <Text style={styles.centerText}>
             Point camera at store QR code
           </Text>
-        </View>
-        
-        <Button 
-          mode="contained" 
-          onPress={onClose}
-          style={styles.closeButton}
-        >
-          Close Scanner
-        </Button>
-      </View>
+        }
+        bottomContent={
+          <Button 
+            mode="contained" 
+            onPress={onClose}
+            style={styles.buttonTouchable}
+          >
+            Close Scanner
+          </Button>
+        }
+        cameraStyle={styles.camera}
+        showMarker={true}
+        markerStyle={styles.marker}
+      />
     </View>
   );
 };
@@ -203,37 +177,32 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'black',
   },
-  overlay: {
+  centerText: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  scanArea: {
-    width: 250,
-    height: 250,
-    borderWidth: 2,
-    borderColor: '#fff',
-    borderRadius: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.1)',
-  },
-  instruction: {
-    color: 'white',
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  message: {
-    color: 'white',
     fontSize: 18,
+    padding: 32,
+    color: '#777',
     textAlign: 'center',
-    marginBottom: 20,
   },
-  closeButton: {
-    position: 'absolute',
-    bottom: 50,
-    backgroundColor: 'rgba(0,0,0,0.7)',
+  textBold: {
+    fontWeight: '500',
+    color: '#000',
+  },
+  buttonText: {
+    fontSize: 21,
+    color: 'rgb(0,122,255)',
+  },
+  buttonTouchable: {
+    fontSize: 16,
+    backgroundColor: '#007AFF',
+    marginTop: 32,
+  },
+  camera: {
+    height: '100%',
+  },
+  marker: {
+    borderColor: '#fff',
+    borderWidth: 2,
   },
 });
 

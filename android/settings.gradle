@@ -44,7 +44,7 @@ if (getRNMinorVersion() >= 75) {
   }
 }
 
-rootProject.name = 'e-comm-expo'
+rootProject.name = 'Paas Ki Dukaan'
 
 dependencyResolutionManagement {
   versionCatalogs {
