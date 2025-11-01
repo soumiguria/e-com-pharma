@@ -5,7 +5,6 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  SafeAreaView,
   Alert,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -13,6 +12,7 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import orderListService from '../../services/api/orderListService';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 type OrderSelectionRouteProp = {
   params: {
@@ -191,6 +191,7 @@ const OrderSelectionScreen = () => {
       justifyContent: 'space-between',
       paddingHorizontal: 16,
       paddingVertical: 12,
+      paddingTop: 30, // Increased from 20 to 30 to bring header down further
       backgroundColor: theme.colors.surface,
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
@@ -223,6 +224,17 @@ const OrderSelectionScreen = () => {
       color: theme.colors.secondary,
       textAlign: 'center',
       marginTop: 16,
+      marginBottom: 24,
+    },
+    loginButton: {
+      paddingHorizontal: 32,
+      paddingVertical: 12,
+      borderRadius: 8,
+    },
+    loginButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
     },
     orderCard: {
       backgroundColor: theme.colors.surface,
@@ -412,7 +424,7 @@ const OrderSelectionScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>
@@ -435,6 +447,12 @@ const OrderSelectionScreen = () => {
               <Text style={styles.emptyText}>
                 Login to view your orders.
               </Text>
+              <TouchableOpacity
+                style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
+                onPress={() => navigation.navigate('PhoneAuth' as any, { cartType: 'grocery' })}
+              >
+                <Text style={styles.loginButtonText}>Login / Sign Up</Text>
+              </TouchableOpacity>
             </View>
           ) : (
             <FlatList

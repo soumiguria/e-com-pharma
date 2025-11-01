@@ -81,7 +81,7 @@ const ProfileScreen = () => {
 
   if (!isAuthenticated || !user) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <View style={styles.centerContainer}>
           <Ionicons name="person-circle-outline" size={80} color={theme.colors.secondary} />
           <Text style={[styles.noUserText, { color: theme.colors.text }]}>
@@ -99,7 +99,7 @@ const ProfileScreen = () => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <ScrollView showsVerticalScrollIndicator={false}>
         {/* User Profile Header */}
         <View style={[styles.profileHeader, { backgroundColor: theme.colors.surface }]}>
@@ -193,6 +193,7 @@ const styles = StyleSheet.create({
   profileHeader: {
     padding: 20,
     margin: 16,
+    marginTop: 100,
     borderRadius: 12,
     flexDirection: 'row',
     alignItems: 'center',

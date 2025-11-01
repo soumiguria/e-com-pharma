@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import RazorpayPaymentButton from '../../components/payment/RazorpayPaymentButton';
 
 const PaymentExampleScreen = () => {
@@ -14,7 +15,7 @@ const PaymentExampleScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.content}>
         <Text style={styles.title}>Payment Example</Text>
         <Text style={styles.amount}>Amount: ₹11.22</Text>

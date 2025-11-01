@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  SafeAreaView,
   Dimensions,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -261,13 +261,24 @@ const EditProfileScreen = () => {
       marginTop: 16,
       textAlign: 'center',
       fontSize: 16,
+      marginBottom: 24,
+    },
+    loginButton: {
+      paddingHorizontal: 32,
+      paddingVertical: 12,
+      borderRadius: 8,
+    },
+    loginButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
     },
   });
 
   // Show loading or error state if not authenticated
   if (!isAuthenticated || !user) {
     return (
-      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity
@@ -283,6 +294,14 @@ const EditProfileScreen = () => {
             <Text style={[styles.noUserText, { color: theme.colors.text }]}>
               {!isAuthenticated ? 'Please login to edit your profile' : 'Loading user data...'}
             </Text>
+            {!isAuthenticated && (
+              <TouchableOpacity
+                style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
+                onPress={() => navigation.navigate('PhoneAuth' as any, { cartType: 'grocery' })}
+              >
+                <Text style={styles.loginButtonText}>Login / Sign Up</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </SafeAreaView>
@@ -290,7 +309,7 @@ const EditProfileScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity

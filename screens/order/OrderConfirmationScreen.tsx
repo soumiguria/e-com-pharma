@@ -6,10 +6,10 @@ import {
   TouchableOpacity,
   Image,
   Animated,
-  SafeAreaView,
   ScrollView,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -34,7 +34,7 @@ const OrderConfirmationScreen = () => {
 
   // Get order details from route params or use defaults
   const routeParams: any = route.params || {};
-  const { paymentData, orderId: routeOrderId, amount: routeAmount, orderData: routeOrderData } = routeParams;
+  const { paymentData, orderId: routeOrderId, amount: routeAmount, orderData: routeOrderData, prescriptionRequired } = routeParams;
   const routeStoreId = routeParams.storeId;
   const orderId = routeOrderId || `ORD${Date.now().toString().slice(-8)}`;
   const totalAmount = routeAmount || 460;
@@ -225,9 +225,11 @@ const OrderConfirmationScreen = () => {
       flexDirection: 'row',
       justifyContent: 'flex-end',
       padding: 16,
+      paddingTop: 20, // Add more top padding to bring close icon down
     },
     closeButton: {
       padding: 8,
+      marginTop: 10, // Add margin to push button down further
     },
     content: {
       flex: 1,
@@ -266,6 +268,32 @@ const OrderConfirmationScreen = () => {
       fontSize: 20,
       fontWeight: 'bold',
       color: theme.colors.primary,
+    },
+    prescriptionSection: {
+      alignItems: 'center',
+      marginBottom: 20,
+      paddingHorizontal: 20,
+    },
+    prescriptionButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      backgroundColor: theme.colors.primary,
+      paddingHorizontal: 24,
+      paddingVertical: 12,
+      borderRadius: 8,
+      marginBottom: 8,
+    },
+    prescriptionButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
+      marginLeft: 8,
+    },
+    prescriptionNote: {
+      fontSize: 14,
+      color: theme.colors.secondary,
+      textAlign: 'center',
+      fontStyle: 'italic',
     },
     divider: {
       height: 1,
@@ -375,7 +403,7 @@ const OrderConfirmationScreen = () => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       {/* Close Button */}
       <View style={styles.header}>
         <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
@@ -420,6 +448,22 @@ const OrderConfirmationScreen = () => {
           </Text>
           <Text style={styles.orderId}>{orderDetails.orderId}</Text>
         </View>
+
+        {/* Prescription Upload Section - Show only if prescriptionRequired is true */}
+        {prescriptionRequired && (
+          <View style={styles.prescriptionSection}>
+            <TouchableOpacity
+              style={styles.prescriptionButton}
+              onPress={() => navigation.navigate('UploadPrescription', { orderId: orderDetails.orderId })}
+            >
+              <MaterialIcons name="upload-file" size={24} color="#fff" />
+              <Text style={styles.prescriptionButtonText}>Upload Prescription</Text>
+            </TouchableOpacity>
+            <Text style={styles.prescriptionNote}>
+              Please upload your prescription to complete the order
+            </Text>
+          </View>
+        )}
 
         <View style={styles.divider} />
 

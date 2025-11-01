@@ -1,7 +1,7 @@
 // import React, { useState } from 'react';
 // import { View, StyleSheet, ScrollView, Platform, TouchableOpacity, Image } from 'react-native';
 // import { SafeAreaView } from 'react-native-safe-area-context';
-// import { Card, Text, Button, Chip } from 'react-native-paper';
+// import { Card, Text, Button, Badge } from 'native-base';
 // import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 // import { StackNavigationProp } from '@react-navigation/stack';
 // import { useTheme } from '../../contexts/ThemeContext';
@@ -382,7 +382,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, Platform, TouchableOpacity, Image, ActivityIndicator, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Card, Text, Button } from 'react-native-paper';
+import { Card, Text, Button } from 'native-base';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -407,31 +407,6 @@ interface Store {
   mobile?: string;
   totalItems?: number;
 }
-
-// Your fallback mock data
-const mockedStores: Store[] = [
-  {
-    id: '1',
-    name: 'Fresh Grocery Store',
-    type: 'grocery',
-    address: '123 Main Street, Downtown',
-    distance: '0.5 km',
-    rating: 4.5,
-    image: 'https://randomuser.me/api/portraits/men/1.jpg',
-    totalItems: 120,
-  },
-  {
-    id: '2',
-    name: 'Quick Pharmacy',
-    type: 'pharma',
-    address: '456 Park Avenue, Downtown',
-    distance: '1.2 km',
-    rating: 4.2,
-    image: 'https://randomuser.me/api/portraits/women/2.jpg',
-    totalItems: 80,
-  },
-  // ... rest of mock data
-];
 
 const StoreListScreen = () => {
   const navigation = useNavigation<NavigationProp>();
@@ -540,12 +515,12 @@ const StoreListScreen = () => {
         );
         
         if (!cancelled) {
-          setStores(storesWithDetails.length > 0 ? storesWithDetails : mockedStores.filter(s => s.type === activeTab));
+          setStores(storesWithDetails.length > 0 ? storesWithDetails : []);
         }
       } catch (error) {
         console.error('Error fetching stores:', error);
         if (!cancelled) {
-          setStores(mockedStores.filter(s => s.type === activeTab));
+          setStores([]);
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -558,7 +533,7 @@ const StoreListScreen = () => {
 
   const filteredStores = stores; // already filtered by type
 
-  const getGradientColors = () => {
+  const getGradientColors = (): [string, string] => {
     return activeTab === 'grocery'
       ? [colors.grocery.primary, colors.grocery.secondary]
       : [colors.pharma.primary, colors.pharma.secondary];
@@ -575,7 +550,7 @@ const StoreListScreen = () => {
   const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: colors.background },
     gradient: { flex: 1 },
-    content: { padding: spacing.lg },
+    content: { padding: spacing.md },
     header: { marginBottom: spacing.lg },
     title: { ...typography.h1, color: colors.surface, marginBottom: spacing.xs },
     subtitle: { ...typography.body1, color: colors.surface, opacity: 0.7 },
@@ -603,7 +578,7 @@ const StoreListScreen = () => {
         android: { elevation: 4 },
       }),
     },
-    cardContent: { padding: spacing.lg },
+    cardContent: { padding: spacing.md },
     storeHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: spacing.sm },
     storeName: { ...typography.h2, color: colors.text, flex: 1 },
     storeAddress: { ...typography.body1, color: colors.text, opacity: 0.7, marginBottom: spacing.sm },
@@ -615,6 +590,27 @@ const StoreListScreen = () => {
     },
     storeRating: { flexDirection: 'row', alignItems: 'center' },
     button: { marginTop: spacing.sm },
+    emptyState: {
+      flex: 1,
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: spacing.lg,
+      paddingVertical: spacing.xl,
+    },
+    emptyStateTitle: {
+      ...typography.h2,
+      color: colors.text,
+      marginTop: spacing.md,
+      marginBottom: spacing.sm,
+      textAlign: 'center',
+    },
+    emptyStateSubtitle: {
+      ...typography.body1,
+      color: colors.secondary,
+      textAlign: 'center',
+      marginBottom: spacing.sm,
+      lineHeight: 24,
+    },
   });
 
   return (
@@ -644,53 +640,61 @@ const StoreListScreen = () => {
           </View>
           
             {/* Store Cards */}
-          {filteredStores.map((store) => (
-            <Card key={store.id} style={styles.card}>
-              <Card.Content style={styles.cardContent}>
-                <View style={styles.storeHeader}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                    <Image
-                      source={store.image ? { uri: store.image } : require('../../assets/icon.png')}
-                      style={{ width: 32, height: 32, borderRadius: 16, marginRight: 10 }}
-                    />
-                    <Text style={styles.storeName}>{store.name}</Text>
+            {filteredStores.length > 0 ? (
+              filteredStores.map((store) => (
+                <Card key={store.id} style={styles.card}>
+                  <View style={styles.cardContent}>
+                    <View style={styles.storeHeader}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                        <Image
+                          source={store.image ? { uri: store.image } : require('../../assets/icon.png')}
+                          style={{ width: 32, height: 32, borderRadius: 16, marginRight: 10 }}
+                        />
+                        <Text style={styles.storeName}>{store.name}</Text>
+                      </View>
+                      <TouchableOpacity onPress={() => store.mobile && handleCallStore(store.mobile)}>
+                        <MaterialIcons name="call" size={20} color={colors.primary} />
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={styles.storeAddress}>{store.address}</Text>
+                    {/* <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                        <Text style={{ color: colors.secondary, fontSize: 13, marginRight: 4 }}>Total items:</Text>
+                        <Text style={{ color: colors.secondary, fontSize: 13, marginRight: 12 }}>{store.totalItems || 0}</Text>
+                    </View> */}
+                    <View style={styles.storeInfo}>
+                      <Text style={styles.storeDistance}>{store.distance}</Text>
+                      <View style={styles.storeRating}>
+                        <MaterialCommunityIcons
+                          name="star"
+                          size={16}
+                          color={store.type === 'grocery' ? colors.grocery.primary : colors.pharma.primary}
+                        />
+                        <Text style={{ marginLeft: 4 }}>{store.rating}</Text>
+                      </View>
+                    </View>
+                    <Button
+                      onPress={() => handleStoreSelect(store)}
+                      style={[styles.button, { backgroundColor: store.type === 'grocery' ? colors.grocery.primary : colors.pharma.primary }]}
+                      colorScheme="primary"
+                      size="lg"
+                    >
+                      Select Store
+                    </Button>
                   </View>
-                  <TouchableOpacity onPress={() => store.mobile && handleCallStore(store.mobile)}>
-                    <MaterialIcons name="call" size={20} color={colors.primary} />
-                  </TouchableOpacity>
-                </View>
-                <Text style={styles.storeAddress}>{store.address}</Text>
-                {/* <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                    <Text style={{ color: colors.secondary, fontSize: 13, marginRight: 4 }}>Total items:</Text>
-                    <Text style={{ color: colors.secondary, fontSize: 13, marginRight: 12 }}>{store.totalItems || 0}</Text>
-                </View> */}
-                <View style={styles.storeInfo}>
-                  <Text style={styles.storeDistance}>{store.distance}</Text>
-                  <View style={styles.storeRating}>
-                    <MaterialCommunityIcons
-                      name="star"
-                      size={16}
-                      color={store.type === 'grocery' ? colors.grocery.primary : colors.pharma.primary}
-                    />
-                    <Text style={{ marginLeft: 4 }}>{store.rating}</Text>
-                  </View>
-                </View>
-                <Button
-                  mode="contained"
-                  onPress={() => handleStoreSelect(store)}
-                  style={styles.button}
-                  theme={{
-                    roundness: borderRadius.md,
-                    colors: {
-                      primary: store.type === 'grocery' ? colors.grocery.primary : colors.pharma.primary,
-                    },
-                  }}
-                >
-                  Select Store
-                </Button>
-              </Card.Content>
-            </Card>
-          ))}
+                </Card>
+              ))
+            ) : (
+              <View style={styles.emptyState}>
+                <MaterialCommunityIcons name="store-off" size={64} color={colors.secondary} />
+                <Text style={styles.emptyStateTitle}>No Stores Found</Text>
+                <Text style={styles.emptyStateSubtitle}>
+                  Sorry, we couldn't find any {activeTab === 'grocery' ? 'grocery' : 'pharmacy'} stores in your area.
+                </Text>
+                <Text style={styles.emptyStateSubtitle}>
+                  Please try a different location or check back later.
+                </Text>
+              </View>
+            )}
         </ScrollView>
         )}
       </LinearGradient>

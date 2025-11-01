@@ -41,9 +41,9 @@ export const usePayment = ({ onSuccess, onError }: UsePaymentProps = {}) => {
                 onPress: () => {
                   // Navigate to order confirmation
                   navigation.navigate('OrderConfirmation', {
-                    orderId: response.data.orderId,
-                    orderData: response.data,
-                  });
+                    orderId: String(response.data.orderId),
+                    orderData: response.data as any,
+                  } as any);
                 },
               },
             ]
@@ -72,14 +72,14 @@ export const usePayment = ({ onSuccess, onError }: UsePaymentProps = {}) => {
       
       // Navigate to Razorpay checkout with order data
       navigation.navigate('RazorpayCheckout', {
-        orderId: orderData.orderId,
-        orderNumber: orderData.orderNo,
+        orderId: String(orderData.orderId),
         amount: originalOrderData.totalAmount || 0,
+        description: `Order ${orderData.orderNo}`,
         deliveryMethod: originalOrderData.deliveryMethod,
         cartType: originalOrderData.type || 'grocery',
-        isExistingOrder: true,
-        orderData: orderData,
-      });
+        isReorder: true,
+        reorderItems: originalOrderData.products,
+      } as any);
       
     } catch (error) {
       console.error('❌ Payment initiation failed:', error);

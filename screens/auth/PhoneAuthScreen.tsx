@@ -8,8 +8,8 @@ import {
   KeyboardAvoidingView,
   Platform,
   Alert,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -31,17 +31,23 @@ const PhoneAuthScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const handleContinue = async () => {
-    // Validate mobile number
-    if (mobileNumber.length < 10) {
-      Alert.alert('Invalid Mobile Number', 'Please enter a valid 10-digit mobile number');
+    // Clean mobile number - remove +91 if present
+    let cleanNumber = mobileNumber.replace(/^\+91/, '').replace(/\D/g, '');
+    
+    // Validate mobile number - allow 10 to 13 digits
+    if (cleanNumber.length < 10 || cleanNumber.length > 13) {
+      Alert.alert('Invalid Mobile Number', 'Please enter a valid mobile number (10-13 digits)');
       return;
     }
+    
+    // Use the cleaned number
+    const finalMobileNumber = cleanNumber;
 
     setIsLoading(true);
 
     try {
       // First, try to send OTP to check if user exists
-      const response = await sendOTP(mobileNumber);
+      const response = await sendOTP(finalMobileNumber);
       
       if (response.success) {
         // User exists, navigate to OTP verification screen
@@ -50,7 +56,7 @@ const PhoneAuthScreen = () => {
         const otpKey = response.data?.otpKey || '';
         console.log('OTP Key received:', otpKey);
         navigation.replace('OTPVerification', { 
-          phoneNumber: mobileNumber,
+          phoneNumber: finalMobileNumber,
           cartType,
           isRegistration: false,
           otpKey: otpKey // Pass otpKey to OTP verification screen
@@ -65,7 +71,7 @@ const PhoneAuthScreen = () => {
           console.log('Customer not found, redirecting to registration');
           // Customer not found, redirect to registration
           navigation.replace('Register', { 
-            phoneNumber: mobileNumber,
+            phoneNumber: finalMobileNumber,
             cartType
           });
         } else {
@@ -154,7 +160,7 @@ const PhoneAuthScreen = () => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -173,10 +179,17 @@ const PhoneAuthScreen = () => {
               style={styles.input}
               placeholder="Mobile Number"
               keyboardType="phone-pad"
-              maxLength={10}
+              maxLength={15}
               value={mobileNumber}
               onChangeText={setMobileNumber}
               placeholderTextColor={theme.colors.secondary}
+              autoComplete="tel"
+              textContentType="telephoneNumber"
+              importantForAutofill="yes"
+              autoFocus={true}
+              returnKeyType="done"
+              dataDetectorTypes="phoneNumber"
+              enablesReturnKeyAutomatically={true}
             />
           </View>
         </View>
@@ -184,10 +197,10 @@ const PhoneAuthScreen = () => {
         <TouchableOpacity
           style={[
             styles.continueButton,
-            mobileNumber.length !== 10 && styles.disabledButton,
+            (mobileNumber.replace(/^\+91/, '').replace(/\D/g, '').length < 10 || mobileNumber.replace(/^\+91/, '').replace(/\D/g, '').length > 13) && styles.disabledButton,
           ]}
           onPress={handleContinue}
-          disabled={mobileNumber.length !== 10 || isLoading}
+          disabled={(mobileNumber.replace(/^\+91/, '').replace(/\D/g, '').length < 10 || mobileNumber.replace(/^\+91/, '').replace(/\D/g, '').length > 13) || isLoading}
         >
           <Text style={styles.continueButtonText}>Continue</Text>
         </TouchableOpacity>

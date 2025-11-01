@@ -24,6 +24,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'OTPVerification'>;
 type OTPVerificationRouteProp = RouteProp<RootStackParamList, 'OTPVerification'>;
 
+
 const OTPVerificationScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<OTPVerificationRouteProp>();
@@ -40,61 +41,115 @@ const OTPVerificationScreen = () => {
   // Get the actual phone number - use user's mobile if coming from cart (logged in user)
   const actualPhoneNumber = phoneNumber || user?.mobile || '';
 
-  // Auto-read OTP functionality
+  // Auto-read OTP functionality - SDK 54 compatible
   useEffect(() => {
     const checkForOTP = async () => {
       try {
-        const hasSMSPermission = await SMS.isAvailableAsync();
-        if (hasSMSPermission) {
-          // Check for OTP in SMS after a short delay
-          setTimeout(async () => {
-            try {
-              const otpFromSMS = await extractOTPFromSMS();
-              if (otpFromSMS && otpFromSMS.length === 6) {
-                console.log('📱 Auto-detected OTP:', otpFromSMS);
-                const otpArray = otpFromSMS.split('');
-                setOtp(otpArray);
-                // Auto-verify after setting OTP
-                setTimeout(() => {
-                  if (!autoVerifyAttempted) {
-                    setAutoVerifyAttempted(true);
-                    handleVerifyOTP();
-                  }
-                }, 500);
-              }
-            } catch (error) {
-              console.log('Auto OTP detection failed:', error);
-            }
-          }, 2000);
-        }
+        console.log('📱 OTP autofill ready for SDK 54');
+        
+        // SMS autofill will work through the TextInput attributes
+        console.log('📱 Using TextInput autofill properties');
+        
+        // Simulate OTP detection for testing (remove in production)
+        setTimeout(() => {
+          console.log('📱 Simulating OTP detection for testing...');
+          // Uncomment below line for testing
+          // const simulatedOTP = '123456';
+          // const otpArray = simulatedOTP.split('');
+          // setOtp(otpArray);
+        }, 3000);
       } catch (error) {
-        console.log('SMS permission check failed:', error);
+        console.log('OTP setup error:', error);
       }
     };
 
     checkForOTP();
   }, []);
 
-  // Extract OTP from SMS (simplified version)
-  const extractOTPFromSMS = async (): Promise<string | null> => {
-    try {
-      // This is a simplified implementation
-      // In a real app, you would use a library like react-native-sms-retriever
-      // For now, we'll return null and let the user enter manually
-      return null;
-    } catch (error) {
-      console.log('Error extracting OTP from SMS:', error);
-      return null;
-    }
-  };
 
-  // Handle OTP input change
+
+
+  // Handle OTP input change - SDK 54 compatible
   const handleOtpChange = (value: string, index: number) => {
-    const newOtp = [...otp];
-    newOtp[index] = value;
-    setOtp(newOtp);
-    if (value && index < 5) {
-      inputRefs.current[index + 1]?.focus();
+    console.log(`🔍 OTP Input ${index}: "${value}" (length: ${value.length})`);
+    
+    // Handle paste/autofill - if value is longer than 1, it's likely a paste
+    if (value.length > 1) {
+      console.log('📋 Paste/autofill detected:', value);
+      
+      // Extract alphanumeric characters and limit to 6
+      const characters = value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6);
+      console.log('🔤 Extracted characters:', characters);
+      
+      const newOtp = ['', '', '', '', '', ''];
+      
+      // Fill all characters
+      for (let i = 0; i < characters.length; i++) {
+        newOtp[i] = characters[i];
+      }
+      
+      console.log('📝 New OTP array:', newOtp);
+      setOtp(newOtp);
+      
+      // Focus the last filled input
+      const lastFilledIndex = Math.min(characters.length - 1, 5);
+      setTimeout(() => {
+        inputRefs.current[lastFilledIndex]?.focus();
+      }, 100);
+      
+      // Auto-verify when all 6 characters are filled
+      if (characters.length === 6) {
+        setTimeout(() => {
+          if (!autoVerifyAttempted) {
+            setAutoVerifyAttempted(true);
+            handleVerifyOTP();
+          }
+        }, 500);
+      }
+      return;
+    }
+    
+    // Single character input - allow digits and characters
+    if (value.length === 1) {
+      console.log(`✅ Valid input: ${value} at index ${index}`);
+      setOtp(prevOtp => {
+        const newOtp = [...prevOtp];
+        newOtp[index] = value;
+        console.log('📝 Updated OTP array:', newOtp);
+        return newOtp;
+      });
+      
+      // Auto-focus next input
+      if (index < 5) {
+        setTimeout(() => {
+          inputRefs.current[index + 1]?.focus();
+        }, 50);
+      }
+      
+      // Auto-verify when all characters are filled
+      setTimeout(() => {
+        setOtp(currentOtp => {
+          if (currentOtp.every(char => char !== '') && index === 5) {
+            if (!autoVerifyAttempted) {
+              setAutoVerifyAttempted(true);
+              handleVerifyOTP();
+            }
+          }
+          return currentOtp;
+        });
+      }, 100);
+    } else if (value.length === 0) {
+      // Handle backspace/clear
+      console.log(`🗑️ Clearing input at index ${index}`);
+      setOtp(prevOtp => {
+        const newOtp = [...prevOtp];
+        newOtp[index] = '';
+        console.log('📝 Cleared OTP array:', newOtp);
+        return newOtp;
+      });
+    } else {
+      // Invalid input - ignore
+      console.log(`❌ Invalid input: "${value}" at index ${index}`);
     }
   };
 
@@ -110,7 +165,7 @@ const OTPVerificationScreen = () => {
   const handleVerifyOTP = async () => {
     const otpString = otp.join('');
     if (otpString.length !== 6) {
-      Alert.alert('Error', 'Please enter a valid 6-digit OTP');
+      console.log('❌ OTP length is not 6:', otpString.length);
       return;
     }
     setIsLoading(true);
@@ -311,21 +366,60 @@ const OTPVerificationScreen = () => {
             <Text style={styles.phoneText}>+91 {actualPhoneNumber}</Text>
           </View>
 
-          <View style={styles.otpContainer}>
-            {otp.map((digit, index) => (
-              <TextInput
-                key={index}
-                ref={(ref) => (inputRefs.current[index] = ref)}
-                style={styles.otpInput}
-                value={digit}
-                onChangeText={(value) => handleOtpChange(value, index)}
-                onKeyPress={(e) => handleKeyPress(e, index)}
-                keyboardType="default"
-                maxLength={1}
-                selectTextOnFocus
-              />
-            ))}
-          </View>
+          {/* Hidden TextInput for autofill */}
+          <TextInput
+            style={{ position: 'absolute', left: -1000, opacity: 0, height: 0 }}
+            autoComplete="sms-otp"
+            textContentType="oneTimeCode"
+            keyboardType="default"
+            maxLength={6}
+            onChangeText={(value) => {
+              console.log('🔍 Hidden autofill input:', value);
+              if (value && value.length >= 4) {
+                const characters = value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 6);
+                console.log('🔤 Hidden input extracted characters:', characters);
+                const newOtp = ['', '', '', '', '', ''];
+                for (let i = 0; i < characters.length; i++) {
+                  newOtp[i] = characters[i];
+                }
+                console.log('📝 Hidden input new OTP array:', newOtp);
+                setOtp(newOtp);
+                if (characters.length === 6) {
+                  setTimeout(() => {
+                    if (!autoVerifyAttempted) {
+                      setAutoVerifyAttempted(true);
+                      handleVerifyOTP();
+                    }
+                  }, 500);
+                }
+              }
+            }}
+          />
+
+           <View style={styles.otpContainer}>
+              {otp.map((digit, index) => (
+                <TextInput
+                  key={index}
+                  ref={(ref) => {inputRefs.current[index] = ref}}
+                  style={styles.otpInput}
+                  value={digit}
+                  onChangeText={(value) => handleOtpChange(value, index)}
+                  onKeyPress={(e) => handleKeyPress(e, index)}
+                  keyboardType="default"
+                  maxLength={1}
+                  selectTextOnFocus
+                  autoComplete="sms-otp"
+                  textContentType="oneTimeCode"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  importantForAutofill="yes"
+                  autoFocus={index === 0}
+                  returnKeyType="next"
+                  contextMenuHidden={false}
+                  dataDetectorTypes="none"
+                />
+              ))}
+           </View>
 
           <TouchableOpacity
             style={styles.verifyButton}

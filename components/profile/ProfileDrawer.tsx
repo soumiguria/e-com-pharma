@@ -174,7 +174,7 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
     {
       key: 'settings',
       items: [
-        { icon: 'store', label: 'Change Store', onPress: handleChangeStorePress },
+        { icon: 'store-edit', label: 'Change Store', onPress: handleChangeStorePress },
         { icon: 'cog', label: 'Settings', onPress: handleSettingsPress },
         { icon: 'bell', label: 'Notifications', onPress: handleNotificationsPress },
         { icon: 'logout', label: 'Logout', onPress: handleLogoutPress },
@@ -193,6 +193,7 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
     {
       key: 'store',
       items: [
+        { icon: 'store-edit', label: 'Change Store', onPress: handleChangeStorePress },
         { icon: 'store', label: 'About Store', onPress: handleAboutStorePress },
         { icon: 'phone', label: 'Contact Store', onPress: handleContactStorePress },
         { icon: 'map-marker-radius', label: 'Locate this Store', onPress: handleLocateStorePress },
@@ -208,6 +209,14 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
   ];
 
   const menuSections = isAuthenticated ? authenticatedMenuSections : nonAuthenticatedMenuSections;
+  
+  // Debug logging for menu sections
+  console.log('🔍 ProfileDrawer Menu Debug:', {
+    isAuthenticated,
+    hasUser: !!user,
+    menuSectionsLength: menuSections.length,
+    currentMenuSections: menuSections.map(s => ({ key: s.key, itemsCount: s.items.length, items: s.items.map(i => i.label) }))
+  });
 
   const renderMenuSection = (section: any, idx: number) => (
     <View
@@ -305,12 +314,14 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
     zIndex: 1000,
+    paddingTop: 25, // Reduced from 40 to 25
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },
@@ -327,7 +338,7 @@ const styles = StyleSheet.create({
   menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: 12,
     // No borderBottom for a cleaner look
   },
   menuText: {
@@ -337,14 +348,14 @@ const styles = StyleSheet.create({
   },
   separator: {
     height: 1,
-    marginVertical: 8,
+    marginVertical: 4,
     marginHorizontal: 16,
   },
   themeToggleBottomContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 16,
+    padding: 12,
     borderTopWidth: 1,
     borderTopColor: '#eee',
     backgroundColor: '#fff',
@@ -366,7 +377,7 @@ const styles = StyleSheet.create({
     elevation: 1,
   },
   userProfileSection: {
-    padding: 16,
+    padding: 12,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
   },

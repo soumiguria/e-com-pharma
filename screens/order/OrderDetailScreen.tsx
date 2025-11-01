@@ -6,9 +6,9 @@ import {
   TouchableOpacity,
   Image,
   ScrollView,
-  SafeAreaView,
   Alert,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
@@ -747,7 +747,7 @@ const OrderDetailScreen = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={[styles.container, { padding: 16 }]}>
           <View style={styles.header}>
             <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', minWidth: 0 }}>
@@ -772,7 +772,7 @@ const OrderDetailScreen = () => {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={[styles.container, { padding: 16 }]}>
         {/* Header */}
         <View style={styles.header}>

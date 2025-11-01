@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   Image,
   FlatList,
-  SafeAreaView,
   TextInput,
   ScrollView,
   ActivityIndicator,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
@@ -23,87 +23,6 @@ import { useAppContext } from '../../contexts/AppContext';
 import storeService from '../../services/api/storeService';
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SearchScreen'>;
-
-// Mock data
-const mockRecentSearches = [
-  'apples',
-  'milk',
-  'bread',
-  'chicken',
-  'rice',
-];
-
-const mockSavedProducts = [
-  {
-    id: '1',
-    name: 'Organic Apples',
-    price: 2.99,
-    image: 'https://images.pexels.com/photos/2093087/pexels-photo-2093087.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '2',
-    name: 'Fresh Milk',
-    price: 3.49,
-    image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '3',
-    name: 'Whole Grain Bread',
-    price: 1.99,
-    image: 'https://images.pexels.com/photos/1721934/pexels-photo-1721934.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-];
-
-const mockUnder99Products = [
-  {
-    id: '4',
-    name: 'Bananas',
-    price: 0.99,
-    image: 'https://images.pexels.com/photos/47305/bananas-banana-bunch-yellow-47305.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '5',
-    name: 'Onions',
-    price: 0.79,
-    image: 'https://images.pexels.com/photos/144206/pexels-photo-144206.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '6',
-    name: 'Tomatoes',
-    price: 0.89,
-    image: 'https://images.pexels.com/photos/1327838/pexels-photo-1327838.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-];
-
-const mockUnder199Products = [
-  {
-    id: '7',
-    name: 'Chicken Breast',
-    price: 8.99,
-    image: 'https://images.pexels.com/photos/3997388/pexels-photo-3997388.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '8',
-    name: 'Rice 1kg',
-    price: 3.99,
-    image: 'https://images.pexels.com/photos/4110225/pexels-photo-4110225.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '9',
-    name: 'Cooking Oil',
-    price: 4.99,
-    image: 'https://images.pexels.com/photos/4110225/pexels-photo-4110225.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-];
 
 interface SearchResult {
   categories: any[];
@@ -436,6 +355,7 @@ const SearchScreen = () => {
       alignItems: 'center',
       paddingHorizontal: 16,
       paddingVertical: 12,
+      paddingTop: 30,
       backgroundColor: theme.colors.surface,
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
@@ -621,7 +541,7 @@ const SearchScreen = () => {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         {/* Header with Search */}
           <View style={styles.header}>
@@ -774,7 +694,7 @@ const SearchScreen = () => {
                                       {product.manufacturer || 'Generic'}
                                     </Text>
                                     <Text style={{ fontSize: 14, color: theme.colors.primary, fontWeight: 'bold', textAlign: 'center' }}>
-                                      ₹{product.sp || product.mrp || '0'}
+                                      ₹{parseFloat(product.sp || product.mrp || '0').toFixed(2)}
                                     </Text>
                                   </TouchableOpacity>
                                 );

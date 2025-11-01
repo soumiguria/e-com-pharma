@@ -5,12 +5,12 @@ import {
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  SafeAreaView,
   Alert,
   Image,
   Platform,
   Linking,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -184,6 +184,7 @@ const UploadPrescriptionScreen = () => {
       alignItems: 'center',
       paddingHorizontal: 16,
       paddingVertical: 12,
+      paddingTop: 20, // Add more top padding to bring header down
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
       backgroundColor: theme.colors.surface,
@@ -341,7 +342,7 @@ const UploadPrescriptionScreen = () => {
       lineHeight: 20,
     },
     uploadButton: {
-      backgroundColor: theme.colors.primary,
+      backgroundColor: theme.colors.tertiary,
       paddingVertical: 16,
       borderRadius: 12,
       alignItems: 'center',
@@ -393,7 +394,7 @@ const UploadPrescriptionScreen = () => {
   ];
 
   return (
-    <SafeAreaView style={themedStyles.container}>
+    <SafeAreaView style={themedStyles.container} edges={['top']}>
       <View style={themedStyles.header}>
         <TouchableOpacity 
           style={themedStyles.backButton}

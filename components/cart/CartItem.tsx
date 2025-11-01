@@ -47,7 +47,10 @@ const CartItem = ({ item, onRemove }: { item: any, onRemove: () => void }) => {
   return (
     <View style={styles.container}>
       <View>
-        <Text style={styles.name}>{item.name}</Text>
+        <Text style={styles.name}>
+  {item.name.length > 20 ? `${item.name.slice(0, 10)}...` : item.name}
+</Text>
+
         <View style={styles.details}>
           <Text style={styles.price}>₹{item.price.toFixed(2)}</Text>
           {item.originalPrice && item.originalPrice > item.price && (

@@ -6,6 +6,7 @@
     "orientation": "portrait",
     "icon": "./assets/paas-ki-dukaan-icon.png",
     "scheme": "paaskidukaan",
+    "sdkVersion": "54.0.0",
     "updates": {
       "fallbackToCacheTimeout": 0
     },
@@ -119,7 +120,38 @@
           "photosPermission": "The app accesses your photos to let you share them.",
           "cameraPermission": "The app accesses your camera to let you take photos of prescriptions."
         }
-      ]
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 35,
+            "targetSdkVersion": 35,
+            "minSdkVersion": 24,
+            "enableProguardInReleaseBuilds": false,
+            "enableShrinkResourcesInReleaseBuilds": false,
+            "packagingOptions": {
+              "pickFirst": [
+                "**/libc++_shared.so",
+                "META-INF/androidx.localbroadcastmanager_localbroadcastmanager.version",
+                "META-INF/*.version"
+              ],
+              "exclude": [
+                "META-INF/DEPENDENCIES",
+                "META-INF/LICENSE",
+                "META-INF/LICENSE.txt",
+                "META-INF/license.txt",
+                "META-INF/NOTICE",
+                "META-INF/NOTICE.txt",
+                "META-INF/notice.txt",
+                "META-INF/ASL2.0"
+              ]
+            }
+          }
+        }
+      ],
+      "expo-font",
+      "./app.plugin.js"
     ]
   }
 }

@@ -48,6 +48,7 @@ export interface PlaceOrderResponse {
   status: string;
   activities: any[];
   createdAt: string;
+  prescriptionRequired?: boolean; // Add prescriptionRequired field
   createdBy: string | null;
   updatedAt: string | null;
   deletedAt: string | null;
@@ -291,8 +292,8 @@ class OrderService {
       console.error(' Request headers:', error.config?.headers);
       console.error(' Request data:', error.config?.data);
       
-      // If API fails, return mock data as fallback
-      console.log('  API failed, returning mock order data as fallback');
+      // If API fails, return error
+      console.log('  API failed for order creation');
       return {
         success: true,
         data: {

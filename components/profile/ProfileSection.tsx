@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, Animated } from 'react-native';
-import { Text, Card, Button, Avatar, List } from 'react-native-paper';
+import { Text, Card, Button, Avatar, VStack, HStack } from 'native-base';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,7 +21,7 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ scrollY }) => {
       padding: spacing.lg,
       backgroundColor: colors.surface,
       borderBottomWidth: 1,
-      borderBottomColor: colors.outline,
+      borderBottomColor: colors.secondary,
     },
     title: {
       ...typography.h1,
@@ -83,57 +83,49 @@ const ProfileSection: React.FC<ProfileSectionProps> = ({ scrollY }) => {
       </Animated.View>
       <ScrollView style={styles.content}>
         <Card style={styles.profileCard}>
-          <Card.Content style={styles.profileContent}>
-            <Avatar.Text
+          <View style={styles.profileContent}>
+            <Avatar
               size={80}
-              label="JD"
               style={styles.avatar}
-            />
+            >
+              <Text>JD</Text>
+            </Avatar>
             <Text style={styles.name}>John Doe</Text>
             <Text style={styles.email}>john.doe@example.com</Text>
-          </Card.Content>
+          </View>
         </Card>
 
         <Card style={styles.menuCard}>
-          <List.Section>
-            <List.Item
-              title="My Orders"
-              left={props => <List.Icon {...props} icon="package-variant" />}
-              style={styles.menuItem}
-              onPress={() => {}}
-            />
-            <List.Item
-              title="Delivery Addresses"
-              left={props => <List.Icon {...props} icon="map-marker" />}
-              style={styles.menuItem}
-              onPress={() => {}}
-            />
-            <List.Item
-              title="Payment Methods"
-              left={props => <List.Icon {...props} icon="credit-card" />}
-              style={styles.menuItem}
-              onPress={() => {}}
-            />
-            <List.Item
-              title="Notifications"
-              left={props => <List.Icon {...props} icon="bell" />}
-              style={styles.menuItem}
-              onPress={() => {}}
-            />
-            <List.Item
-              title="Help & Support"
-              left={props => <List.Icon {...props} icon="help-circle" />}
-              style={styles.menuItem}
-              onPress={() => {}}
-            />
-          </List.Section>
+          <VStack space={2} p={4}>
+            <HStack space={3} alignItems="center" p={2}>
+              <MaterialCommunityIcons name="package-variant" size={24} color={colors.primary} />
+              <Text style={styles.menuItem}>My Orders</Text>
+            </HStack>
+            <HStack space={3} alignItems="center" p={2}>
+              <MaterialCommunityIcons name="map-marker" size={24} color={colors.primary} />
+              <Text style={styles.menuItem}>Delivery Addresses</Text>
+            </HStack>
+            <HStack space={3} alignItems="center" p={2}>
+              <MaterialCommunityIcons name="credit-card" size={24} color={colors.primary} />
+              <Text style={styles.menuItem}>Payment Methods</Text>
+            </HStack>
+            <HStack space={3} alignItems="center" p={2}>
+              <MaterialCommunityIcons name="bell" size={24} color={colors.primary} />
+              <Text style={styles.menuItem}>Notifications</Text>
+            </HStack>
+            <HStack space={3} alignItems="center" p={2}>
+              <MaterialCommunityIcons name="help-circle" size={24} color={colors.primary} />
+              <Text style={styles.menuItem}>Help & Support</Text>
+            </HStack>
+          </VStack>
         </Card>
 
         <Button
-          mode="outlined"
+          variant="outline"
           onPress={() => {}}
           style={styles.logoutButton}
-          theme={{ roundness: borderRadius.md }}
+          colorScheme="primary"
+          size="lg"
         >
           Log Out
         </Button>

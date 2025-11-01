@@ -1,71 +1,32 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-// Mock wishlist data
-const mockWishlistItems = [
-  {
-    id: '1',
-    name: 'Organic Apples',
-    brand: 'Fresh Farms',
-    price: 120,
-    originalPrice: 150,
-    image: 'https://images.pexels.com/photos/2093087/pexels-photo-2093087.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    inStock: true,
-  },
-  {
-    id: '2',
-    name: 'Bananas',
-    brand: 'Tropical Fruits',
-    price: 80,
-    originalPrice: 100,
-    image: 'https://images.pexels.com/photos/1093038/pexels-photo-1093038.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    inStock: true,
-  },
-  {
-    id: '3',
-    name: 'Milk 1L',
-    brand: 'Dairy Fresh',
-    price: 260,
-    originalPrice: 280,
-    image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    inStock: false,
-  },
-  {
-    id: '4',
-    name: 'Whole Wheat Bread',
-    brand: 'Bakery Fresh',
-    price: 75,
-    originalPrice: 90,
-    image: 'https://images.pexels.com/photos/1721934/pexels-photo-1721934.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    inStock: true,
-  },
-];
-
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const MyWishlistScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const [wishlistItems, setWishlistItems] = useState(mockWishlistItems);
+  const [wishlistItems, setWishlistItems] = useState<any[]>([]);
 
   const removeFromWishlist = (itemId: string) => {
     setWishlistItems(prev => prev.filter(item => item.id !== itemId));
   };
 
-  const renderWishlistItem = ({ item }: { item: typeof mockWishlistItems[0] }) => (
+  const renderWishlistItem = ({ item }: { item: any }) => (
     <View style={[styles.wishlistItem, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
       <Image source={{ uri: item.image }} style={styles.itemImage} />
       <View style={styles.itemInfo}>
         <Text style={[styles.itemName, { color: theme.colors.text }]} numberOfLines={2}>{item.name}</Text>
         <Text style={[styles.itemBrand, { color: theme.colors.secondary }]}>{item.brand}</Text>
         <View style={styles.priceRow}>
-          <Text style={[styles.itemPrice, { color: theme.colors.primary }]}>₹{item.price}</Text>
-          <Text style={[styles.originalPrice, { color: theme.colors.secondary }]}>₹{item.originalPrice}</Text>
+          <Text style={[styles.itemPrice, { color: theme.colors.primary }]}>₹{Number(item.price).toFixed(2)}</Text>
+          <Text style={[styles.originalPrice, { color: theme.colors.secondary }]}>₹{Number(item.originalPrice).toFixed(2)}</Text>
         </View>
         {!item.inStock && (
           <Text style={[styles.outOfStock, { color: theme.colors.error }]}>Out of Stock</Text>
@@ -94,7 +55,7 @@ const MyWishlistScreen = () => {
   );
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.text} />

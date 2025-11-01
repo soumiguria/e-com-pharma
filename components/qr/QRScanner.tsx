@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, Alert, Text } from 'react-native';
+import * as React from 'react';
+import { useState } from 'react';
+import { View, StyleSheet, Alert, Text, TouchableOpacity } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import { Button } from 'react-native-paper';
-import { useTheme } from 'react-native-paper';
+import { useTheme } from '../../contexts/ThemeContext';
 import deepLinkingService from '../../services/deepLinkingService';
-import QRCodeScanner from 'react-native-qrcode-scanner';
-import { RNCamera } from 'react-native-camera';
+// @ts-ignore - react-native-qrcode-scanner doesn't have types
+const QRCodeScanner = require('react-native-qrcode-scanner').default;
 
 interface QRScannerProps {
   onClose?: () => void;
@@ -148,21 +148,20 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose }) => {
   return (
     <View style={styles.container}>
       <QRCodeScanner
-        onRead={(e) => handleQRCode(e.data)}
-        flashMode={RNCamera.Constants.FlashMode.auto}
+        onRead={(e: any) => handleQRCode(e.data)}
+        flashMode="auto"
         topContent={
           <Text style={styles.centerText}>
             Point camera at store QR code
           </Text>
         }
         bottomContent={
-          <Button 
-            mode="contained" 
+          <TouchableOpacity
             onPress={onClose}
-            style={styles.buttonTouchable}
+            style={styles.closeButton}
           >
-            Close Scanner
-          </Button>
+            <Text style={styles.closeButtonText}>Close Scanner</Text>
+          </TouchableOpacity>
         }
         cameraStyle={styles.camera}
         showMarker={true}
@@ -196,6 +195,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#007AFF',
     marginTop: 32,
+  },
+  closeButton: {
+    backgroundColor: '#1A7B50',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 8,
+    marginTop: 32,
+  },
+  closeButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
   camera: {
     height: '100%',

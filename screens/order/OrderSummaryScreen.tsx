@@ -7,8 +7,8 @@ import {
   TouchableOpacity,
   Image,
   Alert,
-  SafeAreaView,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -292,7 +292,7 @@ const OrderSummaryScreen = () => {
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <LoadingOverlay visible={true} message="Loading order details..." />
       </SafeAreaView>
     );
@@ -300,7 +300,7 @@ const OrderSummaryScreen = () => {
 
   if (!orderSummary) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
         <View style={styles.errorContainer}>
           <MaterialIcons name="error-outline" size={64} color={theme.colors.text} />
           <Text style={[styles.errorText, { color: theme.colors.text }]}>
@@ -312,7 +312,7 @@ const OrderSummaryScreen = () => {
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       {/* Header */}
       <View style={[styles.header, { backgroundColor: theme.colors.surface }]}>
         <TouchableOpacity
@@ -533,6 +533,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
+    paddingTop: 30, // Increased from 20 to 30 to bring header down further
     elevation: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },

@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, FlatList, ScrollView, Dimensions, Modal, Pressable, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -9,43 +10,6 @@ import ThemedButton from '../../components/ui/ThemedButton';
 import { useCart } from '../../contexts/CartContext';
 
 const { width, height } = Dimensions.get('window');
-
-// Dummy data for demonstration (should be replaced with real data)
-const ALL_PRODUCTS = [
-  {
-    id: 'prod1',
-    name: 'Amul Milk 1L',
-    price: 65,
-    image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg',
-    brand: 'Amul',
-    availableQty: 20,
-  },
-  {
-    id: 'prod2',
-    name: 'Amul Paneer 200g',
-    price: 85,
-    image: 'https://blinkit.com/images/products/400/amul-paneer.jpg',
-    brand: 'Amul',
-    availableQty: 8,
-  },
-  {
-    id: 'prod3',
-    name: 'Mother Dairy Curd',
-    price: 30,
-    image: 'https://blinkit.com/images/products/400/mother-dairy-dahi.jpg',
-    brand: 'Mother Dairy',
-    availableQty: 15,
-  },
-  {
-    id: 'prod4',
-    name: 'Britannia Cheese Slices',
-    price: 120,
-    image: 'https://blinkit.com/images/products/400/britannia-cheese-slices.jpg',
-    brand: 'Britannia',
-    availableQty: 12,
-  },
-  // ...add more products for demo
-];
 
 type BrandDetailRouteProp = RouteProp<RootStackParamList, 'BrandDetail'>;
 
@@ -57,6 +21,8 @@ const BrandDetailScreen = () => {
   const { theme } = useTheme();
   const { addToGroceryCart, removeFromCart } = useCart();
   const { brand } = route.params;
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<'relevance' | 'price_low_high' | 'price_high_low' | 'a_z' | 'z_a'>('relevance');
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
@@ -72,16 +38,16 @@ const BrandDetailScreen = () => {
     { key: 'DietPref', label: 'Diet Prefe..' },
   ];
 
-  // Filter products by brand
-  let products = ALL_PRODUCTS.filter(p => p.brand === brand);
+  // Filter products by brand - now using state instead of mock data
+  let filteredProducts = products;
   if (sortBy === 'price_low_high') {
-    products = [...products].sort((a, b) => a.price - b.price);
+    filteredProducts = [...products].sort((a, b) => a.price - b.price);
   } else if (sortBy === 'price_high_low') {
-    products = [...products].sort((a, b) => b.price - a.price);
+    filteredProducts = [...products].sort((a, b) => b.price - a.price);
   } else if (sortBy === 'a_z') {
-    products = [...products].sort((a, b) => a.name.localeCompare(b.name));
+    filteredProducts = [...products].sort((a, b) => a.name.localeCompare(b.name));
   } else if (sortBy === 'z_a') {
-    products = [...products].sort((a, b) => b.name.localeCompare(a.name));
+    filteredProducts = [...products].sort((a, b) => b.name.localeCompare(a.name));
   }
 
   const sortOptions = [
@@ -93,7 +59,7 @@ const BrandDetailScreen = () => {
   ];
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={['top']}>
       {/* Top Bar */}
       <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, backgroundColor: theme.colors.surface, borderBottomWidth: 1, borderBottomColor: theme.colors.border }}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={{ marginRight: 10 }}>
@@ -122,7 +88,7 @@ const BrandDetailScreen = () => {
       </View>
       {/* Products List */}
       <FlatList
-        data={products}
+        data={filteredProducts}
         keyExtractor={item => item.id}
         showsVerticalScrollIndicator={true}
         contentContainerStyle={{ padding: 12, paddingBottom: 30 }}
@@ -293,7 +259,7 @@ const BrandDetailScreen = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

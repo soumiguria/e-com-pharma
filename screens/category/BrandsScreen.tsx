@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, SafeAreaView, Alert, TextInput } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, Image, Alert, TextInput } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import { Appbar } from 'react-native-paper';
+import { Box, HStack, Text, IconButton } from 'native-base';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const brands = [
@@ -50,11 +51,18 @@ const BrandsScreen = () => {
     </TouchableOpacity>
   );
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <Appbar.Header style={{ backgroundColor: theme.colors.card, elevation: 0 }}>
-        <Appbar.BackAction onPress={() => navigation.goBack()} color={theme.colors.text} />
-        <Appbar.Content title="All Brands" titleStyle={{ color: theme.colors.text, fontWeight: 'bold', fontSize: 20 }} />
-      </Appbar.Header>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={['top']}>
+      <Box bg={theme.colors.card} px={4} py={3} flexDirection="row" alignItems="center">
+        <IconButton
+          icon={<MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.text} />}
+          onPress={() => navigation.goBack()}
+          variant="ghost"
+          size="sm"
+        />
+        <Text color={theme.colors.text} fontSize="lg" fontWeight="bold" flex={1} textAlign="center">
+          All Brands
+        </Text>
+      </Box>
       <View style={{ marginBottom: 16, marginTop: 12, padding: 12 }}>
         <View style={{
           flexDirection: 'row',

@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
 import { Linking } from 'react-native';
-import { PaperProvider } from 'react-native-paper';
+import { NativeBaseProvider } from 'native-base';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import AppNavigator from './navigation/AppNavigator';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
@@ -18,6 +18,7 @@ import { useNavigation, useNavigationState } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { TouchableOpacity, Text } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from './navigation/types';
 
 const getDeepestRouteName = (navState: any) => {
@@ -32,6 +33,7 @@ const getDeepestRouteName = (navState: any) => {
 const FloatingCartButton = () => {
   const { totalItems } = useCart();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
+  const insets = useSafeAreaInsets();
 
   // Get current route name (deepest focused route)
   const navState = useNavigationState(state => state);
@@ -46,10 +48,18 @@ const FloatingCartButton = () => {
       'Pincode',
       'StoreList',
       'SearchScreen',
-      ...homeRouteNames,
-    ].includes(currentRoute) ||
-    // Also hide if currentRoute contains 'Home' (for nested routes, tab names, etc.)
-    (currentRoute && currentRoute.toLowerCase().includes('home'))
+      'Profile',
+      'EditProfile',
+      'MyAddresses',
+      'AddAddress',
+      'Settings',
+      'MyWishlist',
+      'RecentlyBought',
+      'SavedProducts',
+      'Home',
+      'HomeScreen',
+      'HomeRoot',
+    ].includes(currentRoute)
   ) return null;
 
   // Adjust position for SearchScreen
@@ -60,7 +70,7 @@ const FloatingCartButton = () => {
       onPress={() => navigation.navigate('Cart')}
       style={{
         position: 'absolute',
-        top: isSearchScreen ? 70 : 18,
+        top: isSearchScreen ? (insets.top + 70) : (insets.top + 20), // Use safe area insets for proper positioning
         right: 14,
         backgroundColor: '#1A7B50',
         borderRadius: 22,
@@ -74,6 +84,7 @@ const FloatingCartButton = () => {
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 6,
+        maxWidth: 120,
       }}
     >
       <MaterialCommunityIcons name="cart" size={18} color="#fff" />
@@ -117,27 +128,27 @@ const AppContent = () => {
     },
   }), []);
   return (
-    <NavigationContainer theme={theme} linking={linking}>
-      <PaperProvider theme={theme}>
-        <AppProvider>
-          <StorageProvider>
-            <CartProvider>
-              <ToastProvider>
-                <DeepLinkProvider>
-                  <ErrorBoundary>
-                    <DeepLinkHandler>
-                      <AppNavigator />
-                      <FloatingCartButton />
-                    </DeepLinkHandler>
-                  </ErrorBoundary>
-                </DeepLinkProvider>
-                <CustomToast />
-              </ToastProvider>
-            </CartProvider>
-          </StorageProvider>
-        </AppProvider>
-      </PaperProvider>
-    </NavigationContainer>
+      <NavigationContainer theme={theme} linking={linking}>
+        <NativeBaseProvider>
+          <AppProvider>
+            <StorageProvider>
+              <CartProvider>
+                <ToastProvider>
+                  <DeepLinkProvider>
+                    <ErrorBoundary>
+                      <DeepLinkHandler>
+                        <AppNavigator />
+                        <FloatingCartButton />
+                      </DeepLinkHandler>
+                    </ErrorBoundary>
+                  </DeepLinkProvider>
+                  <CustomToast />
+                </ToastProvider>
+              </CartProvider>
+            </StorageProvider>
+          </AppProvider>
+        </NativeBaseProvider>
+      </NavigationContainer>
   );
 };
 

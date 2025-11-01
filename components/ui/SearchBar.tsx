@@ -35,7 +35,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const [searchQuery, setSearchQuery] = useState(value || '');
   const { isListening, transcript, error, startListening, stopListening, isAvailable } = useVoiceRecognition();
   const [animation] = useState(new Animated.Value(0));
-  const [voiceDisabled, setVoiceDisabled] = useState(false);
   const lastTranscriptRef = useRef('');
 
   useEffect(() => {
@@ -51,13 +50,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     }
   }, [transcript, onSearch, stopListening]);
 
-  // Disable voice recognition if not available or there are errors
-  useEffect(() => {
-    if (!isAvailable || error) {
-      console.log('🎤 Voice recognition not available or error, disabling:', { isAvailable, error });
-      setVoiceDisabled(true);
-    }
-  }, [isAvailable, error]);
+  // Mic button is always enabled - user can always try to use it
 
   useEffect(() => {
     if (value !== undefined) {
@@ -120,16 +113,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   }));
 
   const handleVoicePress = async () => {
-    if (voiceDisabled) {
-      console.log('🎤 Voice recognition is disabled due to errors');
-      Alert.alert(
-        'Voice Recognition',
-        'Voice recognition is not available on mobile devices in Expo Go. Please type your search or use the web version for voice search.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-    
     try {
       if (isListening) {
         console.log('🎤 Stopping voice recognition...');
@@ -139,8 +122,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         setSearchQuery(''); // Clear current search when starting voice
         await startListening();
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('🎤 Voice recognition error:', error);
+      // Error is shown but mic button stays enabled for retry
     }
   };
 
@@ -189,22 +173,22 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           )}
           <TouchableOpacity 
             onPress={handleVoicePress} 
-            style={[styles.iconButton, voiceDisabled && { opacity: 0.3 }]}
-            disabled={voiceDisabled}
+            style={styles.iconButton}
+            disabled={false} // Always allow user to try
           >
             <Animated.View style={isListening ? pulseStyle : undefined}>
               <MaterialCommunityIcons
                 name={isListening ? 'microphone' : 'microphone-outline'}
                 size={24}
-                color={voiceDisabled ? colors.text : (isListening ? colors.primary : colors.text)}
+                color={isListening ? colors.primary : colors.text}
               />
             </Animated.View>
           </TouchableOpacity>
         </View>
-        {error && !voiceDisabled && (
+        {error && (
           <View style={{ paddingHorizontal: 16, paddingTop: 4 }}>
             <Text style={{ color: colors.error, fontSize: 12 }}>
-              Voice error: {error}
+              {error}
             </Text>
           </View>
         )}

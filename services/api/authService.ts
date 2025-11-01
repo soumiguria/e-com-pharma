@@ -1,16 +1,9 @@
 // services/api/authService.ts
 import apiClient from './client';
-import { mockDataService } from './mockDataService';
 import { ApiResponse, AuthResponse, LoginRequest, SendOTPRequest, User, UserProfile } from './types';
-
-const USE_MOCK_DATA = false;
 
 export class AuthService {
   async sendOTP(mobile: string): Promise<ApiResponse<{ message: string; otpKey?: string }>> {
-    if (USE_MOCK_DATA) {
-      return mockDataService.sendOTP(mobile);
-    }
-
     const request = { mobile };
     
     try {
@@ -45,35 +38,6 @@ export class AuthService {
   }
 
   async verifyOTP(mobile: string, otp: string, otpKey: string): Promise<ApiResponse<AuthResponse>> {
-    if (USE_MOCK_DATA) {
-      const mockResult = await mockDataService.verifyOTP(mobile, otp, otpKey);
-      return {
-        success: mockResult.success,
-        data: {
-          success: true,
-          data: {
-            status: 'success',
-            token: mockResult.data?.data?.token || 'mock-token',
-            id: '1',
-            firstName: 'John',
-            lastName: 'Doe',
-            mobile: mobile,
-            email: 'john@example.com',
-            mobileVerified: true,
-            emailVerified: true,
-            image: null,
-            customerId: 'mock-customer-id',
-            lastLoginAt: new Date().toISOString(),
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            iat: Math.floor(Date.now() / 1000),
-            exp: Math.floor(Date.now() / 1000) + 3600,
-          }
-        },
-        error: mockResult.error,
-      };
-    }
-
     const request = { otpKey, otp };
 
     try {
@@ -126,10 +90,6 @@ export class AuthService {
     email: string;
     otp?: string;
   }): Promise<ApiResponse<{ message: string; otpKey?: string }>> {
-    if (USE_MOCK_DATA) {
-      return mockDataService.registerUser(userData);
-    }
-
     const request = {
       mobile: userData.mobile,
       firstName: userData.firstName,
@@ -186,10 +146,6 @@ export class AuthService {
   }
 
   async checkPhoneExists(mobile: string): Promise<ApiResponse<{ exists: boolean }>> {
-    if (USE_MOCK_DATA) {
-      return mockDataService.checkPhoneExists(mobile);
-    }
-
     try {
       const response = await this.sendOTP(mobile);
       return {

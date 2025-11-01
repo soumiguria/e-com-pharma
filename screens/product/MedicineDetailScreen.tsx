@@ -35,7 +35,7 @@ const MedicineDetailScreen = () => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.title}>{medicine.name}</Text>
       <Text style={styles.price}>${medicine.price}</Text>
       <ThemedButton title="Add to Cart" onPress={() => {}} />

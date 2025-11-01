@@ -5,10 +5,10 @@ import {
   StyleSheet,
   TouchableOpacity,
   FlatList,
-  SafeAreaView,
   Alert,
   RefreshControl,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation, useFocusEffect, useRoute, RouteProp } from '@react-navigation/native';
@@ -279,6 +279,7 @@ const MyAddressesScreen = React.memo(() => {
       alignItems: 'center',
       paddingHorizontal: 16,
       paddingVertical: 12,
+      paddingTop: 30,
       backgroundColor: theme.colors.surface,
       borderBottomWidth: 1,
       borderBottomColor: theme.colors.border,
@@ -363,6 +364,17 @@ const MyAddressesScreen = React.memo(() => {
       color: theme.colors.secondary,
       textAlign: 'center',
       marginTop: 16,
+      marginBottom: 24,
+    },
+    loginButton: {
+      paddingHorizontal: 32,
+      paddingVertical: 12,
+      borderRadius: 8,
+    },
+    loginButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
     },
     loadingContainer: {
       flex: 1,
@@ -379,7 +391,7 @@ const MyAddressesScreen = React.memo(() => {
   // Show loading state
   if (isLoading) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity
@@ -404,7 +416,7 @@ const MyAddressesScreen = React.memo(() => {
   // Show login prompt if not authenticated
   if (!isAuthenticated) {
     return (
-      <SafeAreaView style={styles.safeArea}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
         <View style={styles.container}>
           <View style={styles.header}>
             <TouchableOpacity
@@ -422,6 +434,12 @@ const MyAddressesScreen = React.memo(() => {
             <Text style={styles.emptyStateText}>
               Please login to view your addresses.
             </Text>
+            <TouchableOpacity
+              style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
+              onPress={() => navigation.navigate('PhoneAuth' as any, { cartType: 'grocery' })}
+            >
+              <Text style={styles.loginButtonText}>Login / Sign Up</Text>
+            </TouchableOpacity>
           </View>
         </View>
       </SafeAreaView>
@@ -429,7 +447,7 @@ const MyAddressesScreen = React.memo(() => {
   }
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity

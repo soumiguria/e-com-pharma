@@ -1,10 +1,5 @@
-import { MD3LightTheme, MD3DarkTheme, adaptNavigationTheme } from 'react-native-paper';
+// NativeBase theme configuration
 import { DefaultTheme, DarkTheme } from '@react-navigation/native';
-
-const { LightTheme, DarkTheme: NavigationDarkTheme } = adaptNavigationTheme({
-  reactNavigationLight: DefaultTheme,
-  reactNavigationDark: DarkTheme,
-});
 
 // Custom colors
 const colors = {
@@ -151,48 +146,42 @@ const shadows = {
 
 // Light theme
 export const lightTheme = {
-  paperTheme: {
-    ...MD3LightTheme,
-    colors: {
-      ...MD3LightTheme.colors,
-      primary: colors.primary.light,
-      secondary: colors.secondary.light,
-      background: colors.background.light,
-      surface: colors.surface.light,
-      text: colors.text.light,
-      error: colors.error.light,
-    },
-    typography,
-    spacing,
-    borderRadius,
-    shadows: shadows.light,
+  ...DefaultTheme,
+  colors: {
+    ...DefaultTheme.colors,
+    primary: colors.primary.light,
+    secondary: colors.secondary.light,
+    background: colors.background.light,
+    surface: colors.surface.light,
+    text: colors.text.light,
+    error: colors.error.light,
   },
-  navigationTheme: LightTheme,
+  typography,
+  spacing,
+  borderRadius,
+  shadows: shadows.light,
   grocery: colors.grocery,
   pharmacy: colors.pharmacy,
 };
 
 // Dark theme
 export const darkTheme = {
-  paperTheme: {
-    ...MD3DarkTheme,
-    colors: {
-      ...MD3DarkTheme.colors,
-      primary: colors.primary.dark,
-      secondary: colors.secondary.dark,
-      background: colors.background.dark,
-      surface: colors.surface.dark,
-      text: colors.text.dark,
-      error: colors.error.dark,
-    },
-    typography,
-    spacing,
-    borderRadius,
-    shadows: shadows.dark,
+  ...DarkTheme,
+  colors: {
+    ...DarkTheme.colors,
+    primary: colors.primary.dark,
+    secondary: colors.secondary.dark,
+    background: colors.background.dark,
+    surface: colors.surface.dark,
+    text: colors.text.dark,
+    error: colors.error.dark,
   },
-  navigationTheme: NavigationDarkTheme,
+  typography,
+  spacing,
+  borderRadius,
+  shadows: shadows.dark,
   grocery: colors.grocery,
   pharmacy: colors.pharmacy,
 };
 
-export type AppTheme = typeof lightTheme; 
+export type AppTheme = typeof lightTheme;

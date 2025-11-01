@@ -19,7 +19,7 @@ export class BannerService {
     console.log('🖼️ Fetching banners for store:', storeId);
     
     if (!isApiEnabled('USE_REAL_BANNERS')) {
-      console.log('   API disabled, using fallback mock data for banners');
+      console.log('   API disabled for banners');
       throw new Error('API_DISABLED');
     }
     
@@ -30,7 +30,7 @@ export class BannerService {
       return response;
     } catch (error) {
       console.log('  Banners API error:', error);
-      console.log('   Using fallback mock data for banners');
+      console.log('   Error fetching banners');
       throw error;
     }
   }
@@ -39,7 +39,7 @@ export class BannerService {
     console.log('🖼️ Fetching banner by ID:', bannerId);
     
     if (!isApiEnabled('USE_REAL_BANNERS')) {
-      console.log('   API disabled, using fallback mock data for banner details');
+      console.log('   API disabled for banner details');
       throw new Error('API_DISABLED');
     }
     

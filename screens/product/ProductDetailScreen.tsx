@@ -10,8 +10,8 @@ import {
   Platform,
   Animated,
   FlatList,
-  SafeAreaView
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import ThemedButton from '../../components/ui/ThemedButton';
 import { HomeStackParamList } from '../../navigation/types';
@@ -392,7 +392,7 @@ const ProductDetailScreen = () => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {/* Large Product Image */}
         <View style={{ width: '100%', height: width * 0.7, backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center', marginBottom: 24, elevation: 2, shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 8, borderBottomLeftRadius: 18, borderBottomRightRadius: 18, overflow: 'hidden' }}>

@@ -1,12 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   FlatList,
-  SafeAreaView,
   TouchableOpacity,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -16,83 +16,10 @@ import ProductCard from '../../components/product/ProductCard';
 
 type Under199ProductsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'Under199Products'>;
 
-// Mock products under ₹199
-const mockUnder199Products = [
-  {
-    id: '1',
-    name: 'Chicken Breast',
-    price: 8.99,
-    image: 'https://images.pexels.com/photos/3997388/pexels-photo-3997388.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '2',
-    name: 'Rice 1kg',
-    price: 3.99,
-    image: 'https://images.pexels.com/photos/4110225/pexels-photo-4110225.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '3',
-    name: 'Cooking Oil',
-    price: 4.99,
-    image: 'https://images.pexels.com/photos/4110225/pexels-photo-4110225.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '4',
-    name: 'Organic Apples',
-    price: 2.99,
-    image: 'https://images.pexels.com/photos/2093087/pexels-photo-2093087.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '5',
-    name: 'Fresh Milk',
-    price: 3.49,
-    image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '6',
-    name: 'Whole Grain Bread',
-    price: 1.99,
-    image: 'https://images.pexels.com/photos/1721934/pexels-photo-1721934.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '7',
-    name: 'Fresh Vegetables',
-    price: 4.99,
-    image: 'https://images.pexels.com/photos/2518893/pexels-photo-2518893.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '8',
-    name: 'Pasta',
-    price: 2.49,
-    image: 'https://images.pexels.com/photos/4110225/pexels-photo-4110225.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '9',
-    name: 'Cheese',
-    price: 5.99,
-    image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-  {
-    id: '10',
-    name: 'Yogurt',
-    price: 1.99,
-    image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    category: 'grocery' as const,
-  },
-];
-
 const Under199ProductsScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<Under199ProductsScreenNavigationProp>();
+  const [products, setProducts] = useState<any[]>([]);
 
   const handleProductPress = (product: any) => {
     navigation.navigate('ProductDetail', { product });
@@ -140,7 +67,7 @@ const Under199ProductsScreen = () => {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity
@@ -154,7 +81,7 @@ const Under199ProductsScreen = () => {
 
         <View style={styles.content}>
           <View style={styles.productsGrid}>
-            {mockUnder199Products.map((product) => (
+            {products.map((product) => (
               <View key={product.id} style={styles.productCard}>
                 <ProductCard
                   product={product}

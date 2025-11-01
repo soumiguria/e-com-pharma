@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, StyleSheet, ScrollView, Animated } from 'react-native';
-import { Text, Card, Button, Divider } from 'react-native-paper';
+import { Text, Card, Button, Divider } from 'native-base';
 import { useAppTheme } from '../../hooks/useAppTheme';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -47,7 +47,7 @@ const CartSection: React.FC<CartSectionProps> = ({ scrollY }) => {
       padding: spacing.lg,
       backgroundColor: colors.surface,
       borderBottomWidth: 1,
-      borderBottomColor: colors.outline,
+      borderBottomColor: colors.secondary,
     },
     title: {
       ...typography.h1,
@@ -150,39 +150,41 @@ const CartSection: React.FC<CartSectionProps> = ({ scrollY }) => {
       <ScrollView style={styles.content}>
         {cartItems.map((item) => (
           <Card key={item.id} style={styles.card}>
-            <Card.Content style={styles.cardContent}>
+            <View style={styles.cardContent}>
               <View style={styles.itemContainer}>
                 <Text style={styles.itemImage}>{item.image}</Text>
                 <View style={styles.itemDetails}>
-                  <Text style={styles.itemName}>{item.name}</Text>
+                  <Text style={styles.itemName}>`${item.name.slice(0, 20)}...`</Text>
                   <Text style={styles.itemPrice}>{item.price}</Text>
                   <View style={styles.quantityContainer}>
                     <Button
-                      mode="outlined"
+                      variant="outline"
                       onPress={() => {}}
                       style={styles.quantityButton}
-                      theme={{ roundness: borderRadius.md }}
+                      colorScheme="primary"
+                      size="sm"
                     >
                       -
                     </Button>
                     <Text style={styles.quantityText}>{item.quantity}</Text>
                     <Button
-                      mode="outlined"
+                      variant="outline"
                       onPress={() => {}}
                       style={styles.quantityButton}
-                      theme={{ roundness: borderRadius.md }}
+                      colorScheme="primary"
+                      size="sm"
                     >
                       +
                     </Button>
                   </View>
                 </View>
               </View>
-            </Card.Content>
+            </View>
           </Card>
         ))}
 
         <Card style={styles.summary}>
-          <Card.Content>
+          <View>
             <View style={styles.summaryRow}>
               <Text style={styles.summaryText}>Subtotal</Text>
               <Text style={styles.summaryText}>${total.toFixed(2)}</Text>
@@ -197,14 +199,14 @@ const CartSection: React.FC<CartSectionProps> = ({ scrollY }) => {
               <Text style={styles.summaryTotal}>${(total + 2.99).toFixed(2)}</Text>
             </View>
             <Button
-              mode="contained"
               onPress={() => {}}
               style={styles.checkoutButton}
-              theme={{ roundness: borderRadius.md }}
+              colorScheme="primary"
+              size="lg"
             >
               Proceed to Checkout
             </Button>
-          </Card.Content>
+          </View>
         </Card>
       </ScrollView>
     </SafeAreaView>

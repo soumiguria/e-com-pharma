@@ -317,6 +317,7 @@ const PaymentMethodsScreen = () => {
         const cartItems = getCartItems();
         navigation.navigate('OrderConfirmation', {
           orderId: String(response.data.orderId),
+          // prescriptionRequired: response.data.prescriptionRequired || false, // Add prescriptionRequired field
           orderData: {
             items: cartItems.map((item: any) => ({
               id: item.productId || item.id,
@@ -660,7 +661,7 @@ const PaymentMethodsScreen = () => {
 
   return (
     <>
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
         <ScrollView showsVerticalScrollIndicator={false}>
         {/* Delivery Address */}
         {selectedDeliveryMethod === '2' && (

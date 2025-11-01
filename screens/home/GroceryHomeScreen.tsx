@@ -55,58 +55,6 @@ interface Category {
   subCategories: SubCategory[];
 }
 
-// Mock data structure that matches your GrocerySection and PharmacySection
-const groceryData: Category[] = [
-  {
-    id: '1',
-    name: 'Fresh Produce',
-    subCategories: [
-      {
-        id: '1-1',
-        name: 'Fruits',
-        products: [
-          { id: '1-1-1', name: 'Organic Apples', price: 2.99, image: 'https://cdn.pixabay.com/photo/2016/01/05/13/58/apple-1122537_1280.jpg', category: 'grocery' },
-          { id: '1-1-2', name: 'Bananas', price: 1.99, image: 'https://cdn.pixabay.com/photo/2017/06/27/22/21/banana-2449019_1280.jpg', category: 'grocery' },
-        ],
-      },
-      {
-        id: '1-2',
-        name: 'Vegetables',
-        products: [
-          { id: '1-2-1', name: 'Carrots', price: 1.49, image: 'https://cdn.pixabay.com/photo/2014/12/21/23/39/carrots-575773_1280.jpg', category: 'grocery' },
-          { id: '1-2-2', name: 'Organic Broccoli', price: 2.49, image: 'https://cdn.pixabay.com/photo/2016/03/05/19/02/broccoli-1238250_1280.jpg', category: 'grocery' },
-        ],
-      },
-    ],
-  },
-  // Add more grocery categories as needed
-];
-
-const pharmacyData: Category[] = [
-  {
-    id: '1',
-    name: 'Medicines',
-    subCategories: [
-      {
-        id: '1-1',
-        name: 'Pain Relief',
-        products: [
-          { id: '1-1-1', name: 'Ibuprofen', price: 5.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharmacy' },
-          { id: '1-1-2', name: 'Aspirin', price: 3.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharmacy' },
-        ],
-      },
-      {
-        id: '1-2',
-        name: 'Cold & Flu',
-        products: [
-          { id: '1-2-1', name: 'Cold Syrup', price: 7.49, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharmacy' },
-          { id: '1-2-2', name: 'Nasal Spray', price: 6.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharmacy' },
-        ],
-      },
-    ],
-  },
-  // Add more pharmacy categories as needed
-];
 
 const Header = ({ onProfilePress, themedStyles }: { onProfilePress: () => void, themedStyles: any }) => {
   const { theme } = useTheme();
@@ -474,11 +422,7 @@ const HomeScreen = () => {
 
   const getAllProducts = () => {
     const allProducts: Product[] = [];
-    groceryData.forEach(category => {
-      category.subCategories.forEach(subCategory => {
-        allProducts.push(...subCategory.products);
-      });
-    });
+    // Remove mock data - products will be fetched from API
     return allProducts;
   };
 

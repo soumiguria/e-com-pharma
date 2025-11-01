@@ -1,6 +1,7 @@
 // GridViewScreen.tsx
 import React from 'react';
 import { View, StyleSheet, FlatList, Text, TouchableOpacity, Image } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
@@ -92,7 +93,7 @@ const GridViewScreen: React.FC<GridViewScreenProps> = ({ route }) => {
   );
 
   return (
-    <View style={[styles.container, { padding: 16 }]}>
+    <SafeAreaView style={[styles.container, { padding: 16 }]} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <Text style={{ color: theme.colors.primary, fontSize: 16 }}>Back</Text>
@@ -106,7 +107,7 @@ const GridViewScreen: React.FC<GridViewScreenProps> = ({ route }) => {
         numColumns={2}
         contentContainerStyle={[styles.gridContainer, { paddingBottom: 32 }]}
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

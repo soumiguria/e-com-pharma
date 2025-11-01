@@ -4,12 +4,11 @@ import {
   View, 
   StyleSheet, 
   FlatList, 
-  Text, 
   TouchableOpacity, 
   Image,
-  SafeAreaView,
   Dimensions
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
@@ -17,8 +16,8 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ProductDetailModal from '../../components/product/ProductDetailModal';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useCart } from '../../contexts/CartContext';
-import { Appbar } from 'react-native-paper';
-import { Card, Button } from 'react-native-paper';
+import { Box, HStack, Text, IconButton, Card, Button } from 'native-base';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Toast from 'react-native-toast-message';
 import { useAppContext } from '../../contexts/AppContext';
 import { storeProductService } from '../../services/api/storeProductService';
@@ -132,7 +131,7 @@ const AllProductsScreen = () => {
           style={styles.productImage}
           resizeMode="cover"
         />
-        <Card.Content style={styles.productContent}>
+        <View style={styles.productContent}>
           <Text style={[styles.productName, { color: theme.colors.text }]} numberOfLines={2}>
             {item.name}
           </Text>
@@ -155,28 +154,31 @@ const AllProductsScreen = () => {
           )}
           
           <Button
-            mode="contained"
             onPress={(e) => handleAddToCart(e, item)}
             style={[styles.addToCartButton, { backgroundColor: theme.colors.primary }]}
-            labelStyle={styles.addToCartButtonText}
-            compact
+            colorScheme="primary"
+            size="sm"
           >
             Add to Cart
           </Button>
-        </Card.Content>
+        </View>
       </TouchableOpacity>
     </Card>
   );
 
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]}>
-      <Appbar.Header style={{ backgroundColor: theme.colors.surface, elevation: 0 }}>
-        <Appbar.BackAction onPress={() => navigation.goBack()} color={theme.colors.text} />
-        <Appbar.Content 
-          title={title} 
-          titleStyle={{ color: theme.colors.text, fontWeight: 'bold', fontSize: 18 }} 
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.colors.background }]} edges={['top']}>
+      <Box bg={theme.colors.surface} px={4} py={3} flexDirection="row" alignItems="center">
+        <IconButton
+          icon={<MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.text} />}
+          onPress={() => navigation.goBack()}
+          variant="ghost"
+          size="sm"
         />
-      </Appbar.Header>
+        <Text color={theme.colors.text} fontSize="lg" fontWeight="bold" flex={1} textAlign="center">
+          {title}
+        </Text>
+      </Box>
       
       <View style={styles.container}>
         <Text style={[styles.subtitle, { color: theme.colors.secondary }]}>

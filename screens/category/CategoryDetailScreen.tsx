@@ -14,6 +14,7 @@ import {
   Animated,
   TextInput,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
@@ -23,6 +24,7 @@ import ThemedButton from '../../components/ui/ThemedButton';
 import { useCart } from '../../contexts/CartContext';
 import { useAppContext } from '../../contexts/AppContext';
 import { storeService } from '../../services/api/storeService';
+import { storeProductService } from '../../services/api/storeProductService';
 
 const { width, height } = Dimensions.get('window');
 const LEFT_COLUMN_WIDTH = 90;
@@ -98,6 +100,15 @@ const CategoryDetailScreen = () => {
   const [selectedSubCategoryId, setSelectedSubCategoryId] = useState<string | undefined>(category.selectedSubcategoryId);
   const [sortBy, setSortBy] = useState<'relevance' | 'price_low_high' | 'price_high_low' | 'a_z' | 'z_a'>('relevance');
 
+  // Filter states
+  const [filter, setFilter] = useState<string | null>(null);
+  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
+  const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
+  const [selectedPackSizes, setSelectedPackSizes] = useState<string[]>([]);
+  const [selectedDiscount, setSelectedDiscount] = useState<string | null>(null);
+  const [favProducts, setFavProducts] = useState<string[]>([]);
+  const [selectedVariants, setSelectedVariants] = useState<{ [productId: string]: { id: string; name: string; price: number; stock: number } | undefined }>({});
+
   // Fetch subcategories when component mounts
   useEffect(() => {
     const fetchCategoryData = async () => {
@@ -143,29 +154,52 @@ const CategoryDetailScreen = () => {
     fetchCategoryData();
   }, [selectedStore?.id, category.id]);
 
-  // Fetch products for the selected subcategory (placeholder until API is available)
+  // Fetch products for the selected subcategory and apply brand filters
   useEffect(() => {
     const fetchSubcategoryProducts = async () => {
       if (!selectedStore?.id || !selectedSubCategoryId) return;
       
+      setLoading(true);
       try {
         console.log('🔍 CategoryDetailScreen: Fetching products for subcategory:', selectedSubCategoryId);
-        setApiProducts([]);
+        
+        // Determine if this is pharma or grocery based on category type
+        const isPharma = category.type === 'pharma' || category.name?.toLowerCase().includes('medicine') || category.name?.toLowerCase().includes('pharma');
+        
+        let response;
+        if (selectedBrands.length > 0) {
+          // Apply brand filter using the new API
+          const filters = { brand: selectedBrands[0] }; // Use first selected brand
+          if (isPharma) {
+            response = await storeProductService.getFilteredPharmaProducts(selectedStore.id, filters);
+          } else {
+            response = await storeProductService.getFilteredGroceryProducts(selectedStore.id, filters);
+          }
+        } else {
+          // Fetch all products for subcategory
+          if (isPharma) {
+            response = await storeProductService.getPharmaProductsBySubcategory(selectedStore.id, selectedSubCategoryId);
+          } else {
+            response = await storeProductService.getGroceryProductsBySubcategory(selectedStore.id, selectedSubCategoryId);
+          }
+        }
+        
+        if (response.success && response.data) {
+          setApiProducts(response.data);
+          console.log('🔍 CategoryDetailScreen: Products fetched:', response.data.length);
+        } else {
+          setApiProducts([]);
+        }
       } catch (error) {
         console.error('🔍 CategoryDetailScreen: Error fetching products:', error);
+        setApiProducts([]);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchSubcategoryProducts();
-  }, [selectedStore?.id, selectedSubCategoryId, subCategories]);
-
-  const [filter, setFilter] = useState<string | null>(null);
-  const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
-  const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
-  const [selectedPackSizes, setSelectedPackSizes] = useState<string[]>([]);
-  const [selectedDiscount, setSelectedDiscount] = useState<string | null>(null);
-  const [favProducts, setFavProducts] = useState<string[]>([]);
-  const [selectedVariants, setSelectedVariants] = useState<{ [productId: string]: { id: string; name: string; price: number; stock: number } | undefined }>({});
+  }, [selectedStore?.id, selectedSubCategoryId, selectedBrands, category.type, category.name]);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showSortModal, setShowSortModal] = useState(false);
   // 1. Add state for selected filter tab and search
@@ -173,9 +207,9 @@ const CategoryDetailScreen = () => {
   const [brandSearch, setBrandSearch] = useState('');
   const filterTabs = [
     { key: 'Brand', label: 'Brand' },
-    { key: 'Type', label: 'Type' },
-    { key: 'Quantity', label: 'Quantity' },
-    { key: 'DietPref', label: 'Diet Prefe..' },
+    // { key: 'Type', label: 'Type' },
+    // { key: 'Quantity', label: 'Quantity' },
+    // { key: 'DietPref', label: 'Diet Prefe..' },
   ];
 
   // Add state for product quantities
@@ -264,7 +298,7 @@ const CategoryDetailScreen = () => {
 
   // --- UI ---
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={['top']}>
       {/* Top Bar */}
       <View style={[styles.topBar, { backgroundColor: theme.colors.surface, borderBottomColor: theme.colors.border }]}> 
         <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
@@ -461,11 +495,11 @@ const CategoryDetailScreen = () => {
             <View style={{ flex: 1, padding: 16 }}>
               {selectedFilterTab === 'Brand' && (
                 <>
-                  <View style={{ backgroundColor: '#F4F4F4', borderRadius: 8, flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingHorizontal: 8 }}>
-                    <MaterialCommunityIcons name="magnify" size={18} color="#888" />
+                  <View style={{ backgroundColor: '#F4F4F4', borderRadius: 8, flexDirection: 'row', alignItems: 'center', marginBottom: 12, paddingHorizontal: 12, width: '100%' }}>
+                    <MaterialCommunityIcons name="magnify" size={20} color="#888" />
                     <TextInput
-                      style={{ flex: 1, height: 36, fontSize: 15, marginLeft: 6 }}
-                      placeholder="Search"
+                      style={{ flex: 1, height: 40, fontSize: 16, marginLeft: 8, paddingHorizontal: 4 }}
+                      placeholder="Search brands..."
                       placeholderTextColor="#aaa"
                       value={brandSearch}
                       onChangeText={setBrandSearch}
@@ -551,7 +585,7 @@ const CategoryDetailScreen = () => {
           ))}
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

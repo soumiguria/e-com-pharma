@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, SafeAreaView, Alert, ScrollView } from 'react-native';
+import { View, StyleSheet, FlatList, TouchableOpacity, Image, Alert, ScrollView } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
-import { Appbar } from 'react-native-paper';
+import { Box, HStack, Text, IconButton } from 'native-base';
 
 const products = [
   { id: '1', name: 'Amul Milk 1L', image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg', price: 65, originalPrice: 80 },
@@ -49,11 +50,18 @@ const RecentlyBoughtScreen = () => {
     </TouchableOpacity>
   );
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }}>
-      <Appbar.Header style={{ backgroundColor: theme.colors.card, elevation: 0 }}>
-        <Appbar.BackAction onPress={() => navigation.goBack()} color={theme.colors.text} />
-        <Appbar.Content title="Recently Bought" titleStyle={{ color: theme.colors.text, fontWeight: 'bold', fontSize: 20 }} />
-      </Appbar.Header>
+    <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={['top']}>
+      <Box bg={theme.colors.card} px={4} py={3} flexDirection="row" alignItems="center">
+        <IconButton
+          icon={<MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.text} />}
+          onPress={() => navigation.goBack()}
+          variant="ghost"
+          size="sm"
+        />
+        <Text color={theme.colors.text} fontSize="lg" fontWeight="bold" flex={1} textAlign="center">
+          Recently Bought
+        </Text>
+      </Box>
       <FlatList
         data={products}
         renderItem={renderItem}

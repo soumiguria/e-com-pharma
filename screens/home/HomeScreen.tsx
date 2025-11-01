@@ -58,58 +58,6 @@ interface Category {
   subCategories: SubCategory[];
 }
 
-// Mock data structure that matches your GrocerySection and PharmacySection
-const groceryData: Category[] = [
-  {
-    id: '1',
-    name: 'Fresh Produce',
-    subCategories: [
-      {
-        id: '1-1',
-        name: 'Fruits',
-        products: [
-          { id: '1-1-1', name: 'Organic Apples', price: 2.99, image: 'https://cdn.pixabay.com/photo/2016/01/05/13/58/apple-1122537_1280.jpg', category: 'grocery' },
-          { id: '1-1-2', name: 'Bananas', price: 1.99, image: 'https://cdn.pixabay.com/photo/2017/06/27/22/21/banana-2449019_1280.jpg', category: 'grocery' },
-        ],
-      },
-      {
-        id: '1-2',
-        name: 'Vegetables',
-        products: [
-          { id: '1-2-1', name: 'Carrots', price: 1.49, image: 'https://cdn.pixabay.com/photo/2014/12/21/23/39/carrots-575773_1280.jpg', category: 'grocery' },
-          { id: '1-2-2', name: 'Organic Broccoli', price: 2.49, image: 'https://cdn.pixabay.com/photo/2016/03/05/19/02/broccoli-1238250_1280.jpg', category: 'grocery' },
-        ],
-      },
-    ],
-  },
-  // Add more grocery categories as needed
-];
-
-const pharmacyData: Category[] = [
-  {
-    id: '1',
-    name: 'Medicines',
-    subCategories: [
-      {
-        id: '1-1',
-        name: 'Pain Relief',
-        products: [
-          { id: '1-1-1', name: 'Ibuprofen', price: 5.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharma' },
-          { id: '1-1-2', name: 'Aspirin', price: 3.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharma' },
-        ],
-      },
-      {
-        id: '1-2',
-        name: 'Cold & Flu',
-        products: [
-          { id: '1-2-1', name: 'Cold Syrup', price: 7.49, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharma' },
-          { id: '1-2-2', name: 'Nasal Spray', price: 6.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharma' },
-        ],
-      },
-    ],
-  },
-  // Add more pharmacy categories as needed
-];
 
 const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { onProfilePress: () => void, themedStyles: any, isDrawerVisible: boolean }) => {
   const { theme } = useTheme();
@@ -129,23 +77,24 @@ const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { 
 
   return (
     <Animated.View style={[themedStyles.header]}>
-      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        {/* Hamburger Menu Icon */}
-        <TouchableOpacity 
-          onPress={onProfilePress} 
-          style={{ 
-            marginRight: 12,
-            padding: 8,
-          }}
-          activeOpacity={0.7}
-        >
-          <MaterialCommunityIcons 
-            name="menu" 
-            size={24} 
-            color={theme.colors.text} 
-          />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          {/* Hamburger Menu Icon */}
+          <TouchableOpacity 
+            onPress={onProfilePress} 
+            style={{ 
+              marginRight: 12,
+              padding: 8,
+            }}
+            activeOpacity={0.7}
+          >
+            <MaterialCommunityIcons 
+              name="menu" 
+              size={24} 
+              color={theme.colors.text} 
+            />
+          </TouchableOpacity>
         
+        {/* Center - Store name and profile */}
         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
           <TouchableOpacity onPress={() => navigation.navigate('EditProfile' as any)}>
             <MaterialCommunityIcons 
@@ -155,37 +104,46 @@ const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { 
             />
           </TouchableOpacity>
           {displayStore && (
-            <Text style={[themedStyles.storeName, {color: theme.colors.text, marginLeft: 10, fontWeight: 'bold', fontSize: 17}]} numberOfLines={1}>
-              {displayStore.name}
-            </Text>
-          )}
+  <Text
+    style={[
+      themedStyles.storeName,
+      {
+        color: theme.colors.text,
+        marginLeft: 2,
+        fontWeight: 'bold',
+        fontSize: 17,
+      },
+    ]}
+    numberOfLines={1}
+  >
+    {displayStore?.name
+      ? displayStore.name.length > 15
+        ? `${displayStore.name.slice(0, 15)}...`
+        : displayStore.name
+      : 'Unknown Store'}
+  </Text>
+)}
+
         </View>
-      </View>
-      <View style={themedStyles.headerRight}>
-        {/* <TouchableOpacity 
-          style={themedStyles.headerIcon}
-          onPress={() => navigation.navigate('GreatOffersScreen')}
-        >
-          <RNImage
-            source={require('../../assets/discount.png')}
-            style={{ width: 26, height: 26, resizeMode: 'contain', marginTop: 1 }}
-          />
-        </TouchableOpacity> */}
-        <TouchableOpacity 
-          style={themedStyles.headerIcon}
-          onPress={() => navigation.navigate('Cart')}
-        >
-          <MaterialCommunityIcons 
-            name="cart" 
-            size={24} 
-            color={theme.colors.text} 
-          />
-          {totalItems > 0 && (
-            <View style={[themedStyles.cartBadge, { backgroundColor: theme.colors.primary }]}> 
-              <Text style={themedStyles.cartBadgeText}>{totalItems}</Text>
-            </View>
-          )}
-        </TouchableOpacity>
+        
+        {/* Right side - Cart Icon with slight left shift */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: 8 }}>
+          <TouchableOpacity 
+            style={[themedStyles.headerIcon, { marginRight: 8 }]}
+            onPress={() => navigation.navigate('Cart')}
+          >
+            <MaterialCommunityIcons 
+              name="cart" 
+              size={24} 
+              color={theme.colors.text} 
+            />
+            {totalItems > 0 && (
+              <View style={[themedStyles.cartBadge, { backgroundColor: theme.colors.primary }]}> 
+                <Text style={themedStyles.cartBadgeText}>{totalItems}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
       </View>
     </Animated.View>
   );
@@ -338,19 +296,15 @@ const HomeScreen = () => {
       backgroundColor: theme.colors.surface,
     },
     storeName: {
-      marginLeft: 10,
+      marginLeft: 8,
       fontWeight: 'bold',
       fontSize: 17,
       color: theme.colors.primary,
     },
-    headerRight: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      marginLeft: 'auto',
-    },
     headerIcon: {
-      marginHorizontal: 8,
+      marginHorizontal: 4,
       position: 'relative',
+      padding: 4,
     },
     cartBadge: {
       position: 'absolute',
@@ -555,11 +509,7 @@ const HomeScreen = () => {
 
   const getAllProducts = () => {
     const allProducts: Product[] = [];
-    groceryData.forEach(category => {
-      category.subCategories.forEach(subCategory => {
-        allProducts.push(...subCategory.products);
-      });
-    });
+    // Remove mock data - products will be fetched from API
     return allProducts;
   };
 

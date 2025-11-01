@@ -924,12 +924,12 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  SafeAreaView,
   Dimensions,
   Alert,
   TextInput,
   FlatList,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
@@ -1203,6 +1203,7 @@ const LocationPickerScreen = () => {
       fontSize: 18,
       fontWeight: 'bold',
       color: theme.colors.text,
+      marginTop: 8,
     },
     mapContainer: {
       flex: 1,
@@ -1246,6 +1247,7 @@ const LocationPickerScreen = () => {
       paddingVertical: 16,
       borderRadius: 12,
       alignItems: 'center',
+      marginTop: -10,
     },
     confirmButtonText: {
       color: theme.colors.surface,
@@ -1508,7 +1510,7 @@ const LocationPickerScreen = () => {
   });
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea} edges={['top']}>
       <View style={styles.container}>
         {/* Header */}
         <View style={styles.header}>

@@ -1,5 +1,4 @@
 import { DefaultTheme, DarkTheme } from '@react-navigation/native';
-import { MD3LightTheme, MD3DarkTheme } from 'react-native-paper';
 
 export const palette = {
   // Primary yellow and white for new look
@@ -127,10 +126,8 @@ const shadows = {
 
 export const lightTheme = {
   ...DefaultTheme,
-  ...MD3LightTheme,
   colors: {
     ...DefaultTheme.colors,
-    ...MD3LightTheme.colors,
     primary: palette.primary_yellow,
     secondary: palette.primary_green,
     tertiary: palette.primary_blue,
@@ -163,10 +160,8 @@ export const lightTheme = {
 
 export const darkTheme = {
   ...DarkTheme,
-  ...MD3DarkTheme,
   colors: {
     ...DarkTheme.colors,
-    ...MD3DarkTheme.colors,
     primary: palette.primary_yellow,
     secondary: palette.primary_green,
     tertiary: palette.primary_blue,

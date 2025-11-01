@@ -30,7 +30,7 @@ const HelpCenterScreen = () => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.title}>Help Center</Text>
       <Text style={styles.helpText}>Need help? Contact us at support@example.com</Text>
       <ThemedButton title="Contact Support" onPress={() => {}} />

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform, Alert, BackHandler } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, Alert, BackHandler, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { TextInput, Button, Text, Divider } from 'react-native-paper';
+import { Input, Button, Text, Divider } from 'native-base';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -197,8 +197,15 @@ const PincodeScreen = () => {
     },
     input: {
       width: '100%',
+      height: 50,
       marginBottom: spacing.lg,
       backgroundColor: colors.surface,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      borderRadius: borderRadius.md,
+      paddingHorizontal: spacing.md,
+      fontSize: 16,
+      color: colors.text,
     },
     button: {
       width: '100%',
@@ -213,7 +220,7 @@ const PincodeScreen = () => {
     dividerLine: {
       flex: 1,
       height: 1,
-      backgroundColor: colors.outline,
+      backgroundColor: colors.secondary,
     },
     dividerText: {
       ...typography.body2,
@@ -230,13 +237,13 @@ const PincodeScreen = () => {
   });
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.container}
       >
         <LinearGradient
-          colors={[colors.primary, colors.background]}
+          colors={[colors.tertiary, colors.background]}
           style={styles.gradient}
           start={{ x: 0.5, y: 0 }}
           end={{ x: 0.5, y: 1 }}
@@ -256,13 +263,13 @@ const PincodeScreen = () => {
             </View>
             
             <Button
-              mode="contained"
               onPress={handleUseCurrentLocation}
-              loading={isLoading}
-              disabled={isLoading}
+              isLoading={isLoading}
+              isDisabled={isLoading}
               style={styles.button}
-              theme={{ roundness: borderRadius.md }}
-              icon="crosshairs-gps"
+              colorScheme="primary"
+              size="lg"
+              leftIcon={<MaterialCommunityIcons name="crosshairs-gps" size={20} color="white" />}
             >
               {currentLocation ? `Use ${currentLocation.address}` : 'Use Current Location'}
             </Button>
@@ -276,23 +283,22 @@ const PincodeScreen = () => {
             </View>
 
             <TextInput
-              mode="outlined"
-              label="Enter Pincode"
+              placeholder="Enter Pincode"
               value={pincode}
               onChangeText={setPincode}
               keyboardType="numeric"
               maxLength={6}
               style={styles.input}
-              theme={{ roundness: borderRadius.md }}
+              placeholderTextColor={theme.colors.secondary}
             />
 
             <Button
-              mode="contained"
               onPress={handleSubmit}
-              loading={isLoading}
-              disabled={!pincode || pincode.length !== 6 || isLoading}
+              isLoading={isLoading}
+              isDisabled={!pincode || pincode.length !== 6 || isLoading}
               style={styles.button}
-              theme={{ roundness: borderRadius.md }}
+              colorScheme="primary"
+              size="lg"
             >
               Continue
             </Button>
@@ -304,11 +310,12 @@ const PincodeScreen = () => {
             </View>
 
             <Button
-              mode="outlined"
+              variant="outline"
               onPress={() => navigation.navigate('LocationPicker' as any)}
               style={styles.button}
-              theme={{ roundness: borderRadius.md }}
-              icon="map"
+              colorScheme="primary"
+              size="lg"
+              leftIcon={<MaterialCommunityIcons name="map" size={20} color={theme.colors.primary} />}
             >
               Choose from Map
             </Button>

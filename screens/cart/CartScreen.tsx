@@ -1,7 +1,9 @@
 // screens/CartScreen.tsx
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, Alert } from 'react-native';
-import { Text, Button, Card, useTheme } from 'react-native-paper';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import { Text, Button, Card, Box, HStack, IconButton } from 'native-base';
+import { useTheme } from '../../contexts/ThemeContext';
 import { useCart } from '../../contexts/CartContext';
 import { useAuth } from '../../contexts/AuthContext';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -9,7 +11,6 @@ import { RootStackParamList } from '../../navigation/types';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import ProductCard from '../../components/product/ProductCard';
 import { ScrollView as RNScrollView } from 'react-native';
-import { Appbar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Cart'>;
@@ -17,7 +18,7 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Cart'>;
 const CartScreen = () => {
   const { groceryItems, pharmacyItems, removeFromCart, updateQuantity, groceryTotal, pharmacyTotal, addToGroceryCart, addToPharmacyCart } = useCart();
   const { isAuthenticated } = useAuth();
-  const theme = useTheme();
+  const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
   
@@ -43,20 +44,6 @@ const CartScreen = () => {
     // Navigate to payment methods/checkout screen
     navigation.navigate('PaymentMethods', {});
   };
-
-  // Mock recommended products for grocery
-  const groceryRecommendations = [
-    { id: '101', name: 'Amul Milk 1L', price: 65, originalPrice: 80, image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg', category: 'grocery' as const },
-    { id: '102', name: 'Britannia Cheese Slices', price: 120, originalPrice: 150, image: 'https://blinkit.com/images/products/400/britannia-cheese-slices.jpg', category: 'grocery' as const },
-    { id: '103', name: 'Mother Dairy Curd', price: 30, originalPrice: 40, image: 'https://blinkit.com/images/products/400/mother-dairy-dahi.jpg', category: 'grocery' as const },
-  ];
-
-  // Mock recommended products for pharmacy
-  const pharmacyRecommendations = [
-    { id: 'p101', name: 'Paracetamol 500mg', price: 5.99, originalPrice: 8.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharma' as const },
-    { id: 'p102', name: 'Vitamin C 1000mg', price: 12.50, originalPrice: 15.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharma' as const },
-    { id: 'p103', name: 'Cetirizine 10mg', price: 8.99, originalPrice: 12.99, image: 'https://cdn.pixabay.com/photo/2017/02/28/14/37/pills-2106003_1280.jpg', category: 'pharma' as const },
-  ];
 
   const renderRecommendations = (items: any[], title: string, addToCart: (item: any) => void) => (
     <View style={{ marginTop: 12, marginBottom: 18 }}>
@@ -84,7 +71,7 @@ const CartScreen = () => {
         <Text style={styles.sectionTitle}>{title}</Text>
         {activeItems.map((item) => (
           <Card key={item.id} style={styles.cartItem}>
-            <Card.Content>
+            <View>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 {/* Product Image */}
                 {item.image && (
@@ -92,7 +79,14 @@ const CartScreen = () => {
                 )}
                 <View style={{ flex: 1 }}>
                   <View style={styles.itemHeader}>
-                    <Text style={styles.itemName}>{item.name}</Text>
+                    <Text style={styles.itemName}>
+  {item?.name
+    ? item.name.length > 20
+      ? `${item.name.slice(0, 20)}...`
+      : item.name
+    : 'Unnamed'}
+</Text>
+
                     <Text style={styles.itemPrice}>₹{formatAmount(item.price)}</Text>
                   </View>
                   {toNumber(item.originalPrice) > toNumber(item.price) && (
@@ -112,7 +106,7 @@ const CartScreen = () => {
                       onPress={() => updateQuantity(item.id, item.quantity - 1, item.category)}
                       activeOpacity={0.7}
                     >
-                      <MaterialCommunityIcons name="minus" size={18} color={theme.colors.onSurface} />
+                      <MaterialCommunityIcons name="minus" size={18} color={theme.colors.text} />
                     </TouchableOpacity>
                     <Text style={styles.quantityText}>{item.quantity}</Text>
                     <TouchableOpacity
@@ -120,19 +114,21 @@ const CartScreen = () => {
                       onPress={() => updateQuantity(item.id, item.quantity + 1, item.category)}
                       activeOpacity={0.7}
                     >
-                      <MaterialCommunityIcons name="plus" size={18} color={theme.colors.onSurface} />
+                      <MaterialCommunityIcons name="plus" size={18} color={theme.colors.text} />
                     </TouchableOpacity>
                     <Button
-                      mode="outlined"
+                      variant="outline"
                       onPress={() => removeFromCart(item.id, item.category)}
                       style={styles.removeButton}
+                      colorScheme="primary"
+                      size="sm"
                     >
                       Remove
                     </Button>
                   </View>
                 </View>
               </View>
-            </Card.Content>
+            </View>
           </Card>
         ))}
         <View style={styles.sectionTotal}>
@@ -143,24 +139,31 @@ const CartScreen = () => {
   };
 
   return (
-    <View style={styles.container}>
-    <Appbar.Header>
-      <Appbar.BackAction onPress={() => navigation.goBack()} />
-      <Appbar.Content title="My Cart" />
-    </Appbar.Header>
+    <SafeAreaView style={styles.container}>
+      <Box bg={theme.colors.card} px={4} py={3} flexDirection="row" alignItems="center">
+        <IconButton
+          icon={<MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.text} />}
+          onPress={() => navigation.goBack()}
+          variant="ghost"
+          size="sm"
+        />
+        <Text color={theme.colors.text} fontSize="lg" fontWeight="bold" flex={1} textAlign="center">
+          My Cart
+        </Text>
+      </Box>
 
       {allItems.length === 0 ? (
         <View style={styles.emptyCart}>
           <View style={styles.emptyCartContent}>
-            <Text style={[styles.emptyText, { color: theme.colors.onSurface }]}>Your cart is empty</Text>
-            <Text style={[styles.emptySubtext, { color: theme.colors.onSurfaceVariant }]}>
+            <Text style={[styles.emptyText, { color: theme.colors.text }]}>Your cart is empty</Text>
+            <Text style={[styles.emptySubtext, { color: theme.colors.secondary }]}>
               Add some items to get started
             </Text>
           </View>
           
           {/* Recommended for You section - HIDDEN */}
           {/* <View style={styles.recommendationsContainer}>
-            <Text style={[styles.recommendationsTitle, { color: theme.colors.onSurface }]}>
+            <Text style={[styles.recommendationsTitle, { color: theme.colors.text }]}>
               Recommended for you
             </Text>
             <ScrollView 
@@ -171,7 +174,7 @@ const CartScreen = () => {
               {groceryRecommendations.map(product => (
                 <View key={product.id} style={[styles.recommendationCard, { backgroundColor: theme.colors.surface }]}>
                   <Image source={{ uri: product.image }} style={styles.recommendationImage} />
-                  <Text style={[styles.recommendationName, { color: theme.colors.onSurface }]} numberOfLines={2}>
+                  <Text style={[styles.recommendationName, { color: theme.colors.text }]} numberOfLines={2}>
                     {product.name}
                   </Text>
                   <Text style={[styles.recommendationPrice, { color: theme.colors.primary }]}>₹{formatAmount(product.price)}</Text>
@@ -201,9 +204,10 @@ const CartScreen = () => {
           </View> */}
           
           <Button
-            mode="contained"
             onPress={() => navigation.navigate('Main', { screen: 'Home', params: { screen: 'HomeRoot', params: { storeId: '', pincode: '' } } })}
             style={{ marginTop: 32, borderRadius: 24, paddingHorizontal: 24 }}
+            colorScheme="primary"
+            size="lg"
           >
             Continue Shopping
           </Button>
@@ -213,7 +217,7 @@ const CartScreen = () => {
           <ScrollView style={styles.cartList}>
             {allItems.map((item) => (
               <Card key={item.id} style={styles.cartItem}>
-                <Card.Content>
+                <View>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     {/* Product Image */}
                     {item.image && (
@@ -221,7 +225,14 @@ const CartScreen = () => {
                     )}
                     <View style={{ flex: 1 }}>
                       <View style={styles.itemHeader}>
-                        <Text style={styles.itemName}>{item.name}</Text>
+                        <Text style={styles.itemName}>
+  {item?.name
+    ? item.name.length > 20
+      ? `${item.name.slice(0, 20)}...`
+      : item.name
+    : 'Unnamed'}
+</Text>
+
                         <Text style={styles.itemPrice}>₹{formatAmount(item.price)}</Text>
                       </View>
                       {toNumber(item.originalPrice) > toNumber(item.price) && (
@@ -241,7 +252,7 @@ const CartScreen = () => {
                           onPress={() => updateQuantity(item.id, item.quantity - 1, item.category)}
                           activeOpacity={0.7}
                         >
-                          <MaterialCommunityIcons name="minus" size={18} color={theme.colors.onSurface} />
+                          <MaterialCommunityIcons name="minus" size={18} color={theme.colors.text} />
                         </TouchableOpacity>
                         <Text style={styles.quantityText}>{item.quantity}</Text>
                         <TouchableOpacity
@@ -249,19 +260,21 @@ const CartScreen = () => {
                           onPress={() => updateQuantity(item.id, item.quantity + 1, item.category)}
                           activeOpacity={0.7}
                         >
-                          <MaterialCommunityIcons name="plus" size={18} color={theme.colors.onSurface} />
+                          <MaterialCommunityIcons name="plus" size={18} color={theme.colors.text} />
                         </TouchableOpacity>
                         <Button
-                          mode="outlined"
+                          variant="outline"
                           onPress={() => removeFromCart(item.id, item.category)}
                           style={styles.removeButton}
+                          colorScheme="primary"
+                          size="sm"
                         >
                           Remove
                         </Button>
                       </View>
                     </View>
                   </View>
-                </Card.Content>
+                </View>
               </Card>
             ))}
           </ScrollView>
@@ -273,16 +286,17 @@ const CartScreen = () => {
           <View style={styles.totalContainer}>
             <Text style={styles.totalText}>Total: ₹{formatAmount(totalAmount)}</Text>
             <Button
-              mode="contained"
               onPress={handleCheckout}
-              disabled={allItems.length === 0}
+              isDisabled={allItems.length === 0}
+              colorScheme="primary"
+              size="lg"
             >
               {isAuthenticated ? 'Process to Checkout' : 'Proceed to Checkout'}
             </Button>
           </View>
         </>
       )}
-    </View>
+    </SafeAreaView>
   );
 };
 

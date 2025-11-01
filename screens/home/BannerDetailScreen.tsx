@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
@@ -15,14 +16,14 @@ const BannerDetailScreen: React.FC<Props> = ({ route }) => {
   const { bannerId } = route.params;
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <Text style={[styles.text, { color: theme.colors.text }]}>
         Banner Detail Screen
       </Text>
       <Text style={[styles.subText, { color: theme.colors.secondary }]}>
         Banner ID: {bannerId}
       </Text>
-    </View>
+    </SafeAreaView>
   );
 };
 

@@ -16,7 +16,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import { Card, Chip, Button } from 'react-native-paper';
+import { Card, Badge, Button } from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
 import orderListService from '../../services/api/orderListService';
 import orderService from '../../services/api/orderService';
@@ -56,58 +56,6 @@ const OrdersScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'ALL' | 'Grocery' | 'Pharmacy'>('ALL');
-
-  // Mock orders data - in real app, fetch from API
-  const mockOrders: Order[] = [
-      {
-        id: '1',
-      orderNumber: 'ORD-001',
-      date: '2024-01-15',
-      total: 450,
-      status: 'paid',
-      paymentMethod: 'online',
-      items: [
-        { name: 'Organic Apples', quantity: 2, price: 120, type: 'grocery', image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=150&h=150&fit=crop&crop=center' },
-        { name: 'Fresh Milk', quantity: 1, price: 60, type: 'grocery', image: 'https://images.unsplash.com/photo-1550583724-b2692b85b150?w=150&h=150&fit=crop&crop=center' },
-        { name: 'Banana', quantity: 1, price: 45, type: 'grocery', image: 'https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=150&h=150&fit=crop&crop=center' },
-      ],
-      deliveryMethod: 'home_delivery',
-      address: '123 Main St, City',
-      storeName: 'Fresh Mart Grocery',
-      },
-      {
-        id: '2',
-      orderNumber: 'ORD-002',
-      date: '2024-01-14',
-      total: 280,
-      status: 'pending',
-      paymentMethod: 'offline',
-      items: [
-        { name: 'Paracetamol', quantity: 1, price: 15, type: 'pharma', image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&h=150&fit=crop&crop=center' },
-        { name: 'Vitamin C', quantity: 1, price: 200, type: 'pharma', image: 'https://images.unsplash.com/photo-1550572017-edd951aa87d7?w=150&h=150&fit=crop&crop=center' },
-        { name: 'Aspirin', quantity: 2, price: 80, type: 'pharma', image: 'https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?w=150&h=150&fit=crop&crop=center' },
-      ],
-      deliveryMethod: 'store_pickup',
-      storeName: 'HealthCare Pharmacy',
-      },
-      {
-        id: '3',
-      orderNumber: 'ORD-003',
-      date: '2024-01-13',
-      total: 650,
-      status: 'completed',
-      paymentMethod: 'online',
-    items: [
-        { name: 'Rice 5kg', quantity: 1, price: 300, type: 'grocery', image: 'https://images.unsplash.com/photo-1586201375761-83865001e31c?w=150&h=150&fit=crop&crop=center' },
-        { name: 'Cooking Oil', quantity: 2, price: 180, type: 'grocery', image: 'https://images.unsplash.com/photo-1474979266404-7eaacbcd87c5?w=150&h=150&fit=crop&crop=center' },
-        { name: 'Bread', quantity: 1, price: 45, type: 'grocery', image: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?w=150&h=150&fit=crop&crop=center' },
-        { name: 'Eggs', quantity: 1, price: 120, type: 'grocery', image: 'https://images.unsplash.com/photo-1518569656558-1f25e69d93d7?w=150&h=150&fit=crop&crop=center' },
-      ],
-      deliveryMethod: 'home_delivery',
-      address: '456 Oak Ave, City',
-      storeName: 'Super Value Store',
-    },
-  ];
 
   useEffect(() => {
     fetchOrders();
@@ -282,13 +230,13 @@ const OrdersScreen = () => {
         });
         setOrders(transformedOrders);
       } else {
-        // Fallback to mock data
-        setOrders(mockOrders);
+        // Fallback to empty array if no data
+        setOrders([]);
       }
     } catch (error) {
       console.log('Error fetching orders:', error);
-      // Fallback to mock data
-      setOrders(mockOrders);
+      // Fallback to empty array if error
+      setOrders([]);
     } finally {
       setIsLoading(false);
     }
@@ -420,13 +368,12 @@ const OrdersScreen = () => {
           <Text style={[styles.loginText, { color: theme.colors.text }]}>
             Please login to view your orders
           </Text>
-          <Button
-            mode="contained"
+          <TouchableOpacity
+            style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
             onPress={() => navigation.navigate('PhoneAuth' as any, { cartType: 'grocery' })}
-            style={styles.loginButton}
           >
-            Login
-          </Button>
+            <Text style={styles.loginButtonText}>Login / Sign Up</Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -435,7 +382,7 @@ const OrdersScreen = () => {
   const filteredOrders = getFilteredOrders();
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
@@ -485,7 +432,7 @@ const OrdersScreen = () => {
         renderItem={({ item: order }) => (
           <Card key={order.id} style={[styles.orderCard, { backgroundColor: theme.colors.surface }]}>
             <TouchableOpacity onPress={() => handleOrderPress(order)}>
-              <Card.Content style={styles.cardContent}>
+              <View style={styles.cardContent}>
                 {/* Item Images and Status Row */}
                 <View style={styles.orderTopRow}>
                   <View style={styles.itemImagesContainer}>
@@ -502,12 +449,14 @@ const OrdersScreen = () => {
                       </View>
                     )}
                   </View>
-                  <Chip
+                  <Badge
                     style={[styles.statusChip, { backgroundColor: getStatusColor(order.status) + '20' }]}
-                    textStyle={{ color: getStatusColor(order.status), fontSize: 12 }}
+                    colorScheme="primary"
                   >
-                    {getStatusText(order.status)}
-                  </Chip>
+                    <Text style={{ color: getStatusColor(order.status), fontSize: 12 }}>
+                      {getStatusText(order.status)}
+                    </Text>
+                  </Badge>
                 </View>
 
                 {/* Order Details */}
@@ -522,7 +471,7 @@ const OrdersScreen = () => {
 
                 <View style={styles.orderDetails}>
                   <Text style={[styles.detailLabel, { color: theme.colors.secondary }]}>Total Amt</Text>
-                  <Text style={[styles.detailValue, { color: theme.colors.text }]}>₹{order.total}</Text>
+                  <Text style={[styles.detailValue, { color: theme.colors.text }]}>₹{Number(order.total).toFixed(2)}</Text>
                 </View>
 
                 <View style={styles.orderDetails}>
@@ -566,7 +515,7 @@ const OrdersScreen = () => {
                     <Text style={[styles.actionButtonText, { color: '#fff' }]}>Rate order</Text>
                   </TouchableOpacity>
                 </View>
-              </Card.Content>
+              </View>
             </TouchableOpacity>
           </Card>
         )}
@@ -634,6 +583,14 @@ const OrdersScreen = () => {
     },
     loginButton: {
       marginTop: 16,
+      paddingHorizontal: 32,
+      paddingVertical: 12,
+      borderRadius: 8,
+    },
+    loginButtonText: {
+      color: '#fff',
+      fontSize: 16,
+      fontWeight: '600',
     },
     emptyText: {
       fontSize: 18,
