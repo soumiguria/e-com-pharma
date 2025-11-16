@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   FlatList,
   Alert,
+  RefreshControl,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -31,6 +32,7 @@ interface Order {
   signedPrescriptionUrl?: string;
   prescriptionUrl?: string;
   storeId?: string;
+  storeName?: string;
 }
 
 const OrderSelectionScreen = () => {
@@ -39,10 +41,17 @@ const OrderSelectionScreen = () => {
   const route = useRoute() as OrderSelectionRouteProp;
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     fetchOrders();
   }, []);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchOrders();
+    setRefreshing(false);
+  };
 
   // Normalize status values from API to consistent format
   const normalizeStatus = (status: string | undefined): string => {
@@ -96,6 +105,7 @@ const OrderSelectionScreen = () => {
             signedPrescriptionUrl: order.signedPrescriptionUrl,
             prescriptionUrl: order.prescriptionUrl,
             storeId: order.storeId,
+            storeName: order.store?.name || order.storeName || 'Store',
           };
         }));
       }
@@ -115,6 +125,7 @@ const OrderSelectionScreen = () => {
             signedPrescriptionUrl: order.signedPrescriptionUrl,
             prescriptionUrl: order.prescriptionUrl,
             storeId: order.storeId,
+            storeName: order.store?.name || order.storeName || 'Store',
           };
         }));
       }
@@ -253,6 +264,11 @@ const OrderSelectionScreen = () => {
       alignItems: 'center',
       marginBottom: 8,
     },
+    orderNumberLabel: {
+      fontSize: 12,
+      color: theme.colors.secondary,
+      marginBottom: 4,
+    },
     orderNumber: {
       fontSize: 16,
       fontWeight: 'bold',
@@ -339,7 +355,10 @@ const OrderSelectionScreen = () => {
     return (
       <View style={styles.orderCard}>
         <View style={styles.orderHeader}>
-          <Text style={styles.orderNumber}>{item.orderNo}</Text>
+          <View>
+            <Text style={styles.orderNumberLabel}>Order Number:</Text>
+            <Text style={styles.orderNumber}>{item.orderNo}</Text>
+          </View>
         </View>
 
         <View style={styles.orderDetails}>
@@ -354,29 +373,29 @@ const OrderSelectionScreen = () => {
             </Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLabel}>Order ID</Text>
+            <Text style={styles.detailLabel}>Store Name</Text>
             <Text style={styles.detailValue} numberOfLines={1}>
-              {item.orderId}
+              {item.storeName || 'N/A'}
             </Text>
           </View>
         </View>
 
-        <View style={styles.prescriptionStatus}>
+        {/* <View style={styles.prescriptionStatus}>
           <MaterialIcons
             name={prescriptionExists ? 'check-circle' : 'upload-file'}
             size={16}
             color={prescriptionExists ? '#4CAF50' : theme.colors.primary}
             style={styles.prescriptionIcon}
-          />
-          <Text
+          /> */}
+          {/* <Text
             style={[
               styles.prescriptionText,
               { color: prescriptionExists ? '#4CAF50' : theme.colors.primary },
             ]}
           >
             {prescriptionExists ? 'Prescription Uploaded' : 'Upload Prescription'}
-          </Text>
-        </View>
+          </Text> */}
+        {/* </View> */}
 
         <View style={{ flexDirection: 'row' }}>
           <TouchableOpacity
@@ -391,7 +410,7 @@ const OrderSelectionScreen = () => {
             onPress={() => handleOrderSelect(item)}
           >
             <MaterialIcons name="upload" size={16} color="#fff" />
-            <Text style={styles.uploadButtonText}>{prescriptionExists ? 'Re-upload' : 'Upload'}</Text>
+            <Text style={styles.uploadButtonText}>{prescriptionExists ? 'Re-upload Prescription' : 'Upload Prescription'}</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -461,6 +480,9 @@ const OrderSelectionScreen = () => {
               keyExtractor={(item) => item.orderId}
               showsVerticalScrollIndicator={false}
               contentContainerStyle={{ paddingBottom: 20 }}
+              refreshControl={
+                <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+              }
             />
           )}
         </View>

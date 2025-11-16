@@ -17,6 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useCart } from '../../contexts/CartContext';
 import storeService, { formatStoreAddress } from '../../services/api/storeService';
+import orderListService from '../../services/api/orderListService';
 
 type OrderConfirmationNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderConfirmation'>;
 type OrderConfirmationRouteProp = RouteProp<RootStackParamList, 'OrderConfirmation'>;
@@ -34,10 +35,16 @@ const OrderConfirmationScreen = () => {
 
   // Get order details from route params or use defaults
   const routeParams: any = route.params || {};
-  const { paymentData, orderId: routeOrderId, amount: routeAmount, orderData: routeOrderData, prescriptionRequired } = routeParams;
+  const { paymentData, orderId: routeOrderId, amount: routeAmount, orderData: routeOrderData, prescriptionRequired: routePrescriptionRequired } = routeParams;
   const routeStoreId = routeParams.storeId;
   const orderId = routeOrderId || `ORD${Date.now().toString().slice(-8)}`;
   const totalAmount = routeAmount || 460;
+  
+  // Check prescriptionRequired from route params or orderData
+  const prescriptionRequiredFromRoute = routePrescriptionRequired || (routeOrderData as any)?.prescriptionRequired || false;
+  
+  // State to track prescriptionRequired (can be updated from API)
+  const [prescriptionRequired, setPrescriptionRequired] = useState<boolean>(prescriptionRequiredFromRoute);
 
   // Use real order data if available, otherwise fallback to mock data
   const orderDetails = routeOrderData ? {
@@ -65,6 +72,48 @@ const OrderConfirmationScreen = () => {
     itemTotal: 400,
     paymentData: paymentData,
   };
+
+  // Update prescriptionRequired when route params change
+  useEffect(() => {
+    setPrescriptionRequired(prescriptionRequiredFromRoute);
+  }, [prescriptionRequiredFromRoute]);
+
+  // Fetch order details from API to check prescriptionRequired
+  useEffect(() => {
+    const fetchOrderDetails = async () => {
+      // Always try to fetch from API if orderId exists and doesn't look like a mock ID
+      if (orderId && !orderId.startsWith('ORD')) {
+        try {
+          console.log('📋 Fetching order details for prescription check:', orderId);
+          console.log('📋 Current prescriptionRequired from route/orderData:', prescriptionRequiredFromRoute);
+          const response = await orderListService.getOrderById(orderId);
+          if (response.success && response.data) {
+            const orderData = response.data;
+            // Check prescriptionRequired field from API response
+            const prescriptionRequiredValue = orderData.prescriptionRequired === true;
+            console.log('📋 Order prescriptionRequired from API:', prescriptionRequiredValue);
+            console.log('📋 Full order data prescriptionRequired field:', orderData.prescriptionRequired);
+            setPrescriptionRequired(prescriptionRequiredValue);
+          } else {
+            // If API fetch fails, use the value from route/orderData
+            console.log('📋 API fetch failed, using prescriptionRequired from route/orderData:', prescriptionRequiredFromRoute);
+            setPrescriptionRequired(prescriptionRequiredFromRoute);
+          }
+        } catch (error) {
+          console.error('❌ Error fetching order details:', error);
+          // If API fetch fails, use the value from route/orderData
+          console.log('📋 API error, using prescriptionRequired from route/orderData:', prescriptionRequiredFromRoute);
+          setPrescriptionRequired(prescriptionRequiredFromRoute);
+        }
+      } else {
+        // For mock orders or when orderId starts with "ORD", use prescriptionRequired from route/orderData
+        console.log('📋 Using prescriptionRequired from route/orderData for mock order:', prescriptionRequiredFromRoute);
+        setPrescriptionRequired(prescriptionRequiredFromRoute);
+      }
+    };
+
+    fetchOrderDetails();
+  }, [orderId, prescriptionRequiredFromRoute]);
 
   // Fetch store details for store address display
   useEffect(() => {
@@ -101,6 +150,8 @@ const OrderConfirmationScreen = () => {
   // Debug logging
   console.log('🎉 OrderConfirmation route params:', { paymentData, routeOrderId, routeAmount, routeOrderData });
   console.log('🎉 OrderConfirmation orderDetails:', orderDetails);
+  console.log('🎯 Current prescriptionRequired state:', prescriptionRequired);
+  console.log('🎯 prescriptionRequiredFromRoute:', prescriptionRequiredFromRoute);
 
   useEffect(() => {
     // Clear cart on successful order
@@ -454,7 +505,14 @@ const OrderConfirmationScreen = () => {
           <View style={styles.prescriptionSection}>
             <TouchableOpacity
               style={styles.prescriptionButton}
-              onPress={() => navigation.navigate('UploadPrescription', { orderId: orderDetails.orderId })}
+              onPress={() => {
+                const storeId = (routeOrderData as any)?.storeId || routeStoreId || (routeOrderData as any)?.store?.storeId;
+                console.log('📤 Navigating to UploadPrescription with orderId:', orderDetails.orderId, 'storeId:', storeId);
+                navigation.navigate('UploadPrescription', { 
+                  orderId: orderDetails.orderId,
+                  storeId: storeId
+                });
+              }}
             >
               <MaterialIcons name="upload-file" size={24} color="#fff" />
               <Text style={styles.prescriptionButtonText}>Upload Prescription</Text>

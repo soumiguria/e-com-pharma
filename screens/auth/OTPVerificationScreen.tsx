@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   View,
   StyleSheet,
@@ -20,6 +20,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SMS from 'expo-sms';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useSMSRetriever } from '../../hooks/useSMSRetriever';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'OTPVerification'>;
 type OTPVerificationRouteProp = RouteProp<RootStackParamList, 'OTPVerification'>;
@@ -41,30 +42,76 @@ const OTPVerificationScreen = () => {
   // Get the actual phone number - use user's mobile if coming from cart (logged in user)
   const actualPhoneNumber = phoneNumber || user?.mobile || '';
 
-  // Auto-read OTP functionality - SDK 54 compatible
+  // Handle OTP received from SMS
+  const handleOTPReceived = useCallback((receivedOtp: string) => {
+    console.log('📱 OTP received from SMS:', receivedOtp);
+    if (receivedOtp && receivedOtp.length >= 4 && receivedOtp.length <= 8) {
+      // Extract exactly 6 digits if available
+      const otpMatch = receivedOtp.match(/\d{6}/);
+      if (otpMatch) {
+        const otpArray = otpMatch[0].split('');
+        setOtp(otpArray);
+        console.log('✅ Auto-filled OTP from SMS');
+        
+        // Auto-verify after a short delay
+        setTimeout(() => {
+          const currentOtp = otpArray.join('');
+          if (!autoVerifyAttempted && currentOtp.length === 6) {
+            setAutoVerifyAttempted(true);
+            // Call handleVerifyOTP directly
+            const verifyOTP = async () => {
+              const otpString = otpArray.join('');
+              if (otpString.length !== 6) return;
+              setIsLoading(true);
+              try {
+                if (!otpKey) {
+                  Alert.alert('Error', 'OTP key not found. Please try again.');
+                  setIsLoading(false);
+                  return;
+                }
+                const loginResult = await login(actualPhoneNumber, otpString, otpKey);
+                if (loginResult.success) {
+                  navigation.replace('Main', undefined as any);
+                } else {
+                  setAutoVerifyAttempted(false);
+                }
+              } catch (error) {
+                console.error('Error verifying OTP:', error);
+                setAutoVerifyAttempted(false);
+              } finally {
+                setIsLoading(false);
+              }
+            };
+            verifyOTP();
+          }
+        }, 500);
+      }
+    }
+  }, [autoVerifyAttempted, otpKey, actualPhoneNumber, login, navigation]);
+
+  // Use SMS Retriever hook for auto-read
+  const { isListening: isSMSListening, error: smsError } = useSMSRetriever(handleOTPReceived);
+
+  // Auto-read OTP functionality - SDK 54 compatible with SMS Retriever
   useEffect(() => {
     const checkForOTP = async () => {
       try {
         console.log('📱 OTP autofill ready for SDK 54');
+        console.log('📱 SMS Retriever status:', isSMSListening ? 'Active' : 'Inactive');
         
-        // SMS autofill will work through the TextInput attributes
-        console.log('📱 Using TextInput autofill properties');
+        if (smsError) {
+          console.log('⚠️ SMS Retriever error:', smsError);
+        }
         
-        // Simulate OTP detection for testing (remove in production)
-        setTimeout(() => {
-          console.log('📱 Simulating OTP detection for testing...');
-          // Uncomment below line for testing
-          // const simulatedOTP = '123456';
-          // const otpArray = simulatedOTP.split('');
-          // setOtp(otpArray);
-        }, 3000);
+        // SMS autofill will work through the TextInput attributes and SMS Retriever
+        console.log('📱 Using TextInput autofill + SMS Retriever');
       } catch (error) {
         console.log('OTP setup error:', error);
       }
     };
 
     checkForOTP();
-  }, []);
+  }, [isSMSListening, smsError]);
 
 
 
@@ -405,14 +452,14 @@ const OTPVerificationScreen = () => {
                   value={digit}
                   onChangeText={(value) => handleOtpChange(value, index)}
                   onKeyPress={(e) => handleKeyPress(e, index)}
-                  keyboardType="default"
-                  maxLength={1}
+                  keyboardType="number-pad"
+                  maxLength={index === 0 ? 6 : 1}
                   selectTextOnFocus
-                  autoComplete="sms-otp"
-                  textContentType="oneTimeCode"
+                  autoComplete={index === 0 ? "sms-otp" : "off"}
+                  textContentType={index === 0 ? "oneTimeCode" : "none"}
                   autoCapitalize="none"
                   autoCorrect={false}
-                  importantForAutofill="yes"
+                  importantForAutofill={index === 0 ? "yes" : "no"}
                   autoFocus={index === 0}
                   returnKeyType="next"
                   contextMenuHidden={false}

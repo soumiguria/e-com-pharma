@@ -50,8 +50,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     }
   }, [transcript, onSearch, stopListening]);
 
-  // Mic button is always enabled - user can always try to use it
-
+  // Mic button अब सिर्फ तभी enable होगा जब voice module available हो (Android app build)
   useEffect(() => {
     if (value !== undefined) {
       setSearchQuery(value);
@@ -171,16 +170,22 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               <Ionicons name="close-circle" size={22} color={colors.text} />
             </TouchableOpacity>
           )}
-          <TouchableOpacity 
-            onPress={handleVoicePress} 
+          <TouchableOpacity
+            onPress={handleVoicePress}
             style={styles.iconButton}
-            disabled={false} // Always allow user to try
+            disabled={!isAvailable}
           >
             <Animated.View style={isListening ? pulseStyle : undefined}>
               <MaterialCommunityIcons
                 name={isListening ? 'microphone' : 'microphone-outline'}
                 size={24}
-                color={isListening ? colors.primary : colors.text}
+                color={
+                  !isAvailable
+                    ? `${colors.text}66`
+                    : isListening
+                    ? colors.primary
+                    : colors.text
+                }
               />
             </Animated.View>
           </TouchableOpacity>

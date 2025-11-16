@@ -14,7 +14,8 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import orderListService from '../../services/api/orderListService';
-import storeService, { formatStoreAddress } from '../../services/api/storeService';
+import * as Location from 'expo-location';
+import storeService, { formatStoreAddress, createAddressFromCoordinates } from '../../services/api/storeService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCart } from '../../contexts/CartContext';
 
@@ -106,12 +107,78 @@ const OrderDetailScreen = () => {
             console.log('🏪 Store details fetched successfully:', response.data);
             const storeData = (response.data as any).data || response.data;
             setStoreDetails(storeData);
-            
-            // Format the address with coordinates if available
-            const coordinates = storeData.location?.coordinates;
-            if (storeData.address || coordinates) {
-              const formattedAddress = formatStoreAddress(storeData.address || {}, coordinates);
-              setFormattedStoreAddress(formattedAddress);
+
+            // Format address using API fields + reverse geocoding if needed
+            const coordinates = storeData.location?.coordinates as [number, number] | undefined;
+            const apiAddress =
+              storeData.address ||
+              storeData.config?.address ||
+              null;
+
+            let finalAddress: string | undefined;
+
+            // Check if API has any non-empty address fields
+            const hasAnyAddressField =
+              !!apiAddress &&
+              [
+                apiAddress.address1,
+                apiAddress.address2,
+                apiAddress.city,
+                apiAddress.state,
+                apiAddress.pincode,
+                apiAddress.country,
+              ].some((part: any) => typeof part === 'string' && part.trim().length > 0);
+
+            // 1) Prefer nicely formatted API address if present
+            if (hasAnyAddressField) {
+              finalAddress = formatStoreAddress(apiAddress, coordinates);
+            }
+            // 2) If API address empty but coordinates present → reverse geocode
+            else if (coordinates && coordinates.length === 2) {
+              try {
+                const [latitude, longitude] = coordinates;
+                console.log('🗺️ OrderDetail reverse geocoding store coords:', {
+                  storeId: currentOrder.storeId,
+                  latitude,
+                  longitude,
+                });
+
+                const results = await Location.reverseGeocodeAsync({
+                  latitude,
+                  longitude,
+                });
+
+                if (results && results.length > 0) {
+                  const r = results[0];
+                  const parts = [
+                    r.name,
+                    r.street,
+                    r.city || r.subregion,
+                    r.region,
+                    r.postalCode,
+                    r.country,
+                  ].filter(Boolean);
+
+                  if (parts.length > 0) {
+                    finalAddress = parts.join(', ');
+                  } else {
+                    finalAddress = createAddressFromCoordinates(latitude, longitude);
+                  }
+                } else {
+                  finalAddress = createAddressFromCoordinates(latitude, longitude);
+                }
+              } catch (geoErr) {
+                console.warn('⚠️ OrderDetail reverse geocoding failed:', geoErr);
+                if (coordinates && coordinates.length === 2) {
+                  const [lat, lng] = coordinates;
+                  finalAddress = createAddressFromCoordinates(lat, lng);
+                }
+              }
+            }
+
+            if (finalAddress) {
+              console.log('🏪 OrderDetail store address resolved:', finalAddress);
+              setFormattedStoreAddress(finalAddress);
             }
           } else {
             console.log('⚠️ Failed to fetch store details:', response.error);

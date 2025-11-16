@@ -18,6 +18,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ProductCard from '../../components/product/ProductCard';
 import { useAppContext } from '../../contexts/AppContext';
 import storeService from '../../services/api/storeService';
+import VoiceSearch from '../../components/search/VoiceSearch';
 
 type SearchResultsScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SearchResults'>;
 
@@ -86,6 +87,7 @@ const SearchResultsScreen = () => {
   const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentQuery, setCurrentQuery] = useState<string>(query);
 
   // Fetch search results from API
   useEffect(() => {
@@ -99,9 +101,9 @@ const SearchResultsScreen = () => {
       try {
         setLoading(true);
         setError(null);
-        console.log('🔍 Searching for:', query, 'in store:', selectedStore.id);
+        console.log('🔍 Searching for:', currentQuery, 'in store:', selectedStore.id);
         
-        const response = await storeService.searchStoreProducts(selectedStore.id, query);
+        const response = await storeService.searchStoreProducts(selectedStore.id, currentQuery);
         
         if (response.success && response.data) {
           console.log('🔍 Search results:', response.data);
@@ -119,7 +121,7 @@ const SearchResultsScreen = () => {
     };
 
     fetchSearchResults();
-  }, [query, selectedStore?.id]);
+  }, [currentQuery, selectedStore?.id]);
 
   const handleProductPress = (product: Product) => {
     // Transform API product to expected format
@@ -292,7 +294,7 @@ const SearchResultsScreen = () => {
           </View>
           <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color={theme.colors.primary} />
-            <Text style={styles.loadingText}>Searching for "{query}"...</Text>
+            <Text style={styles.loadingText}>Searching for "{currentQuery}"...</Text>
           </View>
         </View>
       </SafeAreaView>
@@ -338,9 +340,19 @@ const SearchResultsScreen = () => {
           <Text style={styles.headerTitle}>Search Results</Text>
         </View>
 
+        {/* Voice search bar - updates currentQuery when speech recognized */}
+        <VoiceSearch
+          onResult={(text) => {
+            if (text && text.trim().length > 0) {
+              console.log('🔍 VoiceSearch result used as query:', text);
+              setCurrentQuery(text.trim());
+            }
+          }}
+        />
+
         <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
           <Text style={styles.resultsCount}>
-            {totalResults} results for "{query}"
+            {totalResults} results for "{currentQuery}"
           </Text>
           
           {totalResults === 0 ? (

@@ -128,28 +128,88 @@ const ProductDetailScreen = () => {
     ];
   }
 
-  // Mock variants data - replace with actual data from your API
-  const variants: ProductVariant[] = [
-    { id: '1', name: 'Small (250g)', price: productDetails.price, stock: 10 },
-    { id: '2', name: 'Medium (500g)', price: productDetails.price * 1.8, stock: 15 },
-    { id: '3', name: 'Large (1kg)', price: productDetails.price * 3.2, stock: 8 },
-  ];
+  // Helper function to validate price
+  const isValidPrice = (value: any): boolean => {
+    if (value === null || value === undefined) return false;
+    if (typeof value === 'string') {
+      const num = parseFloat(value);
+      return !isNaN(num) && num > 0 && isFinite(num);
+    }
+    if (typeof value === 'number') {
+      return value > 0 && isFinite(value);
+    }
+    return false;
+  };
 
-  // Set first variant as default when component loads
+  // Helper function to validate quantity (stricter - must be a valid integer, not extracted from string)
+  const isValidQuantity = (value: any): boolean => {
+    if (value === null || value === undefined || value === '') return false;
+    // If it's a number, check if it's a valid positive integer
+    if (typeof value === 'number') {
+      return Number.isInteger(value) && value > 0 && isFinite(value);
+    }
+    // If it's a string, check if it's a pure number (no letters or units)
+    if (typeof value === 'string') {
+      // Remove whitespace and check if it's a pure number
+      const trimmed = value.trim();
+      // Check if string is a valid integer (no decimal, no letters, no units)
+      const num = parseInt(trimmed, 10);
+      // Only valid if the parsed number equals the original string (no extra characters)
+      return !isNaN(num) && num > 0 && String(num) === trimmed;
+    }
+    return false;
+  };
+
+  // Get valid price from product details
+  const getValidPrice = (): number => {
+    const price = selectedVariant ? selectedVariant.price : (productDetails.price || productDetails.sp || 0);
+    if (typeof price === 'string') {
+      const num = parseFloat(price);
+      return !isNaN(num) && num > 0 ? num : 0;
+    }
+    return price > 0 ? price : 0;
+  };
+
+  // Get valid quantity/stock (stricter validation)
+  const getValidQuantity = (): number => {
+    const qty = productDetails.availableQty || productDetails.quantity || productDetails.stock || 0;
+    // Use strict validation - only accept if it's a valid integer
+    if (isValidQuantity(qty)) {
+      if (typeof qty === 'number') {
+        return qty;
+      }
+      if (typeof qty === 'string') {
+        return parseInt(qty.trim(), 10);
+      }
+    }
+    return 0;
+  };
+
+  // Check if product can be added to cart
+  const canAddToCart = (): boolean => {
+    const price = getValidPrice();
+    const qty = getValidQuantity();
+    return price > 0 && qty > 0;
+  };
+
+  // Variants - check if API provides variants, otherwise use empty array
+  const variants: ProductVariant[] = productDetails.variants && Array.isArray(productDetails.variants) && productDetails.variants.length > 0
+    ? productDetails.variants.map((v: any, idx: number) => ({
+        id: v.id || v.variantId || String(idx),
+        name: v.name || v.packing || v.quantity || 'Default',
+        price: isValidPrice(v.price || v.sp) ? (typeof (v.price || v.sp) === 'string' ? parseFloat(v.price || v.sp) : (v.price || v.sp)) : 0,
+        stock: isValidQuantity(v.stock || v.availableQty || v.quantity) ? (typeof (v.stock || v.availableQty || v.quantity) === 'string' ? parseInt(String(v.stock || v.availableQty || v.quantity).trim(), 10) : (v.stock || v.availableQty || v.quantity)) : 0,
+      }))
+    : [];
+
+  // Set first variant as default when component loads (only if variants exist)
   useEffect(() => {
     if (variants.length > 0 && !selectedVariant) {
       setSelectedVariant(variants[0]);
+    } else if (variants.length === 0) {
+      setSelectedVariant(null);
     }
-  }, [variants, selectedVariant]);
-
-  // 1. Add state for similar products (mock data for now)
-  const similarProducts = [
-    { id: '101', name: 'Amul Milk 1L', price: 65, originalPrice: 80, image: 'https://blinkit.com/images/products/400/amul-taaza-homogenised-toned-milk.jpg' },
-    { id: '102', name: 'Britannia Cheese Slices', price: 120, originalPrice: 150, image: 'https://blinkit.com/images/products/400/britannia-cheese-slices.jpg' },
-    { id: '103', name: 'Mother Dairy Curd', price: 30, originalPrice: 40, image: 'https://blinkit.com/images/products/400/mother-dairy-dahi.jpg' },
-    { id: '104', name: 'Tropicana Juice', price: 90, originalPrice: 100, image: 'https://blinkit.com/images/products/400/tropicana-orange-delight.jpg' },
-    { id: '105', name: 'Cadbury Dairy Milk', price: 45, originalPrice: 50, image: 'https://blinkit.com/images/products/400/cadbury-dairy-milk-chocolate.jpg' },
-  ];
+  }, [variants.length]);
 
   const addToCorrectCart = (itemToAdd: any) => {
     // Add to appropriate cart based on product category
@@ -430,18 +490,33 @@ const ProductDetailScreen = () => {
           <Text style={{ fontSize: 15, color: theme.colors.secondary, marginBottom: 8 }}>{selectedVariant ? selectedVariant.name : (variants[0]?.name || '5 kg')}</Text>
           {/* Price Block */}
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, backgroundColor: '#F7F7F7', borderRadius: 8, padding: 8, alignSelf: 'flex-start' }}>
-            <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.colors.primary }}>₹{(selectedVariant ? selectedVariant.price : extendedProduct.price).toFixed(2)}</Text>
-            <Text style={{ fontSize: 15, color: '#888', textDecorationLine: 'line-through', marginLeft: 10 }}>₹{((selectedVariant ? selectedVariant.price : extendedProduct.price) * 1.15).toFixed(2)}</Text>
-            <Text style={{ fontSize: 14, color: '#27ae60', fontWeight: 'bold', marginLeft: 10 }}>15% OFF</Text>
+            <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.colors.primary }}>₹{getValidPrice().toFixed(2)}</Text>
+            {getValidPrice() > 0 && (
+              <>
+                <Text style={{ fontSize: 15, color: '#888', textDecorationLine: 'line-through', marginLeft: 10 }}>₹{(getValidPrice() * 1.15).toFixed(2)}</Text>
+                <Text style={{ fontSize: 14, color: '#27ae60', fontWeight: 'bold', marginLeft: 10 }}>15% OFF</Text>
+              </>
+            )}
           </View>
-          {/* Brand Section */}
-          <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, marginTop: 2, backgroundColor: '#F7F7F7', borderRadius: 8, padding: 8 }} onPress={() => navigation.navigate('BrandDetail', { brand: extendedProduct.brand || 'Aashirvaad' })}>
-            <Image source={{ uri: 'https://seeklogo.com/images/A/amul-logo-7E6B2B7B2B-seeklogo.com.png' }} style={{ width: 32, height: 32, borderRadius: 16, marginRight: 10, backgroundColor: '#f0f0f0' }} />
-            <View>
-              <Text style={{ fontSize: 15, color: theme.colors.text, fontWeight: 'bold' }}>{extendedProduct.brand || 'Aashirvaad'}</Text>
-              <Text style={{ fontSize: 13, color: theme.colors.primary }}>Explore all products</Text>
+          {/* Available Quantity Section */}
+          {getValidQuantity() > 0 && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, marginTop: 2, backgroundColor: '#F7F7F7', borderRadius: 8, padding: 8 }}>
+              <MaterialIcons name="inventory" size={20} color={theme.colors.primary} style={{ marginRight: 8 }} />
+              <Text style={{ fontSize: 15, color: theme.colors.text }}>
+                Available: <Text style={{ fontWeight: 'bold', color: theme.colors.primary }}>{getValidQuantity()} units</Text>
+              </Text>
             </View>
-          </TouchableOpacity>
+          )}
+          {/* Brand Section - Only show if brand exists in API data */}
+          {(productDetails.brand || productDetails.manufacturer) && (
+            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, marginTop: 2, backgroundColor: '#F7F7F7', borderRadius: 8, padding: 8 }} onPress={() => navigation.navigate('BrandDetail', { brand: productDetails.brand || productDetails.manufacturer || '' })}>
+              <Image source={{ uri: 'https://seeklogo.com/images/A/amul-logo-7E6B2B7B2B-seeklogo.com.png' }} style={{ width: 32, height: 32, borderRadius: 16, marginRight: 10, backgroundColor: '#f0f0f0' }} />
+              <View>
+                <Text style={{ fontSize: 15, color: theme.colors.text, fontWeight: 'bold' }}>{productDetails.brand || productDetails.manufacturer}</Text>
+                <Text style={{ fontSize: 13, color: theme.colors.primary }}>Explore all products</Text>
+              </View>
+            </TouchableOpacity>
+          )}
           <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 10 }} />
           {/* View Product Details (Expandable) */}
           <TouchableOpacity onPress={() => setDetailsExpanded(e => !e)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, marginBottom: 2 }}>
@@ -454,10 +529,13 @@ const ProductDetailScreen = () => {
             </View>
           )}
         </View>
-        {/* Available Variants */}
-        <View style={{ marginBottom: 18, backgroundColor: '#fff', borderRadius: 14, padding: 14, marginHorizontal: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, zIndex: 1 }}>
-          <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.colors.text, marginBottom: 10 }}>Available Variants</Text>
-          {variants.map((variant, idx) => (
+        {/* Available Variants - Only show if variants exist */}
+        {variants.length > 0 && (
+          <View style={{ marginBottom: 18, backgroundColor: '#fff', borderRadius: 14, padding: 14, marginHorizontal: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, zIndex: 1 }}>
+            <Text style={{ fontSize: 16, fontWeight: 'bold', color: theme.colors.text, marginBottom: 10 }}>Available Variants</Text>
+            {variants.map((variant, idx) => {
+              const variantCanAdd = isValidPrice(variant.price) && isValidQuantity(variant.stock);
+              return (
             <TouchableOpacity
               key={variant.id}
               activeOpacity={0.85}
@@ -486,41 +564,49 @@ const ProductDetailScreen = () => {
                     </View>
                   )}
                 </View>
-                <Text style={{ fontSize: 15, color: theme.colors.primary, fontWeight: 'bold' }}>₹{variant.price.toFixed(2)}</Text>
+                <Text style={{ fontSize: 15, color: theme.colors.primary, fontWeight: 'bold' }}>
+                  {isValidPrice(variant.price) ? `₹${variant.price.toFixed(2)}` : 'Price not available'}
+                </Text>
               </View>
-              {getCartQuantity(originalProductId, variant.id) > 0 ? (
-                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, borderWidth: 1.5, borderColor: '#27ae60', height: 34, minWidth: 80, paddingHorizontal: 6, margin: 0, shadowColor: '#27ae60', shadowOpacity: 0.08, shadowRadius: 4 }}>
-                  <TouchableOpacity onPress={() => {
-                    const currentQty = getCartQuantity(originalProductId, variant.id);
-                    const newQty = Math.max(0, currentQty - 1);
-                    const itemId = `${originalProductId}-${variant.id}`;
-                    const category = productDetails.category || 'grocery';
-                    console.log('🛒 Variant decrement:', { itemId, currentQty, newQty, category });
-                    updateQuantity(itemId, newQty, category);
-                  }} style={{ width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}>
-                    <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>-</Text>
-                  </TouchableOpacity>
-                  <Text style={{ width: 28, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>{getCartQuantity(originalProductId, variant.id)}</Text>
-                  <TouchableOpacity onPress={() => {
-                    addToCorrectCart({ id: `${originalProductId}-${variant.id}`, name: productDetails.name, price: variant.price, image: productDetails.image || '', variant: { name: variant.name, unit: variant.name.split(' ')[1].replace(/[()]/g, '') } });
-                  }} style={{ width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}>
-                    <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>+</Text>
-                  </TouchableOpacity>
-                </View>
+              {variantCanAdd ? (
+                getCartQuantity(originalProductId, variant.id) > 0 ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, borderWidth: 1.5, borderColor: '#27ae60', height: 34, minWidth: 80, paddingHorizontal: 6, margin: 0, shadowColor: '#27ae60', shadowOpacity: 0.08, shadowRadius: 4 }}>
+                    <TouchableOpacity onPress={() => {
+                      const currentQty = getCartQuantity(originalProductId, variant.id);
+                      const newQty = Math.max(0, currentQty - 1);
+                      const itemId = `${originalProductId}-${variant.id}`;
+                      const category = productDetails.category || 'grocery';
+                      console.log('🛒 Variant decrement:', { itemId, currentQty, newQty, category });
+                      updateQuantity(itemId, newQty, category);
+                    }} style={{ width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}>
+                      <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>-</Text>
+                    </TouchableOpacity>
+                    <Text style={{ width: 28, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>{getCartQuantity(originalProductId, variant.id)}</Text>
+                    <TouchableOpacity onPress={() => {
+                      addToCorrectCart({ id: `${originalProductId}-${variant.id}`, name: productDetails.name, price: variant.price, image: productDetails.image || '', variant: { name: variant.name, unit: variant.name.split(' ')[1]?.replace(/[()]/g, '') || '' } });
+                    }} style={{ width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}>
+                      <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>+</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : null
               ) : (
-                // Remove the 'Add' button from here (should only be in the fixed bottom bar)
-                null
+                <View style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#f5f5f5', borderRadius: 6 }}>
+                  <Text style={{ fontSize: 12, color: '#999', fontStyle: 'italic' }}>Out of stock</Text>
+                </View>
               )}
             </TouchableOpacity>
-          ))}
-        </View>
+              );
+            })}
+          </View>
+        )}
         {/* Similar Products Section */}
         <View style={{ marginTop: 8, marginBottom: 24 }}>
-          <Text style={{ fontSize: 18, fontWeight: 'bold', marginLeft: 16, marginBottom: 8 }}>Similar Products</Text>
+          <Text style={{ fontSize: 18, fontWeight: 'bold', marginLeft: 16, marginBottom: 8, color: theme.colors.text }}>Similar Products</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: 16, paddingRight: 16, paddingVertical: 4 }}>
-            {similarProducts.map(product => (
+            {/* Fetch similar products from API or show placeholder */}
+            {[1, 2, 3, 4, 5].map((item, idx) => (
               <TouchableOpacity
-                key={product.id}
+                key={idx}
                 style={{
                   width: 135,
                   height: 260,
@@ -538,18 +624,20 @@ const ProductDetailScreen = () => {
                   justifyContent: 'flex-start',
                   marginBottom: 10,
                 }}
-                onPress={() => navigation.push('ProductDetail', { product })}
+                onPress={() => {
+                  // Navigate to similar product if available
+                  // For now, just navigate to same product
+                  navigation.push('ProductDetail', { product: productDetails });
+                }}
                 activeOpacity={0.88}
               >
-                <Image source={{ uri: product.image }} style={{ width: 95, height: 110, borderRadius: 12, marginBottom: 12, backgroundColor: '#f7f7f7' }} />
-                <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, marginBottom: 6, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>{product.name}</Text>
-                <Text style={{ fontSize: 16, color: theme.colors.primary, fontWeight: 'bold', textAlign: 'center', marginBottom: 4 }}>₹{product.price.toFixed(2)}</Text>
-                {product.originalPrice && product.originalPrice > product.price && (
-                  <Text style={{ fontSize: 13, color: theme.colors.secondary, textDecorationLine: 'line-through', textAlign: 'center', marginBottom: 3 }}>₹{product.originalPrice.toFixed(2)}</Text>
-                )}
-                {product.originalPrice && product.originalPrice > product.price && (
-                  <Text style={{ fontSize: 12, color: '#FF9800', textAlign: 'center', fontWeight: 'bold' }}>{Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)}% off</Text>
-                )}
+                <View style={{ width: 95, height: 110, borderRadius: 12, marginBottom: 12, backgroundColor: '#f7f7f7', justifyContent: 'center', alignItems: 'center' }}>
+                  <MaterialIcons name="image" size={40} color="#ccc" />
+                </View>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, marginBottom: 6, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>
+                  Similar Product {idx + 1}
+                </Text>
+                <Text style={{ fontSize: 16, color: theme.colors.primary, fontWeight: 'bold', textAlign: 'center', marginBottom: 4 }}>₹{getValidPrice().toFixed(2)}</Text>
               </TouchableOpacity>
             ))}
           </ScrollView>
@@ -581,15 +669,59 @@ const ProductDetailScreen = () => {
             </View>
           ) : (
             <TouchableOpacity
-              style={{ backgroundColor: theme.colors.primary, borderRadius: 8, paddingHorizontal: 40, paddingVertical: 12, alignSelf: 'center' }}
-              onPress={() => {
-                if (!selectedVariant) return;
-                addToCorrectCart({ id: `${originalProductId}-${selectedVariant.id}`, name: productDetails.name, price: selectedVariant.price, image: productDetails.image || '', variant: { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1].replace(/[()]/g, '') } });
+              style={{ 
+                backgroundColor: canAddToCart() ? theme.colors.primary : '#ccc', 
+                borderRadius: 8, 
+                paddingHorizontal: 40, 
+                paddingVertical: 12, 
+                alignSelf: 'center',
+                opacity: canAddToCart() ? 1 : 0.6
               }}
+              onPress={() => {
+                if (!selectedVariant && variants.length > 0) return;
+                if (!canAddToCart()) return;
+                const price = selectedVariant ? selectedVariant.price : getValidPrice();
+                addToCorrectCart({ 
+                  id: selectedVariant ? `${originalProductId}-${selectedVariant.id}` : originalProductId, 
+                  name: productDetails.name, 
+                  price: price, 
+                  image: productDetails.image || '', 
+                  variant: selectedVariant ? { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1]?.replace(/[()]/g, '') || '' } : undefined 
+                });
+              }}
+              disabled={!canAddToCart()}
             >
-              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>Add</Text>
+              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
+                {canAddToCart() ? 'Add' : 'Out of Stock'}
+              </Text>
             </TouchableOpacity>
           )
+        ) : variants.length === 0 ? (
+          <TouchableOpacity
+            style={{ 
+              backgroundColor: canAddToCart() ? theme.colors.primary : '#ccc', 
+              borderRadius: 8, 
+              paddingHorizontal: 40, 
+              paddingVertical: 12, 
+              alignSelf: 'center',
+              opacity: canAddToCart() ? 1 : 0.6
+            }}
+            onPress={() => {
+              if (!canAddToCart()) return;
+              const price = getValidPrice();
+              addToCorrectCart({ 
+                id: originalProductId, 
+                name: productDetails.name, 
+                price: price, 
+                image: productDetails.image || ''
+              });
+            }}
+            disabled={!canAddToCart()}
+          >
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
+              {canAddToCart() ? 'Add' : 'Out of Stock'}
+            </Text>
+          </TouchableOpacity>
         ) : (
           <TouchableOpacity
             style={{ backgroundColor: '#ccc', borderRadius: 8, paddingHorizontal: 40, paddingVertical: 12, alignSelf: 'center', opacity: 0.7 }}

@@ -19,7 +19,8 @@ import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import ThemedButton from '../../components/ui/ThemedButton';
 import LoadingOverlay from '../../components/ui/LoadingOverlay';
 import { usePayment } from '../../hooks/usePayment';
-import storeService, { formatStoreAddress } from '../../services/api/storeService';
+import * as Location from 'expo-location';
+import storeService, { formatStoreAddress, createAddressFromCoordinates } from '../../services/api/storeService';
 
 type OrderSummaryRouteProp = RouteProp<RootStackParamList, 'OrderSummary'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -192,16 +193,84 @@ const OrderSummaryScreen = () => {
         
         setOrderSummary(summary);
         
-        // Fetch and format store address if available
+        // Fetch and format store address if available (reverse geocoding + API address)
         try {
           const storeId = freshOrderData.storeId;
           if (storeId) {
             const storeRes = await storeService.getStoreDetailsById(storeId);
             if (storeRes.success && storeRes.data) {
-              const storeData = (storeRes.data as any).data || storeRes.data;
-              const coordinates = storeData.location?.coordinates;
-              const address = formatStoreAddress(storeData.address || {}, coordinates);
-              setFormattedStoreAddress(address);
+              const rawStore = storeRes.data as any;
+              const storeData = rawStore.data || rawStore;
+
+              const coordinates = storeData.location?.coordinates as [number, number] | undefined;
+              const apiAddress =
+                storeData.address ||
+                storeData.config?.address ||
+                null;
+
+              let finalAddress: string | undefined;
+
+              // Check if API has any non-empty address fields
+              const hasAnyAddressField =
+                !!apiAddress &&
+                [
+                  apiAddress.address1,
+                  apiAddress.address2,
+                  apiAddress.city,
+                  apiAddress.state,
+                  apiAddress.pincode,
+                  apiAddress.country,
+                ].some((part: any) => typeof part === 'string' && part.trim().length > 0);
+
+              // 1) Prefer nicely formatted API address if present
+              if (hasAnyAddressField) {
+                finalAddress = formatStoreAddress(apiAddress, coordinates);
+              }
+              // 2) If API address empty but coordinates present → reverse geocode
+              else if (coordinates && coordinates.length === 2) {
+                try {
+                  const [latitude, longitude] = coordinates;
+                  console.log('🗺️ OrderSummary reverse geocoding store coords:', {
+                    storeId,
+                    latitude,
+                    longitude,
+                  });
+
+                  const results = await Location.reverseGeocodeAsync({
+                    latitude,
+                    longitude,
+                  });
+
+                  if (results && results.length > 0) {
+                    const r = results[0];
+                    const parts = [
+                      r.name,
+                      r.street,
+                      r.city || r.subregion,
+                      r.region,
+                      r.postalCode,
+                      r.country,
+                    ].filter(Boolean);
+
+                    if (parts.length > 0) {
+                      finalAddress = parts.join(', ');
+                    } else {
+                      finalAddress = createAddressFromCoordinates(latitude, longitude);
+                    }
+                  } else {
+                    finalAddress = createAddressFromCoordinates(latitude, longitude);
+                  }
+                } catch (geoErr) {
+                  console.warn('⚠️ OrderSummary reverse geocoding failed:', geoErr);
+                  const [lat, lng] = coordinates;
+                  finalAddress = createAddressFromCoordinates(lat, lng);
+                }
+              }
+
+              if (finalAddress) {
+                console.log('🏪 OrderSummary store address resolved:', finalAddress);
+                setFormattedStoreAddress(finalAddress);
+              }
             }
           }
         } catch (addrErr) {

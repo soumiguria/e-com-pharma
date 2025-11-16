@@ -12,6 +12,7 @@ import {
   ScrollView,
   BackHandler,
   Image as RNImage,
+  RefreshControl,
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -210,6 +211,7 @@ const HomeScreen = () => {
   const scrollY = new Animated.Value(0);
   const [homeProducts, setHomeProducts] = useState<any[]>([]);
   const [homeProductsLoading, setHomeProductsLoading] = useState<boolean>(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Determine if current store is pharmacy or grocery
   const isPharmacyStore = selectedStore?.type === 'pharma';
@@ -242,38 +244,49 @@ const HomeScreen = () => {
 
 
   // Fetch "Some products" based on current store type
-  useEffect(() => {
-    const fetch = async () => {
-      if (!selectedStore?.id) {
-        console.log('🏠 No store selected, clearing home products');
-        setHomeProducts([]);
-        return;
-      }
-      
-      try {
+  const fetchHomeProducts = async (isRefresh = false) => {
+    if (!selectedStore?.id) {
+      console.log('🏠 No store selected, clearing home products');
+      setHomeProducts([]);
+      return;
+    }
+    
+    try {
+      if (!isRefresh) {
         setHomeProductsLoading(true);
-        console.log(`🏠 Fetching ${isPharmacyStore ? 'pharma' : 'grocery'} products for store:`, selectedStore.id);
-        
-        const resp = isPharmacyStore
-          ? await storeProductService.getPharmaProducts(selectedStore.id)
-          : await storeProductService.getGroceryProducts(selectedStore.id);
-        
-        if (resp.success && Array.isArray(resp.data)) {
-          console.log(`🏠 Loaded ${resp.data.length} products for store`);
-          setHomeProducts(resp.data.slice(0, 8));
-        } else {
-          console.log('🏠 No products found for store');
-          setHomeProducts([]);
-        }
-      } catch (e) {
-        console.log('🏠 Error fetching products for store:', e);
+      }
+      console.log(`🏠 Fetching ${isPharmacyStore ? 'pharma' : 'grocery'} products for store:`, selectedStore.id);
+      
+      const resp = isPharmacyStore
+        ? await storeProductService.getPharmaProducts(selectedStore.id)
+        : await storeProductService.getGroceryProducts(selectedStore.id);
+      
+      if (resp.success && Array.isArray(resp.data)) {
+        console.log(`🏠 Loaded ${resp.data.length} products for store`);
+        setHomeProducts(resp.data.slice(0, 8));
+      } else {
+        console.log('🏠 No products found for store');
         setHomeProducts([]);
-      } finally {
+      }
+    } catch (e) {
+      console.log('🏠 Error fetching products for store:', e);
+      setHomeProducts([]);
+    } finally {
+      if (!isRefresh) {
         setHomeProductsLoading(false);
       }
-    };
-    fetch();
+    }
+  };
+
+  useEffect(() => {
+    fetchHomeProducts();
   }, [selectedStore?.id, isPharmacyStore]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchHomeProducts(true);
+    setRefreshing(false);
+  };
 
   const themedStyles = useMemo(() => StyleSheet.create({
     container: {
@@ -630,7 +643,11 @@ const HomeScreen = () => {
             </TouchableOpacity>
           </View>
         ) : (
-          <ScrollView>
+          <ScrollView
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          >
             <BannerSlider />
 
             

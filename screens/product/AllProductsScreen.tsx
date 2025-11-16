@@ -6,7 +6,8 @@ import {
   FlatList, 
   TouchableOpacity, 
   Image,
-  Dimensions
+  Dimensions,
+  RefreshControl
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -38,50 +39,61 @@ const AllProductsScreen = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [products, setProducts] = useState<any[]>(initialProducts);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   // Fetch products from API if store is selected
-  useEffect(() => {
-    const fetchProducts = async () => {
-      if (!selectedStore?.id) {
-        console.log('   No store selected, using fallback mock data');
-        setProducts(initialProducts);
-        return;
-      }
+  const fetchProducts = async (isRefresh = false) => {
+    if (!selectedStore?.id) {
+      console.log('   No store selected, using fallback mock data');
+      setProducts(initialProducts);
+      return;
+    }
 
-      try {
+    try {
+      if (!isRefresh) {
         setLoading(true);
-        console.log(`🔄 Fetching ${section} products for store:`, selectedStore.id);
-        
-        if (section === 'pharma') {
-          const response = await storeProductService.getPharmaProducts(selectedStore.id);
-          if (response.success && response.data) {
-            console.log(' Pharma products loaded from API');
-            setProducts(response.data);
-          } else {
-            console.log('   Pharma API failed, using fallback mock data');
-            setProducts(initialProducts);
-          }
+      }
+      console.log(`🔄 Fetching ${section} products for store:`, selectedStore.id);
+      
+      if (section === 'pharma') {
+        const response = await storeProductService.getPharmaProducts(selectedStore.id);
+        if (response.success && response.data) {
+          console.log(' Pharma products loaded from API');
+          setProducts(response.data);
         } else {
-          const response = await storeProductService.getGroceryProducts(selectedStore.id);
-          if (response.success && response.data) {
-            console.log(' Grocery products loaded from API');
-            setProducts(response.data);
-          } else {
-            console.log('   Grocery API failed, using fallback mock data');
-            setProducts(initialProducts);
-          }
+          console.log('   Pharma API failed, using fallback mock data');
+          setProducts(initialProducts);
         }
-      } catch (error) {
-        console.log(`  Error fetching ${section} products:`, error);
-        console.log('   Using fallback mock data');
-        setProducts(initialProducts);
-      } finally {
+      } else {
+        const response = await storeProductService.getGroceryProducts(selectedStore.id);
+        if (response.success && response.data) {
+          console.log(' Grocery products loaded from API');
+          setProducts(response.data);
+        } else {
+          console.log('   Grocery API failed, using fallback mock data');
+          setProducts(initialProducts);
+        }
+      }
+    } catch (error) {
+      console.log(`  Error fetching ${section} products:`, error);
+      console.log('   Using fallback mock data');
+      setProducts(initialProducts);
+    } finally {
+      if (!isRefresh) {
         setLoading(false);
       }
-    };
+    }
+  };
 
+  useEffect(() => {
     fetchProducts();
   }, [selectedStore?.id, section, initialProducts]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchProducts(true);
+    setRefreshing(false);
+  };
 
   const handleProductPress = (product: any) => {
     setSelectedProduct(product);
@@ -193,6 +205,9 @@ const AllProductsScreen = () => {
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.gridContainer}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+          }
         />
 
         <ProductDetailModal

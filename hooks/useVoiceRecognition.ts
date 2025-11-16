@@ -1,37 +1,79 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Platform, PermissionsAndroid, Alert } from 'react-native';
+import { Platform, PermissionsAndroid, Alert, NativeModules } from 'react-native';
+import Constants from 'expo-constants';
 
-// Load Voice module with better error handling
+// Direct import - simpler approach
 let Voice: any = null;
-let isModuleLoaded = false;
 
-const initializeVoiceModule = () => {
-  if (Platform.OS === 'web' || isModuleLoaded) {
+// Initialize Voice module
+const getVoiceModule = (): any => {
+  // Web या unsupported env में सीधे null
+  if (Platform.OS === 'web') {
+    return null;
+  }
+
+  // Cached instance
+  if (Voice && typeof Voice === 'object') {
     return Voice;
   }
 
   try {
-    const VoiceModule = require('@react-native-voice/voice');
-    
-    // Handle different export patterns
-    if (VoiceModule && typeof VoiceModule === 'object') {
-      Voice = VoiceModule.default || VoiceModule.Voice || VoiceModule;
-      
-      if (Voice && typeof Voice === 'object') {
-        isModuleLoaded = true;
-        console.log('✅ Voice module initialized successfully');
-        return Voice;
-      }
+    // Method 1: Try NativeModules.Voice directly (bare / prebuild build में)
+    if (NativeModules.Voice && typeof NativeModules.Voice === 'object') {
+      console.log('✅ Using NativeModules.Voice directly');
+      Voice = NativeModules.Voice;
+      return Voice;
     }
-  } catch (error: any) {
-    console.warn('⚠️ Voice module not available:', error?.message || error);
-  }
-  
-  return null;
-};
 
-// Initialize once
-Voice = initializeVoiceModule();
+    // Method 2: Try to require the package
+    try {
+      const VoiceModule = require('@react-native-voice/voice');
+      
+      // Try different export patterns
+      let voiceInstance = VoiceModule.default || VoiceModule;
+      
+      // If it's a function, it might be a constructor
+      if (typeof voiceInstance === 'function') {
+        try {
+          voiceInstance = new voiceInstance();
+        } catch (e) {
+          // Not a constructor, use as is
+        }
+      }
+      
+      if (voiceInstance && typeof voiceInstance === 'object') {
+        // Check if it has start methods
+        if (typeof voiceInstance.start === 'function' || typeof voiceInstance.startSpeech === 'function') {
+          console.log('✅ Voice module loaded from package');
+          Voice = voiceInstance;
+          return Voice;
+        }
+        
+        // If it doesn't have start, but NativeModules.Voice exists, use that
+        if (NativeModules.Voice) {
+          console.log('✅ Using NativeModules.Voice (package loaded but no start method)');
+          Voice = NativeModules.Voice;
+          return Voice;
+        }
+      }
+    } catch (e) {
+      console.warn('⚠️ Package require failed:', e);
+    }
+
+    // Method 3: Last resort - check NativeModules.Voice again
+    if (NativeModules.Voice && typeof NativeModules.Voice === 'object') {
+      console.log('✅ Using NativeModules.Voice as fallback');
+      Voice = NativeModules.Voice;
+      return Voice;
+    }
+
+    console.error('❌ Voice module not found');
+    return null;
+  } catch (error: any) {
+    console.error('❌ Error loading Voice module:', error);
+    return null;
+  }
+};
 
 export const useVoiceRecognition = () => {
   const [isListening, setIsListening] = useState(false);
@@ -40,136 +82,147 @@ export const useVoiceRecognition = () => {
   const [isAvailable, setIsAvailable] = useState(false);
   const [status, setStatus] = useState<string>('');
   
-  const mediaRecorderRef = useRef<any>(null);
-  const voiceInstanceRef = useRef<any>(null);
-  const isInitializedRef = useRef(false);
+  const listenersSetupRef = useRef(false);
+  const isMountedRef = useRef(true);
 
-  // Initialize on mount
   useEffect(() => {
-    initVoiceRecognition();
-    return cleanup;
+    isMountedRef.current = true;
+    initVoice();
+    
+    return () => {
+      isMountedRef.current = false;
+      cleanup();
+    };
   }, []);
 
-  const initVoiceRecognition = async () => {
+  const initVoice = async () => {
     if (Platform.OS === 'web') {
-      // Web: Check for Speech Recognition API
       const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      if (SpeechRecognition) {
-        setIsAvailable(true);
-      } else {
-        setIsAvailable(false);
-        setError('Speech recognition not supported on this browser');
-      }
+      // Web पर सिर्फ browser speech rec check
+      setIsAvailable(!!SpeechRecognition);
       return;
     }
 
-    // Mobile: Initialize native module
     try {
-      // Ensure module is loaded
-      if (!Voice) {
-        Voice = initializeVoiceModule();
-      }
-
-      if (!Voice) {
-        console.warn('⚠️ Voice module not available');
+      // Expo Go में native voice module नहीं होता, isAvailable false रखें और चुपचाप disable कर दें
+      if (Constants.appOwnership === 'expo') {
+        console.log('⚠️ Running in Expo Go - disabling native voice recognition');
         setIsAvailable(false);
+        setError(null);
         return;
       }
 
-      // Check availability
-      let available = true;
-      if (typeof Voice.isAvailable === 'function') {
-        try {
-          available = await Voice.isAvailable();
-        } catch (e) {
-          console.warn('⚠️ Availability check failed:', e);
-        }
+      // Wait for native modules
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      const voiceModule = getVoiceModule();
+      
+      if (!voiceModule) {
+        console.warn('⚠️ Voice module not available (likely Expo Go / dev client without native module)');
+        setIsAvailable(false);
+        // Error hard मत दिखाओ, सिर्फ availability false रखो
+        setError(null);
+        return;
       }
 
-      if (available) {
-        setupListeners();
-        setIsAvailable(true);
-        isInitializedRef.current = true;
-      } else {
-        setIsAvailable(false);
-        setError('Speech recognition is not available on this device');
-      }
+      // Setup listeners
+      setupListeners(voiceModule);
+      setIsAvailable(true);
+      console.log('✅ Voice recognition ready');
     } catch (err: any) {
-      console.error('❌ Initialization error:', err);
+      console.error('❌ Init error:', err);
       setIsAvailable(false);
       setError('Failed to initialize voice recognition');
     }
   };
 
-  const setupListeners = () => {
-    if (!Voice || isInitializedRef.current) {
+  const setupListeners = (voiceModule: any) => {
+    if (listenersSetupRef.current) {
+      return;
+    }
+
+    if (!voiceModule || typeof voiceModule !== 'object') {
+      console.error('❌ Cannot setup listeners: voiceModule is null or invalid');
       return;
     }
 
     try {
-      // Remove any existing listeners
-      if (typeof Voice.removeAllListeners === 'function') {
-        Voice.removeAllListeners();
+      // Remove old listeners
+      if (typeof voiceModule.removeAllListeners === 'function') {
+        try {
+          voiceModule.removeAllListeners();
+        } catch (e) {
+          console.warn('⚠️ Error removing listeners:', e);
+        }
       }
 
-      // Setup event listeners
-      Voice.onSpeechStart = () => {
-        console.log('🎤 Speech recognition started');
-        setIsListening(true);
-        setError(null);
-        setTranscript('');
-        setStatus('Listening...');
+      // Verify module is still valid
+      if (!voiceModule || typeof voiceModule !== 'object') {
+        console.error('❌ Voice module became invalid after removeAllListeners');
+        return;
+      }
+
+      // Setup new listeners
+      voiceModule.onSpeechStart = () => {
+        console.log('🎤 Started');
+        if (isMountedRef.current) {
+          setIsListening(true);
+          setError(null);
+          setTranscript('');
+          setStatus('Listening...');
+        }
       };
 
-      Voice.onSpeechEnd = () => {
-        console.log('🎤 Speech recognition ended');
-        setIsListening(false);
-        setStatus('');
+      voiceModule.onSpeechEnd = () => {
+        console.log('🎤 Ended');
+        if (isMountedRef.current) {
+          setIsListening(false);
+          setStatus('');
+        }
       };
 
-      Voice.onSpeechResults = (e: { value?: string[] }) => {
+      voiceModule.onSpeechResults = (e: any) => {
         const text = e?.value?.[0] || '';
-        console.log('🎤 Speech result:', text);
-        if (text) {
+        console.log('🎤 Result:', text);
+        if (text && isMountedRef.current) {
           setTranscript(text);
           setIsListening(false);
           setStatus('');
         }
       };
 
-      Voice.onSpeechPartialResults = (e: { value?: string[] }) => {
+      voiceModule.onSpeechPartialResults = (e: any) => {
         const text = e?.value?.[0] || '';
-        if (text) {
-          console.log('🎤 Partial result:', text);
+        if (text && isMountedRef.current) {
           setTranscript(text);
         }
       };
 
-      Voice.onSpeechError = (e: { error?: { message?: string } }) => {
-        const errorMessage = e?.error?.message || 'Speech recognition error';
-        console.error('❌ Speech error:', errorMessage);
-        setError(errorMessage);
-        setIsListening(false);
-        setStatus('');
+      voiceModule.onSpeechError = (e: any) => {
+        const msg = e?.error?.message || e?.message || 'Speech error';
+        console.error('❌ Speech error:', msg);
+        if (isMountedRef.current) {
+          setError(msg);
+          setIsListening(false);
+          setStatus('');
+        }
       };
 
-      voiceInstanceRef.current = Voice;
-      isInitializedRef.current = true;
-      console.log('✅ Voice listeners setup complete');
-    } catch (err) {
-      console.error('❌ Error setting up listeners:', err);
-      setError('Failed to setup voice recognition listeners');
-      isInitializedRef.current = false;
+      listenersSetupRef.current = true;
+      console.log('✅ Listeners setup complete');
+    } catch (err: any) {
+      console.error('❌ Setup listeners error:', err);
+      listenersSetupRef.current = false;
     }
   };
 
   const requestMicPermission = useCallback(async (): Promise<boolean> => {
     if (Platform.OS !== 'android') {
-      return true; // iOS handles permissions automatically
+      // अभी primary support Android build के लिए ही
+      return false;
     }
 
     try {
-      // Check current permission
       const hasPermission = await PermissionsAndroid.check(
         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO
       );
@@ -178,12 +231,11 @@ export const useVoiceRecognition = () => {
         return true;
       }
 
-      // Request permission
       const result = await PermissionsAndroid.request(
         PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
         {
           title: 'Microphone Permission',
-          message: 'This app needs microphone access to enable voice search. Please allow microphone permission.',
+          message: 'This app needs microphone access for voice search.',
           buttonNeutral: 'Ask Me Later',
           buttonNegative: 'Cancel',
           buttonPositive: 'Allow',
@@ -199,15 +251,13 @@ export const useVoiceRecognition = () => {
 
   const startListening = useCallback(async () => {
     try {
-      console.log('🎤 Requesting to start voice recognition...');
+      console.log('🎤 Starting...');
       setError(null);
       setTranscript('');
       setStatus('');
 
       if (Platform.OS === 'web') {
-        // Web implementation
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-        
         if (!SpeechRecognition) {
           setError('Speech recognition not supported');
           return;
@@ -217,105 +267,114 @@ export const useVoiceRecognition = () => {
         recognition.lang = 'en-IN';
         recognition.interimResults = true;
         recognition.continuous = false;
-        recognition.maxAlternatives = 1;
 
-        recognition.onstart = () => {
-          setIsListening(true);
-          setStatus('Listening...');
-        };
-
+        recognition.onstart = () => setIsListening(true);
         recognition.onerror = (e: any) => {
-          setError(e?.error || 'Speech recognition error');
+          setError(e?.error || 'Speech error');
           setIsListening(false);
-          setStatus('');
         };
-
-        recognition.onend = () => {
-          setIsListening(false);
-          setStatus('');
-        };
-
+        recognition.onend = () => setIsListening(false);
         recognition.onresult = (e: any) => {
           const text = e.results?.[e.resultIndex]?.[0]?.transcript || '';
           if (text) {
             setTranscript(text);
           }
           setIsListening(false);
-          setStatus('');
         };
 
-        mediaRecorderRef.current = recognition;
         recognition.start();
         return;
       }
 
-      // Mobile implementation
-      // Ensure Voice module is available
-      if (!Voice) {
-        Voice = initializeVoiceModule();
-      }
-
-      if (!Voice) {
-        const errorMsg = 'Voice recognition module is not available. Please rebuild the app with a development build.';
+      // Mobile (Android app build)
+      let voiceModule = getVoiceModule();
+      
+      if (!voiceModule) {
+        // Expo Go / dev client में यहाँ आएगा – button disabled रहेगा
+        const errorMsg = 'Voice search is only available in the installed Android app build.';
         setError(errorMsg);
-        Alert.alert(
-          'Voice Recognition Not Available',
-          errorMsg,
-          [{ text: 'OK' }]
-        );
         setIsAvailable(false);
         return;
       }
 
-      // Setup listeners if not already done
-      if (!isInitializedRef.current) {
-        setupListeners();
+      // Verify module is still valid
+      if (!voiceModule || typeof voiceModule !== 'object') {
+        throw new Error('Voice module is invalid');
+      }
+
+      // Setup listeners if needed
+      if (!listenersSetupRef.current) {
+        setupListeners(voiceModule);
+        await new Promise(resolve => setTimeout(resolve, 300));
         
-        // Wait a bit for listeners to be set
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
-        if (!isInitializedRef.current) {
-          setError('Failed to initialize voice recognition. Please try again.');
-          return;
+        // Re-verify after setup
+        const currentModule = getVoiceModule();
+        if (!currentModule || typeof currentModule !== 'object') {
+          throw new Error('Voice module became invalid after listener setup');
         }
+        voiceModule = currentModule;
       }
 
       // Request permission
       const hasPermission = await requestMicPermission();
       if (!hasPermission) {
-        setError('Microphone permission is required for voice search');
-        Alert.alert(
-          'Permission Required',
-          'Please allow microphone permission in app settings to use voice search.',
-          [{ text: 'OK' }]
-        );
+        setError('Microphone permission required');
+        Alert.alert('Permission Required', 'Please allow microphone permission in settings.', [{ text: 'OK' }]);
         return;
+      }
+
+      // Final verification before starting
+      if (!voiceModule || typeof voiceModule !== 'object') {
+        voiceModule = getVoiceModule();
+        if (!voiceModule || typeof voiceModule !== 'object') {
+          throw new Error('Voice module not available');
+        }
       }
 
       // Start listening
-      if (typeof Voice.start !== 'function') {
-        setError('Voice recognition start method not available');
-        return;
+      console.log('🎤 Calling start...');
+      console.log('Voice module keys:', Object.keys(voiceModule));
+      
+      // Try start method first, then startSpeech
+      let startMethod = voiceModule.start || voiceModule.startSpeech;
+      
+      if (!startMethod || typeof startMethod !== 'function') {
+        console.error('Available methods:', Object.keys(voiceModule));
+        throw new Error('Start method not found in Voice module');
       }
 
-      console.log('🎤 Starting voice recognition...');
-      await Voice.start('en-IN');
+      console.log('Using start method:', startMethod.name || 'anonymous');
+      
+      // Call start - handle both sync and async
+      try {
+        const result = startMethod.call(voiceModule, 'en-IN');
+        
+        // Wait if it's a promise
+        if (result && typeof result.then === 'function') {
+          await result;
+        }
+      } catch (callError: any) {
+        console.error('Error calling start method:', callError);
+        throw new Error(`Failed to start: ${callError?.message || 'Unknown error'}`);
+      }
+
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
       setIsListening(true);
       setIsAvailable(true);
       setStatus('Listening...');
-      console.log('✅ Voice recognition started successfully');
+      console.log('✅ Started successfully');
     } catch (err: any) {
-      console.error('❌ Error starting voice recognition:', err);
-      const errorMsg = err?.message || err?.toString() || 'Failed to start voice recognition';
+      console.error('❌ Start error:', err);
+      const errorMsg = err?.message || 'Failed to start voice recognition';
       setError(errorMsg);
       setIsListening(false);
       setStatus('');
       
-      // Show helpful error message
-      if (errorMsg.includes('null') || errorMsg.includes('startSpeech')) {
+      if (errorMsg.includes('null') || errorMsg.includes('not linked')) {
         Alert.alert(
-          'Voice Recognition Error',
-          'Voice recognition is not properly initialized. Please restart the app or rebuild with a development build.',
+          'Voice Recognition',
+          'Please rebuild the APK: npm run build:apk',
           [{ text: 'OK' }]
         );
       }
@@ -324,60 +383,46 @@ export const useVoiceRecognition = () => {
 
   const stopListening = useCallback(async () => {
     try {
-      console.log('🎤 Stopping voice recognition...');
+      console.log('🎤 Stopping...');
 
       if (Platform.OS === 'web') {
-        const recognition = mediaRecorderRef.current;
-        if (recognition && typeof recognition.stop === 'function') {
-          recognition.stop();
-        }
-      } else {
-        if (Voice && typeof Voice.stop === 'function') {
-          await Voice.stop();
-        }
+        // Web handling if needed
+        return;
+      }
+
+      const voiceModule = getVoiceModule();
+      if (voiceModule && typeof voiceModule.stop === 'function') {
+        await voiceModule.stop();
       }
 
       setIsListening(false);
       setStatus('');
-      console.log('✅ Voice recognition stopped');
+      console.log('✅ Stopped');
     } catch (err) {
-      console.error('❌ Error stopping voice recognition:', err);
+      console.error('❌ Stop error:', err);
       setIsListening(false);
       setStatus('');
     }
   }, []);
 
   const cleanup = useCallback(() => {
-    console.log('🧹 Cleaning up voice recognition...');
+    console.log('🧹 Cleaning up...');
     
-    if (Platform.OS === 'web') {
-      const recognition = mediaRecorderRef.current;
-      if (recognition && typeof recognition.stop === 'function') {
+    if (Platform.OS !== 'web') {
+      const voiceModule = getVoiceModule();
+      if (voiceModule) {
         try {
-          recognition.stop();
-        } catch (e) {
-          // Ignore cleanup errors
-        }
-      }
-      mediaRecorderRef.current = null;
-    } else {
-      if (Voice) {
-        try {
-          if (typeof Voice.stop === 'function' && isListening) {
-            Voice.stop().catch(() => {});
+          if (isListening && typeof voiceModule.stop === 'function') {
+            voiceModule.stop().catch(() => {});
           }
-          if (typeof Voice.destroy === 'function') {
-            Voice.destroy().catch(() => {});
-          }
-          if (typeof Voice.removeAllListeners === 'function') {
-            Voice.removeAllListeners();
+          if (typeof voiceModule.removeAllListeners === 'function') {
+            voiceModule.removeAllListeners();
           }
         } catch (e) {
           // Ignore cleanup errors
         }
       }
-      isInitializedRef.current = false;
-      voiceInstanceRef.current = null;
+      listenersSetupRef.current = false;
     }
     
     setIsListening(false);

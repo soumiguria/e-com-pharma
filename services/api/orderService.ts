@@ -571,6 +571,8 @@ class OrderService {
         if (lower.endsWith('.gif')) return 'image/gif';
         if (lower.endsWith('.bmp')) return 'image/bmp';
         if (lower.endsWith('.tiff') || lower.endsWith('.tif')) return 'image/tiff';
+        // Allow PDF prescriptions from documents/files
+        if (lower.endsWith('.pdf')) return 'application/pdf';
         // Fallback (works for most cases; server only needs file bytes)
         return 'application/octet-stream';
       };

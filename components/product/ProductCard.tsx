@@ -37,13 +37,78 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
     ? { uri: product.image } 
     : product.image;
 
+  // Helper function to validate price
+  const isValidPrice = (value: any): boolean => {
+    if (value === null || value === undefined) return false;
+    if (typeof value === 'string') {
+      const num = parseFloat(value);
+      return !isNaN(num) && num > 0 && isFinite(num);
+    }
+    if (typeof value === 'number') {
+      return value > 0 && isFinite(value);
+    }
+    return false;
+  };
+
+  // Helper function to validate quantity (stricter - must be a valid integer, not extracted from string)
+  const isValidQuantity = (value: any): boolean => {
+    if (value === null || value === undefined || value === '') return false;
+    // If it's a number, check if it's a valid positive integer
+    if (typeof value === 'number') {
+      return Number.isInteger(value) && value > 0 && isFinite(value);
+    }
+    // If it's a string, check if it's a pure number (no letters or units)
+    if (typeof value === 'string') {
+      // Remove whitespace and check if it's a pure number
+      const trimmed = value.trim();
+      // Check if string is a valid integer (no decimal, no letters, no units)
+      const num = parseInt(trimmed, 10);
+      // Only valid if the parsed number equals the original string (no extra characters)
+      return !isNaN(num) && num > 0 && String(num) === trimmed;
+    }
+    return false;
+  };
+
+  // Get valid price
+  const getValidPrice = (): number => {
+    const price = product.price || (product as any).sp || 0;
+    if (typeof price === 'string') {
+      const num = parseFloat(price);
+      return !isNaN(num) && num > 0 ? num : 0;
+    }
+    return price > 0 ? price : 0;
+  };
+
+  // Get valid quantity/stock (stricter validation)
+  const getValidQuantity = (): number => {
+    const qty = (product as any).availableQty || (product as any).quantity || (product as any).stock || 0;
+    // Use strict validation - only accept if it's a valid integer
+    if (isValidQuantity(qty)) {
+      if (typeof qty === 'number') {
+        return qty;
+      }
+      if (typeof qty === 'string') {
+        return parseInt(qty.trim(), 10);
+      }
+    }
+    return 0;
+  };
+
+  // Check if product can be added to cart
+  const canAddToCart = (): boolean => {
+    const price = getValidPrice();
+    const qty = getValidQuantity();
+    return price > 0 && qty > 0;
+  };
+
   const handleAddToCart = (e: any) => {
     e.stopPropagation();
+    if (!canAddToCart()) return;
     setQuantity(1);
     const cartItem = {
       id: product.id,
       name: product.name,
-      price: product.price,
+      price: getValidPrice(),
       image: typeof product.image === 'string' ? product.image : ''
     };
     if (product.category === 'pharma') {
@@ -121,11 +186,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
         {!hideCartButton && (
           quantity === 0 ? (
             <TouchableOpacity 
-              style={styles.addButton}
+              style={[styles.addButton, !canAddToCart() && { opacity: 0.5, borderColor: '#ccc' }]}
               onPress={handleAddToCart}
               activeOpacity={0.85}
+              disabled={!canAddToCart()}
             >
-              <Text style={styles.addButtonText}>ADD</Text>
+              <Text style={[styles.addButtonText, !canAddToCart() && { color: '#999' }]}>
+                {canAddToCart() ? 'ADD' : 'OUT'}
+              </Text>
             </TouchableOpacity>
           ) : (
             <View style={styles.counterContainer}>
@@ -133,7 +201,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
                 <Text style={styles.counterBtnText}>-</Text>
               </TouchableOpacity>
               <Text style={styles.counterValue}>{quantity}</Text>
-              <TouchableOpacity onPress={handleIncrement} style={styles.counterBtn}>
+              <TouchableOpacity 
+                onPress={handleIncrement} 
+                style={[styles.counterBtn, !canAddToCart() && { opacity: 0.5 }]}
+                disabled={!canAddToCart()}
+              >
                 <Text style={styles.counterBtnText}>+</Text>
               </TouchableOpacity>
             </View>

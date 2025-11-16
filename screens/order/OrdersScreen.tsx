@@ -53,19 +53,24 @@ const OrdersScreen = () => {
   const { user, isAuthenticated } = useAuth();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);        // initial / full refresh
+  const [isLoadingMore, setIsLoadingMore] = useState(false); // pagination
   const [refreshing, setRefreshing] = useState(false);
   const [activeTab, setActiveTab] = useState<'ALL' | 'Grocery' | 'Pharmacy'>('ALL');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
 
   useEffect(() => {
-    fetchOrders();
+    // Initial load
+    fetchOrdersForCurrentTab(1, false);
   }, []);
 
   // Refresh orders when screen comes into focus (e.g., after payment completion)
   useFocusEffect(
     useCallback(() => {
-      fetchOrders();
-    }, [])
+      // When screen refocuses, refresh first page for current tab
+      fetchOrdersForCurrentTab(1, false);
+    }, [activeTab])
   );
 
   const checkPaymentStatus = async (orderNo: string) => {
@@ -86,12 +91,28 @@ const OrdersScreen = () => {
     }
   };
 
-  const fetchOrders = async (filterType?: 'pharma' | 'grocery') => {
-    setIsLoading(true);
+  const fetchOrders = async (
+    filterType: 'pharma' | 'grocery' | undefined,
+    page: number,
+    append: boolean
+  ) => {
+    if (append) {
+      // Loading more
+      if (isLoadingMore || !hasMore) return;
+      setIsLoadingMore(true);
+    } else {
+      // Fresh load / refresh
+      setIsLoading(true);
+      setHasMore(true);
+      setCurrentPage(page);
+      if (page === 1) {
+        setOrders([]);
+      }
+    }
     try {
       // No local payment tracking - use backend status only
 
-      const response = await orderListService.getOrders(filterType);
+      const response = await orderListService.getOrders(filterType, page, 10);
       if (response.success && response.data) {
         // First, get all orders and check payment status for those with paymentId
         const ordersWithPaymentStatus = await Promise.all(
@@ -228,7 +249,27 @@ const OrdersScreen = () => {
             originalOrderData: order,
           } as Order & { originalOrderData: any };
         });
-        setOrders(transformedOrders);
+
+        // Determine if there are more pages
+        const pageSize = 10;
+        if (transformedOrders.length < pageSize) {
+          setHasMore(false);
+        } else {
+          setHasMore(true);
+          setCurrentPage(page);
+        }
+
+        // Append or replace orders
+        if (append) {
+          setOrders(prev => {
+            // Avoid duplicate IDs when reloading pages
+            const existingIds = new Set(prev.map(o => o.id));
+            const newOnes = transformedOrders.filter(o => !existingIds.has(o.id));
+            return [...prev, ...newOnes];
+          });
+        } else {
+          setOrders(transformedOrders);
+        }
       } else {
         // Fallback to empty array if no data
         setOrders([]);
@@ -239,12 +280,13 @@ const OrdersScreen = () => {
       setOrders([]);
     } finally {
       setIsLoading(false);
+      setIsLoadingMore(false);
     }
   };
 
   const onRefresh = async () => {
     setRefreshing(true);
-    await fetchOrders();
+    await fetchOrdersForCurrentTab(1, false);
     setRefreshing(false);
   };
 
@@ -287,17 +329,23 @@ const OrdersScreen = () => {
   };
 
   // Handle tab change and fetch orders with filter
+  const getFilterTypeForTab = (tabName: 'ALL' | 'Grocery' | 'Pharmacy'): 'pharma' | 'grocery' | undefined => {
+    if (tabName === 'Grocery') return 'grocery';
+    if (tabName === 'Pharmacy') return 'pharma';
+    return undefined;
+  };
+
+  const fetchOrdersForCurrentTab = async (page: number, append: boolean) => {
+    const filterType = getFilterTypeForTab(activeTab);
+    await fetchOrders(filterType, page, append);
+  };
+
   const handleTabChange = async (tabName: 'ALL' | 'Grocery' | 'Pharmacy') => {
     setActiveTab(tabName);
-    
-    // Fetch orders with appropriate filter
-    if (tabName === 'ALL') {
-      await fetchOrders(); // No filter for all orders
-    } else if (tabName === 'Grocery') {
-      await fetchOrders('grocery');
-    } else if (tabName === 'Pharmacy') {
-      await fetchOrders('pharma');
-    }
+    // Reset pagination when tab changes
+    setCurrentPage(1);
+    setHasMore(true);
+    await fetchOrdersForCurrentTab(1, false);
   };
 
   // Filter orders based on active tab (fallback for local filtering)
@@ -418,6 +466,21 @@ const OrdersScreen = () => {
           }
           showsVerticalScrollIndicator={false}
           contentContainerStyle={styles.listContainer}
+          onEndReachedThreshold={0.4}
+          onEndReached={() => {
+            if (!isLoading && !isLoadingMore && hasMore && filteredOrders.length > 0) {
+              fetchOrdersForCurrentTab(currentPage + 1, true);
+            }
+          }}
+          ListFooterComponent={
+            isLoadingMore ? (
+              <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+                <Text style={[styles.loadingText, { color: theme.colors.secondary }]}>
+                  Loading more orders...
+                </Text>
+              </View>
+            ) : null
+          }
           ListEmptyComponent={() => (
             <View style={styles.centerContent}>
               <Ionicons name="receipt-outline" size={64} color={theme.colors.secondary} />
@@ -429,7 +492,7 @@ const OrdersScreen = () => {
               </Text>
             </View>
           )}
-        renderItem={({ item: order }) => (
+          renderItem={({ item: order }) => (
           <Card key={order.id} style={[styles.orderCard, { backgroundColor: theme.colors.surface }]}>
             <TouchableOpacity onPress={() => handleOrderPress(order)}>
               <View style={styles.cardContent}>

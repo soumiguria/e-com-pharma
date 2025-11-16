@@ -81,7 +81,11 @@ class OrderListService {
     }
   }
 
-  async getOrders(filterType?: 'pharma' | 'grocery'): Promise<ApiResponse<OrderListItem[]>> {
+  async getOrders(
+    filterType?: 'pharma' | 'grocery',
+    page: number = 1,
+    limit: number = 10
+  ): Promise<ApiResponse<OrderListItem[]>> {
     try {
       const token = await this.getAuthToken();
       const headers = {
@@ -92,9 +96,10 @@ class OrderListService {
       console.log('📋 Fetching orders...');
       console.log('🔑 Token retrieved:', token ? `${token.substring(0, 20)}...` : 'No token');
       console.log('📋 Filter type:', filterType || 'all');
+      console.log('📋 Page:', page, 'Limit:', limit);
 
-      // Build URL with optional filter
-      let url = 'https://marg-api.thelocalsandbox.dev/v1/customer/order?page=1&limit=10&orders[createdAt]=desc';
+      // Build URL with optional filter and pagination
+      let url = `https://marg-api.thelocalsandbox.dev/v1/customer/order?page=${page}&limit=${limit}&orders[createdAt]=desc`;
       if (filterType) {
         url += `&filters[type]=${filterType}`;
       }

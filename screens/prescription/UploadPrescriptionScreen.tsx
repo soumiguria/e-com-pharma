@@ -17,6 +17,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import orderService from '../../services/api/orderService';
 
@@ -29,7 +30,12 @@ const UploadPrescriptionScreen = () => {
   const orderId = route.params?.orderId;
   const storeId = route.params?.storeId;
   const { theme } = useTheme();
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedFile, setSelectedFile] = useState<{
+    uri: string;
+    name?: string;
+    mimeType?: string | null;
+    isImage?: boolean;
+  } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   // Voice recognition removed from this screen; available on Search only
 
@@ -62,7 +68,13 @@ const UploadPrescriptionScreen = () => {
       });
 
       if (!result.canceled && result.assets[0]) {
-        setSelectedImage(result.assets[0].uri);
+        const asset = result.assets[0];
+        setSelectedFile({
+          uri: asset.uri,
+          name: asset.fileName || 'Camera photo',
+          mimeType: asset.type === 'image' ? 'image/*' : null,
+          isImage: true,
+        });
       }
     } catch (error) {
       console.error('Error taking photo:', error);
@@ -82,11 +94,52 @@ const UploadPrescriptionScreen = () => {
       });
 
       if (!result.canceled && result.assets[0]) {
-        setSelectedImage(result.assets[0].uri);
+        const asset = result.assets[0];
+        setSelectedFile({
+          uri: asset.uri,
+          name: asset.fileName || 'Gallery image',
+          mimeType: asset.type === 'image' ? 'image/*' : null,
+          isImage: true,
+        });
       }
     } catch (error) {
       console.error('Error choosing from gallery:', error);
       Alert.alert('Error', 'Failed to select image from gallery. Please try again.');
+    }
+  };
+
+  const handleChooseFromDocuments = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['image/*', 'application/pdf'],
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+
+      if (result.canceled) {
+        return;
+      }
+
+      // New API shape: result.assets
+      const asset = (result as any).assets?.[0] || (result as any);
+      if (asset && asset.uri) {
+        const mimeType: string | null =
+          asset.mimeType || asset.type || null;
+
+        const isImage =
+          mimeType?.startsWith('image/') ||
+          /\.(jpg|jpeg|png|gif|webp)$/i.test(asset.name || asset.uri);
+
+        setSelectedFile({
+          uri: asset.uri,
+          name: asset.name || (isImage ? 'Prescription image' : 'Prescription document'),
+          mimeType,
+          isImage,
+        });
+      }
+    } catch (error) {
+      console.error('Error choosing from documents:', error);
+      Alert.alert('Error', 'Failed to select file from documents. Please try again.');
     }
   };
 
@@ -137,8 +190,8 @@ const UploadPrescriptionScreen = () => {
   // No voice handlers here
 
   const handleUpload = async () => {
-    if (!selectedImage) {
-      Alert.alert('No Image', 'Please select an image before uploading');
+    if (!selectedFile?.uri) {
+      Alert.alert('No File', 'Please select a prescription file or image before uploading');
       return;
     }
     if (!orderId) {
@@ -149,8 +202,8 @@ const UploadPrescriptionScreen = () => {
     setIsUploading(true);
     
     try {
-      console.log('📄 Uploading prescription for order:', orderId);
-      const res = await orderService.uploadPrescription(orderId, selectedImage);
+      console.log('📄 Uploading prescription for order:', orderId, 'file:', selectedFile);
+      const res = await orderService.uploadPrescription(orderId, selectedFile.uri);
       console.log('📄 Upload response:', res);
       
       if (!res.success) {
@@ -419,9 +472,16 @@ const UploadPrescriptionScreen = () => {
           
           <TouchableOpacity style={themedStyles.actionButton} onPress={handleChooseFromGallery}>
             <MaterialIcons name="photo-library" size={32} color={theme.colors.primary} />
-            <Text style={themedStyles.actionButtonText}>Choose From Gallery</Text>
+            <Text style={themedStyles.actionButtonText}>Gallery</Text>
           </TouchableOpacity>
           
+          <TouchableOpacity style={themedStyles.actionButton} onPress={handleChooseFromDocuments}>
+            <MaterialIcons name="insert-drive-file" size={32} color={theme.colors.primary} />
+            <Text style={themedStyles.actionButtonText}>Documents (PDF/Image)</Text>
+          </TouchableOpacity>
+        </View>
+
+        <View style={themedStyles.actionButtonsContainer}>
           <TouchableOpacity style={themedStyles.actionButton} onPress={handleCallPharmacist}>
             <MaterialIcons name="phone" size={32} color={theme.colors.primary} />
             <Text style={themedStyles.actionButtonText}>Call Pharmacist</Text>
@@ -430,13 +490,37 @@ const UploadPrescriptionScreen = () => {
 
         {/* Voice input is only on Search screen */}
 
-        {/* Selected Image */}
-        {selectedImage && (
+        {/* Selected File Preview */}
+        {selectedFile && (
           <View style={themedStyles.selectedImageContainer}>
-            <Image source={{ uri: selectedImage }} style={themedStyles.selectedImage} />
+            {selectedFile.isImage ? (
+              <Image source={{ uri: selectedFile.uri }} style={themedStyles.selectedImage} />
+            ) : (
+              <View
+                style={{
+                  height: 200,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 16,
+                }}
+              >
+                <MaterialIcons name="picture-as-pdf" size={48} color={theme.colors.primary} />
+                <Text
+                  style={{
+                    marginTop: 8,
+                    color: theme.colors.text,
+                    fontSize: 14,
+                    textAlign: 'center',
+                  }}
+                  numberOfLines={2}
+                >
+                  {selectedFile.name || 'Selected document'}
+                </Text>
+              </View>
+            )}
             <TouchableOpacity 
               style={themedStyles.removeImageButton}
-              onPress={() => setSelectedImage(null)}
+              onPress={() => setSelectedFile(null)}
             >
               <MaterialIcons name="close" size={20} color="white" />
             </TouchableOpacity>
@@ -497,7 +581,7 @@ const UploadPrescriptionScreen = () => {
         </View>
 
         {/* Upload Button */}
-        {selectedImage && (
+        {selectedFile && (
           <TouchableOpacity 
             style={[themedStyles.uploadButton, isUploading && themedStyles.uploadButtonDisabled]} 
             onPress={handleUpload}

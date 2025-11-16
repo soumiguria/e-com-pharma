@@ -380,7 +380,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Platform, TouchableOpacity, Image, ActivityIndicator, Linking } from 'react-native';
+import { View, StyleSheet, ScrollView, Platform, TouchableOpacity, Image, ActivityIndicator, Linking, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text, Button } from 'native-base';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -391,7 +391,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useAppContext } from '../../contexts/AppContext';
 import { useAuth } from '../../contexts/AuthContext';
-import storeService, { formatStoreAddress } from '../../services/api/storeService';
+import * as Location from 'expo-location';
+import storeService, { formatStoreAddress, createAddressFromCoordinates } from '../../services/api/storeService';
 
 type NavigationProp = StackNavigationProp<RootStackParamList, 'StoreList'>;
 type StoreListRouteProp = RouteProp<RootStackParamList, 'StoreList'>;
@@ -420,6 +421,7 @@ const StoreListScreen = () => {
 
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   const handleStoreSelect = (store: Store) => {
     setSelectedStore(store);
@@ -455,8 +457,8 @@ const StoreListScreen = () => {
       name: raw.name || raw.storeName || 'Store',
       type,
       address: raw.address || raw.location?.address || '—',
-      distance: raw.distance ? `${parseFloat(raw.distance).toFixed(1)} km` : '—',
-      rating: Number(raw.rating ?? raw.avgRating ?? 4.2),
+      distance: raw.distance ? `${parseFloat(raw.distance).toFixed(1)} km away from your location` : '',
+      // rating: Number(raw.rating ?? raw.avgRating ?? 4.2),
       image: raw.image || raw.logo || undefined,
       mobile: raw.mobile,
       // totalItems: raw.totalItems || raw.itemCount || 0,
@@ -469,15 +471,81 @@ const StoreListScreen = () => {
       console.log('🏪 Fetching detailed store info for:', store.id);
       const response = await storeService.getStoreDetailsById(store.id);
       if (response.success && response.data) {
-        const detailedStore = response.data;
-        const coordinates = detailedStore.location?.coordinates;
-        const formattedAddress = detailedStore.address 
-          ? formatStoreAddress(detailedStore.address, coordinates) 
-          : store.address;
-        console.log('🏪 Store address updated:', formattedAddress);
+        // API wrapper: { status, message, data: { ...store } } OR direct store
+        const payload: any = response.data;
+        const detailedStore = payload.data || payload;
+
+        const coordinates = detailedStore.location?.coordinates as [number, number] | undefined;
+        const apiAddress =
+          detailedStore.address ||
+          detailedStore.config?.address ||
+          null;
+
+        let finalAddress = store.address;
+
+        // 1) Try formatted API address ONLY if there is at least some address data
+        const hasAnyAddressField =
+          !!apiAddress &&
+          [
+            apiAddress.address1,
+            apiAddress.address2,
+            apiAddress.city,
+            apiAddress.state,
+            apiAddress.pincode,
+            apiAddress.country,
+          ].some((part: any) => typeof part === 'string' && part.trim().length > 0);
+
+        if (hasAnyAddressField && coordinates) {
+          finalAddress = formatStoreAddress(apiAddress, coordinates);
+        }
+        // 2) If no address fields but we have coordinates, reverse geocode on device
+        else if (coordinates && coordinates.length === 2) {
+          try {
+            const [latitude, longitude] = coordinates;
+            console.log('🗺️ Reverse geocoding coordinates for store:', {
+              id: store.id,
+              latitude,
+              longitude,
+            });
+
+            const results = await Location.reverseGeocodeAsync({
+              latitude,
+              longitude,
+            });
+
+            if (results && results.length > 0) {
+              const r = results[0];
+              const parts = [
+                r.name,
+                r.street,
+                r.city || r.subregion,
+                r.region,
+                r.postalCode,
+                r.country,
+              ].filter(Boolean);
+
+              if (parts.length > 0) {
+                finalAddress = parts.join(', ');
+              } else {
+                finalAddress = createAddressFromCoordinates(latitude, longitude);
+              }
+            } else {
+              finalAddress = createAddressFromCoordinates(latitude, longitude);
+            }
+          } catch (geoError) {
+            console.warn('⚠️ Reverse geocoding failed for store', store.id, geoError);
+            if (coordinates && coordinates.length === 2) {
+              const [lat, lng] = coordinates;
+              finalAddress = createAddressFromCoordinates(lat, lng);
+            }
+          }
+        }
+
+        console.log('🏪 Store address updated:', finalAddress);
+
         return {
           ...store,
-          address: formattedAddress,
+          address: finalAddress || 'Store address not available',
           mobile: String(detailedStore.mobile || store.mobile || ''),
         };
       }
@@ -488,48 +556,52 @@ const StoreListScreen = () => {
   };
 
   // Fetch data from API based on active tab (type)
-  useEffect(() => {
-    let cancelled = false;
-    const fetchStores = async () => {
+  const fetchStores = async (isRefresh = false) => {
+    if (!isRefresh) {
       setLoading(true);
-      try {
-        let response;
-        // Use location-based API if coordinates are available, otherwise fall back to pincode
-        if (latitude && longitude) {
-          console.log('📍 Using location-based API:', { latitude, longitude, activeTab });
-          response = await storeService.exploreStoresByLocation(latitude, longitude, activeTab);
-        } else if (pincode) {
-          console.log('📮 Using pincode-based API:', { pincode, activeTab });
-          response = await storeService.exploreStores(pincode || '110001', activeTab);
-        } else {
-          throw new Error('No location data available');
-        }
-        
-        const raw: any = response.data;
-        const list: any[] = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
-        const mapped: Store[] = (list as any[]).map(mapStore).filter((s: Store) => s.type === activeTab);
-        
-        // Fetch detailed store information for each store to get proper addresses
-        const storesWithDetails = await Promise.all(
-          mapped.map(store => fetchStoreDetails(store))
-        );
-        
-        if (!cancelled) {
-          setStores(storesWithDetails.length > 0 ? storesWithDetails : []);
-        }
-      } catch (error) {
-        console.error('Error fetching stores:', error);
-        if (!cancelled) {
-          setStores([]);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
+    }
+    try {
+      let response;
+      // Use location-based API if coordinates are available, otherwise fall back to pincode
+      if (latitude && longitude) {
+        console.log('📍 Using location-based API:', { latitude, longitude, activeTab });
+        response = await storeService.exploreStoresByLocation(latitude, longitude, activeTab);
+      } else if (pincode) {
+        console.log('📮 Using pincode-based API:', { pincode, activeTab });
+        response = await storeService.exploreStores(pincode || '110001', activeTab);
+      } else {
+        throw new Error('No location data available');
       }
-    };
+      
+      const raw: any = response.data;
+      const list: any[] = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
+      const mapped: Store[] = (list as any[]).map(mapStore).filter((s: Store) => s.type === activeTab);
+      
+      // Fetch detailed store information for each store to get proper addresses
+      const storesWithDetails = await Promise.all(
+        mapped.map(store => fetchStoreDetails(store))
+      );
+      
+      setStores(storesWithDetails.length > 0 ? storesWithDetails : []);
+    } catch (error) {
+      console.error('Error fetching stores:', error);
+      setStores([]);
+    } finally {
+      if (!isRefresh) {
+        setLoading(false);
+      }
+    }
+  };
 
+  useEffect(() => {
     fetchStores();
-    return () => { cancelled = true; };
   }, [pincode, latitude, longitude, activeTab]);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchStores(true);
+    setRefreshing(false);
+  };
 
   const filteredStores = stores; // already filtered by type
 
@@ -621,7 +693,14 @@ const StoreListScreen = () => {
             <ActivityIndicator size="large" color={colors.primary} />
           </View>
         ) : (
-          <ScrollView style={styles.content} contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
+          <ScrollView 
+            style={styles.content} 
+            contentContainerStyle={{ flexGrow: 1, paddingBottom: 20 }} 
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
+          >
             <View style={styles.header}>
               <Text style={styles.title}>Stores Near You</Text>
               <Text style={styles.subtitle}>
@@ -663,14 +742,14 @@ const StoreListScreen = () => {
                     </View> */}
                     <View style={styles.storeInfo}>
                       <Text style={styles.storeDistance}>{store.distance}</Text>
-                      <View style={styles.storeRating}>
+                      {/* <View style={styles.storeRating}>
                         <MaterialCommunityIcons
                           name="star"
                           size={16}
                           color={store.type === 'grocery' ? colors.grocery.primary : colors.pharma.primary}
                         />
                         <Text style={{ marginLeft: 4 }}>{store.rating}</Text>
-                      </View>
+                      </View> */}
                     </View>
                     <Button
                       onPress={() => handleStoreSelect(store)}
