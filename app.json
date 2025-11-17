@@ -82,14 +82,9 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.RECORD_AUDIO",
         "android.permission.MODIFY_AUDIO_SETTINGS",
-        "android.permission.READ_SMS",
-        "android.permission.RECEIVE_SMS",
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE",
-        "android.permission.WRITE_EXTERNAL_STORAGE",
-        "android.permission.ACCESS_COARSE_LOCATION",
-        "android.permission.ACCESS_FINE_LOCATION",
-        "android.permission.RECORD_AUDIO"
+        "android.permission.WRITE_EXTERNAL_STORAGE"
       ],
       "config": {
         "googleMaps": {
@@ -106,10 +101,11 @@
     "extra": {
       "googleMapsApiKey": "AIzaSyAVXxFLtJn-hLmeLAreKFdON1rzuHtNBDc",
       "eas": {
-        "projectId": "dfc327da-2ff2-4ab9-8d6f-5bb53ab1e6bd"
+        "projectId": "9e287073-a26f-48b7-98ef-516ffbb4964f"
       }
     },
     "plugins": [
+      "expo-dev-client",
       [
         "expo-location",
         {
@@ -148,7 +144,8 @@
                 "META-INF/notice.txt",
                 "META-INF/ASL2.0"
               ]
-            }
+            },
+            "enableMinifyInReleaseBuilds": false
           }
         }
       ],

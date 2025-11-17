@@ -401,10 +401,10 @@ const OrderSummaryScreen = () => {
         <View style={[styles.orderInfoCard, { backgroundColor: theme.colors.surface }]}>
           <View style={styles.orderInfoRow}>
             <Text style={[styles.orderInfoLabel, { color: theme.colors.text }]}>
-              {orderSummary.status === 'pending' ? 'Order ID:' : 'Order Number:'}
+              {orderSummary.status === 'pending' ? 'Order Number:' : 'Order Number:'}
             </Text>
             <Text style={[styles.orderInfoValue, { color: theme.colors.primary }]}>
-              {orderSummary.status === 'pending' ? orderSummary.orderId : orderSummary.orderNumber}
+              {orderSummary.status === 'pending' ? orderSummary.orderNumber : orderSummary.orderNumber}
             </Text>
           </View>
           

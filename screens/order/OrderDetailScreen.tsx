@@ -866,10 +866,10 @@ const OrderDetailScreen = () => {
           <View style={[styles.orderInfoCard, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.orderInfoRow}>
               <Text style={[styles.orderInfoLabel, { color: theme.colors.text }]}>
-                {orderData.paymentStatus === 'pending' ? 'Order ID:' : 'Order Number:'}
+                {orderData.paymentStatus === 'pending' ? 'Order Number:' : 'Order Number:'}
               </Text>
               <Text style={[styles.orderInfoValue, { color: theme.colors.primary }]}>
-                {orderData.paymentStatus === 'pending' ? order?.orderId : orderData.id}
+                {orderData.paymentStatus === 'pending' ? orderData.id : orderData.id}
               </Text>
             </View>
             

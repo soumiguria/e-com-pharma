@@ -12,7 +12,8 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../hooks/useAppTheme';
-import { useVoiceRecognition } from '../../hooks/useVoiceRecognition';
+// Voice feature disabled temporarily
+// import { useVoiceRecognition } from '../../hooks/useVoiceRecognition';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -33,50 +34,15 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 }) => {
   const { createStyles, colors } = useAppTheme();
   const [searchQuery, setSearchQuery] = useState(value || '');
-  const { isListening, transcript, error, startListening, stopListening, isAvailable } = useVoiceRecognition();
-  const [animation] = useState(new Animated.Value(0));
-  const lastTranscriptRef = useRef('');
 
-  useEffect(() => {
-    if (transcript && transcript !== lastTranscriptRef.current) {
-      console.log('🎤 Voice transcript received:', transcript);
-      setSearchQuery(transcript);
-      // Only update the search query, don't auto-submit
-      // Let user see the transcribed text and decide whether to search
-      onSearch(transcript);
-      lastTranscriptRef.current = transcript;
-      // Stop listening after first successful transcript to avoid re-listening loops
-      stopListening();
-    }
-  }, [transcript, onSearch, stopListening]);
+  // Voice feature disabled - removed all voice recognition logic
+  // const { isListening, transcript, partialTranscript, error, startListening, stopListening, isAvailable } = useVoiceRecognition();
 
-  // Mic button अब सिर्फ तभी enable होगा जब voice module available हो (Android app build)
   useEffect(() => {
     if (value !== undefined) {
       setSearchQuery(value);
     }
   }, [value]);
-
-  useEffect(() => {
-    if (isListening) {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(animation, {
-            toValue: 1,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-          Animated.timing(animation, {
-            toValue: 0,
-            duration: 1000,
-            useNativeDriver: true,
-          }),
-        ])
-      ).start();
-    } else {
-      animation.setValue(0);
-    }
-  }, [isListening]);
 
   const styles = createStyles(theme => ({
     container: {
@@ -111,32 +77,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     },
   }));
 
-  const handleVoicePress = async () => {
-    try {
-      if (isListening) {
-        console.log('🎤 Stopping voice recognition...');
-        await stopListening();
-      } else {
-        console.log('🎤 Starting voice recognition...');
-        setSearchQuery(''); // Clear current search when starting voice
-        await startListening();
-      }
-    } catch (error: any) {
-      console.error('🎤 Voice recognition error:', error);
-      // Error is shown but mic button stays enabled for retry
-    }
+  // Voice feature disabled
+  const handleVoicePress = () => {
+    // Do nothing - feature is disabled
   };
 
   const handleClear = () => {
     setSearchQuery('');
     onSearch('');
-  };
-
-  const pulseStyle = {
-    opacity: animation.interpolate({
-      inputRange: [0, 1],
-      outputRange: [0.5, 1],
-    }),
   };
 
   return (
@@ -149,7 +97,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           placeholderTextColor={`${colors.text}80`}
           value={searchQuery}
           onChangeText={(text) => {
-            console.log('🔍 SearchBar onChangeText:', text);
             setSearchQuery(text);
             onSearch(text);
           }}
@@ -173,30 +120,15 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           <TouchableOpacity
             onPress={handleVoicePress}
             style={styles.iconButton}
-            disabled={!isAvailable}
+            disabled={true}
           >
-            <Animated.View style={isListening ? pulseStyle : undefined}>
-              <MaterialCommunityIcons
-                name={isListening ? 'microphone' : 'microphone-outline'}
-                size={24}
-                color={
-                  !isAvailable
-                    ? `${colors.text}66`
-                    : isListening
-                    ? colors.primary
-                    : colors.text
-                }
-              />
-            </Animated.View>
+            <MaterialCommunityIcons
+              name="microphone-outline"
+              size={24}
+              color={`${colors.text}40`}
+            />
           </TouchableOpacity>
         </View>
-        {error && (
-          <View style={{ paddingHorizontal: 16, paddingTop: 4 }}>
-            <Text style={{ color: colors.error, fontSize: 12 }}>
-              {error}
-            </Text>
-          </View>
-        )}
       </View>
     </View>
   );

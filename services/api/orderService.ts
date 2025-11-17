@@ -552,7 +552,7 @@ class OrderService {
   }
 
   // Upload prescription image for an order
-  async uploadPrescription(orderId: string, fileUri: string): Promise<ApiResponse<{ signedPresciptionUrl: string }>> {
+  async uploadPrescription(orderId: string, fileUri: string, mimeType?: string | null): Promise<ApiResponse<{ signedPresciptionUrl: string }>> {
     try {
       const token = await this.getAuthToken();
       if (!token) {
@@ -561,8 +561,17 @@ class OrderService {
 
       const url = `https://marg-api.thelocalsandbox.dev/v1/customer/order/${orderId}/upload-prescription`;
 
-      // Best-effort MIME type detection from filename extension
-      const guessMimeType = (filename: string): string => {
+      // Best-effort MIME type detection from filename extension or provided mimeType
+      const guessMimeType = (filename: string, providedMimeType?: string | null): string => {
+        // Use provided MIME type if available and valid
+        if (providedMimeType && providedMimeType !== 'application/octet-stream') {
+          // Normalize common variations
+          if (providedMimeType === 'image/jpg') return 'image/jpeg';
+          if (providedMimeType === 'image/x-png') return 'image/png';
+          return providedMimeType;
+        }
+
+        // Fallback to filename extension
         const lower = filename.toLowerCase();
         if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
         if (lower.endsWith('.png')) return 'image/png';
@@ -580,7 +589,16 @@ class OrderService {
       const formData = new FormData();
       const rawFilename = fileUri.split('/').pop() || `prescription_${Date.now()}.jpg`;
       const filename = rawFilename.includes('.') ? rawFilename : `${rawFilename}.jpg`;
-      const type = guessMimeType(filename);
+      const detectedType = guessMimeType(filename, mimeType);
+
+      // Validate file type - API accepts images and PDFs
+      const allowedImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/x-png', 'image/webp', 'image/gif', 'image/bmp', 'image/tiff', 'image/tif'];
+      const isImageType = allowedImageTypes.includes(detectedType.toLowerCase()) || detectedType.startsWith('image/');
+      const isPdfType = detectedType === 'application/pdf';
+      
+      if (!isImageType && !isPdfType) {
+        throw new Error(`File type ${detectedType} is not supported. Please upload an image file (JPG, PNG) or PDF.`);
+      }
 
       // Handle different URI formats for React Native
       let normalizedUri = fileUri;
@@ -593,11 +611,35 @@ class OrderService {
         }
       }
       
+      // Ensure filename has correct extension based on MIME type
+      let finalFilename = filename;
+      let finalType = detectedType;
+      
+      if (isPdfType) {
+        // For PDFs, ensure .pdf extension and exact MIME type
+        if (!finalFilename.toLowerCase().endsWith('.pdf')) {
+          finalFilename = finalFilename.replace(/\.[^/.]+$/, '') + '.pdf';
+        }
+        finalType = 'application/pdf'; // Exact type as API expects
+      } else if (detectedType === 'image/jpeg' || detectedType === 'image/jpg') {
+        if (!finalFilename.toLowerCase().endsWith('.jpg') && !finalFilename.toLowerCase().endsWith('.jpeg')) {
+          finalFilename = finalFilename.replace(/\.[^/.]+$/, '') + '.jpg';
+        }
+        finalType = 'image/jpeg'; // Normalize to jpeg
+      } else if (detectedType === 'image/png' || detectedType === 'image/x-png') {
+        if (!finalFilename.toLowerCase().endsWith('.png')) {
+          finalFilename = finalFilename.replace(/\.[^/.]+$/, '') + '.png';
+        }
+        finalType = 'image/png'; // Normalize to png
+      }
+      
+      // Create file object with proper format for API
       const file: any = {
         uri: normalizedUri,
-        name: filename,
-        type,
+        name: finalFilename,
+        type: finalType, // Use exact MIME type as API expects
       };
+      
       // Use 'prescription' as the field name as per API documentation
       formData.append('prescription', file);
 
@@ -612,11 +654,14 @@ class OrderService {
 
       console.log('📄 Upload details:', {
         url,
-        filename,
-        type,
+        filename: finalFilename,
+        type: finalType,
+        detectedType,
         normalizedUri,
         platform: Platform.OS,
-        hasToken: !!token
+        hasToken: !!token,
+        isPdf: isPdfType,
+        isImage: isImageType
       });
 
       // Use direct axios with proper Android file handling

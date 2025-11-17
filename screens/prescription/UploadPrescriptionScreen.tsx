@@ -111,7 +111,7 @@ const UploadPrescriptionScreen = () => {
   const handleChooseFromDocuments = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['image/*', 'application/pdf'],
+        type: ['image/*', 'application/pdf'], // Allow both images and PDFs
         copyToCacheDirectory: true,
         multiple: false,
       });
@@ -203,7 +203,8 @@ const UploadPrescriptionScreen = () => {
     
     try {
       console.log('📄 Uploading prescription for order:', orderId, 'file:', selectedFile);
-      const res = await orderService.uploadPrescription(orderId, selectedFile.uri);
+      // Pass the mimeType from selected file to ensure correct type detection
+      const res = await orderService.uploadPrescription(orderId, selectedFile.uri, selectedFile.mimeType);
       console.log('📄 Upload response:', res);
       
       if (!res.success) {

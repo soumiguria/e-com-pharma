@@ -1,159 +1,60 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   View,
   Text,
   Button,
   StyleSheet,
-  Platform,
-  PermissionsAndroid,
-  Alert,
 } from 'react-native';
-import Voice from '@react-native-voice/voice';
-import Constants from 'expo-constants';
-
-const isExpoGo = Constants.appOwnership === 'expo';
+import { useVoiceRecognition } from '../../hooks/useVoiceRecognition';
 
 interface VoiceSearchProps {
   onResult?: (text: string) => void;
 }
 
 const VoiceSearch: React.FC<VoiceSearchProps> = ({ onResult }) => {
-  const [isListening, setIsListening] = useState(false);
-  const [results, setResults] = useState<string[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const {
+    isListening,
+    transcript,
+    error,
+    startListening,
+    stopListening,
+    isAvailable,
+    status,
+  } = useVoiceRecognition();
 
-  // Voice event handlers
-  const onSpeechStart = (e: any) => {
-    console.log('🎤 onSpeechStart:', e);
-    setIsListening(true);
-    setError(null);
-  };
+  // Avoid emitting the same transcript multiple times
+  const lastEmittedRef = useRef('');
 
-  const onSpeechResults = (e: any) => {
-    console.log('🎤 onSpeechResults:', e);
-    const values: string[] = e?.value || [];
-    setResults(values);
-    if (values[0] && onResult) {
-      onResult(values[0]);
-    }
-  };
-
-  const onSpeechEnd = (e: any) => {
-    console.log('🎤 onSpeechEnd:', e);
-    setIsListening(false);
-  };
-
-  const onSpeechError = (e: any) => {
-    console.log('🎤 onSpeechError:', e);
-    const message = e?.error?.message || 'Something went wrong with voice recognition.';
-    setError(message);
-    setIsListening(false);
-  };
-
-  // Attach listeners & cleanup
   useEffect(() => {
-    if (isExpoGo) {
-      // In Expo Go we do not touch native Voice module
-      return;
-    }
+    if (!onResult) return;
+    if (!transcript || transcript.trim().length === 0) return;
+    if (transcript === lastEmittedRef.current) return;
 
-    Voice.onSpeechStart = onSpeechStart;
-    Voice.onSpeechResults = onSpeechResults;
-    Voice.onSpeechEnd = onSpeechEnd;
-    Voice.onSpeechError = onSpeechError;
+    console.log('🎤 VoiceSearch onResult transcript:', transcript);
+    lastEmittedRef.current = transcript;
+    onResult(transcript);
+  }, [transcript, onResult]);
 
-    return () => {
-      try {
-        Voice.destroy().then(Voice.removeAllListeners).catch(() => {});
-      } catch (e) {
-        console.log('🎤 Voice cleanup error:', e);
-      }
-    };
-  }, []);
-
-  const requestMicPermission = useCallback(async (): Promise<boolean> => {
-    if (Platform.OS !== 'android') {
-      return true;
-    }
-
-    try {
-      const result = await PermissionsAndroid.request(
-        PermissionsAndroid.PERMISSIONS.RECORD_AUDIO,
-        {
-          title: 'Microphone Permission',
-          message: 'We need access to your microphone for voice search.',
-          buttonPositive: 'OK',
-        }
-      );
-      return result === PermissionsAndroid.RESULTS.GRANTED;
-    } catch (e) {
-      console.warn('🎤 Mic permission error:', e);
-      return false;
-    }
-  }, []);
-
-  const startListening = useCallback(async () => {
-    if (isExpoGo) {
-      Alert.alert(
-        'Voice Search',
-        'Voice Search is disabled in Expo Go. Please run the app in a native build (EAS dev / production) to use this feature.'
-      );
-      return;
-    }
-
-    try {
-      setError(null);
-      setResults([]);
-
-      const hasPermission = await requestMicPermission();
-      if (!hasPermission) {
-        setError('Microphone permission not granted.');
-        return;
-      }
-
-      await Voice.start('en-IN');
-    } catch (e: any) {
-      console.log('🎤 startListening error:', e);
-      const message = e?.message || 'Failed to start voice recognition.';
-      setError(message);
-      setIsListening(false);
-    }
-  }, [requestMicPermission]);
-
-  const stopListening = useCallback(async () => {
-    if (isExpoGo) {
-      return;
-    }
-    try {
-      await Voice.stop();
-      setIsListening(false);
-    } catch (e: any) {
-      console.log('🎤 stopListening error:', e);
-      const message = e?.message || 'Failed to stop voice recognition.';
-      setError(message);
-    }
-  }, []);
-
-  if (isExpoGo) {
+  if (!isAvailable) {
     return (
       <View style={styles.container}>
         <Text style={styles.title}>Voice Search</Text>
         <Text style={styles.disabledText}>
-          Voice Search is disabled in Expo Go. Please run the app in a native build to use this
-          feature.
+          Voice search is not available on this device or build. You can still search by typing.
         </Text>
+        {error ? <Text style={styles.errorText}>{error}</Text> : null}
       </View>
     );
   }
-
-  const topResult = results[0] || '';
 
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Voice Search</Text>
       <View style={styles.statusRow}>
         <Text style={styles.statusLabel}>Status: </Text>
-        <Text style={styles.statusValue}>{isListening ? 'Listening…' : 'Idle'}</Text>
+        <Text style={styles.statusValue}>
+          {status || (isListening ? 'Listening…' : 'Idle')}
+        </Text>
       </View>
       <View style={styles.buttonsRow}>
         <Button
@@ -165,7 +66,7 @@ const VoiceSearch: React.FC<VoiceSearchProps> = ({ onResult }) => {
         <Button title="Stop" onPress={stopListening} disabled={!isListening} />
       </View>
       <Text style={styles.resultsLabel}>Heard:</Text>
-      <Text style={styles.resultsText}>{topResult || '—'}</Text>
+      <Text style={styles.resultsText}>{transcript || '—'}</Text>
       {error ? <Text style={styles.errorText}>{error}</Text> : null}
     </View>
   );
