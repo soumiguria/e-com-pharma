@@ -186,12 +186,12 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
         {!hideCartButton && (
           quantity === 0 ? (
             <TouchableOpacity 
-              style={[styles.addButton, !canAddToCart() && { opacity: 0.5, borderColor: '#ccc' }]}
+              style={[styles.addButton, !canAddToCart() && { opacity: 1, borderColor: '#dc3545', backgroundColor: '#dc3545' }]}
               onPress={handleAddToCart}
               activeOpacity={0.85}
               disabled={!canAddToCart()}
             >
-              <Text style={[styles.addButtonText, !canAddToCart() && { color: '#999' }]}>
+              <Text style={[styles.addButtonText, !canAddToCart() && { color: '#fff' }]}>
                 {canAddToCart() ? 'ADD' : 'OUT'}
               </Text>
             </TouchableOpacity>

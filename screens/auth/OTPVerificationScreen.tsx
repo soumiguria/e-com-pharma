@@ -410,7 +410,7 @@ const OTPVerificationScreen = () => {
             <Text style={styles.subtitle}>
               Enter the 6-digit code sent to your mobile number
             </Text>
-            <Text style={styles.phoneText}>+91 {actualPhoneNumber}</Text>
+            <Text style={styles.phoneText}>{actualPhoneNumber}</Text>
           </View>
 
           {/* Hidden TextInput for autofill */}
@@ -452,7 +452,7 @@ const OTPVerificationScreen = () => {
                   value={digit}
                   onChangeText={(value) => handleOtpChange(value, index)}
                   onKeyPress={(e) => handleKeyPress(e, index)}
-                  keyboardType="number-pad"
+                  keyboardType="default"
                   maxLength={index === 0 ? 6 : 1}
                   selectTextOnFocus
                   autoComplete={index === 0 ? "sms-otp" : "off"}

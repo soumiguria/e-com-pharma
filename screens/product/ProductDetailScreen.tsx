@@ -590,8 +590,8 @@ const ProductDetailScreen = () => {
                   </View>
                 ) : null
               ) : (
-                <View style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#f5f5f5', borderRadius: 6 }}>
-                  <Text style={{ fontSize: 12, color: '#999', fontStyle: 'italic' }}>Out of stock</Text>
+                <View style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#fee', borderRadius: 6 }}>
+                  <Text style={{ fontSize: 12, color: '#dc3545', fontStyle: 'italic', fontWeight: '500' }}>Out of stock</Text>
                 </View>
               )}
             </TouchableOpacity>
@@ -670,12 +670,12 @@ const ProductDetailScreen = () => {
           ) : (
             <TouchableOpacity
               style={{ 
-                backgroundColor: canAddToCart() ? theme.colors.primary : '#ccc', 
+                backgroundColor: canAddToCart() ? theme.colors.primary : '#dc3545', 
                 borderRadius: 8, 
                 paddingHorizontal: 40, 
                 paddingVertical: 12, 
                 alignSelf: 'center',
-                opacity: canAddToCart() ? 1 : 0.6
+                opacity: canAddToCart() ? 1 : 1
               }}
               onPress={() => {
                 if (!selectedVariant && variants.length > 0) return;
@@ -699,12 +699,12 @@ const ProductDetailScreen = () => {
         ) : variants.length === 0 ? (
           <TouchableOpacity
             style={{ 
-              backgroundColor: canAddToCart() ? theme.colors.primary : '#ccc', 
+              backgroundColor: canAddToCart() ? theme.colors.primary : '#dc3545', 
               borderRadius: 8, 
               paddingHorizontal: 40, 
               paddingVertical: 12, 
               alignSelf: 'center',
-              opacity: canAddToCart() ? 1 : 0.6
+              opacity: canAddToCart() ? 1 : 1
             }}
             onPress={() => {
               if (!canAddToCart()) return;

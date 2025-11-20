@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,10 @@ import {
   Image,
   Platform,
   Linking,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -37,7 +38,32 @@ const UploadPrescriptionScreen = () => {
     isImage?: boolean;
   } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   // Voice recognition removed from this screen; available on Search only
+
+  // Reload/refresh order data when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      // Optionally refresh order data when screen is focused
+      // This ensures users see the latest order status
+      console.log('📋 UploadPrescription screen focused');
+    }, [])
+  );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    // Reload order data if needed
+    // Navigate to OrderSelection to refresh order list
+    try {
+      navigation.navigate('OrderSelection' as any);
+      // Wait a bit before returning to allow navigation
+      setTimeout(() => {
+        setRefreshing(false);
+      }, 1000);
+    } catch (error) {
+      setRefreshing(false);
+    }
+  }, [navigation]);
 
   const requestPermissions = async () => {
     if (Platform.OS !== 'web') {
@@ -248,9 +274,15 @@ const UploadPrescriptionScreen = () => {
       marginRight: 8,
     },
     headerTitle: {
+      flex: 1,
       fontSize: 18,
       fontWeight: 'bold',
       color: theme.colors.text,
+      textAlign: 'center',
+    },
+    reloadButton: {
+      padding: 8,
+      marginLeft: 8,
     },
     content: {
       flex: 1,
@@ -457,12 +489,31 @@ const UploadPrescriptionScreen = () => {
           <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={themedStyles.headerTitle}>Upload Prescription</Text>
+        <TouchableOpacity 
+          style={themedStyles.reloadButton}
+          onPress={onRefresh}
+          disabled={refreshing}
+        >
+          <Ionicons 
+            name="reload" 
+            size={22} 
+            color={refreshing ? theme.colors.secondary : theme.colors.primary} 
+          />
+        </TouchableOpacity>
       </View>
 
       <ScrollView 
         style={themedStyles.content} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={themedStyles.scrollContent}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[theme.colors.primary]}
+            tintColor={theme.colors.primary}
+          />
+        }
       >
         {/* Action Buttons */}
         <View style={themedStyles.actionButtonsContainer}>

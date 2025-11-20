@@ -7,6 +7,7 @@ import {
   Image,
   ScrollView,
   Alert,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -210,18 +211,30 @@ const OrderDetailScreen = () => {
 
   const orderData = {
     id: order?.orderNo || order?.orderNumber || order?.id || 'N/A',
+    orderId: order?.orderId || order?.id,
+    orderNumber: order?.orderNo || order?.orderNumber || order?.id || 'N/A',
     items: (order?.orderItems || order?.items || order?.products || []).map((it: any) => {
       // Try multiple possible product ID fields from different API response structures
       const productId = it.productId || it.product_id || it.id || it._id || it.productERPId || it.productNumber || `product_${Math.random().toString(36).substr(2, 9)}`;
+      const name = it.name || it.productName || it.product_name || 'Product';
+      const price = Number(it.actual ?? it.price ?? it.sp ?? it.selling_price ?? 0); // Rate
+      const quantity = Number(it.quantity ?? 1); // Qty
+      const amount = price * quantity; // Amount = Rate × Qty
       
       return {
         id: productId,
         productId: productId, // Store actual product ID for reordering
-        name: it.name || it.productName || it.product_name || 'Product',
-        price: Number(it.actual ?? it.price ?? it.sp ?? it.selling_price ?? 0),
+        name: name, // Item Name
+        price: price, // Rate
         originalPrice: Number(it.mrp ?? it.original_price ?? 0),
-        quantity: Number(it.quantity ?? 1),
+        quantity: quantity, // Qty
+        amount: amount, // Amount = Rate × Qty
         image: it.images?.primary || it.signedImages?.primary || it.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
+        // Additional fields if available
+        variant: it.variant,
+        packing: it.packing || it.variant?.unit || '',
+        discount: Number(it.discount || it.discountAmount || 0),
+        tax: Number(it.tax || it.taxAmount || 0),
       };
     }),
     itemTotal: Number(order?.subtotalAmount || order?.itemTotal || order?.total || 0),
@@ -243,7 +256,69 @@ const OrderDetailScreen = () => {
   console.log('📦 First item structure:', JSON.stringify((order?.orderItems || order?.items)?.[0], null, 2));
 
   const handleDownloadInvoice = () => {
-    Alert.alert('Download Invoice', 'Invoice download started...');
+    if (!order) {
+      Alert.alert('Error', 'Order data not available');
+      return;
+    }
+    
+    // Ensure all details are properly passed to invoice preview
+    const itemsWithAmount = orderData.items.map((item: any) => {
+      const price = item.price || 0;
+      const quantity = item.quantity || 1;
+      const amount = item.amount || (price * quantity);
+      return {
+        ...item,
+        // Ensure amount is calculated if not present
+        amount: amount,
+        // Ensure all fields are present
+        name: item.name || 'Unknown Product',
+        quantity: quantity,
+        price: price,
+        discount: item.discount || 0,
+        tax: item.tax || 0,
+        taxAmount: item.tax || 0,
+        discountAmount: item.discount || 0,
+      };
+    });
+    
+    // Calculate total from items if orderData.grandTotal is 0 or missing
+    const calculatedTotal = itemsWithAmount.reduce((sum: number, item: any) => sum + (item.amount || 0), 0);
+    const orderTotal = orderData.grandTotal || 0;
+    const finalTotal = orderTotal > 0 ? orderTotal : calculatedTotal;
+    
+    // Convert orderDate to ISO format if it's in DD/MM/YYYY format
+    let orderDateISO = orderData.orderDate;
+    if (orderData.orderDate && typeof orderData.orderDate === 'string' && orderData.orderDate.includes('/')) {
+      // Parse DD/MM/YYYY format
+      const [day, month, year] = orderData.orderDate.split('/');
+      if (day && month && year) {
+        orderDateISO = new Date(`${year}-${month}-${day}`).toISOString();
+      }
+    } else if (order?.createdAt) {
+      orderDateISO = order.createdAt;
+    } else if (orderData.orderDate) {
+      // Try to parse as is
+      const parsed = new Date(orderData.orderDate);
+      orderDateISO = isNaN(parsed.getTime()) ? new Date().toISOString() : parsed.toISOString();
+    } else {
+      orderDateISO = new Date().toISOString();
+    }
+    
+    const invoiceData = {
+      ...orderData,
+      items: itemsWithAmount,
+      total: finalTotal, // Ensure total is set correctly
+      grandTotal: finalTotal, // Also set grandTotal for consistency
+      orderDate: orderDateISO, // Ensure orderDate is in ISO format
+      storeName: storeDetails?.name || order?.store?.name || 'Store', // Include store name
+      storeId: order?.storeId || 'N/A', // Include store ID
+      deliveryMethod: orderData.orderType || 'Home Delivery',
+      deliveryAddress: orderData.address || order?.shippingAddress?.address || 'Store Pickup',
+    };
+    
+    console.log('📄 Navigating to InvoicePreview with data:', JSON.stringify(invoiceData, null, 2));
+    // Navigate to invoice preview screen
+    navigation.navigate('InvoicePreview', { orderData: invoiceData } as any);
   };
 
   const handleCallStore = async () => {
@@ -751,6 +826,11 @@ const OrderDetailScreen = () => {
     borderRadius: 12,
     backgroundColor: '#f0f0f0',
   },
+  pdfContainer: {
+    width: 200,
+    height: 150,
+    borderRadius: 12,
+  },
   prescriptionOverlay: {
     position: 'absolute',
     top: 0,
@@ -857,7 +937,7 @@ const OrderDetailScreen = () => {
             style={styles.downloadButton}
           >
             <MaterialIcons name="file-download" size={16} color="#fff" />
-            <Text style={styles.downloadButtonText} numberOfLines={1} ellipsizeMode="tail">Download Invoice</Text>
+            <Text style={styles.downloadButtonText} numberOfLines={1} ellipsizeMode="tail">Preview Invoice</Text>
           </TouchableOpacity>
         </View>
 
@@ -958,32 +1038,75 @@ const OrderDetailScreen = () => {
               
               return finalPrescriptionUrl ? (
                 <>
-                  <TouchableOpacity
-                    style={styles.prescriptionContainer}
-                    onPress={() => {
-                      console.log('🖼️ Opening prescription image:', finalPrescriptionUrl);
-                      navigation.navigate('ImageViewer', { 
-                        imageUrl: finalPrescriptionUrl, 
-                        title: 'Prescription' 
-                      });
-                    }}
-                  >
-                    <Image
-                      source={{ uri: finalPrescriptionUrl }}
-                      style={styles.prescriptionImage}
-                      resizeMode="cover"
-                      onError={(error) => {
-                        console.error('🖼️ Prescription image load error:', error.nativeEvent.error);
-                      }}
-                      onLoad={() => {
-                        console.log('🖼️ Prescription image loaded successfully for:', finalPrescriptionUrl);
-                      }}
-                    />
-                    <View style={styles.prescriptionOverlay}>
-                      <MaterialIcons name="zoom-in" size={24} color="#fff" />
-                      <Text style={styles.prescriptionOverlayText}>Tap to view full size</Text>
-                    </View>
-                  </TouchableOpacity>
+                  {(() => {
+                    // Check if the file is a PDF
+                    const isPdf = finalPrescriptionUrl.toLowerCase().includes('.pdf') || 
+                                 finalPrescriptionUrl.toLowerCase().includes('application/pdf');
+                    
+                    if (isPdf) {
+                      // For PDFs, show a PDF icon button instead of trying to render as image
+                      return (
+                        <TouchableOpacity
+                          style={styles.prescriptionContainer}
+                          onPress={async () => {
+                            try {
+                              console.log('📄 Opening PDF prescription:', finalPrescriptionUrl);
+                              const canOpen = await Linking.canOpenURL(finalPrescriptionUrl);
+                              if (canOpen) {
+                                await Linking.openURL(finalPrescriptionUrl);
+                              } else {
+                                Alert.alert('Error', 'Cannot open PDF. Please check the file URL.');
+                              }
+                            } catch (error) {
+                              console.error('📄 Error opening PDF:', error);
+                              Alert.alert('Error', 'Failed to open PDF. Please try again.');
+                            }
+                          }}
+                        >
+                          <View style={[styles.prescriptionImage, styles.pdfContainer, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}>
+                            <MaterialIcons name="picture-as-pdf" size={64} color="#dc3545" />
+                            <Text style={[styles.prescriptionOverlayText, { color: theme.colors.text, marginTop: 8 }]}>
+                              PDF Document
+                            </Text>
+                          </View>
+                          <View style={styles.prescriptionOverlay}>
+                            <MaterialIcons name="open-in-new" size={24} color="#fff" />
+                            <Text style={styles.prescriptionOverlayText}>Tap to open PDF</Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    } else {
+                      // For images, show the image preview
+                      return (
+                        <TouchableOpacity
+                          style={styles.prescriptionContainer}
+                          onPress={() => {
+                            console.log('🖼️ Opening prescription image:', finalPrescriptionUrl);
+                            navigation.navigate('ImageViewer', { 
+                              imageUrl: finalPrescriptionUrl, 
+                              title: 'Prescription' 
+                            });
+                          }}
+                        >
+                          <Image
+                            source={{ uri: finalPrescriptionUrl }}
+                            style={styles.prescriptionImage}
+                            resizeMode="cover"
+                            onError={(error) => {
+                              console.error('🖼️ Prescription image load error:', error.nativeEvent.error);
+                            }}
+                            onLoad={() => {
+                              console.log('🖼️ Prescription image loaded successfully for:', finalPrescriptionUrl);
+                            }}
+                          />
+                          <View style={styles.prescriptionOverlay}>
+                            <MaterialIcons name="zoom-in" size={24} color="#fff" />
+                            <Text style={styles.prescriptionOverlayText}>Tap to view full size</Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    }
+                  })()}
                   
                   <Text style={[styles.prescriptionText, { color: '#4CAF50' }]}>
                     ✓ Prescription uploaded successfully

@@ -216,9 +216,14 @@ const OrderSelectionScreen = () => {
       marginRight: 12,
     },
     headerTitle: {
+      flex: 1,
       fontSize: 18,
       fontWeight: 'bold',
       color: theme.colors.text,
+    },
+    reloadButton: {
+      padding: 8,
+      marginLeft: 8,
     },
     content: {
       flex: 1,
@@ -456,6 +461,17 @@ const OrderSelectionScreen = () => {
             </TouchableOpacity>
             <Text style={styles.headerTitle}>Select Order for Prescription</Text>
           </View>
+          <TouchableOpacity
+            onPress={onRefresh}
+            style={styles.reloadButton}
+            disabled={refreshing}
+          >
+            <MaterialIcons 
+              name="refresh" 
+              size={24} 
+              color={refreshing ? theme.colors.secondary : theme.colors.primary} 
+            />
+          </TouchableOpacity>
         </View>
 
         {/* Orders List */}

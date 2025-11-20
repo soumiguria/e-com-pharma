@@ -193,7 +193,7 @@ const RegisterScreen = () => {
           </View>
 
           <View style={styles.phoneDisplay}>
-            <Text style={styles.phoneText}>Mobile: +91 {phoneNumber}</Text>
+            <Text style={styles.phoneText}>Mobile: {phoneNumber}</Text>
           </View>
 
           <View style={styles.inputContainer}>

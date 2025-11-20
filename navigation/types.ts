@@ -114,8 +114,9 @@ export type RootStackParamList = {
   Under199Products: undefined;
   BrandDetail: { brand: string };
   OrderSelection: undefined;
-  UploadPrescription: { orderId: string };
+  UploadPrescription: { orderId: string; storeId?: string };
   ImageViewer: { imageUrl: string; title?: string };
+  InvoicePreview: { orderData: any };
 };
 
 export type HomeTabParamList = {

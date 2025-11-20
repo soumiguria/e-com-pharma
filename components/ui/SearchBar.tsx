@@ -12,8 +12,7 @@ import {
 } from 'react-native';
 import { MaterialCommunityIcons, Ionicons } from '@expo/vector-icons';
 import { useAppTheme } from '../../hooks/useAppTheme';
-// Voice feature disabled temporarily
-// import { useVoiceRecognition } from '../../hooks/useVoiceRecognition';
+import { useVoiceSearch } from '../../hooks/useVoiceSearch';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -34,15 +33,61 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 }) => {
   const { createStyles, colors } = useAppTheme();
   const [searchQuery, setSearchQuery] = useState(value || '');
-
-  // Voice feature disabled - removed all voice recognition logic
-  // const { isListening, transcript, partialTranscript, error, startListening, stopListening, isAvailable } = useVoiceRecognition();
+  const [animation] = useState(new Animated.Value(0));
+  
+  // Voice search hook with Google Cloud Speech-to-Text
+  const { 
+    isListening, 
+    error: voiceError, 
+    result: voiceResult, 
+    partialResult, 
+    startListening, 
+    stopListening, 
+    isAvailable 
+  } = useVoiceSearch();
 
   useEffect(() => {
     if (value !== undefined) {
       setSearchQuery(value);
     }
   }, [value]);
+
+  // Update search query when voice result is ready
+  useEffect(() => {
+    if (voiceResult && voiceResult.trim().length > 0) {
+      setSearchQuery(voiceResult);
+      onSearch(voiceResult);
+    }
+  }, [voiceResult, onSearch]);
+
+  // Show partial results in real-time
+  useEffect(() => {
+    if (partialResult && isListening) {
+      setSearchQuery(partialResult);
+    }
+  }, [partialResult, isListening]);
+
+  // Pulse animation while listening
+  useEffect(() => {
+    if (isListening) {
+      Animated.loop(
+        Animated.sequence([
+          Animated.timing(animation, {
+            toValue: 1,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+          Animated.timing(animation, {
+            toValue: 0,
+            duration: 1000,
+            useNativeDriver: true,
+          }),
+        ])
+      ).start();
+    } else {
+      animation.setValue(0);
+    }
+  }, [isListening]);
 
   const styles = createStyles(theme => ({
     container: {
@@ -58,7 +103,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       paddingHorizontal: theme.spacing.md,
       height: 48,
       borderWidth: 1,
-      borderColor: theme.colors.border,
+      borderColor: isListening ? colors.primary : theme.colors.border,
     },
     input: {
       flex: 1,
@@ -77,10 +122,36 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     },
   }));
 
-  // Voice feature disabled
-  const handleVoicePress = () => {
-    // Do nothing - feature is disabled
+  const handleVoicePress = async () => {
+    try {
+      if (isListening) {
+        await stopListening();
+      } else {
+        setSearchQuery(''); // Clear current search when starting voice
+        await startListening();
+      }
+    } catch (error: any) {
+      // Error is handled by hook and shown via error state
+      console.error('Voice search error:', error);
+    }
   };
+
+  const pulseStyle = {
+    opacity: animation.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.5, 1],
+    }),
+    transform: [
+      {
+        scale: animation.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, 1.1],
+        }),
+      },
+    ],
+  };
+
+  const displayText = isListening && partialResult ? partialResult : searchQuery;
 
   const handleClear = () => {
     setSearchQuery('');
@@ -95,7 +166,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           style={styles.input}
           placeholder={placeholder}
           placeholderTextColor={`${colors.text}80`}
-          value={searchQuery}
+          value={displayText}
           onChangeText={(text) => {
             setSearchQuery(text);
             onSearch(text);
@@ -110,9 +181,17 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             }
           }}
           onFocus={onInputFocus}
+          editable={!isListening} // Disable editing while listening
         />
         <View style={styles.rightContainer}>
-          {searchQuery.length > 0 && (
+          {isListening && (
+            <ActivityIndicator 
+              size="small" 
+              color={colors.primary} 
+              style={{ marginRight: 4 }}
+            />
+          )}
+          {searchQuery.length > 0 && !isListening && (
             <TouchableOpacity onPress={handleClear} style={styles.iconButton}>
               <Ionicons name="close-circle" size={22} color={colors.text} />
             </TouchableOpacity>
@@ -120,16 +199,31 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           <TouchableOpacity
             onPress={handleVoicePress}
             style={styles.iconButton}
-            disabled={true}
+            // Always enabled - will show error message if API key not configured
           >
-            <MaterialCommunityIcons
-              name="microphone-outline"
-              size={24}
-              color={`${colors.text}40`}
-            />
+            <Animated.View style={isListening ? pulseStyle : undefined}>
+              <MaterialCommunityIcons
+                name={isListening ? 'microphone' : 'microphone-outline'}
+                size={24}
+                color={
+                  isListening
+                    ? colors.primary
+                    : voiceError
+                    ? colors.error
+                    : colors.text
+                }
+              />
+            </Animated.View>
           </TouchableOpacity>
         </View>
       </View>
+      {isListening && (
+        <View style={{ paddingHorizontal: 16, paddingTop: 4 }}>
+          <Text style={{ color: colors.primary, fontSize: 12, fontStyle: 'italic' }}>
+            Listening... {partialResult ? '(speaking)' : '(waiting for speech)'}
+          </Text>
+        </View>
+      )}
     </View>
   );
 };

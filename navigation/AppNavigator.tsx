@@ -45,6 +45,8 @@ import BrandDetailScreen from '../screens/category/BrandDetailScreen';
 import UploadPrescriptionScreen from '../screens/prescription/UploadPrescriptionScreen';
 import OrderSelectionScreen from '../screens/prescription/OrderSelectionScreen';
 import ImageViewerScreen from '../screens/common/ImageViewerScreen';
+import InvoicePreviewScreen from '../screens/order/InvoicePreviewScreen';
+import OrderSummaryScreen from '../screens/order/OrderSummaryScreen';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
@@ -102,6 +104,8 @@ const AppNavigator = () => {
       <Stack.Screen name="OrderSelection" component={OrderSelectionScreen} />
       <Stack.Screen name="UploadPrescription" component={UploadPrescriptionScreen} />
       <Stack.Screen name="ImageViewer" component={ImageViewerScreen} />
+      <Stack.Screen name="OrderSummary" component={OrderSummaryScreen} />
+      <Stack.Screen name="InvoicePreview" component={InvoicePreviewScreen} />
     </Stack.Navigator>
   );
 };

@@ -123,12 +123,6 @@ const PhoneAuthScreen = () => {
       paddingHorizontal: theme.spacing.md,
       backgroundColor: theme.colors.surface,
     },
-    countryCode: {
-      fontSize: 16,
-      color: theme.colors.text,
-      marginRight: theme.spacing.sm,
-      fontWeight: '500',
-    },
     input: {
       flex: 1,
       fontSize: 16,
@@ -174,10 +168,9 @@ const PhoneAuthScreen = () => {
 
         <View style={styles.inputContainer}>
           <View style={styles.phoneInput}>
-            <Text style={styles.countryCode}>+91</Text>
             <TextInput
               style={styles.input}
-              placeholder="Mobile Number"
+              placeholder="Mobile Number (with or without +91)"
               keyboardType="phone-pad"
               maxLength={15}
               value={mobileNumber}
