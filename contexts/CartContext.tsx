@@ -139,10 +139,9 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
   const updateQuantity = (productId: string, newQuantity: number, category: 'grocery' | 'pharma') => {
     console.log('🛒 updateQuantity called:', { productId, newQuantity, category });
     
-    // Allow quantity to be 0 to keep the item in cart (for form persistence)
-    // Only remove from cart if quantity is negative
-    if (newQuantity < 0) {
-      console.log('🛒 Quantity < 0, removing from cart');
+    // Remove from cart if quantity is 0 or negative
+    if (newQuantity <= 0) {
+      console.log('🛒 Quantity <= 0, removing from cart');
       removeFromCart(productId, category);
       return;
     }
