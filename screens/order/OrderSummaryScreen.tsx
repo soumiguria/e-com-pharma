@@ -670,23 +670,17 @@ const OrderSummaryScreen = () => {
       </ScrollView>
 
       {/* Bottom Actions */}
-      <View style={[styles.bottomContainer, { backgroundColor: theme.colors.surface }]}>
-        {orderSummary.paymentStatus === 'pending' ? (
+      {/* Removed reorder button - reorder functionality is now in OrderDetailScreen */}
+      {orderSummary.paymentStatus === 'pending' && (
+        <View style={[styles.bottomContainer, { backgroundColor: theme.colors.surface }]}>
           <ThemedButton
             title={`Pay Now - ₹${orderSummary.total.toFixed(2)}`}
             onPress={() => navigation.navigate('PaymentMethods' as any)}
             disabled={isProcessing}
             style={styles.reorderButton}
           />
-        ) : (
-          <ThemedButton
-            title="Reorder Items"
-            onPress={handleReorder}
-            disabled={isProcessing}
-            style={styles.reorderButton}
-          />
-        )}
-      </View>
+        </View>
+      )}
 
       <LoadingOverlay
         visible={isProcessing}

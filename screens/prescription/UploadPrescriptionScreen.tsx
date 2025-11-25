@@ -68,12 +68,11 @@ const UploadPrescriptionScreen = () => {
   const requestPermissions = async () => {
     if (Platform.OS !== 'web') {
       const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
-      const { status: mediaLibraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       
-      if (cameraStatus !== 'granted' || mediaLibraryStatus !== 'granted') {
+      if (cameraStatus !== 'granted') {
         Alert.alert(
           'Permissions Required',
-          'Camera and photo library permissions are required to upload prescriptions.',
+          'Camera permission is required to take prescription photos.',
           [{ text: 'OK' }]
         );
         return false;
@@ -91,46 +90,52 @@ const UploadPrescriptionScreen = () => {
         allowsEditing: true,
         aspect: [4, 3],
         quality: 0.8,
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
       });
 
       if (!result.canceled && result.assets[0]) {
         const asset = result.assets[0];
+        
+        // Extract filename from URI or use default
+        const uriParts = asset.uri.split('/');
+        const rawFileName = asset.fileName || uriParts[uriParts.length - 1] || `prescription_${Date.now()}`;
+        
+        // Detect mimeType from file extension (similar to documents feature)
+        let mimeType: string | null = null;
+        let finalFileName = rawFileName;
+        
+        // Check if filename has extension
+        if (/\.(jpg|jpeg)$/i.test(rawFileName)) {
+          mimeType = 'image/jpeg';
+        } else if (/\.(png)$/i.test(rawFileName)) {
+          mimeType = 'image/png';
+        } else if (/\.(gif)$/i.test(rawFileName)) {
+          mimeType = 'image/gif';
+        } else if (/\.(webp)$/i.test(rawFileName)) {
+          mimeType = 'image/webp';
+        } else {
+          // No extension found - add .jpg and set mimeType to image/jpeg (camera photos are usually JPEG)
+          finalFileName = `${rawFileName}.jpg`;
+          mimeType = 'image/jpeg';
+        }
+        
+        // Fallback: if mimeType is still null, default to image/jpeg
+        if (!mimeType) {
+          mimeType = 'image/jpeg';
+        }
+        
+        console.log('📸 Camera photo selected:', { uri: asset.uri, fileName: finalFileName, mimeType });
+        
         setSelectedFile({
           uri: asset.uri,
-          name: asset.fileName || 'Camera photo',
-          mimeType: asset.type === 'image' ? 'image/*' : null,
+          name: finalFileName,
+          mimeType: mimeType,
           isImage: true,
         });
       }
     } catch (error) {
       console.error('Error taking photo:', error);
       Alert.alert('Error', 'Failed to take photo. Please try again.');
-    }
-  };
-
-  const handleChooseFromGallery = async () => {
-    const hasPermissions = await requestPermissions();
-    if (!hasPermissions) return;
-
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
-
-      if (!result.canceled && result.assets[0]) {
-        const asset = result.assets[0];
-        setSelectedFile({
-          uri: asset.uri,
-          name: asset.fileName || 'Gallery image',
-          mimeType: asset.type === 'image' ? 'image/*' : null,
-          isImage: true,
-        });
-      }
-    } catch (error) {
-      console.error('Error choosing from gallery:', error);
-      Alert.alert('Error', 'Failed to select image from gallery. Please try again.');
     }
   };
 
@@ -473,7 +478,7 @@ const UploadPrescriptionScreen = () => {
   ];
 
   const processSteps = [
-    'Upload your prescription image using camera or gallery',
+    'Upload your prescription image using camera or documents',
     'Our pharmacist will review your prescription within 2-4 hours',
     'You will receive a call or SMS with medicine availability and pricing',
     'Confirm your order and make payment to complete the process'
@@ -520,11 +525,6 @@ const UploadPrescriptionScreen = () => {
           <TouchableOpacity style={themedStyles.actionButton} onPress={handleTakePhoto}>
             <MaterialIcons name="camera-alt" size={32} color={theme.colors.primary} />
             <Text style={themedStyles.actionButtonText}>Take Photo</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={themedStyles.actionButton} onPress={handleChooseFromGallery}>
-            <MaterialIcons name="photo-library" size={32} color={theme.colors.primary} />
-            <Text style={themedStyles.actionButtonText}>Gallery</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={themedStyles.actionButton} onPress={handleChooseFromDocuments}>

@@ -17,6 +17,7 @@ import { RootStackParamList } from '../../navigation/types';
 import orderListService from '../../services/api/orderListService';
 import * as Location from 'expo-location';
 import storeService, { formatStoreAddress, createAddressFromCoordinates } from '../../services/api/storeService';
+import { storeProductService } from '../../services/api/storeProductService';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useCart } from '../../contexts/CartContext';
 
@@ -365,7 +366,7 @@ const OrderDetailScreen = () => {
     }
   };
 
-  const handleReorder = () => {
+  const handleReorder = async () => {
     console.log('🔄 ===== REORDER FUNCTION CALLED =====');
     console.log('🔄 Order object:', order);
     console.log('🔄 API Order data:', apiOrder);
@@ -384,60 +385,146 @@ const OrderDetailScreen = () => {
         return;
       }
       
+      // Get store ID for fetching current product details
+      const storeId = sourceOrder?.storeId || order?.storeId || storeDetails?.id;
+      if (!storeId) {
+        Alert.alert('Error', 'Store information not found. Cannot reorder items.');
+        return;
+      }
+      
       // Determine store type
       const storeType = sourceOrder?.type || sourceOrder?.store?.type || 'grocery';
       const isPharmacyStore = storeType === 'pharma';
       
       console.log('🔄 Store type:', storeType);
       console.log('🔄 Is pharmacy store:', isPharmacyStore);
+      console.log('🔄 Store ID:', storeId);
       
-      // Process each item
-      sourceItems.forEach((item: any, index: number) => {
-        console.log(`🔄 Processing item ${index + 1}:`, item);
+      // Process each item - fetch current details and validate
+      const validItems: any[] = [];
+      const invalidItems: string[] = [];
+      
+      for (const item of sourceItems) {
+        try {
+          console.log(`🔄 Processing item:`, item);
+          
+          // Get product ID - try multiple fields
+          const productId = item.productId || item.productMasterId || item.id || item._id;
+          
+          if (!productId) {
+            console.error('❌ No product ID found for item');
+            invalidItems.push(item.productName || item.name || 'Unknown Product');
+            continue;
+          }
+          
+          console.log('🔍 Fetching current product details for:', productId);
+          
+          // Fetch current product details from API
+          const productResponse = isPharmacyStore
+            ? await storeProductService.getPharmaProductDetails(storeId, productId)
+            : await storeProductService.getGroceryProductDetails(storeId, productId);
+          
+          if (!productResponse.success || !productResponse.data) {
+            console.error('❌ Product not found or API error:', productId);
+            invalidItems.push(item.productName || item.name || 'Unknown Product');
+            continue;
+          }
+          
+          const currentProduct = productResponse.data;
+          const requestedQuantity = item.quantity || 1;
+          
+          // Validate product availability and quantity
+          const availableQty = currentProduct.availableQty || 0;
+          const isAvailable = currentProduct.isAvailable !== false && availableQty > 0;
+          
+          if (!isAvailable || availableQty < requestedQuantity) {
+            console.error('❌ Product not available or insufficient quantity:', {
+              productId,
+              requestedQuantity,
+              availableQty,
+              isAvailable
+            });
+            invalidItems.push(
+              `${item.productName || item.name || 'Unknown Product'} (Requested: ${requestedQuantity}, Available: ${availableQty})`
+            );
+            continue;
+          }
+          
+          // Get current price - use actual current price, not old price
+          const currentPrice = currentProduct.price || 0;
+          
+          if (!currentPrice || currentPrice <= 0) {
+            console.error('❌ Invalid price for product:', productId);
+            invalidItems.push(item.productName || item.name || 'Unknown Product');
+            continue;
+          }
+          
+          // Prepare product data with current details
+          const productData = {
+            id: productId,
+            name: currentProduct.name || item.productName || item.name || 'Unknown Product',
+            price: currentPrice, // Use current price
+            originalPrice: currentProduct.originalPrice || currentPrice,
+            image: currentProduct.image || currentProduct.images?.[0] || item.productImage || item.image || 'https://via.placeholder.com/150',
+            description: currentProduct.description || item.productDescription || item.description || '',
+            unit: currentProduct.unit || item.unit || 'piece',
+            mrp: currentProduct.originalPrice || currentPrice,
+            discount: currentProduct.discountPercentage || item.discountAmount || item.discount || 0,
+            category: currentProduct.category || (isPharmacyStore ? 'pharma' : 'grocery'),
+            brand: currentProduct.brand || item.brand || '',
+            weight: currentProduct.weight || item.weight || '',
+            expiryDate: currentProduct.expiryDate || item.expiryDate || '',
+            // manufacturer: currentProduct.manufacturer || item.manufacturer || '',
+            productId: productId,
+            availableQty: availableQty // Store available quantity
+          };
+          
+          console.log('✅ Valid product with current details:', productData);
+          
+          // Add to valid items list with quantity
+          validItems.push({
+            productData,
+            quantity: requestedQuantity
+          });
+          
+        } catch (error) {
+          console.error('❌ Error processing item:', error);
+          invalidItems.push(item.productName || item.name || 'Unknown Product');
+        }
+      }
+      
+      // Check if any items are valid
+      if (validItems.length === 0) {
+        const errorMsg = invalidItems.length > 0
+          ? `None of the items are available:\n${invalidItems.map((name, idx) => `${idx + 1}. ${name}`).join('\n')}`
+          : 'No items could be added to cart. Please check product availability.';
         
-        // Get product ID - try multiple fields
-        const productId = item.productId || item.productMasterId || item.id || item._id || `reorder_${index}`;
-        
-        console.log('🔍 Product ID:', productId);
-        
-        const productData = {
-          id: productId,
-          name: item.productName || item.name || 'Unknown Product',
-          price: item.sp || item.price || item.mrp || 0,
-          image: item.productImage || item.image || 'https://via.placeholder.com/150',
-          description: item.productDescription || item.description || '',
-          unit: item.unit || 'piece',
-          mrp: item.mrp || item.price || 0,
-          discount: item.discountAmount || item.discount || 0,
-          category: item.category || (isPharmacyStore ? 'pharma' : 'grocery'),
-          brand: item.brand || '',
-          weight: item.weight || '',
-          expiryDate: item.expiryDate || '',
-          manufacturer: item.manufacturer || '',
-          productId: productId
-        };
-        
-        console.log('🔄 Product data:', productData);
-        
-        // Add to appropriate cart
-        for (let i = 0; i < (item.quantity || 1); i++) {
+        Alert.alert('Cannot Reorder', errorMsg);
+        return;
+      }
+      
+      // Add valid items to cart with correct quantity
+      for (const { productData, quantity } of validItems) {
+        for (let i = 0; i < quantity; i++) {
           if (isPharmacyStore) {
-            console.log('🔄 Adding to pharmacy cart');
+            console.log('🔄 Adding to pharmacy cart:', productData.name);
             addToPharmacyCart(productData);
           } else {
-            console.log('🔄 Adding to grocery cart');
+            console.log('🔄 Adding to grocery cart:', productData.name);
             addToGroceryCart(productData);
           }
         }
-      });
+      }
       
-      console.log('✅ Items added to cart');
+      console.log('✅ Valid items added to cart successfully');
       
-      // Navigate to OrderSummaryScreen for reorder - pass the same API data structure
-      console.log('🔄 Navigating to OrderSummary...');
-      navigation.navigate('OrderSummary' as any, {
-        orderData: sourceOrder, // Pass the same API data structure that prescription flow uses
-      });
+      // Show success message with details
+      let successMsg = `${validItems.length} item(s) added to cart with current prices.`;
+      if (invalidItems.length > 0) {
+        successMsg += `\n\n${invalidItems.length} item(s) could not be added:\n${invalidItems.map((name, idx) => `${idx + 1}. ${name}`).join('\n')}`;
+      }
+      
+      Alert.alert('Success', successMsg, [{ text: 'OK' }]);
       
     } catch (error) {
       console.error('❌ Error in reorder:', error);

@@ -53,13 +53,24 @@ export const usePayment = ({ onSuccess, onError }: UsePaymentProps = {}) => {
         onSuccess?.(response.data);
         return response.data;
       } else {
-        throw new Error(response.error || 'Failed to place order');
+        const errorMessage = response.error || 'Failed to place order';
+        onError?.(errorMessage);
+        Alert.alert(
+          'Order Cannot Be Placed',
+          errorMessage,
+          [{ text: 'OK' }]
+        );
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('❌ Order placement failed:', error);
       const errorMessage = error instanceof Error ? error.message : 'Failed to place order';
       onError?.(errorMessage);
-      Alert.alert('Order Failed', errorMessage);
+      Alert.alert(
+        'Order Cannot Be Placed',
+        errorMessage,
+        [{ text: 'OK' }]
+      );
       throw error;
     } finally {
       setIsProcessing(false);

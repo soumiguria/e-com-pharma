@@ -205,39 +205,11 @@ class OrderService {
       
       // Handle case where API returns null or empty data
       if (!response.data) {
-        console.log(' API returned null data, creating mock response');
+        console.error('❌ API returned null or empty data');
         return {
-          success: true,
-          data: {
-            orderId: Math.floor(Math.random() * 1000),
-            orderNo: `ORD_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            customerId: '3',
-            paymentId: '22',
-            deliveryMethod: orderData.deliveryMethod,
-            shippingAddress: orderData.shippingAddress || {},
-            billingAddress: orderData.billingAddress || {},
-            products: orderData.products || [],
-            storeDiscount: (orderData.storeDiscount ?? 0).toString(),
-            couponDiscount: '0',
-            shippingAmount: (orderData.shippingAmount ?? 0).toString(),
-            taxAmount: (orderData.taxAmount ?? 0).toString(),
-            subtotalAmount: (orderData.subtotalAmount ?? 0).toString(),
-            totalAmount: (orderData.totalAmount ?? 0).toString(),
-            otpRequired: orderData.deliveryMethod === 'store',
-            otp: orderData.deliveryMethod === 'store' ? '000000' : '',
-            isOtpVerified: false,
-            expressDelivery: orderData.expressDelivery ?? false,
-            timeslotId: null,
-            timeslotDate: null,
-            timeslot: {},
-            status: 'created',
-            activities: [],
-            createdAt: new Date().toISOString(),
-            createdBy: null,
-            updatedAt: null,
-            deletedAt: null,
-            deletedBy: null,
-          } as PlaceOrderResponse,
+          success: false,
+          error: 'Order cannot be placed. The server did not return any data. Please try again.',
+          data: null as any,
         };
       }
       
@@ -282,53 +254,48 @@ class OrderService {
         data: transformedData,
       };
     } catch (error: any) {
-      console.error(' Error placing order:', error);
-      console.error(' Error response:', error.response?.data);
-      console.error(' Error status:', error.response?.status);
-      console.error(' Error status text:', error.response?.statusText);
-      console.error(' Error headers:', error.response?.headers);
-      console.error(' Request URL:', error.config?.url);
-      console.error(' Request method:', error.config?.method);
-      console.error(' Request headers:', error.config?.headers);
-      console.error(' Request data:', error.config?.data);
+      console.error('❌ Error placing order:', error);
+      console.error('❌ Error response:', error.response?.data);
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Error status text:', error.response?.statusText);
+      console.error('❌ Error headers:', error.response?.headers);
+      console.error('❌ Request URL:', error.config?.url);
+      console.error('❌ Request method:', error.config?.method);
+      console.error('❌ Request headers:', error.config?.headers);
+      console.error('❌ Request data:', error.config?.data);
       
-      // If API fails, return error
-      console.log('  API failed for order creation');
+      // Extract error message from API response
+      let errorMessage = 'Failed to place order. Please try again.';
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        
+        // Check for products not found error
+        if (errorData.productsNotFound && Array.isArray(errorData.productsNotFound) && errorData.productsNotFound.length > 0) {
+          const productIds = errorData.productsNotFound.map((p: any) => p.productId).join(', ');
+          errorMessage = `Order cannot be placed because the following items are not available in this store: ${productIds}. Please remove these items and try again.`;
+        }
+        // Check for generic message
+        else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+        // Check for error field
+        else if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+        // Check for field-specific errors
+        else if (errorData.field && errorData.message) {
+          errorMessage = `${errorData.field}: ${errorData.message}`;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Return error response instead of mock data
       return {
-        success: true,
-        data: {
-          orderId: Math.floor(Math.random() * 1000),
-          orderNo: `MOCK_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          customerId: '3',
-          paymentId: '22',
-          // Add payment gateway data for mock fallback
-          pgKey: 'rzp_test_1DP5mmOlF5G5ag',
-          pgReferenceId: `order_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-          deliveryMethod: orderData.deliveryMethod,
-          shippingAddress: orderData.deliveryMethod === 'home' ? (orderData.shippingAddress || {}) : {},
-          billingAddress: orderData.deliveryMethod === 'home' ? (orderData.billingAddress || {}) : {},
-          products: orderData.products || [],
-          storeDiscount: (orderData.storeDiscount ?? 0).toString(),
-          couponDiscount: '0',
-          shippingAmount: (orderData.shippingAmount ?? 0).toString(),
-          taxAmount: (orderData.taxAmount ?? 0).toString(),
-          subtotalAmount: (orderData.subtotalAmount ?? 0).toString(),
-          totalAmount: (orderData.totalAmount ?? 0).toString(),
-          otpRequired: orderData.deliveryMethod === 'store',
-          otp: orderData.deliveryMethod === 'store' ? '000000' : '',
-          isOtpVerified: false,
-          expressDelivery: orderData.expressDelivery ?? false,
-          timeslotId: orderData.deliveryMethod === 'home' ? orderData.timeslot : null,
-          timeslotDate: orderData.deliveryMethod === 'home' ? orderData.timeslot : null,
-          timeslot: orderData.deliveryMethod === 'home' ? { timeslot: orderData.timeslot } : {},
-          status: 'created',
-          activities: [],
-          createdAt: new Date().toISOString(),
-          createdBy: null,
-          updatedAt: null,
-          deletedAt: null,
-          deletedBy: null,
-        } as PlaceOrderResponse,
+        success: false,
+        error: errorMessage,
+        data: null as any,
       };
     }
   }

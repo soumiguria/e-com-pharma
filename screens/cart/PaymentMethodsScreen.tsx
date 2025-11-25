@@ -335,11 +335,26 @@ const PaymentMethodsScreen = () => {
           }
         });
       } else {
-        throw new Error(response.error || 'Failed to place order');
+        // Show error popup with reason
+        const errorMessage = response.error || 'Failed to place order. Please try again.';
+        Alert.alert(
+          'Order Cannot Be Placed',
+          errorMessage,
+          [{ text: 'OK' }]
+        );
+        return;
       }
     } catch (error: any) {
-      console.error('  Error placing offline order:', error);
-      Alert.alert('Order Failed', error.message || 'Failed to place order. Please try again.');
+      console.error('❌ Error placing offline order:', error);
+      const errorMessage = error.response?.data?.message || 
+                          error.response?.data?.error || 
+                          error.message || 
+                          'Failed to place order. Please try again.';
+      Alert.alert(
+        'Order Cannot Be Placed',
+        errorMessage,
+        [{ text: 'OK' }]
+      );
     } finally {
       setIsLoading(false);
       setIsProcessingPayment(false);

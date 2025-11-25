@@ -888,7 +888,13 @@ const RazorpayCheckoutScreen = () => {
         const placeOrderResponse = await orderService.placeOrder(orderData);
 
         if (!placeOrderResponse.success || !placeOrderResponse.data) {
-          throw new Error(placeOrderResponse.error || 'Failed to place order');
+          const errorMessage = placeOrderResponse.error || 'Failed to place order';
+          Alert.alert(
+            'Order Cannot Be Placed',
+            errorMessage,
+            [{ text: 'OK' }]
+          );
+          throw new Error(errorMessage);
         }
 
         orderNo = placeOrderResponse.data.orderNo;
