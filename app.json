@@ -36,6 +36,7 @@
       },
       "package": "com.paaskidukaan.app",
       "versionCode": 9,
+      "privacyPolicy": "https://paaskidukaan.com/privacy-policy",
       "intentFilters": [
         {
           "action": "VIEW",
