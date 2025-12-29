@@ -30,7 +30,7 @@ Both approaches are implemented with proper error handling, permissions, and use
 ┌─────────────────────────────────────────┐
 │      Services & Libraries               │
 │  speechToTextService (Google Cloud)     │
-│  @react-native-voice/voice             │
+│  @react-native-voice/voice              │
 │  expo-av (Audio Recording)              │
 └─────────────────────────────────────────┘
 ```
