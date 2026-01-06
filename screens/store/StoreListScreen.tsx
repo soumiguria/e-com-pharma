@@ -405,6 +405,7 @@ interface Store {
   distance: string;
   rating: number;
   image?: string;
+  pincode?: string;
   mobile?: string;
   totalItems?: number;
 }
@@ -424,19 +425,27 @@ const StoreListScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   const handleStoreSelect = (store: Store) => {
-    setSelectedStore(store);
-    // Save as last visited store if user is authenticated
-    if (isAuthenticated) {
-      console.log('💾 Saving store as last visited in StoreListScreen:', store);
-      saveLastVisitedStore(store);
-    }
+    // Ensure store has proper type based on activeTab
+    const storeWithType = {
+      ...store,
+      type: store.type || activeTab,
+      pincode: store.pincode || pincode,
+    };
+    
+    setSelectedStore(storeWithType);
+    // Always save as last visited store (both grocery and pharmacy separately)
+    console.log('💾 Saving store as last visited in StoreListScreen:', storeWithType);
+    saveLastVisitedStore(storeWithType);
+    
     navigation.navigate('Main', {
       screen: 'Home',
       params: {
         screen: 'HomeRoot',
         params: {
-          storeId: store.id,
-          pincode: pincode || address,
+          storeId: storeWithType.id,
+          pincode: pincode || address || storeWithType.pincode,
+          storeType: storeWithType.type,
+          storeName: storeWithType.name,
         },
       },
     });    
@@ -460,6 +469,7 @@ const StoreListScreen = () => {
       distance: raw.distance ? `${parseFloat(raw.distance).toFixed(1)} km away from your location` : '',
       // rating: Number(raw.rating ?? raw.avgRating ?? 4.2),
       image: raw.image || raw.logo || undefined,
+      pincode: raw.pincode || raw.address?.pincode || pincode,
       mobile: raw.mobile,
       // totalItems: raw.totalItems || raw.itemCount || 0,
     } as Store;
@@ -543,9 +553,13 @@ const StoreListScreen = () => {
 
         console.log('🏪 Store address updated:', finalAddress);
 
+        // Extract pincode from API response
+        const storePincode = apiAddress?.pincode || detailedStore.pincode || store.pincode || pincode;
+
         return {
           ...store,
           address: finalAddress || 'Store address not available',
+          pincode: storePincode,
           mobile: String(detailedStore.mobile || store.mobile || ''),
         };
       }
@@ -573,6 +587,13 @@ const StoreListScreen = () => {
         throw new Error('No location data available');
       }
       
+      // Log API response (success or failure)
+      console.log('📦 StoreListScreen - API Response Received:');
+      console.log('   Success:', response.success);
+      console.log('   Error:', response.error || 'None');
+      console.log('   Response Data:', JSON.stringify(response.data, null, 2));
+      console.log('   Full Response:', JSON.stringify(response, null, 2));
+      
       const raw: any = response.data;
       const list: any[] = Array.isArray(raw?.data) ? raw.data : Array.isArray(raw) ? raw : [];
       const mapped: Store[] = (list as any[]).map(mapStore).filter((s: Store) => s.type === activeTab);
@@ -583,8 +604,13 @@ const StoreListScreen = () => {
       );
       
       setStores(storesWithDetails.length > 0 ? storesWithDetails : []);
-    } catch (error) {
-      console.error('Error fetching stores:', error);
+    } catch (error: any) {
+      console.error('❌ Error fetching stores in StoreListScreen:');
+      console.error('❌ Error message:', error.message);
+      console.error('❌ Error stack:', error.stack);
+      console.error('❌ Error response data:', JSON.stringify(error.response?.data, null, 2));
+      console.error('❌ Error status:', error.response?.status);
+      console.error('❌ Full error object:', JSON.stringify(error, null, 2));
       setStores([]);
     } finally {
       if (!isRefresh) {
@@ -678,7 +704,7 @@ const StoreListScreen = () => {
     },
     emptyStateSubtitle: {
       ...typography.body1,
-      color: colors.secondary,
+      color: colors.surface,
       textAlign: 'center',
       marginBottom: spacing.sm,
       lineHeight: 24,
@@ -764,7 +790,7 @@ const StoreListScreen = () => {
               ))
             ) : (
               <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="store-off" size={64} color={colors.secondary} />
+                <MaterialCommunityIcons name="store-off" size={64} color="#FFFFFF" />
                 <Text style={styles.emptyStateTitle}>No Stores Found</Text>
                 <Text style={styles.emptyStateSubtitle}>
                   Sorry, we couldn't find any {activeTab === 'grocery' ? 'grocery' : 'pharmacy'} stores in your area.

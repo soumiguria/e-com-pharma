@@ -6,8 +6,9 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ProductCard from '../../components/product/ProductCard';
 import StoreSection from '../../components/store/StoreSection';
 import NearbyStores from '../../components/store/NearbyStores';
-import { RootStackParamList } from '../../navigation/types';
+import { RootStackParamList, PharmacyStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useAppContext } from '../../contexts/AppContext';
 
 // Define types
 type Product = {
@@ -31,28 +32,43 @@ type Store = {
 };
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type PharmacyHomeRouteProp = RouteProp<RootStackParamList, 'PharmacyHome'>;
+type PharmacyHomeRouteProp = RouteProp<PharmacyStackParamList, 'PharmacyRoot'>;
 
 const PharmacyHomeScreen = () => {
   const route = useRoute<PharmacyHomeRouteProp>();
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
+  const { selectedStore, setSelectedStore } = useAppContext();
   
   const [products, setProducts] = useState<Product[]>([]);
   const [store, setStore] = useState<Store | null>(null);
 
   useEffect(() => {
-    const storeId = route.params?.storeId || 'pharmacy-1';
-    setStore({
-      id: storeId,
-      name: `Pharmacy Store ${storeId.split('-')[1]}`,
-      distance: '0.8 km',
-      rating: 4.7,
-      type: 'pharma'
-    });
+    // Get storeId from route params or selectedStore
+    const storeId = route.params?.storeId || selectedStore?.id || 'pharmacy-1';
+    const pincode = route.params?.pincode || selectedStore?.pincode;
+    
+    // If we have a selectedStore with matching id, use it
+    if (selectedStore && selectedStore.id === storeId && selectedStore.type === 'pharma') {
+      setStore({
+        id: selectedStore.id,
+        name: selectedStore.name,
+        distance: '0.8 km',
+        rating: 4.7,
+        type: 'pharma'
+      });
+    } else {
+      setStore({
+        id: storeId,
+        name: `Pharmacy Store ${storeId.split('-')[1]}`,
+        distance: '0.8 km',
+        rating: 4.7,
+        type: 'pharma'
+      });
+    }
     // Remove mock data - products will be fetched from API
     setProducts([]);
-  }, [route.params]);
+  }, [route.params, selectedStore]);
 
   const handleProductPress = (product: Product) => {
     navigation.navigate('ProductDetail', { product });

@@ -234,13 +234,13 @@ const HomeScreen = () => {
   // Deep link handling is now done in DeepLinkHandler component
   // HomeScreen just uses the selectedStore from AppContext
 
-  // Save store as last visited when selected
+  // Save store as last visited when selected (always, not just when authenticated)
   useEffect(() => {
-    if (selectedStore && isAuthenticated) {
+    if (selectedStore) {
       console.log('💾 Saving selected store as last visited:', selectedStore);
       saveLastVisitedStore(selectedStore);
     }
-  }, [selectedStore, isAuthenticated, saveLastVisitedStore]);
+  }, [selectedStore, saveLastVisitedStore]);
 
 
   // Fetch "Some products" based on current store type

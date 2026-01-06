@@ -3,12 +3,12 @@
 
 export const API_CONFIG = {
   // Base URL for all APIs
-  BASE_URL: 'https://marg-api.thelocalsandbox.dev',
+  BASE_URL: 'https://passkidukaanapi.margerp.com',
   
   // Google Maps Configuration
   GOOGLE_MAPS: {
     // API_KEY: 'AIzaSyACYDuQEBFQZWFNj1U838PoHEARNzPPCBw',
-    API_KEY: 'AIzaSyAVXxFLtJn-hLmeLAreKFdON1rzuHtNBDc',
+    API_KEY: 'AIzaSyBulvdhv-w6y-tdPIvzaLJuo8RroDU0EBM',
     GEOCODING_URL: 'https://maps.googleapis.com/maps/api/geocode/json',
     PLACES_URL: 'https://maps.googleapis.com/maps/api/place',
   },
@@ -55,9 +55,9 @@ export const API_CONFIG = {
     STORE_DETAILS: '/v1/store/details',
     
     // Payment APIs
-    PLACE_ORDER: 'https://marg-api.thelocalsandbox.dev/v1/store/checkout/placeorder',
-    INITIATE_PAYMENT: 'https://marg-api.thelocalsandbox.dev/v1/store/checkout/orderpayment/initiate',
-    VERIFY_PAYMENT: 'https://marg-api.thelocalsandbox.dev/v1/store/checkout/orderpayment/verify',
+    PLACE_ORDER: 'https://passkidukaanapi.margerp.com/v1/store/checkout/placeorder',
+    INITIATE_PAYMENT: 'https://passkidukaanapi.margerp.com/v1/store/checkout/orderpayment/initiate',
+    VERIFY_PAYMENT: 'https://passkidukaanapi.margerp.com/v1/store/checkout/orderpayment/verify',
   },
   
   // Feature Flags - Enable/disable API usage

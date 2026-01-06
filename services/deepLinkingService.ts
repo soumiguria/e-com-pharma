@@ -17,7 +17,7 @@ interface DeepLinkResult {
 class DeepLinkingService {
   private readonly playStoreUrl = 'https://play.google.com/store/apps/details?id=com.yourcompany.ecommexpo';
   private readonly appStoreUrl = 'https://apps.apple.com/app/e-comm-expo/id1234567890';
-  private readonly apiBaseUrl = 'https://marg-api.thelocalsandbox.dev'; // Your domain
+  private readonly apiBaseUrl = 'https://passkidukaanapi.margerp.com'; // Your domain
 
   /**
    * Parse deep link URL and extract store information

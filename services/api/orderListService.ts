@@ -99,7 +99,7 @@ class OrderListService {
       console.log('📋 Page:', page, 'Limit:', limit);
 
       // Build URL with optional filter and pagination
-      let url = `https://marg-api.thelocalsandbox.dev/v1/customer/order?page=${page}&limit=${limit}&orders[createdAt]=desc`;
+      let url = `https://passkidukaanapi.margerp.com/v1/customer/order?page=${page}&limit=${limit}&orders[createdAt]=desc`;
       if (filterType) {
         url += `&filters[type]=${filterType}`;
       }
@@ -140,7 +140,7 @@ class OrderListService {
         'Content-Type': 'application/json',
       };
 
-      const url = `https://marg-api.thelocalsandbox.dev/v1/customer/order/${orderId}`;
+      const url = `https://passkidukaanapi.margerp.com/v1/customer/order/${orderId}`;
       console.log('📦 Fetching order detail:', url);
       console.log('📦 Order ID:', orderId);
       const response = await axios.get(url, { headers });

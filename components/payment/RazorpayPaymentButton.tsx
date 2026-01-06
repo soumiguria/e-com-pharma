@@ -33,14 +33,13 @@ const RazorpayPaymentButton: React.FC<PaymentButtonProps> = ({
   const [showWebView, setShowWebView] = useState(false);
   const [paymentData, setPaymentData] = useState<any>(null);
 
-  const API_BASE = 'https://marg-api.thelocalsandbox.dev/v1';
+  const API_BASE = 'https://passkidukaanapi.margerp.com/v1';
 
   const getAuthHeaders = async () => {
     // Get your auth token from AsyncStorage or context
     const token = ''; // Replace with actual token retrieval
     return {
       'marg-customer-token': `Bearer ${token}`,
-      'Content-Type': 'application/json',
     };
   };
 

@@ -50,7 +50,7 @@ class CustomerService {
       console.log('👤 Updating customer profile:', updateData);
       console.log('🔑 Token retrieved:', token ? `${token.substring(0, 20)}...` : 'No token');
 
-      const response = await axios.patch('https://marg-api.thelocalsandbox.dev/v1/customer/self', updateData, {
+      const response = await axios.patch('https://passkidukaanapi.margerp.com/v1/customer/self', updateData, {
         headers,
       });
 
@@ -89,7 +89,7 @@ class CustomerService {
       console.log('👤 Fetching customer profile...');
       console.log('🔑 Token retrieved:', token ? `${token.substring(0, 20)}...` : 'No token');
 
-      const response = await axios.get('https://marg-api.thelocalsandbox.dev/v1/customer/self', {
+      const response = await axios.get('https://passkidukaanapi.margerp.com/v1/customer/self', {
         headers,
       });
 

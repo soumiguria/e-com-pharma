@@ -266,8 +266,15 @@ export class StoreService {
   }
 
   async exploreStoresByLocation(latitude: number, longitude: number, type?: 'grocery' | 'pharma'): Promise<ApiResponse<Store[]>> {
+    const apiUrl = `https://passkidukaanapi.margerp.com/v1/store/explore/location?latitude=${latitude}&longitude=${longitude}${type ? `&type=${type}` : ''}`;
+    
+    console.log('🏪 ========== Store Explore Location API Call ==========');
+    console.log('📍 Request Details:');
+    console.log('   URL:', apiUrl);
+    console.log('   Method: GET');
+    console.log('   Params:', JSON.stringify({ latitude, longitude, type }, null, 2));
+    
     try {
-      console.log('🏪 Fetching stores for location:', { latitude, longitude, type });
       // Use the new location-based API endpoint
       const response = await apiClient.get<Store[]>('/v1/store/explore/location', { 
         latitude, 
@@ -275,10 +282,52 @@ export class StoreService {
         ...(type ? { type } : {}) 
       });
 
-      console.log(' Stores Location API Response:', JSON.stringify(response, null, 2));
+      // Log response whether success or failure
+      if (response.success) {
+        console.log('✅ API Call Successful - Response Received:');
+        console.log('   Success:', response.success);
+        console.log('   Response Data:', JSON.stringify(response.data, null, 2));
+        console.log('   Full Response:', JSON.stringify(response, null, 2));
+      } else {
+        console.log('⚠️ API Hit But Returned Error Response:');
+        console.log('   Success:', response.success);
+        console.log('   Error Message:', response.error);
+        console.log('   Response Data:', JSON.stringify(response.data, null, 2));
+        console.log('   Full Response:', JSON.stringify(response, null, 2));
+      }
+      console.log('🏪 ====================================================');
+      
       return response;
     } catch (error: any) {
-      console.log('  Stores Location API Error:', error.response?.data || error.message);
+      // Check if API was hit or not
+      if (error.response) {
+        // API was hit and returned a response (even if error status)
+        console.log('⚠️ API Hit Successfully But Returned Error Response:');
+        console.log('   Status Code:', error.response.status);
+        console.log('   Status Text:', error.response.statusText);
+        console.log('   Response Data:', JSON.stringify(error.response.data, null, 2));
+        console.log('   Response Headers:', JSON.stringify(error.response.headers, null, 2));
+        console.log('   Request URL:', error.config?.url || error.request?.responseURL || apiUrl);
+        console.log('   Request Method:', error.config?.method || 'GET');
+        console.log('   Request Headers:', JSON.stringify(error.config?.headers, null, 2));
+      } else if (error.request) {
+        // Request was made but no response received
+        console.log('❌ API Request Made But No Response Received:');
+        console.log('   Error Type: Network Error / No Response');
+        console.log('   Request URL:', apiUrl);
+        console.log('   Request Details:', JSON.stringify(error.request, null, 2));
+        console.log('   Error Message:', error.message);
+      } else {
+        // Request was not made (configuration error, etc.)
+        console.log('❌ API Request Could Not Be Made:');
+        console.log('   Error Type: Request Configuration Error');
+        console.log('   Error Message:', error.message);
+        console.log('   Error Stack:', error.stack);
+      }
+      
+      console.log('   Full Error Object:', JSON.stringify(error, null, 2));
+      console.log('🏪 ====================================================');
+      
       return {
         success: false,
         error: 'Failed to fetch stores. Please try again.',

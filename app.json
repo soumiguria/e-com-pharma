@@ -18,7 +18,7 @@
       "bundleIdentifier": "com.paaskidukaan.app",
       "buildNumber": "1.0.0",
       "config": {
-        "googleMapsApiKey": "AIzaSyAVXxFLtJn-hLmeLAreKFdON1rzuHtNBDc"
+        "googleMapsApiKey": "AIzaSyBulvdhv-w6y-tdPIvzaLJuo8RroDU0EBM"
       },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "This app needs access to location to show nearby stores and delivery options.",
@@ -89,18 +89,18 @@
       ],
       "config": {
         "googleMaps": {
-          "apiKey": "AIzaSyAVXxFLtJn-hLmeLAreKFdON1rzuHtNBDc"
+          "apiKey": "AIzaSyBulvdhv-w6y-tdPIvzaLJuo8RroDU0EBM"
         }
       }
     },
     "web": {
       "favicon": "./assets/favicon.png",
       "config": {
-        "googleMapsApiKey": "AIzaSyAVXxFLtJn-hLmeLAreKFdON1rzuHtNBDc"
+        "googleMapsApiKey": "AIzaSyBulvdhv-w6y-tdPIvzaLJuo8RroDU0EBM"
       }
     },
     "extra": {
-      "googleMapsApiKey": "AIzaSyAVXxFLtJn-hLmeLAreKFdON1rzuHtNBDc",
+      "googleMapsApiKey": "AIzaSyBulvdhv-w6y-tdPIvzaLJuo8RroDU0EBM",
       "eas": {
         "projectId": "9e287073-a26f-48b7-98ef-516ffbb4964f"
       }

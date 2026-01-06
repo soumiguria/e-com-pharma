@@ -131,7 +131,13 @@ export type HomeTabParamList = {
   };
   'Order Again': undefined;
   Categories: undefined;
-  Pharmacy: undefined;
+  Pharmacy: {
+    screen: 'PharmacyRoot',
+    params: {
+      storeId: string;
+      pincode: string;
+    };
+  };
   Grocery: undefined;
 };
 

@@ -183,7 +183,7 @@ class OrderService {
       console.log('🛒 Placing order with new API:', JSON.stringify(requestBody, null, 2));
       console.log(' Token retrieved:', token ? `${token.substring(0, 20)}...` : 'No token');
       console.log(' Headers being sent:', headers);
-      console.log(' Making request to:', 'https://marg-api.thelocalsandbox.dev/v1/store/checkout/placeorder');
+      console.log(' Making request to:', 'https://passkidukaanapi.margerp.com/v1/store/checkout/placeorder');
       
       // Validate required fields before making the request
       if (!requestBody.storeId) {
@@ -196,7 +196,7 @@ class OrderService {
         throw new Error('Payment method is required');
       }
       
-      const response = await axios.post('https://marg-api.thelocalsandbox.dev/v1/store/checkout/placeorder', requestBody, {
+      const response = await axios.post('https://passkidukaanapi.margerp.com/v1/store/checkout/placeorder', requestBody, {
         headers,
       });
 
@@ -315,11 +315,11 @@ class OrderService {
       console.log(' Initiating payment for order:', orderNo);
       console.log(' Token retrieved:', token ? `${token.substring(0, 20)}...` : 'No token');
       console.log(' Headers being sent:', headers);
-      console.log(' Making request to: https://marg-api.thelocalsandbox.dev/v1/store/checkout/payment/initiate');
+      console.log(' Making request to: https://passkidukaanapi.margerp.com/v1/store/checkout/payment/initiate');
       console.log(' Request body:', { orderNo });
       
       const response = await axios.post(
-        'https://marg-api.thelocalsandbox.dev/v1/store/checkout/payment/initiate',
+        'https://passkidukaanapi.margerp.com/v1/store/checkout/payment/initiate',
         { orderNo },
         { headers }
       );
@@ -388,7 +388,7 @@ class OrderService {
       
       console.log('🔍 VERIFY PAYMENT - Input Data:', JSON.stringify(paymentData, null, 2));
       console.log('  Token retrieved:', token ? `${token.substring(0, 20)}...` : 'No token');
-      console.log('  Making request to: https://marg-api.thelocalsandbox.dev/v1/store/checkout/payment/verify');
+      console.log('  Making request to: https://passkidukaanapi.margerp.com/v1/store/checkout/payment/verify');
       
       // Use paymentId as orderNo for verify API
       const verifyPayload = {
@@ -401,7 +401,7 @@ class OrderService {
       console.log('📤 VERIFY PAYMENT - Request Body:', JSON.stringify(verifyPayload, null, 2));
       console.log('📤 VERIFY PAYMENT - Headers:', JSON.stringify(headers, null, 2));
       
-      const response = await axios.post('https://marg-api.thelocalsandbox.dev/v1/store/checkout/payment/verify', verifyPayload, {
+      const response = await axios.post('https://passkidukaanapi.margerp.com/v1/store/checkout/payment/verify', verifyPayload, {
         headers,
       });
 
@@ -454,7 +454,7 @@ class OrderService {
 
       console.log(' Checking payment status for order:', orderNo);
       const response = await axios.post(
-        'https://marg-api.thelocalsandbox.dev/v1/store/checkout/payment/initiate',
+        'https://passkidukaanapi.margerp.com/v1/store/checkout/payment/initiate',
         { orderNo },
         { headers }
       );
@@ -490,9 +490,9 @@ class OrderService {
       
       // Try multiple endpoints for updating payment status
       const endpoints = [
-        'https://marg-api.thelocalsandbox.dev/v1/store/checkout/payment/update-status',
-        'https://marg-api.thelocalsandbox.dev/v1/store/checkout/payment/status',
-        'https://marg-api.thelocalsandbox.dev/v1/payment/update-status'
+        'https://passkidukaanapi.margerp.com/v1/store/checkout/payment/update-status',
+        'https://passkidukaanapi.margerp.com/v1/store/checkout/payment/status',
+        'https://passkidukaanapi.margerp.com/v1/payment/update-status'
       ];
       
       for (const endpoint of endpoints) {
@@ -526,7 +526,7 @@ class OrderService {
         throw new Error('No authentication token found');
       }
 
-      const url = `https://marg-api.thelocalsandbox.dev/v1/customer/order/${orderId}/upload-prescription`;
+      const url = `https://passkidukaanapi.margerp.com/v1/customer/order/${orderId}/upload-prescription`;
 
       // Best-effort MIME type detection from filename extension or provided mimeType
       const guessMimeType = (filename: string, providedMimeType?: string | null): string => {

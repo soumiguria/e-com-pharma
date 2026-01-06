@@ -128,7 +128,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onClose }) => {
         }
       }
       
-      // Handle https://marg-api.thelocalsandbox.dev/dl/{storeId}
+      // Handle https://passkidukaanapi.margerp.com/dl/{storeId}
       if (data.includes('/dl/')) {
         const match = data.match(/\/dl\/([^/?]+)/);
         if (match && match[1]) {

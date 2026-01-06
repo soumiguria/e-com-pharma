@@ -928,8 +928,10 @@ import {
   Alert,
   TextInput,
   FlatList,
+  ScrollView,
+  Platform,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
@@ -948,6 +950,7 @@ const LocationPickerScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<LocationPickerScreenNavigationProp>();
   const route = useRoute();
+  const insets = useSafeAreaInsets();
   
   // Check if this is being used for address creation
   const isForAddressCreation = (route.params as any)?.forAddress === true;
@@ -1208,6 +1211,7 @@ const LocationPickerScreen = () => {
     mapContainer: {
       flex: 1,
       backgroundColor: theme.colors.background,
+      minHeight: 300,
     },
     map: {
       flex: 1,
@@ -1217,8 +1221,20 @@ const LocationPickerScreen = () => {
     footer: {
       backgroundColor: theme.colors.surface,
       padding: 16,
+      paddingBottom: 20,
       borderTopWidth: 1,
       borderTopColor: theme.colors.border,
+      ...Platform.select({
+        ios: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        },
+        android: {
+          elevation: 8,
+        },
+      }),
     },
     locationInfo: {
       flexDirection: 'row',
@@ -1449,8 +1465,13 @@ const LocationPickerScreen = () => {
       flex: 1,
       backgroundColor: theme.colors.surface,
       padding: 20,
+      minHeight: 300,
+    },
+    fallbackMapScrollContent: {
+      flexGrow: 1,
       justifyContent: 'center',
       alignItems: 'center',
+      paddingBottom: 20,
     },
     fallbackMapHeader: {
       flexDirection: 'row',
@@ -1760,7 +1781,7 @@ const LocationPickerScreen = () => {
         </View>
 
         {/* Footer */}
-        <View style={styles.footer}>
+        <View style={[styles.footer, { paddingBottom: Math.max(insets.bottom, 20) }]}>
           <View style={styles.locationInfo}>
             <MaterialIcons name="location-on" size={20} color={theme.colors.primary} />
             <Text style={styles.locationText} numberOfLines={2}>

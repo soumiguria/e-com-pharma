@@ -102,7 +102,7 @@ const AppContent = () => {
       'https://stores.yourdomain.com',
       'https://qr.ecomm.com',
       'https://ecomm-stores.com',
-      'https://marg-api.thelocalsandbox.dev'
+      'https://passkidukaanapi.margerp.com'
     ],
     config: {
       screens: {

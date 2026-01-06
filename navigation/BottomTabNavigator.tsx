@@ -17,6 +17,7 @@ import BrandsScreen from '../screens/category/BrandsScreen';
 import { useNavigation } from '@react-navigation/native';
 import { RootStackParamList } from './types';
 import { StackNavigationProp } from '@react-navigation/stack';
+import { useAppContext } from '../contexts/AppContext';
 
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
@@ -61,6 +62,78 @@ const PharmacyStackNavigator = () => (
 const BottomTabNavigator = () => {
   const { section, setSection } = useTheme();
   const navigation = useNavigation<NavigationProp>();
+  const { 
+    lastVisitedGroceryStore, 
+    lastVisitedPharmacyStore, 
+    setSelectedStore,
+    saveLastVisitedStore,
+    loadLastVisitedGroceryStore,
+    loadLastVisitedPharmacyStore
+  } = useAppContext();
+
+  const handleGroceryTabPress = async (e: any) => {
+    e.preventDefault();
+    setSection('grocery');
+    
+    // Reload grocery store from storage to ensure we have latest
+    const groceryStore = await loadLastVisitedGroceryStore();
+    
+    // Check if last visited grocery store exists
+    if (groceryStore && groceryStore.id) {
+      console.log('🛒 Opening last visited grocery store:', groceryStore);
+      setSelectedStore(groceryStore);
+      saveLastVisitedStore(groceryStore);
+      
+      // Navigate directly to Home with the store
+      navigation.navigate('Main', {
+        screen: 'Home',
+        params: {
+          screen: 'HomeRoot',
+          params: {
+            storeId: groceryStore.id,
+            pincode: groceryStore.pincode,
+            storeType: 'grocery',
+            storeName: groceryStore.name,
+          },
+        },
+      });
+    } else {
+      console.log('🛒 No last visited grocery store found, proceeding to location flow');
+      // No last visited grocery store, proceed to location flow
+      navigation.navigate('Pincode' as any);
+    }
+  };
+
+  const handlePharmacyTabPress = async (e: any) => {
+    e.preventDefault();
+    setSection('pharma');
+    
+    // Reload pharmacy store from storage to ensure we have latest
+    const pharmacyStore = await loadLastVisitedPharmacyStore();
+    
+    // Check if last visited pharmacy store exists
+    if (pharmacyStore && pharmacyStore.id) {
+      console.log('💊 Opening last visited pharmacy store:', pharmacyStore);
+      setSelectedStore(pharmacyStore);
+      saveLastVisitedStore(pharmacyStore);
+      
+      // Navigate directly to Pharmacy Home with the store
+      navigation.navigate('Main', {
+        screen: 'Pharmacy',
+        params: {
+          screen: 'PharmacyRoot',
+          params: {
+            storeId: pharmacyStore.id,
+            pincode: pharmacyStore.pincode || '',
+          },
+        },
+      });
+    } else {
+      console.log('💊 No last visited pharmacy store found, proceeding to location flow');
+      // No last visited pharmacy store, proceed to location flow
+      navigation.navigate('Pincode' as any);
+    }
+  };
 
   return (
     <Tab.Navigator
@@ -96,11 +169,7 @@ const BottomTabNavigator = () => {
           name="Pharmacy"
           component={PharmacyStackNavigator}
           listeners={{
-            tabPress: (e) => {
-              e.preventDefault();
-              setSection('pharma');
-              navigation.navigate('Pincode' as any);
-            },
+            tabPress: handlePharmacyTabPress,
           }}
         />
       ) : (
@@ -108,11 +177,7 @@ const BottomTabNavigator = () => {
           name="Grocery"
           component={HomeStackNavigator}
           listeners={{
-            tabPress: (e) => {
-              e.preventDefault();
-              setSection('grocery');
-              navigation.navigate('Pincode' as any);
-            },
+            tabPress: handleGroceryTabPress,
           }}
         />
       )}
