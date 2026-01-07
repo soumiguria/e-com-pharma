@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+
+    <!-- Default: HTTPS only -->
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <!-- Production API domains (HTTPS) -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">passkidukaanapi.margerp.com</domain>
+        <domain includeSubdomains="true">margerp.com</domain>
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+
+    <!-- Localhost (required only for emulator builds) -->
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">localhost</domain>
+        <domain includeSubdomains="false">127.0.0.1</domain>
+        <domain includeSubdomains="false">10.0.2.2</domain>
+        <!-- Private IP ranges for Metro bundler -->
+        <domain includeSubdomains="true">192.168.0.0</domain>
+        <domain includeSubdomains="true">10.0.0.0</domain>
+        <domain includeSubdomains="true">172.16.0.0</domain>
+        <domain includeSubdomains="true">172.17.0.0</domain>
+        <domain includeSubdomains="true">172.18.0.0</domain>
+        <domain includeSubdomains="true">172.19.0.0</domain>
+        <domain includeSubdomains="true">172.20.0.0</domain>
+        <domain includeSubdomains="true">172.21.0.0</domain>
+        <domain includeSubdomains="true">172.22.0.0</domain>
+        <domain includeSubdomains="true">172.23.0.0</domain>
+        <domain includeSubdomains="true">172.24.0.0</domain>
+        <domain includeSubdomains="true">172.25.0.0</domain>
+        <domain includeSubdomains="true">172.26.0.0</domain>
+        <domain includeSubdomains="true">172.27.0.0</domain>
+        <domain includeSubdomains="true">172.28.0.0</domain>
+        <domain includeSubdomains="true">172.29.0.0</domain>
+        <domain includeSubdomains="true">172.30.0.0</domain>
+        <domain includeSubdomains="true">172.31.0.0</domain>
+        <!-- Expo tunnel domains -->
+        <domain includeSubdomains="true">exp.host</domain>
+        <domain includeSubdomains="true">exp.direct</domain>
+        <domain includeSubdomains="true">expo.io</domain>
+    </domain-config>
+
+    <!-- Debug only -->
+    <debug-overrides>
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="user" />
+        </trust-anchors>
+    </debug-overrides>
+
+</network-security-config>

@@ -1,4 +1,4 @@
-const { withAppBuildGradle, withProjectBuildGradle, withAndroidManifest, AndroidConfig } = require('@expo/config-plugins');
+const { withAppBuildGradle, withProjectBuildGradle, withAndroidManifest, withDangerousMod, AndroidConfig } = require('@expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
@@ -88,12 +88,12 @@ function withNetworkSecurityConfig(config) {
   });
 }
 
+// Network security config file is now managed by Expo via app.json
+// No need to manually create files - Expo handles it automatically
 function withNetworkSecurityConfigFile(config) {
-  return withAppBuildGradle(config, (config) => {
-    // This will be handled by a custom plugin hook
-    // We'll create the file during prebuild
-    return config;
-  });
+  // This function is kept for backward compatibility but does nothing
+  // Expo automatically copies networkSecurityConfig from app.json
+  return config;
 }
 
 function withFixDuplicateClasses(config) {
@@ -190,14 +190,15 @@ function withNetworkSecurityConfigFile(config) {
 
 // Main plugin function
 function withHttpsSSLFix(config) {
-  // Apply network security config
+  // Apply network security config (AndroidManifest updates)
   config = withNetworkSecurityConfig(config);
   
   // Apply duplicate classes fix
   config = withFixDuplicateClasses(config);
   
-  // Note: Network security config files are created by the npm script
-  // before prebuild runs. The plugin ensures AndroidManifest is configured.
+  // Network security config file is now handled by Expo via app.json
+  // Expo automatically copies networkSecurityConfig from assets folder
+  // No manual file creation needed
   
   return config;
 }

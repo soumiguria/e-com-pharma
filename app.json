@@ -37,6 +37,7 @@
       "package": "com.paaskidukaan.app",
       "versionCode": 9,
       "privacyPolicy": "https://paaskidukaan.com/privacy-policy",
+      "networkSecurityConfig": "./assets/network_security_config.xml",
       "intentFilters": [
         {
           "action": "VIEW",
