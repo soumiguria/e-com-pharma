@@ -190,15 +190,13 @@ function withNetworkSecurityConfigFile(config) {
 
 // Main plugin function
 function withHttpsSSLFix(config) {
-  // Apply network security config (AndroidManifest updates)
-  config = withNetworkSecurityConfig(config);
+  // DO NOT modify networkSecurityConfig here - Expo handles it via app.json
+  // The networkSecurityConfig field in app.json automatically:
+  // 1. Copies the file from assets/ to android/app/src/main/res/xml/
+  // 2. Adds the manifest reference
   
-  // Apply duplicate classes fix
+  // Apply duplicate classes fix only
   config = withFixDuplicateClasses(config);
-  
-  // Network security config file is now handled by Expo via app.json
-  // Expo automatically copies networkSecurityConfig from assets folder
-  // No manual file creation needed
   
   return config;
 }

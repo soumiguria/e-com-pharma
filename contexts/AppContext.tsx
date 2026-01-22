@@ -157,6 +157,23 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
     initializeStores();
   }, []);
 
+  // Automatically set selectedStore from last visited stores when they are loaded and selectedStore is null
+  useEffect(() => {
+    if (!selectedStore) {
+      // Priority: lastVisitedStore > lastVisitedGroceryStore > lastVisitedPharmacyStore
+      if (lastVisitedStore) {
+        console.log('🔄 Auto-setting lastVisitedStore as selectedStore:', lastVisitedStore);
+        setSelectedStore(lastVisitedStore);
+      } else if (lastVisitedGroceryStore) {
+        console.log('🔄 Auto-setting lastVisitedGroceryStore as selectedStore:', lastVisitedGroceryStore);
+        setSelectedStore(lastVisitedGroceryStore);
+      } else if (lastVisitedPharmacyStore) {
+        console.log('🔄 Auto-setting lastVisitedPharmacyStore as selectedStore:', lastVisitedPharmacyStore);
+        setSelectedStore(lastVisitedPharmacyStore);
+      }
+    }
+  }, [selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore, setSelectedStore]);
+
   return (
     <AppContext.Provider value={{ 
       selectedStore, 

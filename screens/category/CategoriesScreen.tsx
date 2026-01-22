@@ -7,6 +7,7 @@ import {
   Image,
   ScrollView,
   ActivityIndicator,
+  Dimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -20,6 +21,11 @@ import storeService from '../../services/api/storeService';
 import { storeProductService } from '../../services/api/storeProductService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+
+const { width: screenWidth } = Dimensions.get('window');
+// Calculate card width: screen width - section padding (32) - row padding (32) - margins (24) = screenWidth - 88
+// Then divide by 4 for 4 columns
+const CARD_WIDTH = Math.floor((screenWidth - 88) / 4);
 
 // const categorySections = [
 //   {
@@ -91,73 +97,81 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 // ];
 
 // Pharmacy category sections
-const pharmacyCategorySections = [
-  {
-    id: '1',
-    title: 'Medicines & Healthcare',
-    categories: [
-      { id: '1', name: 'Pain Relief', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '2', name: 'Cold & Flu', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '3', name: 'Fever & Headache', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '4', name: 'Digestive Health', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '5', name: 'Vitamins & Supplements', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '6', name: 'Diabetes Care', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '7', name: 'Heart Health', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '8', name: 'Skin Care', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-    ],
-  },
-  {
-    id: '2',
-    title: 'Personal Care & Hygiene',
-    categories: [
-      { id: '9', name: 'Oral Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '10', name: 'Hair Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '11', name: 'Baby Care', image: 'https://images.pexels.com/photos/3875217/pexels-photo-3875217.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '12', name: 'Feminine Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '13', name: 'Men\'s Grooming', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '14', name: 'Fragrances', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '15', name: 'Makeup', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '16', name: 'Health Supplements', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-    ],
-  },
-  {
-    id: '3',
-    title: 'Medical Devices & Equipment',
-    categories: [
-      { id: '17', name: 'Blood Pressure Monitors', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '18', name: 'Thermometers', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '19', name: 'First Aid', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '20', name: 'Mobility Aids', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '21', name: 'Respiratory Care', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '22', name: 'Diabetes Monitoring', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '23', name: 'Hearing Aids', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-      { id: '24', name: 'Orthopedic Support', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-    ],
-  },
-];
+// const pharmacyCategorySections = [
+//   {
+//     id: '1',
+//     title: 'Medicines & Healthcare',
+//     categories: [
+//       { id: '1', name: 'Pain Relief', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '2', name: 'Cold & Flu', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '3', name: 'Fever & Headache', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '4', name: 'Digestive Health', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '5', name: 'Vitamins & Supplements', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '6', name: 'Diabetes Care', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '7', name: 'Heart Health', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '8', name: 'Skin Care', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//     ],
+//   },
+//   {
+//     id: '2',
+//     title: 'Personal Care & Hygiene',
+//     categories: [
+//       { id: '9', name: 'Oral Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '10', name: 'Hair Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '11', name: 'Baby Care', image: 'https://images.pexels.com/photos/3875217/pexels-photo-3875217.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '12', name: 'Feminine Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '13', name: 'Men\'s Grooming', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '14', name: 'Fragrances', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '15', name: 'Makeup', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '16', name: 'Health Supplements', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//     ],
+//   },
+//   {
+//     id: '3',
+//     title: 'Medical Devices & Equipment',
+//     categories: [
+//       { id: '17', name: 'Blood Pressure Monitors', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '18', name: 'Thermometers', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '19', name: 'First Aid', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '20', name: 'Mobility Aids', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '21', name: 'Respiratory Care', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '22', name: 'Diabetes Monitoring', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '23', name: 'Hearing Aids', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//       { id: '24', name: 'Orthopedic Support', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+//     ],
+//   },
+// ];
 
 const CategoriesScreen = () => {
   const { theme, section } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const { selectedStore } = useAppContext();
+  const { selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore } = useAppContext();
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Get the effective store to use (selectedStore or fallback to last visited stores)
+  const effectiveStore = selectedStore || lastVisitedStore || lastVisitedGroceryStore || lastVisitedPharmacyStore;
+
+  // Show first 8 categories when collapsed, all when expanded
+  const displayedCategories = isExpanded ? categories : categories.slice(0, 8);
+  const hasMoreCategories = categories.length > 8;
 
   // Fetch categories (and subcategories for pharmacy) from API only - no hardcoded data
   useEffect(() => {
     const fetchCategories = async () => {
-      if (!selectedStore?.id) {
-        console.log('   No store selected, showing empty categories');
+      if (!effectiveStore?.id) {
+        console.log('   No store available, showing empty categories');
         setCategories([]);
         setLoading(false);
         return;
       }
 
       try {
-        console.log(`🔄 Fetching ${section} categories for store:`, selectedStore.id);
+        console.log(`🔄 Fetching ${section} categories for store:`, effectiveStore.id);
         
         // Fetch categories from the new API endpoint
-        const response = await storeService.getStoreCategories(selectedStore.id, section);
+        const response = await storeService.getStoreCategories(effectiveStore.id, section);
         
         console.log(`🔍 ${section} API response:`, JSON.stringify(response, null, 2));
         
@@ -190,15 +204,20 @@ const CategoriesScreen = () => {
     };
 
     fetchCategories();
-  }, [selectedStore?.id, section]);
+  }, [effectiveStore?.id, section]);
 
   const renderCategoryItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={[
         styles.card,
         {
-          backgroundColor: theme.colors.surface,
+          backgroundColor: theme.dark ? '#4B3F1D' : '#FFF9E5',
           borderColor: theme.colors.border,
+          shadowColor: theme.dark ? '#000' : '#FFD700',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.08,
+          shadowRadius: 4,
+          elevation: 2,
         },
       ]}
       onPress={async () => {
@@ -206,7 +225,7 @@ const CategoriesScreen = () => {
           console.log('🔍 Category clicked:', item.name, 'ID:', item.categoryId);
           
           // Fetch category details from API
-          const categoryResponse = await storeService.getCategoryDetails(selectedStore?.id || '', item.categoryId);
+          const categoryResponse = await storeService.getCategoryDetails(effectiveStore?.id || '', item.categoryId);
           console.log('🔍 Category details API response:', JSON.stringify(categoryResponse, null, 2));
           
           if (categoryResponse.success && categoryResponse.data) {
@@ -254,7 +273,7 @@ const CategoriesScreen = () => {
     >
       <Image 
         source={{ 
-          uri: item.signedImage || item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center' 
+          uri: item.image || item.signedImage || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center' 
         }} 
         style={styles.image} 
       />
@@ -263,42 +282,6 @@ const CategoriesScreen = () => {
       </Text>
     </TouchableOpacity>
   );
-
-  const renderSection = ({ item }: { item: any }) => (
-    <View style={styles.section}>
-      <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>{item.title}</Text>
-      <FlatList
-        data={item.categories.slice(0, 8)}
-        renderItem={renderCategoryItem}
-        keyExtractor={(category) => category.id}
-        numColumns={4}
-        columnWrapperStyle={styles.row}
-        scrollEnabled={false}
-      />
-      {item.categories.length > 8 && (
-        <TouchableOpacity
-          style={styles.showMoreButton}
-          onPress={() =>
-            navigation.navigate('AllProducts', {
-              title: item.title,
-              products: item.categories.map((cat: any) => ({
-                id: cat.id,
-                name: cat.name,
-                price: 0, // Placeholder price
-                image: cat.image,
-                category: 'grocery' as const,
-              })),
-            })
-          }
-        >
-          <Text style={[styles.showMoreText, { color: theme.colors.primary }]}>View More</Text>
-        </TouchableOpacity>
-      )}
-    </View>
-  );
-
-  // Build sections for UI rendering - only show API data
-  const computedSections = [{ id: section, title: section === 'pharma' ? 'Pharmacy Categories' : 'Grocery Categories', categories }];
 
   if (loading) {
     return (
@@ -358,13 +341,34 @@ const CategoriesScreen = () => {
           All Categories
         </Text>
       </Box>
-      <FlatList
-        data={computedSections}
-        renderItem={renderSection}
-        keyExtractor={(item) => item.title}
-        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
+      <ScrollView 
+        contentContainerStyle={{ paddingBottom: 32 }}
         showsVerticalScrollIndicator={false}
-      />
+      >
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
+            {section === 'pharma' ? 'Pharmacy Categories' : 'Grocery Categories'}
+          </Text>
+          <FlatList
+            data={displayedCategories}
+            renderItem={renderCategoryItem}
+            keyExtractor={(item) => item.categoryId || item.id}
+            numColumns={4}
+            columnWrapperStyle={styles.row}
+            scrollEnabled={false}
+          />
+          {hasMoreCategories && (
+            <TouchableOpacity
+              style={styles.viewMoreButton}
+              onPress={() => setIsExpanded(!isExpanded)}
+            >
+              <Text style={[styles.viewMoreText, { color: theme.colors.primary }]}>
+                {isExpanded ? 'View Less' : 'View More'}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -375,32 +379,26 @@ const styles = StyleSheet.create({
   },
   section: {
     marginBottom: 24,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 16,
-    paddingHorizontal: 6,
   },
   row: {
-    flex: 1,
-    justifyContent: 'space-around',
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
     marginBottom: 16,
+    paddingHorizontal: 16,
   },
   card: {
-    width: '22%',
+    width: CARD_WIDTH,
     alignItems: 'center',
     padding: 8,
     borderRadius: 8,
     borderWidth: 1,
-    marginBottom: 8,
-    marginHorizontal: 2,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 4,
-    elevation: 1,
+    marginRight: 8,
   },
   image: {
     width: 50,
@@ -410,16 +408,16 @@ const styles = StyleSheet.create({
   },
   name: {
     textAlign: 'center',
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 13,
+    fontWeight: '500',
     marginTop: 4,
   },
-  showMoreButton: {
+  viewMoreButton: {
     alignItems: 'center',
     paddingVertical: 12,
     marginTop: 8,
   },
-  showMoreText: {
+  viewMoreText: {
     fontSize: 14,
     fontWeight: '600',
   },

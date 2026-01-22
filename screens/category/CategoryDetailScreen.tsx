@@ -84,10 +84,16 @@ const discountOptions = [
 const CategoryDetailScreen = () => {
   const route = useRoute<RouteProp<RootStackParamList, 'CategoryDetail'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
-  const { theme } = useTheme();
+  const { theme, section } = useTheme();
   const { addToGroceryCart, addToPharmacyCart, removeFromCart } = useCart();
-  const { selectedStore } = useAppContext();
+  const { selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore } = useAppContext();
   const { category } = route.params;
+  
+  // Determine if this is pharma or grocery based on current section
+  const isPharma = section === 'pharma';
+
+  // Get the effective store to use (selectedStore or fallback to last visited stores)
+  const effectiveStore = selectedStore || lastVisitedStore || lastVisitedGroceryStore || lastVisitedPharmacyStore;
   
   // State for API data
   const [apiSubCategories, setApiSubCategories] = useState<any[]>([]);
@@ -112,14 +118,14 @@ const CategoryDetailScreen = () => {
   // Fetch subcategories when component mounts
   useEffect(() => {
     const fetchCategoryData = async () => {
-      if (!selectedStore?.id || !category.id) return;
+      if (!effectiveStore?.id || !category.id) return;
       
       setLoading(true);
       try {
-        console.log('🔍 CategoryDetailScreen: Fetching subcategories for category:', category.id);
+        console.log('🔍 CategoryDetailScreen: Fetching subcategories for category:', category.id, 'section:', section);
         
-        // Fetch subcategories for this specific category only
-        const subcategoriesResponse = await storeService.getCategorySubcategories(category.id, 'pharma');
+        // Fetch subcategories for this specific category only - use current section (pharma or grocery)
+        const subcategoriesResponse = await storeService.getCategorySubcategories(category.id, section);
         console.log('🔍 CategoryDetailScreen: Subcategories response for category', category.id, ':', JSON.stringify(subcategoriesResponse, null, 2));
         
         if (subcategoriesResponse.success && subcategoriesResponse.data) {
@@ -152,35 +158,36 @@ const CategoryDetailScreen = () => {
     };
 
     fetchCategoryData();
-  }, [selectedStore?.id, category.id]);
+  }, [effectiveStore?.id, category.id, section]);
 
   // Fetch products for the selected subcategory and apply brand filters
   useEffect(() => {
     const fetchSubcategoryProducts = async () => {
-      if (!selectedStore?.id || !selectedSubCategoryId) return;
+      if (!effectiveStore?.id || !selectedSubCategoryId) return;
       
       setLoading(true);
       try {
-        console.log('🔍 CategoryDetailScreen: Fetching products for subcategory:', selectedSubCategoryId);
+        console.log('🔍 CategoryDetailScreen: Fetching products for subcategory:', selectedSubCategoryId, 'section:', section);
         
-        // Determine if this is pharma or grocery based on category type
-        const isPharma = category.type === 'pharma' || category.name?.toLowerCase().includes('medicine') || category.name?.toLowerCase().includes('pharma');
+        // Use section from ThemeContext to determine pharma or grocery (more reliable than category.type)
+        // Fallback to category.type or name check if section is not available
+        const isPharmaCategory = isPharma || category.type === 'pharma' || category.name?.toLowerCase().includes('medicine') || category.name?.toLowerCase().includes('pharma');
         
         let response;
         if (selectedBrands.length > 0) {
           // Apply brand filter using the new API
           const filters = { brand: selectedBrands[0] }; // Use first selected brand
-          if (isPharma) {
-            response = await storeProductService.getFilteredPharmaProducts(selectedStore.id, filters);
+          if (isPharmaCategory) {
+            response = await storeProductService.getFilteredPharmaProducts(effectiveStore.id, filters);
           } else {
-            response = await storeProductService.getFilteredGroceryProducts(selectedStore.id, filters);
+            response = await storeProductService.getFilteredGroceryProducts(effectiveStore.id, filters);
           }
         } else {
           // Fetch all products for subcategory
-          if (isPharma) {
-            response = await storeProductService.getPharmaProductsBySubcategory(selectedStore.id, selectedSubCategoryId);
+          if (isPharmaCategory) {
+            response = await storeProductService.getPharmaProductsBySubcategory(effectiveStore.id, selectedSubCategoryId);
           } else {
-            response = await storeProductService.getGroceryProductsBySubcategory(selectedStore.id, selectedSubCategoryId);
+            response = await storeProductService.getGroceryProductsBySubcategory(effectiveStore.id, selectedSubCategoryId);
           }
         }
         
@@ -199,7 +206,7 @@ const CategoryDetailScreen = () => {
     };
 
     fetchSubcategoryProducts();
-  }, [selectedStore?.id, selectedSubCategoryId, selectedBrands, category.type, category.name]);
+  }, [effectiveStore?.id, selectedSubCategoryId, selectedBrands, isPharma, section, category.type, category.name]);
   const [showFilterModal, setShowFilterModal] = useState(false);
   const [showSortModal, setShowSortModal] = useState(false);
   // 1. Add state for selected filter tab and search

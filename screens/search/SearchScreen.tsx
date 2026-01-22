@@ -33,7 +33,10 @@ interface SearchResult {
 const SearchScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<SearchScreenNavigationProp>();
-  const { selectedStore } = useAppContext();
+  const { selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore } = useAppContext();
+
+  // Get the effective store to use (selectedStore or fallback to last visited stores)
+  const effectiveStore = selectedStore || lastVisitedStore || lastVisitedGroceryStore || lastVisitedPharmacyStore;
   const [searchQuery, setSearchQuery] = useState('');
   const [recentSearches, setRecentSearches] = useState<string[]>([]);
   const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
@@ -67,7 +70,7 @@ const SearchScreen = () => {
   // Debounced search function
   const debouncedSearch = useCallback(
     debounce(async (query: string) => {
-      if (!query.trim() || !selectedStore?.id) {
+      if (!query.trim() || !effectiveStore?.id) {
         setSearchResults(null);
         setSearchError(null);
         return;
@@ -76,9 +79,9 @@ const SearchScreen = () => {
       try {
         setIsSearching(true);
         setSearchError(null);
-        console.log('🔍 Searching for:', query, 'in store:', selectedStore.id);
+        console.log('🔍 Searching for:', query, 'in store:', effectiveStore.id);
         
-        const response = await storeService.searchStoreProducts(selectedStore.id, query);
+        const response = await storeService.searchStoreProducts(effectiveStore.id, query);
         
         console.log('🔍 Full API response:', JSON.stringify(response, null, 2));
         
@@ -118,7 +121,7 @@ const SearchScreen = () => {
         setIsSearching(false);
       }
     }, 500),
-    [selectedStore?.id]
+    [effectiveStore?.id]
   );
 
   const handleSearch = (query: string) => {

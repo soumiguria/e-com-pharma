@@ -81,8 +81,11 @@ const SearchResultsScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<SearchResultsScreenNavigationProp>();
   const route = useRoute();
-  const { selectedStore } = useAppContext();
+  const { selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore } = useAppContext();
   const { query } = route.params as { query: string };
+
+  // Get the effective store to use (selectedStore or fallback to last visited stores)
+  const effectiveStore = selectedStore || lastVisitedStore || lastVisitedGroceryStore || lastVisitedPharmacyStore;
   
   const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -92,8 +95,8 @@ const SearchResultsScreen = () => {
   // Fetch search results from API
   useEffect(() => {
     const fetchSearchResults = async () => {
-      if (!selectedStore?.id) {
-        setError('No store selected');
+      if (!effectiveStore?.id) {
+        setError('No store available');
         setLoading(false);
         return;
       }
@@ -101,9 +104,9 @@ const SearchResultsScreen = () => {
       try {
         setLoading(true);
         setError(null);
-        console.log('🔍 Searching for:', currentQuery, 'in store:', selectedStore.id);
+        console.log('🔍 Searching for:', currentQuery, 'in store:', effectiveStore.id);
         
-        const response = await storeService.searchStoreProducts(selectedStore.id, currentQuery);
+        const response = await storeService.searchStoreProducts(effectiveStore.id, currentQuery);
         
         if (response.success && response.data) {
           console.log('🔍 Search results:', response.data);
@@ -121,7 +124,7 @@ const SearchResultsScreen = () => {
     };
 
     fetchSearchResults();
-  }, [currentQuery, selectedStore?.id]);
+  }, [currentQuery, effectiveStore?.id]);
 
   const handleProductPress = (product: Product) => {
     // Transform API product to expected format

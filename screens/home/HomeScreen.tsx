@@ -63,12 +63,12 @@ interface Category {
 const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { onProfilePress: () => void, themedStyles: any, isDrawerVisible: boolean }) => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const { selectedStore, lastVisitedStore, setSelectedStore } = useAppContext();
+  const { selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore, setSelectedStore } = useAppContext();
   const { groceryItems, totalItems } = useCart();
   const { isAuthenticated } = useAuth();
 
   // Show last visited store name if user is logged in and no store is currently selected
-  const displayStore = selectedStore || (isAuthenticated ? lastVisitedStore : null);
+  const displayStore = selectedStore || lastVisitedStore || lastVisitedGroceryStore || lastVisitedPharmacyStore;
   
   // Debug logging for store display
   console.log('🏪 Header - selectedStore:', selectedStore);
@@ -199,7 +199,7 @@ const HomeScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<HomeRouteProp>();
   const { addToGroceryCart } = useCart();
-  const { selectedStore, setSelectedStore, saveLastVisitedStore, lastVisitedStore } = useAppContext();
+  const { selectedStore, setSelectedStore, saveLastVisitedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore } = useAppContext();
   const { isAuthenticated } = useAuth();
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -213,23 +213,48 @@ const HomeScreen = () => {
   const [homeProductsLoading, setHomeProductsLoading] = useState<boolean>(false);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Get the effective store to use (selectedStore or fallback to last visited stores)
+  const effectiveStore = selectedStore || lastVisitedStore || lastVisitedGroceryStore || lastVisitedPharmacyStore;
+
   // Determine if current store is pharmacy or grocery
-  const isPharmacyStore = selectedStore?.type === 'pharma';
+  const isPharmacyStore = effectiveStore?.type === 'pharma';
   const currentSection = isPharmacyStore ? 'pharma' : 'grocery';
 
   // Set section based on store type
   useEffect(() => {
-    if (selectedStore) {
+    if (effectiveStore) {
       setSection(currentSection);
     }
-  }, [selectedStore, currentSection, setSection]);
+  }, [effectiveStore, currentSection, setSection]);
 
   // Adopt last visited store on mount if no selectedStore
   useEffect(() => {
-    if (!selectedStore && lastVisitedStore) {
-      setSelectedStore(lastVisitedStore);
+    if (!selectedStore) {
+      // Try to set from lastVisitedStore first
+      if (lastVisitedStore) {
+        console.log('🔄 Setting lastVisitedStore as selectedStore:', lastVisitedStore);
+        setSelectedStore(lastVisitedStore);
+      } 
+      // If no lastVisitedStore, try grocery or pharmacy based on current section
+      else if (lastVisitedGroceryStore && currentSection === 'grocery') {
+        console.log('🔄 Setting lastVisitedGroceryStore as selectedStore:', lastVisitedGroceryStore);
+        setSelectedStore(lastVisitedGroceryStore);
+      } 
+      else if (lastVisitedPharmacyStore && currentSection === 'pharma') {
+        console.log('🔄 Setting lastVisitedPharmacyStore as selectedStore:', lastVisitedPharmacyStore);
+        setSelectedStore(lastVisitedPharmacyStore);
+      }
+      // Fallback: use any available last visited store
+      else if (lastVisitedGroceryStore) {
+        console.log('🔄 Setting lastVisitedGroceryStore as selectedStore (fallback):', lastVisitedGroceryStore);
+        setSelectedStore(lastVisitedGroceryStore);
+      } 
+      else if (lastVisitedPharmacyStore) {
+        console.log('🔄 Setting lastVisitedPharmacyStore as selectedStore (fallback):', lastVisitedPharmacyStore);
+        setSelectedStore(lastVisitedPharmacyStore);
+      }
     }
-  }, [selectedStore, lastVisitedStore, setSelectedStore]);
+  }, [selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore, setSelectedStore, currentSection]);
 
   // Deep link handling is now done in DeepLinkHandler component
   // HomeScreen just uses the selectedStore from AppContext
@@ -245,8 +270,9 @@ const HomeScreen = () => {
 
   // Fetch "Some products" based on current store type
   const fetchHomeProducts = async (isRefresh = false) => {
-    if (!selectedStore?.id) {
-      console.log('🏠 No store selected, clearing home products');
+    const storeToUse = effectiveStore;
+    if (!storeToUse?.id) {
+      console.log('🏠 No store available, clearing home products');
       setHomeProducts([]);
       return;
     }
@@ -255,11 +281,11 @@ const HomeScreen = () => {
       if (!isRefresh) {
         setHomeProductsLoading(true);
       }
-      console.log(`🏠 Fetching ${isPharmacyStore ? 'pharma' : 'grocery'} products for store:`, selectedStore.id);
+      console.log(`🏠 Fetching ${isPharmacyStore ? 'pharma' : 'grocery'} products for store:`, storeToUse.id);
       
       const resp = isPharmacyStore
-        ? await storeProductService.getPharmaProducts(selectedStore.id)
-        : await storeProductService.getGroceryProducts(selectedStore.id);
+        ? await storeProductService.getPharmaProducts(storeToUse.id)
+        : await storeProductService.getGroceryProducts(storeToUse.id);
       
       if (resp.success && Array.isArray(resp.data)) {
         console.log(`🏠 Loaded ${resp.data.length} products for store`);
@@ -280,7 +306,7 @@ const HomeScreen = () => {
 
   useEffect(() => {
     fetchHomeProducts();
-  }, [selectedStore?.id, isPharmacyStore]);
+  }, [effectiveStore?.id, isPharmacyStore]);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -619,7 +645,7 @@ const HomeScreen = () => {
             activeTab={activeTab}
             themedStyles={themedStyles}
           />
-        ) : !selectedStore ? (
+        ) : !effectiveStore ? (
           <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
             <MaterialIcons name="store" size={64} color={theme.colors.secondary} style={{ marginBottom: 16 }} />
             <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' }}>
@@ -673,11 +699,6 @@ const HomeScreen = () => {
                 {isPharmacyStore ? 'Medicine Categories' : 'Categories'}
               </Text>
               <CategoryGrid />
-              <View style={{ alignItems: 'center', marginTop: 8 }}>
-                <TouchableOpacity onPress={() => navigation.navigate('CategoriesScreen' as any)}>
-                  <Text style={[themedStyles.viewAll, {color: theme.colors.primary}]}>View All</Text>
-                </TouchableOpacity>
-              </View>
             </View>
             {/* Shop by Brands Section - HIDDEN */}
             {/* <View style={themedStyles.section}>

@@ -38,37 +38,80 @@ const PharmacyHomeScreen = () => {
   const route = useRoute<PharmacyHomeRouteProp>();
   const navigation = useNavigation<NavigationProp>();
   const { theme } = useTheme();
-  const { selectedStore, setSelectedStore } = useAppContext();
+  const { selectedStore, setSelectedStore, lastVisitedStore, lastVisitedPharmacyStore } = useAppContext();
   
   const [products, setProducts] = useState<Product[]>([]);
   const [store, setStore] = useState<Store | null>(null);
 
+  // Get the effective store to use (selectedStore or fallback to last visited stores)
+  const effectiveStore = selectedStore || lastVisitedStore || lastVisitedPharmacyStore;
+
   useEffect(() => {
-    // Get storeId from route params or selectedStore
-    const storeId = route.params?.storeId || selectedStore?.id || 'pharmacy-1';
-    const pincode = route.params?.pincode || selectedStore?.pincode;
+    // Get storeId from route params or effectiveStore
+    const storeId = route.params?.storeId || effectiveStore?.id;
+    const pincode = route.params?.pincode || effectiveStore?.pincode;
     
-    // If we have a selectedStore with matching id, use it
-    if (selectedStore && selectedStore.id === storeId && selectedStore.type === 'pharma') {
+    if (!storeId) {
+      console.log('💊 No pharmacy store available');
+      setStore(null);
+      setProducts([]);
+      return;
+    }
+    
+    // If we have an effectiveStore with matching id and type, use it
+    if (effectiveStore && effectiveStore.id === storeId && effectiveStore.type === 'pharma') {
       setStore({
-        id: selectedStore.id,
-        name: selectedStore.name,
+        id: effectiveStore.id,
+        name: effectiveStore.name,
         distance: '0.8 km',
         rating: 4.7,
         type: 'pharma'
       });
+      // Set as selectedStore if not already set
+      if (!selectedStore || selectedStore.id !== effectiveStore.id) {
+        setSelectedStore(effectiveStore);
+      }
     } else {
       setStore({
         id: storeId,
-        name: `Pharmacy Store ${storeId.split('-')[1]}`,
+        name: effectiveStore?.name || `Pharmacy Store ${storeId.split('-')[1] || storeId}`,
         distance: '0.8 km',
         rating: 4.7,
         type: 'pharma'
       });
     }
-    // Remove mock data - products will be fetched from API
-    setProducts([]);
-  }, [route.params, selectedStore]);
+    // Products will be fetched from API - see fetchProducts below
+  }, [route.params, effectiveStore, selectedStore, setSelectedStore]);
+
+  // Fetch products from API
+  useEffect(() => {
+    const fetchProducts = async () => {
+      const storeId = route.params?.storeId || effectiveStore?.id;
+      if (!storeId) {
+        setProducts([]);
+        return;
+      }
+
+      try {
+        console.log('💊 Fetching pharmacy products for store:', storeId);
+        const { storeProductService } = await import('../../services/api/storeProductService');
+        const response = await storeProductService.getPharmaProducts(storeId);
+        
+        if (response.success && Array.isArray(response.data)) {
+          console.log(`💊 Loaded ${response.data.length} pharmacy products`);
+          setProducts(response.data);
+        } else {
+          console.log('💊 No pharmacy products found');
+          setProducts([]);
+        }
+      } catch (error) {
+        console.error('💊 Error fetching pharmacy products:', error);
+        setProducts([]);
+      }
+    };
+
+    fetchProducts();
+  }, [route.params?.storeId, effectiveStore?.id]);
 
   const handleProductPress = (product: Product) => {
     navigation.navigate('ProductDetail', { product });

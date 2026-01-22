@@ -169,11 +169,23 @@ export class StoreProductService {
     }
 
     try {
-      const url = buildApiUrl(API_CONFIG.ENDPOINTS.GROCERY_SUBCATEGORIES, { storeId, subcategoryId });
+      // Use products endpoint and filter by subcategoryId
+      const url = buildApiUrl(API_CONFIG.ENDPOINTS.GROCERY_PRODUCTS, { storeId });
       const response = await apiClient.get<any>(url);
       const raw = response.data;
-      const mapped = Array.isArray(raw?.data) ? raw.data.map((p: any) => mapProduct(p, 'grocery')) : [];
-      console.log(' Grocery products API mapped:', mapped.length);
+      
+      // Filter raw data by subcategoryId before mapping
+      const rawProducts = Array.isArray(raw?.data) ? raw.data : [];
+      const filteredRaw = rawProducts.filter((p: any) => 
+        p.subcategoryId === subcategoryId || 
+        p.subCategoryId === subcategoryId ||
+        p.subcategory?.subcategoryId === subcategoryId ||
+        p.subcategory?.id === subcategoryId
+      );
+      
+      const mapped = filteredRaw.map((p: any) => mapProduct(p, 'grocery'));
+      
+      console.log(`🛒 Filtered ${mapped.length} grocery products for subcategory ${subcategoryId} from ${rawProducts.length} total products`);
       return { success: true, data: mapped } as ApiResponse<Product[]>;
     } catch (error) {
       console.log('  Grocery products API error:', error);
@@ -302,11 +314,23 @@ export class StoreProductService {
     }
 
     try {
-      const url = buildApiUrl(API_CONFIG.ENDPOINTS.PHARMA_SUBCATEGORIES, { storeId, subcategoryId });
+      // Use products endpoint and filter by subcategoryId
+      const url = buildApiUrl(API_CONFIG.ENDPOINTS.PHARMA_PRODUCTS, { storeId });
       const response = await apiClient.get<any>(url);
       const raw = response.data;
-      const mapped = Array.isArray(raw?.data) ? raw.data.map((p: any) => mapProduct(p, 'pharma')) : [];
-      console.log(' Pharma products API mapped:', mapped.length);
+      
+      // Filter raw data by subcategoryId before mapping
+      const rawProducts = Array.isArray(raw?.data) ? raw.data : [];
+      const filteredRaw = rawProducts.filter((p: any) => 
+        p.subcategoryId === subcategoryId || 
+        p.subCategoryId === subcategoryId ||
+        p.subcategory?.subcategoryId === subcategoryId ||
+        p.subcategory?.id === subcategoryId
+      );
+      
+      const mapped = filteredRaw.map((p: any) => mapProduct(p, 'pharma'));
+      
+      console.log(`💊 Filtered ${mapped.length} pharma products for subcategory ${subcategoryId} from ${rawProducts.length} total products`);
       return { success: true, data: mapped } as ApiResponse<Product[]>;
     } catch (error) {
       console.log('  Pharma products API error:', error);

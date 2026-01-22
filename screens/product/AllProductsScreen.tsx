@@ -34,17 +34,20 @@ const AllProductsScreen = () => {
   const route = useRoute();
   const { title, products: initialProducts } = route.params as { title: string; products: any[] };
   const { addToGroceryCart, addToPharmacyCart } = useCart();
-  const { selectedStore } = useAppContext();
+  const { selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore } = useAppContext();
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [modalVisible, setModalVisible] = useState(false);
   const [products, setProducts] = useState<any[]>(initialProducts);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Get the effective store to use (selectedStore or fallback to last visited stores)
+  const effectiveStore = selectedStore || lastVisitedStore || lastVisitedGroceryStore || lastVisitedPharmacyStore;
+
   // Fetch products from API if store is selected
   const fetchProducts = async (isRefresh = false) => {
-    if (!selectedStore?.id) {
-      console.log('   No store selected, using fallback mock data');
+    if (!effectiveStore?.id) {
+      console.log('   No store available, using fallback mock data');
       setProducts(initialProducts);
       return;
     }
@@ -53,10 +56,10 @@ const AllProductsScreen = () => {
       if (!isRefresh) {
         setLoading(true);
       }
-      console.log(`🔄 Fetching ${section} products for store:`, selectedStore.id);
+      console.log(`🔄 Fetching ${section} products for store:`, effectiveStore.id);
       
       if (section === 'pharma') {
-        const response = await storeProductService.getPharmaProducts(selectedStore.id);
+        const response = await storeProductService.getPharmaProducts(effectiveStore.id);
         if (response.success && response.data) {
           console.log(' Pharma products loaded from API');
           setProducts(response.data);
@@ -65,7 +68,7 @@ const AllProductsScreen = () => {
           setProducts(initialProducts);
         }
       } else {
-        const response = await storeProductService.getGroceryProducts(selectedStore.id);
+        const response = await storeProductService.getGroceryProducts(effectiveStore.id);
         if (response.success && response.data) {
           console.log(' Grocery products loaded from API');
           setProducts(response.data);
@@ -87,7 +90,7 @@ const AllProductsScreen = () => {
 
   useEffect(() => {
     fetchProducts();
-  }, [selectedStore?.id, section, initialProducts]);
+  }, [effectiveStore?.id, section, initialProducts]);
 
   const onRefresh = async () => {
     setRefreshing(true);
