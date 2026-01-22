@@ -506,7 +506,7 @@ const CategoryDetailScreen = () => {
                           }}
                           disabled={!canAddToCart(product)}
                         >
-                          <Text style={styles.addBtnText}>{canAddToCart(product) ? 'ADD' : 'OUT'}</Text>
+                          <Text style={styles.addBtnText}>{canAddToCart(product) ? 'ADD' : 'OUT OF STOCK'}</Text>
                         </TouchableOpacity>
                       )}
                       <TouchableOpacity
@@ -830,18 +830,21 @@ const styles = StyleSheet.create({
   },
   addRowList: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 8,
+    alignItems: 'flex-start',
+    marginTop: 4,
     gap: 10,
   },
   addBtn: {
     flex: 1,
     backgroundColor: '#00b14f',
     borderRadius: 8,
-    paddingVertical: 7,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
     alignItems: 'center',
     justifyContent: 'center',
     marginRight: 8,
+    minWidth: 100,
+    minHeight: 40,
     shadowColor: '#00b14f',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -851,8 +854,8 @@ const styles = StyleSheet.create({
   addBtnText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 15,
-    letterSpacing: 0.5,
+    fontSize: 11,
+    letterSpacing: 0.2,
   },
 });
 

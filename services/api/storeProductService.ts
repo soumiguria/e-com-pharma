@@ -81,10 +81,22 @@ const pickPrice = (raw: any): number => {
 
 const pickImage = (raw: any): string => {
   // Priority: signedImage > signedImages[0] > image > images[0] > placeholder
-  if (raw.signedImage) return buildImageUrl(raw.signedImage);
-  if (Array.isArray(raw.signedImages) && raw.signedImages.length > 0) return buildImageUrl(raw.signedImages[0]);
-  if (raw.image) return buildImageUrl(raw.image);
-  if (Array.isArray(raw.images) && raw.images.length > 0) return buildImageUrl(raw.images[0]);
+  // Check signedImage only if it's a valid non-empty string
+  if (raw.signedImage && typeof raw.signedImage === 'string' && raw.signedImage.trim().length > 0) {
+    return buildImageUrl(raw.signedImage);
+  }
+  // Check signedImages array first (preferred)
+  if (Array.isArray(raw.signedImages) && raw.signedImages.length > 0) {
+    return buildImageUrl(raw.signedImages[0]);
+  }
+  // Check image only if it's a valid non-empty string
+  if (raw.image && typeof raw.image === 'string' && raw.image.trim().length > 0) {
+    return buildImageUrl(raw.image);
+  }
+  // Check images array
+  if (Array.isArray(raw.images) && raw.images.length > 0) {
+    return buildImageUrl(raw.images[0]);
+  }
   return PLACEHOLDER_IMAGE;
 };
 
@@ -96,11 +108,15 @@ const mapProduct = (raw: any, category: 'grocery' | 'pharma'): Product => {
     ? rawImagesArray.map((img: string) => buildImageUrl(img))
     : undefined;
   
-  // Ensure primary image is set - use first image from array if pickImage returns placeholder
-  const primaryImage = pickImage(raw);
-  const finalImage = primaryImage === PLACEHOLDER_IMAGE && imagesArray && imagesArray.length > 0
-    ? imagesArray[0]
-    : primaryImage;
+  // Ensure primary image is set - prioritize first image from array if available
+  let primaryImage = pickImage(raw);
+  
+  // If primaryImage is placeholder or invalid, use first image from array
+  if ((primaryImage === PLACEHOLDER_IMAGE || !primaryImage || (typeof primaryImage === 'string' && primaryImage.trim().length === 0)) && imagesArray && imagesArray.length > 0) {
+    primaryImage = imagesArray[0];
+  }
+  
+  const finalImage = primaryImage;
   
   return {
     id: raw.productId || raw.id || String(Math.random()),
@@ -149,10 +165,39 @@ export class StoreProductService {
     
     try {
       const url = buildApiUrl(API_CONFIG.ENDPOINTS.GROCERY_CATEGORIES, { storeId });
-      const response = await apiClient.get<any>(url);
+      // Fetch all categories by passing a high limit parameter
+      const response = await apiClient.get<any>(url, { limit: 100, page: 1 });
       const raw = response.data;
-      const mapped = Array.isArray(raw?.data) ? raw.data.map(mapCategory) : [];
-      console.log(' Grocery categories API mapped:', mapped.length);
+      
+      // Check if pagination is needed
+      const totalCount = raw?.count || 0;
+      const currentData = Array.isArray(raw?.data) ? raw.data : [];
+      let allCategories = [...currentData];
+      
+      // If there are more categories, fetch remaining pages
+      if (totalCount > currentData.length) {
+        const itemsPerPage = currentData.length || 10;
+        const totalPages = Math.ceil(totalCount / itemsPerPage);
+        
+        console.log(`🛒 Fetching ${totalPages} pages of grocery categories (total: ${totalCount})`);
+        
+        // Fetch remaining pages
+        for (let page = 2; page <= totalPages; page++) {
+          try {
+            const pageResponse = await apiClient.get<any>(url, { limit: itemsPerPage, page });
+            const pageData = pageResponse.data;
+            if (Array.isArray(pageData?.data)) {
+              allCategories = [...allCategories, ...pageData.data];
+            }
+          } catch (pageError) {
+            console.log(`  Error fetching page ${page}:`, pageError);
+            // Continue with other pages even if one fails
+          }
+        }
+      }
+      
+      const mapped = allCategories.map(mapCategory);
+      console.log(`🛒 Grocery categories API mapped: ${mapped.length} out of ${totalCount} total`);
       return { success: true, data: mapped } as ApiResponse<Category[]>;
     } catch (error) {
       console.log('  Grocery categories API error:', error);
@@ -292,10 +337,39 @@ export class StoreProductService {
     
     try {
       const url = buildApiUrl(API_CONFIG.ENDPOINTS.PHARMA_CATEGORIES, { storeId });
-      const response = await apiClient.get<any>(url);
+      // Fetch all categories by passing a high limit parameter
+      const response = await apiClient.get<any>(url, { limit: 100, page: 1 });
       const raw = response.data;
-      const mapped = Array.isArray(raw?.data) ? raw.data.map(mapCategory) : [];
-      console.log(' Pharma categories API mapped:', mapped.length);
+      
+      // Check if pagination is needed
+      const totalCount = raw?.count || 0;
+      const currentData = Array.isArray(raw?.data) ? raw.data : [];
+      let allCategories = [...currentData];
+      
+      // If there are more categories, fetch remaining pages
+      if (totalCount > currentData.length) {
+        const itemsPerPage = currentData.length || 10;
+        const totalPages = Math.ceil(totalCount / itemsPerPage);
+        
+        console.log(`💊 Fetching ${totalPages} pages of pharma categories (total: ${totalCount})`);
+        
+        // Fetch remaining pages
+        for (let page = 2; page <= totalPages; page++) {
+          try {
+            const pageResponse = await apiClient.get<any>(url, { limit: itemsPerPage, page });
+            const pageData = pageResponse.data;
+            if (Array.isArray(pageData?.data)) {
+              allCategories = [...allCategories, ...pageData.data];
+            }
+          } catch (pageError) {
+            console.log(`  Error fetching page ${page}:`, pageError);
+            // Continue with other pages even if one fails
+          }
+        }
+      }
+      
+      const mapped = allCategories.map(mapCategory);
+      console.log(`💊 Pharma categories API mapped: ${mapped.length} out of ${totalCount} total`);
       return { success: true, data: mapped } as ApiResponse<Category[]>;
     } catch (error) {
       console.log('  Pharma categories API error:', error);

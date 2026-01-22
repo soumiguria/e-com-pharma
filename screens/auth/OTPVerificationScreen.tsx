@@ -21,6 +21,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SMS from 'expo-sms';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSMSRetriever } from '../../hooks/useSMSRetriever';
+import { useToast } from '../../contexts/ToastContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'OTPVerification'>;
 type OTPVerificationRouteProp = RouteProp<RootStackParamList, 'OTPVerification'>;
@@ -32,6 +33,7 @@ const OTPVerificationScreen = () => {
   const { phoneNumber, cartType, isRegistration = false, userData, otpKey: routeOtpKey } = route.params;
   const { theme } = useTheme();
   const { login, user } = useAuth();
+  const { showToast } = useToast();
 
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
@@ -248,9 +250,20 @@ const OTPVerificationScreen = () => {
         navigation.replace('Main', undefined as any);
       } else {
         console.log('  Login failed:', loginResult.error);
-        // Only show alert if not auto-verifying
-        if (!autoVerifyAttempted) {
-          Alert.alert('Error', loginResult.error || 'Failed to verify OTP. Please try again.');
+        const errorMsg = loginResult.error || 'Failed to verify OTP. Please try again.';
+        const lowerErrorMsg = errorMsg.toLowerCase();
+        
+        // Check if error is about invalid OTP
+        const isInvalidOTP = lowerErrorMsg.includes('invalid') && (lowerErrorMsg.includes('otp') || lowerErrorMsg.includes('code'));
+        
+        if (isInvalidOTP) {
+          // Always show toast for invalid OTP
+          showToast('INVALID OTP');
+        } else {
+          // Only show alert if not auto-verifying
+          if (!autoVerifyAttempted) {
+            Alert.alert('Error', errorMsg);
+          }
         }
       }
     } catch (error) {

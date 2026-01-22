@@ -8,6 +8,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Dimensions,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -19,128 +20,22 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAppContext } from '../../contexts/AppContext';
 import storeService from '../../services/api/storeService';
 import { storeProductService } from '../../services/api/storeProductService';
+import apiClient from '../../services/api/client';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const { width: screenWidth } = Dimensions.get('window');
-// Calculate card width: screen width - section padding (32) - row padding (32) - margins (24) = screenWidth - 88
-// Then divide by 4 for 4 columns
-const CARD_WIDTH = Math.floor((screenWidth - 88) / 4);
-
-// const categorySections = [
-//   {
-//     id: '1',
-//     title: 'Grocery & Kitchen',
-//     categories: [
-//       { id: '1', name: 'Fruits', image: 'https://images.pexels.com/photos/2093087/pexels-photo-2093087.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '2', name: 'Vegetables', image: 'https://images.pexels.com/photos/2518893/pexels-photo-2518893.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '3', name: 'Dairy', image: 'https://images.pexels.com/photos/248412/pexels-photo-248412.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '4', name: 'Meat', image: 'https://images.pexels.com/photos/3997388/pexels-photo-3997388.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '5', name: 'Bakery', image: 'https://images.pexels.com/photos/1721934/pexels-photo-1721934.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '6', name: 'Spices', image: 'https://images.pexels.com/photos/5945763/pexels-photo-5945763.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '7', name: 'Rice & Grains', image: 'https://images.pexels.com/photos/4110225/pexels-photo-4110225.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '8', name: 'Cooking Oil', image: 'https://images.pexels.com/photos/4110225/pexels-photo-4110225.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '9', name: 'Pulses', image: 'https://images.pexels.com/photos/4110225/pexels-photo-4110225.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '10', name: 'Nuts & Dry Fruits', image: 'https://images.pexels.com/photos/2093087/pexels-photo-2093087.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '11', name: 'Condiments', image: 'https://images.pexels.com/photos/5945763/pexels-photo-5945763.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '12', name: 'Frozen Foods', image: 'https://images.pexels.com/photos/3997388/pexels-photo-3997388.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//     ],
-//   },
-//   {
-//     id: '2',
-//     title: 'Snacks & Drinks',
-//     categories: [
-//       { id: '13', name: 'Snacks', image: 'https://images.pexels.com/photos/5638597/pexels-photo-5638597.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '14', name: 'Drinks', image: 'https://images.pexels.com/photos/338713/pexels-photo-338713.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '15', name: 'Beverages', image: 'https://images.pexels.com/photos/2789328/pexels-photo-2789328.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '16', name: 'Energy Drinks', image: 'https://images.pexels.com/photos/2789328/pexels-photo-2789328.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '17', name: 'Juices', image: 'https://images.pexels.com/photos/2789328/pexels-photo-2789328.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '18', name: 'Soft Drinks', image: 'https://images.pexels.com/photos/2789328/pexels-photo-2789328.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '19', name: 'Tea & Coffee', image: 'https://images.pexels.com/photos/2789328/pexels-photo-2789328.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '20', name: 'Water', image: 'https://images.pexels.com/photos/2789328/pexels-photo-2789328.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '21', name: 'Chocolates', image: 'https://images.pexels.com/photos/5638597/pexels-photo-5638597.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '22', name: 'Chips & Namkeen', image: 'https://images.pexels.com/photos/5638597/pexels-photo-5638597.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//     ],
-//   },
-//   {
-//     id: '3',
-//     title: 'Personal Care',
-//     categories: [
-//       { id: '23', name: 'Personal Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '24', name: 'Baby Care', image: 'https://images.pexels.com/photos/3875217/pexels-photo-3875217.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '25', name: 'Hair Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '26', name: 'Skin Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '27', name: 'Oral Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '28', name: 'Feminine Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '29', name: 'Men\'s Grooming', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '30', name: 'Fragrances', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '31', name: 'Makeup', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '32', name: 'Health Supplements', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//     ],
-//   },
-//   {
-//     id: '4',
-//     title: 'Home & Cleaning',
-//     categories: [
-//       { id: '33', name: 'Cleaning', image: 'https://images.pexels.com/photos/4239031/pexels-photo-4239031.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '34', name: 'Pets', image: 'https://images.pexels.com/photos/5749792/pexels-photo-5749792.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '35', name: 'Kitchen & Dining', image: 'https://images.pexels.com/photos/4239031/pexels-photo-4239031.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '36', name: 'Bathroom', image: 'https://images.pexels.com/photos/4239031/pexels-photo-4239031.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '37', name: 'Laundry', image: 'https://images.pexels.com/photos/4239031/pexels-photo-4239031.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '38', name: 'Paper & Disposables', image: 'https://images.pexels.com/photos/4239031/pexels-photo-4239031.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '39', name: 'Home Care', image: 'https://images.pexels.com/photos/4239031/pexels-photo-4239031.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '40', name: 'Stationery', image: 'https://images.pexels.com/photos/4239031/pexels-photo-4239031.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '41', name: 'Home Decor', image: 'https://images.pexels.com/photos/4239031/pexels-photo-4239031.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '42', name: 'Gardening', image: 'https://images.pexels.com/photos/4239031/pexels-photo-4239031.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//     ],
-//   },
-// ];
-
-// Pharmacy category sections
-// const pharmacyCategorySections = [
-//   {
-//     id: '1',
-//     title: 'Medicines & Healthcare',
-//     categories: [
-//       { id: '1', name: 'Pain Relief', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '2', name: 'Cold & Flu', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '3', name: 'Fever & Headache', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '4', name: 'Digestive Health', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '5', name: 'Vitamins & Supplements', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '6', name: 'Diabetes Care', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '7', name: 'Heart Health', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '8', name: 'Skin Care', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//     ],
-//   },
-//   {
-//     id: '2',
-//     title: 'Personal Care & Hygiene',
-//     categories: [
-//       { id: '9', name: 'Oral Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '10', name: 'Hair Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '11', name: 'Baby Care', image: 'https://images.pexels.com/photos/3875217/pexels-photo-3875217.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '12', name: 'Feminine Care', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '13', name: 'Men\'s Grooming', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '14', name: 'Fragrances', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '15', name: 'Makeup', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '16', name: 'Health Supplements', image: 'https://images.pexels.com/photos/3762465/pexels-photo-3762465.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//     ],
-//   },
-//   {
-//     id: '3',
-//     title: 'Medical Devices & Equipment',
-//     categories: [
-//       { id: '17', name: 'Blood Pressure Monitors', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '18', name: 'Thermometers', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '19', name: 'First Aid', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '20', name: 'Mobility Aids', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '21', name: 'Respiratory Care', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '22', name: 'Diabetes Monitoring', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '23', name: 'Hearing Aids', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//       { id: '24', name: 'Orthopedic Support', image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-//     ],
-//   },
-// ];
+// Calculate card width properly:
+// - contentContainer paddingHorizontal: 16 (left) + 16 (right) = 32
+// - margins between 4 cards: 8 * 3 = 24 (3 margins for 4 cards)
+// - Total space used: 32 + 24 = 56
+// - Available width: screenWidth - 56
+// - Card width: (screenWidth - 56) / 4
+const CARD_MARGIN_HORIZONTAL = 8;
+const SECTION_PADDING_HORIZONTAL = 16;
+const NUM_COLUMNS = 4;
+const TOTAL_HORIZONTAL_SPACE = (SECTION_PADDING_HORIZONTAL * 2) + (CARD_MARGIN_HORIZONTAL * (NUM_COLUMNS - 1));
+const CARD_WIDTH = (screenWidth - TOTAL_HORIZONTAL_SPACE) / NUM_COLUMNS;
 
 const CategoriesScreen = () => {
   const { theme, section } = useTheme();
@@ -148,63 +43,110 @@ const CategoriesScreen = () => {
   const { selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore } = useAppContext();
   const [categories, setCategories] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isExpanded, setIsExpanded] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
   // Get the effective store to use (selectedStore or fallback to last visited stores)
   const effectiveStore = selectedStore || lastVisitedStore || lastVisitedGroceryStore || lastVisitedPharmacyStore;
 
-  // Show first 8 categories when collapsed, all when expanded
-  const displayedCategories = isExpanded ? categories : categories.slice(0, 8);
-  const hasMoreCategories = categories.length > 8;
+  // Fetch categories with pagination
+  const fetchCategories = async (page: number = 1, isLoadMore: boolean = false) => {
+    if (!effectiveStore?.id) {
+      console.log('   No store available, showing empty categories');
+      setCategories([]);
+      setLoading(false);
+      return;
+    }
 
-  // Fetch categories (and subcategories for pharmacy) from API only - no hardcoded data
-  useEffect(() => {
-    const fetchCategories = async () => {
-      if (!effectiveStore?.id) {
-        console.log('   No store available, showing empty categories');
-        setCategories([]);
-        setLoading(false);
-        return;
+    try {
+      if (isLoadMore) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
       }
 
-      try {
-        console.log(`🔄 Fetching ${section} categories for store:`, effectiveStore.id);
+      console.log(`🔄 Fetching ${section} categories page ${page} for store:`, effectiveStore.id);
+      
+      // Fetch single page from API
+      const url = `/v1/store/${effectiveStore.id}/category/${section}`;
+      const response = await apiClient.get<any>(url, { limit: 10, page });
+      const raw = response.data;
+      
+      console.log(`🔍 ${section} API response page ${page}:`, JSON.stringify(raw, null, 2));
+      
+      if (raw?.status === 'success' && Array.isArray(raw?.data)) {
+        const newCategories = raw.data;
+        const count = raw.count || 0;
         
-        // Fetch categories from the new API endpoint
-        const response = await storeService.getStoreCategories(effectiveStore.id, section);
+        setTotalCount(count);
         
-        console.log(`🔍 ${section} API response:`, JSON.stringify(response, null, 2));
-        
-        if (response.success && response.data) {
-          // Handle nested data structure: response.data.data or response.data
-          const categoriesData = Array.isArray(response.data) ? response.data : ((response.data as any)?.data || response.data);
-          
-          if (Array.isArray(categoriesData)) {
-            console.log(`✅ ${section} categories loaded from API:`, categoriesData.length);
-            console.log(`📊 Categories data:`, JSON.stringify(categoriesData, null, 2));
-            setCategories(categoriesData);
-          } else {
-            console.log(`❌ ${section} API returned non-array data:`, typeof categoriesData);
-            setCategories([]);
-          }
-          
-          // Note: Subcategories will be fetched individually when user clicks on a category
-          // This avoids fetching all subcategories upfront as requested
+        if (isLoadMore) {
+          // Append new categories to existing ones
+          setCategories(prev => {
+            const updated = [...prev, ...newCategories];
+            // Check if there are more pages to load
+            setHasMore(updated.length < count);
+            return updated;
+          });
         } else {
-          console.log(`❌ ${section} API failed, showing empty categories`);
+          // Replace categories for first page
+          setCategories(newCategories);
+          // Check if there are more pages to load
+          setHasMore(newCategories.length < count);
+        }
+        
+        // Calculate total for logging (using current categories length + new items)
+        const currentTotal = isLoadMore ? categories.length + newCategories.length : newCategories.length;
+        console.log(`✅ ${section} categories page ${page} loaded: ${newCategories.length} items (${currentTotal}/${count} total)`);
+      } else {
+        console.log(`❌ ${section} API returned invalid data`);
+        if (!isLoadMore) {
           setCategories([]);
         }
-      } catch (error) {
-        console.log(`  Error fetching ${section} categories:`, error);
-        console.log('   Showing empty categories');
+      }
+    } catch (error) {
+      console.log(`  Error fetching ${section} categories page ${page}:`, error);
+      if (!isLoadMore) {
         setCategories([]);
-      } finally {
+      }
+    } finally {
+      if (isLoadMore) {
+        setLoadingMore(false);
+      } else {
         setLoading(false);
       }
-    };
+    }
+  };
 
-    fetchCategories();
+  // Initial fetch
+  useEffect(() => {
+    setCurrentPage(1);
+    setHasMore(true);
+    setTotalCount(0);
+    fetchCategories(1, false);
   }, [effectiveStore?.id, section]);
+
+  // Load more categories when scrolling
+  const loadMoreCategories = () => {
+    if (!loadingMore && hasMore && categories.length > 0) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+      fetchCategories(nextPage, true);
+    }
+  };
+
+  // Pull to refresh handler
+  const onRefresh = async () => {
+    setRefreshing(true);
+    setCurrentPage(1);
+    setHasMore(true);
+    setTotalCount(0);
+    await fetchCategories(1, false);
+    setRefreshing(false);
+  };
 
   const renderCategoryItem = ({ item }: { item: any }) => (
     <TouchableOpacity
@@ -273,11 +215,15 @@ const CategoriesScreen = () => {
     >
       <Image 
         source={{ 
-          uri: item.image || item.signedImage || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center' 
+          uri: item.signedImage || item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center' 
         }} 
         style={styles.image} 
       />
-      <Text style={[styles.name, { color: theme.colors.text }]} numberOfLines={2}>
+      <Text 
+        style={[styles.name, { color: theme.colors.text }]} 
+        numberOfLines={2} 
+        ellipsizeMode="tail"
+      >
         {item.name}
       </Text>
     </TouchableOpacity>
@@ -341,34 +287,51 @@ const CategoriesScreen = () => {
           All Categories
         </Text>
       </Box>
-      <ScrollView 
-        contentContainerStyle={{ paddingBottom: 32 }}
-        showsVerticalScrollIndicator={false}
-      >
+      <View style={{ flex: 1 }}>
         <View style={styles.section}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
             {section === 'pharma' ? 'Pharmacy Categories' : 'Grocery Categories'}
           </Text>
-          <FlatList
-            data={displayedCategories}
-            renderItem={renderCategoryItem}
-            keyExtractor={(item) => item.categoryId || item.id}
-            numColumns={4}
-            columnWrapperStyle={styles.row}
-            scrollEnabled={false}
-          />
-          {hasMoreCategories && (
-            <TouchableOpacity
-              style={styles.viewMoreButton}
-              onPress={() => setIsExpanded(!isExpanded)}
-            >
-              <Text style={[styles.viewMoreText, { color: theme.colors.primary }]}>
-                {isExpanded ? 'View Less' : 'View More'}
-              </Text>
-            </TouchableOpacity>
-          )}
         </View>
-      </ScrollView>
+        <FlatList
+          data={categories}
+          renderItem={renderCategoryItem}
+          keyExtractor={(item) => item.categoryId || item.id}
+          numColumns={4}
+          columnWrapperStyle={styles.row}
+          contentContainerStyle={{ paddingBottom: 32, paddingHorizontal: SECTION_PADDING_HORIZONTAL }}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={[theme.colors.primary]}
+              tintColor={theme.colors.primary}
+            />
+          }
+          onEndReached={loadMoreCategories}
+          onEndReachedThreshold={0.5}
+          ListFooterComponent={
+            loadingMore ? (
+              <View style={{ paddingVertical: 16, alignItems: 'center' }}>
+                <ActivityIndicator size="small" color={theme.colors.primary} />
+                <Text style={{ marginTop: 8, color: theme.colors.secondary, fontSize: 12 }}>
+                  Loading more categories...
+                </Text>
+              </View>
+            ) : null
+          }
+          ListEmptyComponent={
+            !loading ? (
+              <View style={{ paddingVertical: 32, alignItems: 'center' }}>
+                <Text style={{ color: theme.colors.secondary }}>
+                  No categories available
+                </Text>
+              </View>
+            ) : null
+          }
+        />
+      </View>
     </SafeAreaView>
   );
 };
@@ -378,8 +341,9 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   section: {
-    marginBottom: 24,
     paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
   sectionTitle: {
     fontSize: 20,
@@ -390,15 +354,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'flex-start',
     marginBottom: 16,
-    paddingHorizontal: 16,
   },
   card: {
     width: CARD_WIDTH,
     alignItems: 'center',
-    padding: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 4,
     borderRadius: 8,
     borderWidth: 1,
-    marginRight: 8,
+    marginRight: CARD_MARGIN_HORIZONTAL,
   },
   image: {
     width: 50,
@@ -411,6 +375,10 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '500',
     marginTop: 4,
+    width: '100%',
+    overflow: 'hidden',
+    flexWrap: 'wrap',
+    paddingHorizontal: 0,
   },
   viewMoreButton: {
     alignItems: 'center',

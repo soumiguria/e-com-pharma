@@ -75,9 +75,26 @@ export class AuthService {
       return response;
     } catch (error: any) {
       console.log('  Verify OTP Error:', error.response?.data || error.message);
+      
+      // Extract error message from API response
+      let errorMessage = 'Failed to verify OTP. Please try again.';
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        if (errorData.message) {
+          errorMessage = errorData.message;
+        } else if (errorData.error) {
+          errorMessage = errorData.error;
+        } else if (typeof errorData === 'string') {
+          errorMessage = errorData;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       return {
         success: false,
-        error: 'Failed to verify OTP. Please try again.',
+        error: errorMessage,
         data: null as any,
       };
     }

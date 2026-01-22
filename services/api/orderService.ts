@@ -275,6 +275,10 @@ class OrderService {
           const productIds = errorData.productsNotFound.map((p: any) => p.productId).join(', ');
           errorMessage = `Order cannot be placed because the following items are not available in this store: ${productIds}. Please remove these items and try again.`;
         }
+        // Check for online payment not supported error
+        else if (errorData.message && errorData.message.includes('Online Payment Not Supported')) {
+          errorMessage = 'Online payment is currently not available for this store. Please use offline payment (Cash on Delivery) instead.';
+        }
         // Check for generic message
         else if (errorData.message) {
           errorMessage = errorData.message;

@@ -95,22 +95,15 @@ const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { 
             />
           </TouchableOpacity>
         
-        {/* Center - Store name and profile */}
+        {/* Center - Store name */}
         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-          <TouchableOpacity onPress={() => navigation.navigate('EditProfile' as any)}>
-            <MaterialCommunityIcons 
-              name="account-circle" 
-              size={28} 
-              color={theme.colors.text} 
-            />
-          </TouchableOpacity>
           {displayStore && (
   <Text
     style={[
       themedStyles.storeName,
       {
         color: theme.colors.text,
-        marginLeft: 2,
+        marginLeft: 0,
         fontWeight: 'bold',
         fontSize: 17,
       },

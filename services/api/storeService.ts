@@ -93,7 +93,45 @@ export class StoreService {
 
   // Get all categories for a store
   async getStoreCategories(storeId: string, type: 'pharma' | 'grocery'): Promise<ApiResponse<any[]>> {
-    return apiClient.get(`/v1/store/${storeId}/category/${type}`);
+    try {
+      // First fetch to get total count
+      const firstResponse = await apiClient.get<any>(`/v1/store/${storeId}/category/${type}`, { limit: 100, page: 1 });
+      const raw = firstResponse.data;
+      
+      // Check if pagination is needed
+      const totalCount = raw?.count || 0;
+      const currentData = Array.isArray(raw?.data) ? raw.data : [];
+      let allCategories = [...currentData];
+      
+      // If there are more categories, fetch remaining pages
+      if (totalCount > currentData.length) {
+        const itemsPerPage = currentData.length || 10;
+        const totalPages = Math.ceil(totalCount / itemsPerPage);
+        
+        console.log(`📦 Fetching ${totalPages} pages of ${type} categories (total: ${totalCount})`);
+        
+        // Fetch remaining pages
+        for (let page = 2; page <= totalPages; page++) {
+          try {
+            const pageResponse = await apiClient.get<any>(`/v1/store/${storeId}/category/${type}`, { limit: itemsPerPage, page });
+            const pageData = pageResponse.data;
+            if (Array.isArray(pageData?.data)) {
+              allCategories = [...allCategories, ...pageData.data];
+            }
+          } catch (pageError) {
+            console.log(`  Error fetching page ${page}:`, pageError);
+            // Continue with other pages even if one fails
+          }
+        }
+      }
+      
+      console.log(`📦 ${type} categories fetched: ${allCategories.length} out of ${totalCount} total`);
+      return { success: true, data: allCategories } as ApiResponse<any[]>;
+    } catch (error) {
+      console.log(`  Error fetching ${type} categories:`, error);
+      // Fallback to single page fetch
+      return apiClient.get(`/v1/store/${storeId}/category/${type}`);
+    }
   }
 
   // Get subcategories for a specific category

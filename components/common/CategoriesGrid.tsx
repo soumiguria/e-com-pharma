@@ -53,10 +53,9 @@ const CategoryGrid = () => {
     const [categories, setCategories] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [tapLoadingId, setTapLoadingId] = useState<string | null>(null);
-    const [isExpanded, setIsExpanded] = useState(false);
     
-    // Show first 8 categories when collapsed, all when expanded
-    const displayedCategories = isExpanded ? categories : categories.slice(0, 8);
+    // Always show first 8 categories on home screen
+    const displayedCategories = categories.slice(0, 8);
     const hasMoreCategories = categories.length > 8;
 
     // Get the effective store to use (selectedStore or fallback to last visited stores)
@@ -143,7 +142,13 @@ const CategoryGrid = () => {
             }
         }}>
             <Image source={{ uri: item.image }} style={styles.image} />
-            <Text style={[styles.name, { color: theme.colors.text }]}>{item.name}</Text>
+            <Text 
+              style={[styles.name, { color: theme.colors.text }]} 
+              numberOfLines={2} 
+              ellipsizeMode="tail"
+            >
+              {item.name}
+            </Text>
         </TouchableOpacity>
     );
 
@@ -160,10 +165,10 @@ const CategoryGrid = () => {
             {hasMoreCategories && (
                 <TouchableOpacity 
                     style={styles.viewMoreButton}
-                    onPress={() => setIsExpanded(!isExpanded)}
+                    onPress={() => navigation.navigate('Categories' as any)}
                 >
                     <Text style={[styles.viewMoreText, { color: theme.colors.primary }]}>
-                        {isExpanded ? 'View Less' : 'View More'}
+                        View More
                     </Text>
                 </TouchableOpacity>
             )}
@@ -181,7 +186,8 @@ const styles = StyleSheet.create({
     card: {
         width: CARD_WIDTH,
         alignItems: 'center',
-        padding: 8,
+        paddingVertical: 8,
+        paddingHorizontal: 4,
         borderRadius: 8,
         borderWidth: 1,
         marginRight: 8,
@@ -197,6 +203,10 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '500',
         marginTop: 4,
+        width: '100%',
+        overflow: 'hidden',
+        flexWrap: 'wrap',
+        paddingHorizontal: 0,
     },
     viewMoreButton: {
         alignItems: 'center',

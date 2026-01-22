@@ -192,7 +192,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
               disabled={!canAddToCart()}
             >
               <Text style={[styles.addButtonText, !canAddToCart() && { color: '#fff' }]}>
-                {canAddToCart() ? 'ADD' : 'OUT'}
+                {canAddToCart() ? 'ADD' : 'OUT OF STOCK'}
               </Text>
             </TouchableOpacity>
           ) : (
@@ -298,15 +298,16 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 0,
     right: 0,
-    minWidth: 54,
-    height: 28,
+    minWidth: 100,
+    minHeight: 36,
     borderRadius: 6,
     borderWidth: 1.5,
     borderColor: '#27ae60',
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: 6,
+    paddingVertical: 6,
     shadowColor: 'rgba(39, 174, 96, 0.08)',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
@@ -317,8 +318,9 @@ const styles = StyleSheet.create({
   addButtonText: {
     color: '#27ae60',
     fontWeight: 'bold',
-    fontSize: 14,
-    letterSpacing: 0.5,
+    fontSize: 10,
+    letterSpacing: 0.2,
+    textAlign: 'center',
   },
   counterContainer: {
     position: 'absolute',
