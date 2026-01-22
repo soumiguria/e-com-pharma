@@ -269,28 +269,10 @@ const OTPVerificationScreen = () => {
       console.log('📱 Phone Number:', actualPhoneNumber);
       console.log('📝 Is Registration:', isRegistration);
       
-      let response;
-      
-      if (isRegistration) {
-        // For registration, call register API again to get new otpKey
-        console.log('  Registration flow - calling register API for new otpKey...');
-        if (!userData) {
-          Alert.alert('Error', 'User data not found. Please go back and try again.');
-          setIsLoading(false);
-          return;
-        }
-        
-        response = await authService.registerUser({
-          mobile: actualPhoneNumber,
-          firstName: userData.firstName,
-          lastName: userData.lastName,
-          email: userData.email,
-        });
-      } else {
-        // For login, call sendOTP API
-        console.log('  Login flow - calling sendOTP API...');
-        response = await authService.sendOTP(actualPhoneNumber);
-      }
+      // For both registration and login flows, use sendOTP endpoint
+      // This endpoint works for both new and existing users
+      console.log('  Calling sendOTP API to resend OTP...');
+      const response = await authService.sendOTP(actualPhoneNumber);
 
       console.log('📡 Resend OTP Response:', JSON.stringify(response, null, 2));
 

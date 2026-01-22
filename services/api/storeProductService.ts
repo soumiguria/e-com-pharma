@@ -6,11 +6,31 @@ import { API_CONFIG, buildApiUrl, isApiEnabled } from './config';
 // Helpers to normalize backend shapes to UI-friendly shapes
 const PLACEHOLDER_IMAGE = 'https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?auto=compress&cs=tinysrgb&w=800';
 
+// Helper function to build full image URL from relative path
+const buildImageUrl = (imagePath: string | undefined | null): string => {
+  if (!imagePath) return PLACEHOLDER_IMAGE;
+  
+  // If already a full URL (starts with http:// or https://), return as is
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  
+  // If it's a relative path (starts with /), prepend base URL
+  if (imagePath.startsWith('/')) {
+    const fullUrl = `${API_CONFIG.BASE_URL}${imagePath}`;
+    console.log('🖼️ Building image URL:', { original: imagePath, full: fullUrl });
+    return fullUrl;
+  }
+  
+  // Otherwise, assume it's already a full URL or return placeholder
+  return imagePath || PLACEHOLDER_IMAGE;
+};
+
 const mapCategory = (raw: any): Category => {
   return {
     id: raw.categoryId || raw.id || String(raw.categoryERPId || raw.subcategoryERPId || Math.random()),
     name: raw.name || raw.title || 'Category',
-    image: raw.signedImage || raw.image || PLACEHOLDER_IMAGE,
+    image: buildImageUrl(raw.signedImage || raw.image),
     description: raw.description || undefined,
     isActive: raw.status ? String(raw.status).toLowerCase() === 'active' : true,
     subCategories: [],
@@ -21,7 +41,7 @@ const mapSubCategory = (raw: any): SubCategory => {
   return {
     id: raw.subcategoryId || raw.id || String(raw.subcategoryERPId || Math.random()),
     name: raw.name || 'Subcategory',
-    image: raw.signedImage || raw.image || PLACEHOLDER_IMAGE,
+    image: buildImageUrl(raw.signedImage || raw.image),
     description: raw.description || undefined,
     parentCategoryId: raw.categoryId || raw.category?.categoryId,
     products: [],
@@ -30,8 +50,23 @@ const mapSubCategory = (raw: any): SubCategory => {
 
 const toNumber = (val: any): number => {
   if (typeof val === 'number') return val;
+  if (val === null || val === undefined || val === '') return 0;
   const n = Number(val);
   return Number.isFinite(n) ? n : 0;
+};
+
+// Helper to parse quantity - handles string numbers like "150"
+const parseQuantity = (val: any): number => {
+  if (val === null || val === undefined || val === '') return 0;
+  if (typeof val === 'number') {
+    return Number.isInteger(val) && val > 0 ? val : 0;
+  }
+  if (typeof val === 'string') {
+    const trimmed = val.trim();
+    const num = parseInt(trimmed, 10);
+    return !isNaN(num) && num > 0 ? num : 0;
+  }
+  return 0;
 };
 
 const pickPrice = (raw: any): number => {
@@ -46,29 +81,39 @@ const pickPrice = (raw: any): number => {
 
 const pickImage = (raw: any): string => {
   // Priority: signedImage > signedImages[0] > image > images[0] > placeholder
-  if (raw.signedImage) return raw.signedImage;
-  if (Array.isArray(raw.signedImages) && raw.signedImages.length > 0) return raw.signedImages[0];
-  if (raw.image) return raw.image;
-  if (Array.isArray(raw.images) && raw.images.length > 0) return raw.images[0];
+  if (raw.signedImage) return buildImageUrl(raw.signedImage);
+  if (Array.isArray(raw.signedImages) && raw.signedImages.length > 0) return buildImageUrl(raw.signedImages[0]);
+  if (raw.image) return buildImageUrl(raw.image);
+  if (Array.isArray(raw.images) && raw.images.length > 0) return buildImageUrl(raw.images[0]);
   return PLACEHOLDER_IMAGE;
 };
 
 const mapProduct = (raw: any, category: 'grocery' | 'pharma'): Product => {
   // Handle images array: prefer signedImages, fallback to images
-  const imagesArray = raw.signedImages || raw.images || undefined;
+  // Build full URLs for all images in the array
+  const rawImagesArray = raw.signedImages || raw.images || undefined;
+  const imagesArray = Array.isArray(rawImagesArray) 
+    ? rawImagesArray.map((img: string) => buildImageUrl(img))
+    : undefined;
+  
+  // Ensure primary image is set - use first image from array if pickImage returns placeholder
+  const primaryImage = pickImage(raw);
+  const finalImage = primaryImage === PLACEHOLDER_IMAGE && imagesArray && imagesArray.length > 0
+    ? imagesArray[0]
+    : primaryImage;
   
   return {
     id: raw.productId || raw.id || String(Math.random()),
     name: raw.name || raw.productName || 'Product',
     price: pickPrice(raw),
     originalPrice: (() => { const n = toNumber(raw.mrp); return n > 0 ? n : undefined; })(),
-    image: pickImage(raw),
+    image: finalImage,
     images: imagesArray,
     description: raw.description || undefined,
     brand: raw.brand || raw.brandName || undefined,
     category,
     subCategory: raw.subcategoryId || raw.subCategoryId || undefined,
-    availableQty: raw.availableQty ?? raw.stock ?? raw.quantity ?? 0,
+    availableQty: parseQuantity(raw.availableQty ?? raw.stock ?? raw.quantity),
     unit: raw.unit || raw.unitOfMeasure || 'unit',
     weight: raw.weight || undefined,
     expiryDate: raw.expiryDate || undefined,
@@ -175,13 +220,33 @@ export class StoreProductService {
       const raw = response.data;
       
       // Filter raw data by subcategoryId before mapping
+      // Check multiple possible locations: direct property, nested object, or subcategories array
       const rawProducts = Array.isArray(raw?.data) ? raw.data : [];
-      const filteredRaw = rawProducts.filter((p: any) => 
-        p.subcategoryId === subcategoryId || 
-        p.subCategoryId === subcategoryId ||
-        p.subcategory?.subcategoryId === subcategoryId ||
-        p.subcategory?.id === subcategoryId
-      );
+      const filteredRaw = rawProducts.filter((p: any) => {
+        // Check direct properties
+        if (p.subcategoryId === subcategoryId || p.subCategoryId === subcategoryId) {
+          return true;
+        }
+        
+        // Check nested subcategory object
+        if (p.subcategory?.subcategoryId === subcategoryId || p.subcategory?.id === subcategoryId) {
+          return true;
+        }
+        
+        // Check subcategories array (API returns subcategories as an array)
+        if (Array.isArray(p.subcategories)) {
+          const hasMatchingSubcategory = p.subcategories.some((sub: any) => 
+            sub.subcategoryId === subcategoryId || 
+            sub.id === subcategoryId ||
+            sub.subcategoryERPId === subcategoryId
+          );
+          if (hasMatchingSubcategory) {
+            return true;
+          }
+        }
+        
+        return false;
+      });
       
       const mapped = filteredRaw.map((p: any) => mapProduct(p, 'grocery'));
       
@@ -320,13 +385,33 @@ export class StoreProductService {
       const raw = response.data;
       
       // Filter raw data by subcategoryId before mapping
+      // Check multiple possible locations: direct property, nested object, or subcategories array
       const rawProducts = Array.isArray(raw?.data) ? raw.data : [];
-      const filteredRaw = rawProducts.filter((p: any) => 
-        p.subcategoryId === subcategoryId || 
-        p.subCategoryId === subcategoryId ||
-        p.subcategory?.subcategoryId === subcategoryId ||
-        p.subcategory?.id === subcategoryId
-      );
+      const filteredRaw = rawProducts.filter((p: any) => {
+        // Check direct properties
+        if (p.subcategoryId === subcategoryId || p.subCategoryId === subcategoryId) {
+          return true;
+        }
+        
+        // Check nested subcategory object
+        if (p.subcategory?.subcategoryId === subcategoryId || p.subcategory?.id === subcategoryId) {
+          return true;
+        }
+        
+        // Check subcategories array (API returns subcategories as an array)
+        if (Array.isArray(p.subcategories)) {
+          const hasMatchingSubcategory = p.subcategories.some((sub: any) => 
+            sub.subcategoryId === subcategoryId || 
+            sub.id === subcategoryId ||
+            sub.subcategoryERPId === subcategoryId
+          );
+          if (hasMatchingSubcategory) {
+            return true;
+          }
+        }
+        
+        return false;
+      });
       
       const mapped = filteredRaw.map((p: any) => mapProduct(p, 'pharma'));
       

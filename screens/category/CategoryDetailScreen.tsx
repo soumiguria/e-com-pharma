@@ -287,6 +287,41 @@ const CategoryDetailScreen = () => {
     setSelectedDiscount(null);
   };
 
+  // Helper function to validate quantity (similar to ProductCard)
+  const isValidQuantity = (value: any): boolean => {
+    if (value === null || value === undefined || value === '') return false;
+    if (typeof value === 'number') {
+      return Number.isInteger(value) && value > 0 && isFinite(value);
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      const num = parseInt(trimmed, 10);
+      return !isNaN(num) && num > 0 && String(num) === trimmed;
+    }
+    return false;
+  };
+
+  // Get valid quantity for a product
+  const getValidQuantity = (product: Product): number => {
+    const qty = product.availableQty || (product as any).quantity || (product as any).stock || 0;
+    if (isValidQuantity(qty)) {
+      if (typeof qty === 'number') {
+        return qty;
+      }
+      if (typeof qty === 'string') {
+        return parseInt(qty.trim(), 10);
+      }
+    }
+    return 0;
+  };
+
+  // Check if product can be added to cart
+  const canAddToCart = (product: Product): boolean => {
+    const price = product.price || 0;
+    const qty = getValidQuantity(product);
+    return price > 0 && qty > 0;
+  };
+
   const handleAddToCart = (product: Product, variant?: { id: string; name: string; price: number; stock: number }) => {
     addToGroceryCart({
       id: variant ? `${product.id}-${variant.id}` : product.id,
@@ -430,25 +465,48 @@ const CategoryDetailScreen = () => {
                             <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>-</Text>
                           </TouchableOpacity>
                           <Text style={{ width: 24, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 16 }}>{productQuantities[product.id]}</Text>
-                          <TouchableOpacity onPress={() => {
-                            setProductQuantities(q => {
-                              const newQty = (q[product.id] || 0) + 1;
-                              addToGroceryCart({ id: product.id, name: product.name, price: product.price, image: product.image });
-                              return { ...q, [product.id]: newQty };
-                            });
-                          }} style={{ width: 28, height: 28, justifyContent: 'center', alignItems: 'center' }}>
+                          <TouchableOpacity 
+                            onPress={() => {
+                              const currentQty = productQuantities[product.id] || 0;
+                              const availableQty = getValidQuantity(product);
+                              if (currentQty < availableQty) {
+                                setProductQuantities(q => {
+                                  const newQty = currentQty + 1;
+                                  addToGroceryCart({ id: product.id, name: product.name, price: product.price, image: product.image });
+                                  return { ...q, [product.id]: newQty };
+                                });
+                              }
+                            }} 
+                            style={{ 
+                              width: 28, 
+                              height: 28, 
+                              justifyContent: 'center', 
+                              alignItems: 'center',
+                              opacity: (productQuantities[product.id] || 0) < getValidQuantity(product) ? 1 : 0.5
+                            }}
+                            disabled={(productQuantities[product.id] || 0) >= getValidQuantity(product)}
+                          >
                             <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>+</Text>
                           </TouchableOpacity>
                         </View>
                       ) : (
                         <TouchableOpacity
-                          style={[styles.addBtn, { backgroundColor: theme.colors.primary, shadowColor: theme.colors.primary }]}
+                          style={[
+                            styles.addBtn, 
+                            { 
+                              backgroundColor: canAddToCart(product) ? theme.colors.primary : '#dc3545',
+                              shadowColor: canAddToCart(product) ? theme.colors.primary : '#dc3545',
+                              opacity: canAddToCart(product) ? 1 : 0.7
+                            }
+                          ]}
                           onPress={() => {
+                            if (!canAddToCart(product)) return;
                             setProductQuantities(q => ({ ...q, [product.id]: 1 }));
                             addToGroceryCart({ id: product.id, name: product.name, price: product.price, image: product.image });
                           }}
+                          disabled={!canAddToCart(product)}
                         >
-                          <Text style={styles.addBtnText}>Add</Text>
+                          <Text style={styles.addBtnText}>{canAddToCart(product) ? 'ADD' : 'OUT'}</Text>
                         </TouchableOpacity>
                       )}
                       <TouchableOpacity

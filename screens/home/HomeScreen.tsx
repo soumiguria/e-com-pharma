@@ -233,8 +233,8 @@ const HomeScreen = () => {
       // Try to set from lastVisitedStore first
       if (lastVisitedStore) {
         console.log('🔄 Setting lastVisitedStore as selectedStore:', lastVisitedStore);
-        setSelectedStore(lastVisitedStore);
-      } 
+      setSelectedStore(lastVisitedStore);
+    }
       // If no lastVisitedStore, try grocery or pharmacy based on current section
       else if (lastVisitedGroceryStore && currentSection === 'grocery') {
         console.log('🔄 Setting lastVisitedGroceryStore as selectedStore:', lastVisitedGroceryStore);

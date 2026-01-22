@@ -60,7 +60,26 @@ const ProductDetailScreen = () => {
   const fadeAnim = new Animated.Value(0);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [detailsExpanded, setDetailsExpanded] = useState(false);
-  const [productDetails, setProductDetails] = useState<any>(extendedProduct);
+  
+  // Helper to ensure image URLs are full URLs (in case they're relative paths)
+  const ensureFullImageUrl = (imgPath: string | undefined | null): string => {
+    if (!imgPath) return 'https://images.pexels.com/photos/461382/pexels-photo-461382.jpeg';
+    if (imgPath.startsWith('http://') || imgPath.startsWith('https://')) return imgPath;
+    if (imgPath.startsWith('/')) {
+      // Prepend base URL for relative paths
+      return `https://passkidukaanapi.margerp.com${imgPath}`;
+    }
+    return imgPath;
+  };
+  
+  // Ensure initial product has full image URLs
+  const initialProduct = {
+    ...extendedProduct,
+    image: extendedProduct.image ? ensureFullImageUrl(extendedProduct.image) : undefined,
+    images: extendedProduct.images ? extendedProduct.images.map(ensureFullImageUrl) : undefined,
+  };
+  
+  const [productDetails, setProductDetails] = useState<any>(initialProduct);
   
   // Use original product ID for cart operations (consistent with ProductCard)
   const originalProductId = extendedProduct.id;
@@ -117,12 +136,18 @@ const ProductDetailScreen = () => {
 
   // Use images array if present, else fallback to single image
   let images = productDetails.images && productDetails.images.length > 0
-    ? productDetails.images
-    : productDetails.image ? [productDetails.image] : [];
-  // If only one image, add dummy images for demo
-  if (images.length <= 1) {
+    ? productDetails.images.map(ensureFullImageUrl)
+    : productDetails.image ? [ensureFullImageUrl(productDetails.image)] : [];
+  
+  // If no images at all, use placeholder
+  if (images.length === 0) {
+    images = ['https://images.pexels.com/photos/461382/pexels-photo-461382.jpeg'];
+  }
+  
+  // If only one image, add dummy images for demo (but keep the real one first)
+  if (images.length === 1) {
     images = [
-      images[0] || 'https://images.pexels.com/photos/461382/pexels-photo-461382.jpeg',
+      images[0],
       'https://images.pexels.com/photos/42059/orange-fruit-vitamins-healthy-eating-42059.jpeg',
       'https://images.pexels.com/photos/162806/lemon-yellow-citrus-fruit-162806.jpeg',
     ];

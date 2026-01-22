@@ -88,7 +88,7 @@ const PharmacyHomeScreen = () => {
     const fetchProducts = async () => {
       const storeId = route.params?.storeId || effectiveStore?.id;
       if (!storeId) {
-        setProducts([]);
+    setProducts([]);
         return;
       }
 
