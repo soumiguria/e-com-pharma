@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, StyleProp, ViewStyle, ImageURISource } from 'react-native';
 import { useCart } from '../../contexts/CartContext';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -28,10 +28,9 @@ interface ProductCardProps {
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, compact, hideCartButton }) => {
-  const { addToGroceryCart, addToPharmacyCart } = useCart();
+  const { addToGroceryCart, addToPharmacyCart, groceryItems, pharmacyItems, updateQuantity } = useCart();
   const { theme } = useTheme();
   const { showToast } = useToast();
-  const [quantity, setQuantity] = useState(0);
 
   const imageSource = typeof product.image === 'string' 
     ? { uri: product.image } 
@@ -101,17 +100,42 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
     return price > 0 && qty > 0;
   };
 
+  const getCategory = (): 'grocery' | 'pharma' => {
+    return product.category === 'pharma' ? 'pharma' : 'grocery';
+  };
+
+  const getCartQuantity = (): number => {
+    const category = getCategory();
+    const items = category === 'pharma' ? pharmacyItems : groceryItems;
+    const existing = items.find(item => item.id === product.id);
+    return existing?.quantity || 0;
+  };
+
+  const currentQuantity = getCartQuantity();
+
   const handleAddToCart = (e: any) => {
     e.stopPropagation();
     if (!canAddToCart()) return;
-    setQuantity(1);
+
+    const category = getCategory();
+    const items = category === 'pharma' ? pharmacyItems : groceryItems;
+    const existing = items.find(item => item.id === product.id);
+
+    if (existing) {
+      // If item already exists in cart, just increment its quantity
+      updateQuantity(product.id, existing.quantity + 1, category);
+      return;
+    }
+
     const cartItem = {
       id: product.id,
       name: product.name,
       price: getValidPrice(),
-      image: typeof product.image === 'string' ? product.image : ''
+      image: typeof product.image === 'string' ? product.image : '',
+      originalPrice: product.originalPrice,
+      productId: (product as any).productId || product.id,
     };
-    if (product.category === 'pharma') {
+    if (category === 'pharma') {
       addToPharmacyCart(cartItem);
     } else {
       addToGroceryCart(cartItem);
@@ -120,17 +144,18 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
 
   const handleIncrement = (e: any) => {
     e.stopPropagation();
-    setQuantity(q => q + 1);
-    // Optionally, add to cart again or update cart quantity here
+    if (!canAddToCart()) return;
+
+    const category = getCategory();
+    const newQuantity = currentQuantity + 1;
+    updateQuantity(product.id, newQuantity, category);
   };
 
   const handleDecrement = (e: any) => {
     e.stopPropagation();
-    setQuantity(q => {
-      if (q <= 1) return 0;
-      return q - 1;
-    });
-    // Optionally, remove from cart or update cart quantity here
+    const category = getCategory();
+    const newQuantity = currentQuantity - 1;
+    updateQuantity(product.id, newQuantity, category);
   };
 
   const percentOff = product.originalPrice && product.originalPrice > product.price
@@ -184,7 +209,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
           )}
         </View>
         {!hideCartButton && (
-          quantity === 0 ? (
+          currentQuantity === 0 ? (
             <TouchableOpacity 
               style={[styles.addButton, !canAddToCart() && { opacity: 1, borderColor: '#dc3545', backgroundColor: '#dc3545' }]}
               onPress={handleAddToCart}
@@ -200,7 +225,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
               <TouchableOpacity onPress={handleDecrement} style={styles.counterBtn}>
                 <Text style={styles.counterBtnText}>-</Text>
               </TouchableOpacity>
-              <Text style={styles.counterValue}>{quantity}</Text>
+              <Text style={styles.counterValue}>{currentQuantity}</Text>
               <TouchableOpacity 
                 onPress={handleIncrement} 
                 style={[styles.counterBtn, !canAddToCart() && { opacity: 0.5 }]}
