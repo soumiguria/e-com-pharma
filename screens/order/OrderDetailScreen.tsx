@@ -1239,7 +1239,7 @@ const OrderDetailScreen = () => {
           </View>
 
           {/* Help Section */}
-          <View style={styles.helpSection}>
+          <View style={[styles.helpSection, { marginBottom: 48 }]}>
             <Text style={styles.helpTitle}>Need Help With Your Order?</Text>
             <View style={styles.helpButtonsContainer}>
               <TouchableOpacity

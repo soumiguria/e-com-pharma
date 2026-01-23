@@ -16,7 +16,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
-import { Card, Badge, Button } from 'native-base';
+import { Card } from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
 import orderListService from '../../services/api/orderListService';
 import orderService from '../../services/api/orderService';
@@ -293,7 +293,7 @@ const OrdersScreen = () => {
   const getStatusColor = (status: Order['status']) => {
     switch (status) {
       case 'pending':
-        return '#FF9800';
+        return '#fff';
       case 'paid':
         return '#4CAF50';
       case 'completed':
@@ -512,34 +512,46 @@ const OrdersScreen = () => {
                       </View>
                     )}
                   </View>
-                  <Badge
-                    style={[styles.statusChip, { backgroundColor: getStatusColor(order.status) + '20' }]}
-                    colorScheme="primary"
+                  <View
+                    style={[
+                      styles.statusChip,
+                      {
+                        backgroundColor: getStatusColor(order.status) + '22',
+                        borderWidth: 1.5,
+                        borderColor: getStatusColor(order.status),
+                        paddingHorizontal: 14,
+                        paddingVertical: 8,
+                        borderRadius: 18,
+                        alignSelf: 'flex-start',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                      },
+                    ]}
                   >
-                    <Text style={{ color: getStatusColor(order.status), fontSize: 12 }}>
+                    <Text style={{ color: getStatusColor(order.status), fontSize: 13, fontWeight: '700' }}>
                       {getStatusText(order.status)}
                     </Text>
-                  </Badge>
+                  </View>
                 </View>
 
                 {/* Order Details */}
                 <View style={styles.orderIdContainer}>
-                  <Text style={[styles.detailLabel, { color: theme.colors.secondary }]}>
+                  <Text style={[styles.detailLabel, { color: theme.colors.primary }]}>
                     {order.status === 'pending' ? 'Order ID' : 'Order Number'}
                   </Text>
-                  <Text style={[styles.orderIdValue, { color: theme.colors.text }]} numberOfLines={2}>
+                  <Text style={[styles.orderIdValue, { color: theme.colors.primary }]} numberOfLines={2}>
                     {order.status === 'pending' ? order.id : order.orderNumber}
                   </Text>
                 </View>
 
                 <View style={styles.orderDetails}>
-                  <Text style={[styles.detailLabel, { color: theme.colors.secondary }]}>Total Amt</Text>
-                  <Text style={[styles.detailValue, { color: theme.colors.text }]}>₹{Number(order.total).toFixed(2)}</Text>
+                  <Text style={[styles.detailLabel, { color: theme.colors.primary }]}>Total Amt</Text>
+                  <Text style={[styles.detailValue, { color: theme.colors.primary }]}>₹{Number(order.total).toFixed(2)}</Text>
                 </View>
 
                 <View style={styles.orderDetails}>
-                  <Text style={[styles.detailLabel, { color: theme.colors.secondary }]}>Total Items</Text>
-                  <Text style={[styles.detailValue, { color: theme.colors.text }]}>{order.items.reduce((sum, item) => sum + item.quantity, 0)}</Text>
+                  <Text style={[styles.detailLabel, { color: theme.colors.primary }]}>Total Items</Text>
+                  <Text style={[styles.detailValue, { color: theme.colors.primary }]}>{order.items.reduce((sum, item) => sum + item.quantity, 0)}</Text>
                 </View>
 
                       <TouchableOpacity 
@@ -553,12 +565,12 @@ const OrdersScreen = () => {
                           }
                         }}
                       >
-                        <Text style={[styles.detailLabel, { color: theme.colors.secondary }]}>Store Name</Text>
+                        <Text style={[styles.detailLabel, { color: theme.colors.primary }]}>Store Name</Text>
                         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                          <Text style={[styles.storeNameValue, { color: theme.colors.text, flex: 1 }]} numberOfLines={2}>
+                          <Text style={[styles.storeNameValue, { color: theme.colors.primary, flex: 1 }]} numberOfLines={2}>
                             {order.storeName || (order.items.some(item => item.type === 'pharma') ? 'Pharmacy Store' : 'Grocery Store')}
                           </Text>
-                          <Ionicons name="chevron-forward" size={20} color={theme.colors.secondary} />
+                          <Ionicons name="chevron-forward" size={20} color={theme.colors.primary} />
                         </View>
                       </TouchableOpacity>
 

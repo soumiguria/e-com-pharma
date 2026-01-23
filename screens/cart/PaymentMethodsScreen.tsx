@@ -806,7 +806,7 @@ const PaymentMethodsScreen = () => {
         <ThemedButton 
           title={isReorder ? "Reorder Items" : "Place Order"} 
           onPress={handlePlaceOrder} 
-          style={{ marginTop: 24 }} 
+          style={{ marginTop: 24, marginBottom: 48 }} 
         />
               </ScrollView>
       </SafeAreaView>

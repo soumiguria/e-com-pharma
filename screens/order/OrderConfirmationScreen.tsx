@@ -652,7 +652,7 @@ const OrderConfirmationScreen = () => {
         </View>
         
         {/* Bottom spacing */}
-        <View style={{ height: 30 }} />
+        <View style={{ height: 56 }} />
       </ScrollView>
     </SafeAreaView>
   );

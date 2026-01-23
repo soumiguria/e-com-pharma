@@ -389,7 +389,7 @@ const UploadPrescriptionScreen = () => {
       lineHeight: 20,
     },
     uploadButton: {
-      backgroundColor: theme.colors.tertiary,
+      backgroundColor: '#4285F4',
       paddingVertical: 16,
       borderRadius: 12,
       alignItems: 'center',

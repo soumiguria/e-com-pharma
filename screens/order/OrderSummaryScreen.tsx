@@ -456,7 +456,7 @@ const OrderSummaryScreen = () => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+      <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 48 }}>
         {/* Order Info */}
         <View style={[styles.orderInfoCard, { backgroundColor: theme.colors.surface }]}>
           <View style={styles.orderInfoRow}>

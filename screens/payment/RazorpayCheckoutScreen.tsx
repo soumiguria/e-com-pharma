@@ -1502,7 +1502,7 @@ const RazorpayCheckoutScreen = () => {
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color={theme.colors.primary} />
           <Text style={[styles.loadingText, { color: theme.colors.text }]}>
-            Processing payment...
+            Placing Order...
           </Text>
           <Text style={[styles.subText, { color: theme.colors.secondary }]}>
             Please wait, do not close this screen

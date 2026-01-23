@@ -691,7 +691,8 @@ const ProductDetailScreen = () => {
         </View>
       </ScrollView>
       {/* Fixed Bottom Bar with Add to Cart +1/-1 counter for selected variant */}
-      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', elevation: 12, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12 }}>
+      // add margin botton of 48 after the button
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', elevation: 12, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12, marginBottom: 48 }}>
         {selectedVariant ? (
           getCartQuantity(originalProductId, selectedVariant.id) > 0 ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 6, borderWidth: 1.5, borderColor: '#27ae60', height: 40, minWidth: 100, paddingHorizontal: 8 }}>
