@@ -324,6 +324,7 @@ const AddAddressScreen = () => {
     },
     scrollContent: {
       padding: 16,
+      paddingBottom: 64,
     },
     mapContainer: {
       height: 150,
@@ -441,7 +442,12 @@ const AddAddressScreen = () => {
           </Text>
         </View>
 
-        <ScrollView style={styles.scrollContent}>
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
           {/* Map Preview */}
           <View style={styles.mapContainer}>
             <MapView

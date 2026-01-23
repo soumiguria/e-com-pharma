@@ -365,6 +365,17 @@ const PaymentMethodsScreen = () => {
     try {
       setIsProcessingPayment(true);
       
+      // Check if online payment is available for this store
+      if (storeDetails && storeDetails.config && !storeDetails.config.paymentMethods?.online) {
+        Alert.alert(
+          'Online Payment Not Available',
+          'Online payment is currently not available for this store. Please use offline payment (Cash on Delivery) instead.',
+          [{ text: 'OK' }]
+        );
+        setIsProcessingPayment(false);
+        return;
+      }
+      
       // Use calculated total from bill details
       const totalAmount = Math.round(billDetails.total * 100) / 100;
       

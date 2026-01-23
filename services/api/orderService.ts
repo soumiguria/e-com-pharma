@@ -371,9 +371,31 @@ class OrderService {
       console.error(' Request headers:', error.config?.headers);
       console.error(' Request data:', error.config?.data);
       
+      // Extract error message from API response
+      let errorMessage = 'Failed to initiate payment';
+      
+      if (error.response?.data) {
+        const errorData = error.response.data;
+        
+        // Check for online payment not supported error
+        if (errorData.message && (errorData.message.includes('Online Payment Not Supported') || errorData.message.includes('online payment') || errorData.message.includes('payment not available'))) {
+          errorMessage = 'Online payment is currently not available for this store. Please use offline payment (Cash on Delivery) instead.';
+        }
+        // Check for generic message
+        else if (errorData.message) {
+          errorMessage = errorData.message;
+        }
+        // Check for error field
+        else if (errorData.error) {
+          errorMessage = errorData.error;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
       return {
         success: false,
-        error: error.response?.data?.message || error.message || 'Failed to initiate payment',
+        error: errorMessage,
         data: null as any,
       };
     }

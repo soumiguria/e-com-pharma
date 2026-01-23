@@ -14,6 +14,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import orderListService from '../../services/api/orderListService';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useAuth } from '../../contexts/AuthContext';
 
 type OrderSelectionRouteProp = {
   params: {
@@ -39,6 +40,7 @@ const OrderSelectionScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<any>();
   const route = useRoute() as OrderSelectionRouteProp;
+  const { isAuthenticated } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -480,14 +482,16 @@ const OrderSelectionScreen = () => {
             <View style={styles.emptyContainer}>
               <MaterialIcons name="receipt" size={64} color={theme.colors.secondary} />
               <Text style={styles.emptyText}>
-                Login to view your orders.
+                {isAuthenticated ? 'No order placed till now.' : 'Login to view your orders.'}
               </Text>
-              <TouchableOpacity
-                style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
-                onPress={() => navigation.navigate('PhoneAuth' as any, { cartType: 'grocery' })}
-              >
-                <Text style={styles.loginButtonText}>Login / Sign Up</Text>
-              </TouchableOpacity>
+              {!isAuthenticated && (
+                <TouchableOpacity
+                  style={[styles.loginButton, { backgroundColor: theme.colors.primary }]}
+                  onPress={() => navigation.navigate('PhoneAuth' as any, { cartType: 'grocery' })}
+                >
+                  <Text style={styles.loginButtonText}>Login / Sign Up</Text>
+                </TouchableOpacity>
+              )}
             </View>
           ) : (
             <FlatList

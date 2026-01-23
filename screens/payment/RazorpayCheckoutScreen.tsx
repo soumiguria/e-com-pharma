@@ -594,6 +594,7 @@ import { orderService } from '../../services/api';
 import { addressService } from '../../services/api/addressService';
 import { PlaceOrderRequest, InitiatePaymentResponse } from '../../services/api/orderService';
 import { Address } from '../../services/api/addressService';
+import { useToast } from '../../contexts/ToastContext';
 
 type RazorpayCheckoutRouteProp = RouteProp<RootStackParamList, 'RazorpayCheckout'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'RazorpayCheckout'>;
@@ -605,6 +606,7 @@ const RazorpayCheckoutScreen = () => {
   const { user } = useAuth();
   const { selectedStore } = useAppContext();
   const { groceryItems, pharmacyItems, clearCart, resetAllContexts } = useCart();
+  const { showToast } = useToast();
 
   const [isLoading, setIsLoading] = useState(true);
   const [paymentData, setPaymentData] = useState<InitiatePaymentResponse | null>(null);
@@ -837,7 +839,9 @@ const RazorpayCheckoutScreen = () => {
             paymentId: initiatePaymentResponse.data.paymentId,
           };
         } else {
-          throw new Error('Failed to initiate payment for existing order');
+          // Extract error message from response
+          const errorMsg = initiatePaymentResponse.error || 'Failed to initiate payment for existing order';
+          throw new Error(errorMsg);
         }
         
       } else {
@@ -947,12 +951,31 @@ const RazorpayCheckoutScreen = () => {
         setBackendPaymentId(orderResponseData?.paymentId || orderNo);
         console.log(' Payment data set successfully');
       } else {
-        throw new Error('Invalid payment data received from server');
+        // Check if the error is about online payment not being available
+        const errorMsg = paymentDataFromOrder?.message || 'Invalid payment data received from server';
+        if (errorMsg.includes('Online Payment Not Supported') || errorMsg.includes('online payment') || errorMsg.includes('payment not available')) {
+          throw new Error('Online payment is currently not available for this store. Please use offline payment (Cash on Delivery) instead.');
+        }
+        throw new Error(errorMsg);
       }
 
     } catch (error: any) {
       console.error('  Payment initialization failed:', error);
-      setError(error.message || 'Failed to initialize payment');
+      
+      // Extract and format error message
+      let errorMessage = error.message || 'Failed to initialize payment';
+      
+      // Check if error is about online payment not being supported
+      if (errorMessage.includes('Online Payment Not Supported') || errorMessage.includes('online payment') || errorMessage.includes('payment not available')) {
+        errorMessage = 'Online payment is currently not available for this store. Please use offline payment (Cash on Delivery) instead.';
+      }
+      
+      // Show toast for payment initialization errors
+      if (errorMessage.includes('Online payment') || errorMessage.includes('payment not available')) {
+        showToast('Payment initialization failed: ' + errorMessage.substring(0, 50) + '...');
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
