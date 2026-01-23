@@ -652,7 +652,7 @@ const OrderConfirmationScreen = () => {
             disabled={buttonPressed !== null}
           >
             <Text style={styles.primaryButtonText}>
-              {buttonPressed === 'details' ? 'Loading...' : 'View Order Details'}
+              {buttonPressed === 'details' ? 'View Order Details' : 'View Order Details'}
             </Text>
           </TouchableOpacity>
         </View>

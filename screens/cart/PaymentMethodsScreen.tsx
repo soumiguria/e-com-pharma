@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react'; 
+import React, { useState, useEffect, useCallback, useRef } from 'react'; 
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ThemedButton from '../../components/ui/ThemedButton';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useAuth } from '../../contexts/AuthContext';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useCart } from '../../contexts/CartContext';
@@ -69,6 +69,18 @@ const PaymentMethodsScreen = () => {
   const [storeDetails, setStoreDetails] = useState<any>(null);
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState<any[]>([]);
   const [availableDeliveryMethods, setAvailableDeliveryMethods] = useState<any[]>([]);
+
+  // Check route params for selected address on mount
+  useEffect(() => {
+    const routeParams = (route.params as any) || {};
+    const addressFromRoute = routeParams.selectedAddress;
+    if (addressFromRoute) {
+      console.log('📍 Setting selected address from route params on mount:', addressFromRoute);
+      setSelectedAddress(addressFromRoute);
+      // Clear the selected address from route params
+      navigation.setParams({ selectedAddress: undefined } as any);
+    }
+  }, [route.params, navigation]);
 
   // Load addresses on component mount
   useEffect(() => {
@@ -170,23 +182,26 @@ const PaymentMethodsScreen = () => {
   }, [selectedStore?.id]);
 
   // Handle screen focus - reload addresses and check for selected address
-  useEffect(() => {
-    const unsubscribe = navigation.addListener('focus', () => {
-      // Reload addresses when returning from AddAddress or MyAddresses
-      loadAddresses();
-      
+  useFocusEffect(
+    useCallback(() => {
       // Check if we have a selected address from MyAddressesScreen
-      const state = navigation.getState();
-      const currentRoute = state.routes[state.index];
-      if (currentRoute.name === 'PaymentMethods' && (currentRoute.params as any)?.selectedAddress) {
-        setSelectedAddress((currentRoute.params as any).selectedAddress);
+      const routeParams = (route.params as any) || {};
+      const addressFromRoute = routeParams.selectedAddress;
+      
+      if (addressFromRoute) {
+        // Set the selected address from route params first
+        console.log('📍 Setting selected address from route params on focus:', addressFromRoute);
+        setSelectedAddress(addressFromRoute);
         // Clear the selected address from route params to avoid re-selection
-        navigation.setParams({ selectedAddress: undefined });
+        navigation.setParams({ selectedAddress: undefined } as any);
+        // Then reload addresses (but don't reset selectedAddress)
+        loadAddresses();
+      } else {
+        // No address from route, just reload addresses normally
+        loadAddresses();
       }
-    });
-
-    return unsubscribe;
-  }, [navigation]);
+    }, [route.params, navigation])
+  );
 
   const loadAddresses = async () => {
     try {
@@ -204,34 +219,53 @@ const PaymentMethodsScreen = () => {
         setAddresses(addressesList);
         
         // Set default address as selected only if no address is already selected
-        if (!selectedAddress) {
+        // Use a callback to check the current state to avoid stale closure
+        setSelectedAddress((currentSelected) => {
+          if (currentSelected) {
+            // Address already selected, verify it still exists in the list
+            const addressStillExists = addressesList.find(
+              (addr: Address) => addr.customerAddressId === currentSelected.customerAddressId || 
+                                 addr._id === currentSelected._id
+            );
+            if (addressStillExists) {
+              console.log('📍 Preserving selected address:', currentSelected);
+              return currentSelected; // Keep the selected address
+            } else {
+              console.log('📍 Selected address no longer exists, setting default');
+              // Selected address was deleted, fall through to set default
+            }
+          }
+          
+          // No address selected or selected address was deleted, set default
           const defaultAddress = addressesList.find((addr: Address) => addr.isDefault);
           if (defaultAddress) {
-            setSelectedAddress(defaultAddress);
             console.log('📍 Set default address:', defaultAddress);
+            return defaultAddress;
           } else if (addressesList.length > 0) {
             // If no default, use first address
-            setSelectedAddress(addressesList[0]);
             console.log('📍 Set first address as default:', addressesList[0]);
+            return addressesList[0];
           } else {
             // No addresses available
-            setSelectedAddress(null);
             console.log('📍 No addresses found');
+            return null;
           }
-        }
+        });
       } else {
         console.log('  Failed to load addresses:', response.error);
         setAddresses([]);
-        if (!selectedAddress) {
-          setSelectedAddress(null);
-        }
+        setSelectedAddress((currentSelected) => {
+          // Only clear if no address was selected
+          return currentSelected || null;
+        });
       }
     } catch (error) {
       console.error('  Error loading addresses:', error);
       setAddresses([]);
-      if (!selectedAddress) {
-        setSelectedAddress(null);
-      }
+      setSelectedAddress((currentSelected) => {
+        // Only clear if no address was selected
+        return currentSelected || null;
+      });
     } finally {
       setAddressLoading(false);
     }
@@ -708,14 +742,15 @@ const PaymentMethodsScreen = () => {
                     <Text style={styles.changeAddressText}>Change</Text>
                   </TouchableOpacity>
                 </View>
-                <Text style={styles.addressText}>{selectedAddress?.line1 || ''}</Text>
-                {selectedAddress?.line2 && (
-                  <Text style={styles.addressText}>{selectedAddress.line2}</Text>
-                )}
                 <Text style={styles.addressText}>
-                  {selectedAddress?.city || ''}, {selectedAddress?.state || ''} - {selectedAddress?.pincode || ''}
+                  {[
+                    selectedAddress?.line1,
+                    selectedAddress?.city,
+                    selectedAddress?.state,
+                    selectedAddress?.pincode,
+                    selectedAddress?.country,
+                  ].filter(Boolean).join(', ')}
                 </Text>
-                <Text style={styles.addressText}>{selectedAddress?.country || ''}</Text>
                 <Text style={styles.addressContact}>
                   📞 {selectedAddress?.mobile || user?.mobile || ''}
                 </Text>

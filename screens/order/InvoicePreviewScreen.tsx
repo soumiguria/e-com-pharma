@@ -19,6 +19,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { generateInvoiceFromOrder, InvoiceData, TransactionItem } from '../../services/api/invoiceService';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'InvoicePreview'>;
 type RouteProp = { params: { orderData: any } };
@@ -139,15 +140,83 @@ const InvoicePreviewScreen = () => {
       // Generate PDF
       const { uri } = await Print.printToFileAsync({ html: htmlContent });
       
-      // Share the PDF
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri);
-      } else {
-        Alert.alert('Download Complete', `Invoice saved to: ${uri}`);
+      // Create filename with order number and date
+      const invoiceDate = new Date(invoiceData.orderDate);
+      const dateStr = invoiceDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+      const filename = `Invoice_${invoiceData.orderNumber || 'N/A'}_${dateStr}.pdf`;
+      
+      // Get directory path - use type assertion since type definitions may be incomplete
+      // The properties exist at runtime in expo-file-system
+      const fs = FileSystem as any;
+      const cacheDir = fs.cacheDirectory || fs.documentDirectory;
+      if (!cacheDir) {
+        // If no directory available, use the original URI from Print
+        console.log('📄 Using original PDF URI:', uri);
+        // Share the original URI directly
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(uri, {
+            mimeType: 'application/pdf',
+            dialogTitle: Platform.OS === 'android' ? 'Save Invoice to Downloads' : 'Save Invoice',
+            UTI: 'com.adobe.pdf',
+          });
+          Alert.alert(
+            'Invoice Ready',
+            'Invoice has been generated. Use the share menu to save it to your Downloads folder.',
+            [{ text: 'OK' }]
+          );
+          return;
+        }
+        throw new Error('No directory available and sharing not available');
+      }
+      
+      const destinationUri = cacheDir + filename;
+      
+      // Copy the PDF to the cache directory
+      await FileSystem.copyAsync({
+        from: uri,
+        to: destinationUri,
+      });
+      
+      console.log('📄 Invoice saved to:', destinationUri);
+      
+      // Automatically open share dialog so user can save to Downloads or share
+      // On Android, users can select "Save to Downloads" from the share menu
+      // On iOS, users can save to Files app
+      // This allows the file to be downloaded to the device's Downloads folder
+      try {
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(destinationUri, {
+            mimeType: 'application/pdf',
+            dialogTitle: Platform.OS === 'android' ? 'Save Invoice to Downloads' : 'Save Invoice',
+            UTI: 'com.adobe.pdf', // iOS UTI for PDF
+          });
+          
+          // Show success message after sharing
+          setTimeout(() => {
+            Alert.alert(
+              'Invoice Ready',
+              'Invoice has been generated. Use the share menu to save it to your Downloads folder or share it with others.',
+              [{ text: 'OK' }]
+            );
+          }, 500);
+        } else {
+          Alert.alert(
+            'Download Complete',
+            `Invoice has been saved.\n\nLocation: ${destinationUri}`,
+            [{ text: 'OK' }]
+          );
+        }
+      } catch (shareError) {
+        console.error('Error sharing invoice:', shareError);
+        Alert.alert(
+          'Invoice Saved',
+          `Invoice has been saved to the app directory.\n\nYou can access it from: ${destinationUri}`,
+          [{ text: 'OK' }]
+        );
       }
     } catch (error: any) {
       console.error('Error generating invoice:', error);
-      Alert.alert('Error', 'Failed to generate invoice. Please try again.');
+      Alert.alert('Error', `Failed to generate invoice: ${error.message || 'Please try again.'}`);
     } finally {
       setIsGenerating(false);
     }

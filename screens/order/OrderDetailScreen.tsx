@@ -210,6 +210,90 @@ const OrderDetailScreen = () => {
     backendPayment?.mode === 'online' || order?.paymentMethod === 'online' ? 'online'
       : backendPayment?.mode === 'offline' ? 'offline' : 'unknown';
 
+  // Helper function to format address object into string
+  const formatAddressString = (address: any): string => {
+    if (!address) return 'Store Pickup';
+    
+    // If it's already a string, return it
+    if (typeof address === 'string') return address;
+    
+    // If it's an object, format it
+    if (typeof address === 'object') {
+      const parts = [
+        address.line1,
+        address.line2,
+        address.city,
+        address.state,
+        address.pincode,
+        address.country,
+      ].filter(Boolean); // Remove empty/null/undefined values
+      
+      return parts.length > 0 ? parts.join(', ') : 'Store Pickup';
+    }
+    
+    return 'Store Pickup';
+  };
+
+  // Format shipping address - prioritize string from OrderConfirmation, then API object
+  const shippingAddress = order?.shippingAddress;
+  let formattedShippingAddress: string = 'Store Pickup';
+  
+  // Extract individual address fields for display
+  let addressLine1: string = '';
+  let addressCity: string = '';
+  let addressState: string = '';
+  let addressPincode: string = '';
+  let addressCountry: string = '';
+  
+  // Priority 1: If shippingAddress is already a string (from OrderConfirmation)
+  if (typeof shippingAddress === 'string' && shippingAddress.trim().length > 0) {
+    formattedShippingAddress = shippingAddress;
+    // Try to parse the string to extract fields (format: "Name, Line1, City, State - Pincode, Country")
+    const parts = shippingAddress.split(',');
+    if (parts.length >= 3) {
+      addressLine1 = parts[1]?.trim() || '';
+      addressCity = parts[2]?.trim() || '';
+      // State might be in format "State - Pincode"
+      const statePart = parts[3]?.trim() || '';
+      const statePincodeParts = statePart.split('-');
+      addressState = statePincodeParts[0]?.trim() || '';
+      addressPincode = statePincodeParts[1]?.trim() || '';
+      addressCountry = parts[4]?.trim() || '';
+    }
+  }
+  // Priority 2: If shippingAddress is an object with an address property (from API)
+  else if (shippingAddress && typeof shippingAddress === 'object' && shippingAddress.address) {
+    formattedShippingAddress = typeof shippingAddress.address === 'string' 
+      ? shippingAddress.address 
+      : formatAddressString(shippingAddress.address);
+    // Extract from object if available
+    if (shippingAddress.line1) addressLine1 = shippingAddress.line1;
+    if (shippingAddress.city) addressCity = shippingAddress.city;
+    if (shippingAddress.state) addressState = shippingAddress.state;
+    if (shippingAddress.pincode) addressPincode = shippingAddress.pincode;
+    if (shippingAddress.country) addressCountry = shippingAddress.country;
+  }
+  // Priority 3: If shippingAddress is an object without address property, format it
+  else if (shippingAddress && typeof shippingAddress === 'object') {
+    formattedShippingAddress = formatAddressString(shippingAddress);
+    // Extract individual fields from object
+    if (shippingAddress.line1) addressLine1 = shippingAddress.line1;
+    if (shippingAddress.city) addressCity = shippingAddress.city;
+    if (shippingAddress.state) addressState = shippingAddress.state;
+    if (shippingAddress.pincode) addressPincode = shippingAddress.pincode;
+    if (shippingAddress.country) addressCountry = shippingAddress.country;
+  }
+  
+  // Create comma-separated address string
+  const addressParts = [
+    addressLine1,
+    addressCity,
+    addressState,
+    addressPincode,
+    addressCountry,
+  ].filter(Boolean); // Remove empty values
+  const fullAddressString = addressParts.length > 0 ? addressParts.join(', ') : formattedShippingAddress;
+
   const orderData = {
     id: order?.orderNo || order?.orderNumber || order?.id || 'N/A',
     orderId: order?.orderId || order?.id,
@@ -245,7 +329,7 @@ const OrderDetailScreen = () => {
     paymentMode: normalizedPaymentMode === 'online' ? 'Online' : normalizedPaymentMode === 'offline' ? 'Offline' : 'Unknown',
     paymentStatus: normalizedPaymentStatus,
     orderType: order?.deliveryMethod === 'store' || order?.deliveryMethod === 'store_pickup' ? 'Store Pickup' : 'Home Delivery',
-    address: order?.shippingAddress?.address || order?.address || order?.shippingAddress || 'Store Pickup',
+    address: formattedShippingAddress || formatAddressString(order?.address) || 'Store Pickup',
     orderDate: order?.createdAt ? new Date(order.createdAt).toLocaleDateString() : order?.date ? new Date(order.date).toLocaleDateString() : order?.orderDate || new Date().toLocaleDateString(),
     status: order?.status || 'Processing',
   };
@@ -314,7 +398,7 @@ const OrderDetailScreen = () => {
       storeName: storeDetails?.name || order?.store?.name || 'Store', // Include store name
       storeId: order?.storeId || 'N/A', // Include store ID
       deliveryMethod: orderData.orderType || 'Home Delivery',
-      deliveryAddress: orderData.address || order?.shippingAddress?.address || 'Store Pickup',
+      deliveryAddress: orderData.address || order.shippingAddress?.address || 'Store Pickup',
     };
     
     console.log('📄 Navigating to InvoicePreview with data:', JSON.stringify(invoiceData, null, 2));
@@ -1100,13 +1184,33 @@ const OrderDetailScreen = () => {
               <Text style={[styles.deliveryText, { color: theme.colors.text }]}>{orderData.orderType}</Text>
             </View>
             
-            {(formattedStoreAddress || orderData.address) && (
-              <View style={styles.deliveryRow}>
-                <MaterialIcons name="location-on" size={20} color={theme.colors.secondary} />
-                <Text style={[styles.deliveryAddress, { color: theme.colors.text }]}>
-                  {formattedStoreAddress || orderData.address}
-                </Text>
-              </View>
+            {orderData.orderType === 'Home Delivery' ? (
+              <>
+                {fullAddressString && fullAddressString !== 'Store Pickup' ? (
+                  <View style={styles.deliveryRow}>
+                    <MaterialIcons name="location-on" size={20} color={theme.colors.secondary} />
+                    <Text style={[styles.deliveryAddress, { color: theme.colors.text }]}>
+                      {fullAddressString}
+                    </Text>
+                  </View>
+                ) : (formattedStoreAddress || orderData.address) && (
+                  <View style={styles.deliveryRow}>
+                    <MaterialIcons name="location-on" size={20} color={theme.colors.secondary} />
+                    <Text style={[styles.deliveryAddress, { color: theme.colors.text }]}>
+                      {formattedStoreAddress || orderData.address}
+                    </Text>
+                  </View>
+                )}
+              </>
+            ) : (
+              (formattedStoreAddress || orderData.address) && (
+                <View style={styles.deliveryRow}>
+                  <MaterialIcons name="location-on" size={20} color={theme.colors.secondary} />
+                  <Text style={[styles.deliveryAddress, { color: theme.colors.text }]}>
+                    {formattedStoreAddress || orderData.address}
+                  </Text>
+                </View>
+              )
             )}
           </View>
 
