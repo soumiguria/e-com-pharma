@@ -537,11 +537,17 @@ const OrderConfirmationScreen = () => {
           
           {/* Individual Items */}
           {orderDetails.items.map((item: any, index: number) => (
-            <View key={index} style={[styles.billRow, { marginLeft: 16, marginBottom: 4 }]}>
-              <Text style={[styles.billLabel, { fontSize: 14, color: theme.colors.secondary }]}>
-                {item.name} x{item.quantity}
-              </Text>
-              <Text style={[styles.billValue, { fontSize: 14 }]}>
+            <View key={index} style={[styles.billRow, { marginLeft: 16, marginBottom: 4, alignItems: 'flex-start' }]}>
+              <View style={{ flex: 1, marginRight: 12, justifyContent: 'center' }}>
+                <Text
+                  style={[styles.billLabel, { fontSize: 14, color: theme.colors.secondary }]}
+                  numberOfLines={2}
+                  ellipsizeMode="tail"
+                >
+                  {item.name} x{item.quantity}
+                </Text>
+              </View>
+              <Text style={[styles.billValue, { fontSize: 14, flexShrink: 0 }]}>
                 ₹{(item.price * item.quantity).toFixed(2)}
               </Text>
             </View>

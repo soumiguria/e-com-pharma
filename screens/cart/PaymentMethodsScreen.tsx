@@ -806,14 +806,14 @@ const PaymentMethodsScreen = () => {
         <ThemedButton 
           title={isReorder ? "Reorder Items" : "Place Order"} 
           onPress={handlePlaceOrder} 
-          style={{ marginTop: 24, marginBottom: 48 }} 
+          style={{ marginTop: 24, marginBottom: 80 }} 
         />
               </ScrollView>
       </SafeAreaView>
 
       <LoadingOverlay 
         visible={isLoading || isProcessingPayment} 
-        message={isProcessingPayment ? "Processing payment..." : (selectedPaymentMethod === 'online' ? "Opening Razorpay..." : "Placing order...")} 
+        message={isProcessingPayment ? "Placing Order..." : (selectedPaymentMethod === 'online' ? "Opening Razorpay..." : "Placing order...")} 
       />
 
       {/* Pay Now / Payment Successful Modal */}

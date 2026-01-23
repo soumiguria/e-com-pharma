@@ -288,6 +288,10 @@ const ProductDetailScreen = () => {
     
     addToCorrectCart(itemToAdd);
   };
+  
+  const percentOff = product.originalPrice && product.originalPrice > product.price
+  ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+  : 0;
 
   const styles = StyleSheet.create({
     container: {
@@ -523,8 +527,8 @@ const ProductDetailScreen = () => {
             <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.colors.primary }}>₹{getValidPrice().toFixed(2)}</Text>
             {getValidPrice() > 0 && (
               <>
-                <Text style={{ fontSize: 15, color: '#888', textDecorationLine: 'line-through', marginLeft: 10 }}>₹{(getValidPrice() * 1.15).toFixed(2)}</Text>
-                <Text style={{ fontSize: 14, color: '#27ae60', fontWeight: 'bold', marginLeft: 10 }}>15% OFF</Text>
+                <Text style={{ fontSize: 15, color: '#888', textDecorationLine: 'line-through', marginLeft: 10 }}>₹{product.originalPrice.toFixed(2)}</Text>
+                <Text style={{ fontSize: 14, color: '#27ae60', fontWeight: 'bold', marginLeft: 10 }}>{percentOff}% OFF</Text>
               </>
             )}
           </View>
@@ -692,7 +696,7 @@ const ProductDetailScreen = () => {
       </ScrollView>
       {/* Fixed Bottom Bar with Add to Cart +1/-1 counter for selected variant */}
       // add margin botton of 48 after the button
-      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', elevation: 12, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12, marginBottom: 48 }}>
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', elevation: 12, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12 }}>
         {selectedVariant ? (
           getCartQuantity(originalProductId, selectedVariant.id) > 0 ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 6, borderWidth: 1.5, borderColor: '#27ae60', height: 40, minWidth: 100, paddingHorizontal: 8 }}>

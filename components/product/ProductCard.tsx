@@ -239,7 +239,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
       </View>
       <View style={[styles.infoContainer, compact && styles.compactInfoContainer]}>
         <Text style={[styles.name, compact && styles.compactName, { color: theme.colors.text }]} numberOfLines={2}>{product.name}</Text>
-        <PriceBlock price={product.price} originalPrice={displayOriginalPrice} perUnit={product.perUnit || '₹33.4/100 g'} />
+        <PriceBlock price={product.price} originalPrice={displayOriginalPrice} perUnit={product.perUnit || ''} />
       </View>
     </TouchableOpacity>
   );
