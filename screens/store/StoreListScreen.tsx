@@ -416,7 +416,7 @@ const StoreListScreen = () => {
   const { theme, section } = useTheme();
   const { colors, typography, spacing, borderRadius } = theme;
   const { pincode, latitude, longitude, address } = route.params;
-  const [activeTab, setActiveTab] = useState<'grocery' | 'pharma'>(section === 'pharma' ? 'pharma' : 'grocery');
+  const [activeTab, setActiveTab] = useState<'grocery' | 'pharma'>('pharma');
   const { setSelectedStore, saveLastVisitedStore } = useAppContext();
   const { isAuthenticated } = useAuth();
 
@@ -736,11 +736,11 @@ const StoreListScreen = () => {
 
             {/* Tabs */}
             <View style={styles.tabContainer}>
-              <TouchableOpacity style={[styles.tab, activeTab === 'grocery' && styles.activeTab]} onPress={() => setActiveTab('grocery')}>
-                <Text style={[styles.tabText, activeTab === 'grocery' && styles.activeTabText]}>Grocery Stores</Text>
-            </TouchableOpacity>
               <TouchableOpacity style={[styles.tab, activeTab === 'pharma' && styles.activeTab]} onPress={() => setActiveTab('pharma')}>
                 <Text style={[styles.tabText, activeTab === 'pharma' && styles.activeTabText]}>Pharmacy Stores</Text>
+            </TouchableOpacity>
+              <TouchableOpacity style={[styles.tab, activeTab === 'grocery' && styles.activeTab]} onPress={() => setActiveTab('grocery')}>
+                <Text style={[styles.tabText, activeTab === 'grocery' && styles.activeTabText]}>Grocery Stores</Text>
             </TouchableOpacity>
           </View>
           

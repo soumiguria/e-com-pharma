@@ -8,7 +8,6 @@ import {
   Alert,
   Image,
   Platform,
-  Linking,
   RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -174,49 +173,6 @@ const UploadPrescriptionScreen = () => {
     }
   };
 
-  const handleCallPharmacist = async () => {
-    try {
-      if (!storeId) {
-        Alert.alert('Store Info', 'Store information not available');
-        return;
-      }
-
-      // Fetch store details to get phone number
-      const storeService = require('../../services/api/storeService').default;
-      const response = await storeService.getStoreDetailsById(storeId);
-      
-      if (response.success && response.data) {
-        const storeData = (response.data as any).data || response.data;
-        const phoneNumber = storeData.mobile || storeData.phone;
-        
-        if (phoneNumber) {
-          Alert.alert(
-            'Call Pharmacist',
-            `Call ${storeData.name || 'store'} at ${phoneNumber}?`,
-            [
-              { text: 'Cancel', style: 'cancel' },
-              { 
-                text: 'Call', 
-                onPress: () => {
-                  Linking.openURL(`tel:${phoneNumber}`).catch(err => {
-                    console.error('Error opening phone dialer:', err);
-                    Alert.alert('Error', 'Unable to open phone dialer');
-                  });
-                }
-              }
-            ]
-          );
-        } else {
-          Alert.alert('Contact Info', 'Store phone number not available');
-        }
-      } else {
-        Alert.alert('Error', 'Failed to fetch store details');
-      }
-    } catch (error) {
-      console.error('Error calling pharmacist:', error);
-      Alert.alert('Error', 'Failed to initiate call');
-    }
-  };
 
   // No voice handlers here
 
@@ -530,13 +486,6 @@ const UploadPrescriptionScreen = () => {
           <TouchableOpacity style={themedStyles.actionButton} onPress={handleChooseFromDocuments}>
             <MaterialIcons name="insert-drive-file" size={32} color={theme.colors.primary} />
             <Text style={themedStyles.actionButtonText}>Documents (PDF/Image)</Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={themedStyles.actionButtonsContainer}>
-          <TouchableOpacity style={themedStyles.actionButton} onPress={handleCallPharmacist}>
-            <MaterialIcons name="phone" size={32} color={theme.colors.primary} />
-            <Text style={themedStyles.actionButtonText}>Call Pharmacist</Text>
           </TouchableOpacity>
         </View>
 

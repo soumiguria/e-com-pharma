@@ -85,7 +85,7 @@ const CategoryDetailScreen = () => {
   const route = useRoute<RouteProp<RootStackParamList, 'CategoryDetail'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { theme, section } = useTheme();
-  const { addToGroceryCart, addToPharmacyCart, removeFromCart } = useCart();
+  const { addToGroceryCart, addToPharmacyCart, removeFromCart, updateQuantity, groceryItems, pharmacyItems } = useCart();
   const { selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore } = useAppContext();
   const { category } = route.params;
   
@@ -219,8 +219,12 @@ const CategoryDetailScreen = () => {
     // { key: 'DietPref', label: 'Diet Prefe..' },
   ];
 
-  // Add state for product quantities
-  const [productQuantities, setProductQuantities] = useState<{ [productId: string]: number }>({});
+  // Get cart quantity for a product
+  const getCartQuantity = (productId: string): number => {
+    const cartItems = isPharma ? pharmacyItems : groceryItems;
+    const existing = cartItems.find(item => item.id === productId);
+    return existing?.quantity || 0;
+  };
 
   const selectedSubCategory = Array.isArray(subCategories) 
     ? subCategories.find((sc: SubCategory) => sc.id === selectedSubCategoryId)
@@ -448,33 +452,36 @@ const CategoryDetailScreen = () => {
                       {product.availableQty ? `In stock: ${product.availableQty}` : 'Available'}
                     </Text>
                     <View style={styles.addRowList}>
-                      {productQuantities[product.id] > 0 ? (
+                      {getCartQuantity(product.id) > 0 ? (
                         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 6, borderWidth: 1.5, borderColor: '#27ae60', height: 28, minWidth: 70, paddingHorizontal: 4, margin: 0 }}>
                           <TouchableOpacity onPress={() => {
-                            setProductQuantities(q => {
-                              const newQty = Math.max(0, (q[product.id] || 1) - 1);
-                              if (newQty === 0) {
-                                removeFromCart(product.id, 'grocery');
-                                // Remove the product from state
-                                const { [product.id]: _, ...rest } = q;
-                                return rest;
-                              }
-                              return { ...q, [product.id]: newQty };
-                            });
+                            const currentQty = getCartQuantity(product.id);
+                            const newQty = Math.max(0, currentQty - 1);
+                            const category = isPharma ? 'pharma' : 'grocery';
+                            updateQuantity(product.id, newQty, category);
                           }} style={{ width: 28, height: 28, justifyContent: 'center', alignItems: 'center' }}>
                             <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>-</Text>
                           </TouchableOpacity>
-                          <Text style={{ width: 24, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 16 }}>{productQuantities[product.id]}</Text>
+                          <Text style={{ width: 24, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 16 }}>{getCartQuantity(product.id)}</Text>
                           <TouchableOpacity 
                             onPress={() => {
-                              const currentQty = productQuantities[product.id] || 0;
+                              const currentQty = getCartQuantity(product.id);
                               const availableQty = getValidQuantity(product);
+                              const category = isPharma ? 'pharma' : 'grocery';
+                              
                               if (currentQty < availableQty) {
-                                setProductQuantities(q => {
-                                  const newQty = currentQty + 1;
-                                  addToGroceryCart({ id: product.id, name: product.name, price: product.price, image: product.image });
-                                  return { ...q, [product.id]: newQty };
-                                });
+                                const cartItems = isPharma ? pharmacyItems : groceryItems;
+                                const existing = cartItems.find(item => item.id === product.id);
+                                
+                                if (existing) {
+                                  updateQuantity(product.id, currentQty + 1, category);
+                                } else {
+                                  if (isPharma) {
+                                    addToPharmacyCart({ id: product.id, name: product.name, price: product.price, image: product.image, productId: (product as any).productId || product.id });
+                                  } else {
+                                    addToGroceryCart({ id: product.id, name: product.name, price: product.price, image: product.image, productId: (product as any).productId || product.id });
+                                  }
+                                }
                               }
                             }} 
                             style={{ 
@@ -482,9 +489,9 @@ const CategoryDetailScreen = () => {
                               height: 28, 
                               justifyContent: 'center', 
                               alignItems: 'center',
-                              opacity: (productQuantities[product.id] || 0) < getValidQuantity(product) ? 1 : 0.5
+                              opacity: getCartQuantity(product.id) < getValidQuantity(product) ? 1 : 0.5
                             }}
-                            disabled={(productQuantities[product.id] || 0) >= getValidQuantity(product)}
+                            disabled={getCartQuantity(product.id) >= getValidQuantity(product)}
                           >
                             <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>+</Text>
                           </TouchableOpacity>
@@ -501,8 +508,12 @@ const CategoryDetailScreen = () => {
                           ]}
                           onPress={() => {
                             if (!canAddToCart(product)) return;
-                            setProductQuantities(q => ({ ...q, [product.id]: 1 }));
-                            addToGroceryCart({ id: product.id, name: product.name, price: product.price, image: product.image });
+                            const category = isPharma ? 'pharma' : 'grocery';
+                            if (isPharma) {
+                              addToPharmacyCart({ id: product.id, name: product.name, price: product.price, image: product.image, productId: (product as any).productId || product.id });
+                            } else {
+                              addToGroceryCart({ id: product.id, name: product.name, price: product.price, image: product.image, productId: (product as any).productId || product.id });
+                            }
                           }}
                           disabled={!canAddToCart(product)}
                         >
