@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
+import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useCart } from '../../contexts/CartContext';
@@ -175,6 +175,14 @@ const OrderConfirmationScreen = () => {
     ]).start();
   }, []); // Remove clearCart from dependencies to prevent infinite loop
 
+  // Reset button state when screen comes into focus
+  useFocusEffect(
+    useCallback(() => {
+      // Reset button pressed state when screen is focused
+      setButtonPressed(null);
+    }, [])
+  );
+
   const handleContinueShopping = () => {
     console.log('Continue Shopping pressed');
     setButtonPressed('continue');
@@ -195,10 +203,13 @@ const OrderConfirmationScreen = () => {
             }
           }],
         });
+        // Reset button state after navigation
+        setTimeout(() => setButtonPressed(null), 300);
       } catch (error) {
         console.error('Error navigating to Main:', error);
         // Fallback navigation
         navigation.navigate('Main' as any);
+        setButtonPressed(null);
       }
     }, 200);
   };
@@ -219,9 +230,12 @@ const OrderConfirmationScreen = () => {
           paymentStatus: paymentData ? 'paid' : 'pending'
         };
         navigation.navigate('OrderDetail', { order: orderData });
+        // Reset button state after navigation
+        setTimeout(() => setButtonPressed(null), 300);
       } catch (error) {
         console.error('Error navigating to OrderDetail:', error);
         Alert.alert('Error', 'Unable to view order details. Please try again.');
+        setButtonPressed(null);
       }
     }, 200);
   };

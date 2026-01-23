@@ -583,7 +583,7 @@ const UploadPrescriptionScreen = () => {
         {/* Upload Button */}
         {selectedFile && (
           <TouchableOpacity 
-            style={[themedStyles.uploadButton, isUploading && themedStyles.uploadButtonDisabled]} 
+            style={[themedStyles.uploadButton, isUploading && themedStyles.uploadButton]} 
             onPress={handleUpload}
             disabled={isUploading}
           >
