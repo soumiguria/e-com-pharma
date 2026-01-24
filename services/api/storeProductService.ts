@@ -4,7 +4,8 @@ import { ApiResponse, Product, ExtendedProduct, Category, SubCategory } from './
 import { API_CONFIG, buildApiUrl, isApiEnabled } from './config';
 
 // Helpers to normalize backend shapes to UI-friendly shapes
-const PLACEHOLDER_IMAGE = 'https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?auto=compress&cs=tinysrgb&w=800';
+// Removed placeholder image - use empty string or null instead
+const PLACEHOLDER_IMAGE = '';
 
 // Helper function to build full image URL from relative path
 const buildImageUrl = (imagePath: string | undefined | null): string => {

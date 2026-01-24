@@ -221,7 +221,7 @@ const SearchScreen = () => {
       id: actualProductId, // Use the actual productId from API
       name: product.name,
       price: parseFloat(product.sp || product.mrp || '0'),
-      image: product.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
+      image: product.image || '',
       category: selectedStore?.type || 'grocery',
       description: product.description || '',
       productId: actualProductId, // Use the same ID for consistency
@@ -229,7 +229,7 @@ const SearchScreen = () => {
       brand: product.brand || '',
       availableQty: product.quantity || 0,
       variants: product.variants || [],
-      images: product.images || [product.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center'],
+      images: product.images || [product.image || ''],
       originalPrice: parseFloat(product.mrp || '0'),
       // API specific fields
       _id: product._id,
@@ -619,7 +619,7 @@ const SearchScreen = () => {
                             <Text style={styles.sectionTitle}>Categories</Text>
                             {searchResults.categories.map((category: any, index: number) => {
                               console.log(`🔍 Rendering category ${index}:`, JSON.stringify(category, null, 2));
-                              const categoryImage = category.signedImage || category.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center';
+                              const categoryImage = category.signedImage || category.image || '';
                               
                               return (
                                 <TouchableOpacity
@@ -646,7 +646,7 @@ const SearchScreen = () => {
                             <Text style={styles.sectionTitle}>Subcategories</Text>
                             {searchResults.subcategories.map((subcategory: any, index: number) => {
                               console.log(`🔍 Rendering subcategory ${index}:`, JSON.stringify(subcategory, null, 2));
-                              const subcategoryImage = subcategory.signedImage || subcategory.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center';
+                              const subcategoryImage = subcategory.signedImage || subcategory.image || '';
                               
                               return (
                                 <TouchableOpacity
@@ -677,7 +677,7 @@ const SearchScreen = () => {
                                 const productImage = product.signedImage || product.image || 
                                   (Array.isArray(product.signedImages) && product.signedImages.length > 0 ? product.signedImages[0] : undefined) ||
                                   (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : undefined) ||
-                                  'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center';
+                                  '';
                                 
                                 return (
                                   <TouchableOpacity

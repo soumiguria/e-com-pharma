@@ -314,7 +314,7 @@ const OrderDetailScreen = () => {
         originalPrice: Number(it.mrp ?? it.original_price ?? 0),
         quantity: quantity, // Qty
         amount: amount, // Amount = Rate × Qty
-        image: it.images?.primary || it.signedImages?.primary || it.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center',
+        image: it.images?.primary || it.signedImages?.primary || it.image || '',
         // Additional fields if available
         variant: it.variant,
         packing: it.packing || it.variant?.unit || '',
@@ -1152,9 +1152,8 @@ const OrderDetailScreen = () => {
             {orderData.items.map((item: any, index: number) => (
               <View key={item.id || index} style={styles.itemRow}>
                 <Image
-                  source={{ uri: item.image || 'https://via.placeholder.com/60' }}
+                  source={{ uri: item.image || '' }}
                   style={styles.itemImage}
-                  defaultSource={{ uri: 'https://via.placeholder.com/60' }}
                 />
                 
                 <View style={styles.itemDetails}>

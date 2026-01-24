@@ -413,16 +413,26 @@ interface Store {
 const StoreListScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<StoreListRouteProp>();
-  const { theme, section } = useTheme();
+  const { theme, section, setSection } = useTheme();
   const { colors, typography, spacing, borderRadius } = theme;
   const { pincode, latitude, longitude, address } = route.params;
-  const [activeTab, setActiveTab] = useState<'grocery' | 'pharma'>('pharma');
+  const [activeTab, setActiveTab] = useState<'grocery' | 'pharma'>(
+    route.params?.storeType ?? section
+  );
   const { setSelectedStore, saveLastVisitedStore } = useAppContext();
   const { isAuthenticated } = useAuth();
 
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  // Keep StoreList tab in sync with navbar selection / route param
+  useEffect(() => {
+    const desiredTab: 'grocery' | 'pharma' = route.params?.storeType ?? section;
+    if (desiredTab !== activeTab) {
+      setActiveTab(desiredTab);
+    }
+  }, [route.params?.storeType, section, activeTab]);
 
   const handleStoreSelect = (store: Store) => {
     // Ensure store has proper type based on activeTab
@@ -436,6 +446,13 @@ const StoreListScreen = () => {
     // Always save as last visited store (both grocery and pharmacy separately)
     console.log('💾 Saving store as last visited in StoreListScreen:', storeWithType);
     saveLastVisitedStore(storeWithType);
+    
+    // Set section based on store type to ensure correct categories are shown
+    if (storeWithType.type === 'pharma') {
+      setSection('pharma');
+    } else if (storeWithType.type === 'grocery') {
+      setSection('grocery');
+    }
     
     navigation.navigate('Main', {
       screen: 'Home',
@@ -736,10 +753,24 @@ const StoreListScreen = () => {
 
             {/* Tabs */}
             <View style={styles.tabContainer}>
-              <TouchableOpacity style={[styles.tab, activeTab === 'pharma' && styles.activeTab]} onPress={() => setActiveTab('pharma')}>
+            <TouchableOpacity
+              style={[styles.tab, activeTab === 'pharma' && styles.activeTab]}
+              onPress={() => {
+                setActiveTab('pharma');
+                setSection('pharma');
+                navigation.setParams({ storeType: 'pharma' } as any);
+              }}
+            >
                 <Text style={[styles.tabText, activeTab === 'pharma' && styles.activeTabText]}>Pharmacy Stores</Text>
             </TouchableOpacity>
-              <TouchableOpacity style={[styles.tab, activeTab === 'grocery' && styles.activeTab]} onPress={() => setActiveTab('grocery')}>
+              <TouchableOpacity
+                style={[styles.tab, activeTab === 'grocery' && styles.activeTab]}
+                onPress={() => {
+                  setActiveTab('grocery');
+                  setSection('grocery');
+                  navigation.setParams({ storeType: 'grocery' } as any);
+                }}
+              >
                 <Text style={[styles.tabText, activeTab === 'grocery' && styles.activeTabText]}>Grocery Stores</Text>
             </TouchableOpacity>
           </View>

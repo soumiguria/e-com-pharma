@@ -59,12 +59,21 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   const [cart, setCart] = useState<CartItem[]>([]);
   const [user, setUser] = useState<User | null>(null);
 
-  // Load last visited store on app start and set it as selected store
+  // Load last visited store on app start - prioritize pharmacy store
   useEffect(() => {
     const initializeStore = async () => {
+      // Always prioritize pharmacy store on app start
+      const pharmacyStore = await loadLastVisitedPharmacyStore();
+      if (pharmacyStore && !selectedStore) {
+        console.log('🔄 Auto-setting pharmacy store as selected store (default):', pharmacyStore);
+        setSelectedStore(pharmacyStore);
+        return;
+      }
+      
+      // Fallback to general last visited store only if no pharmacy store
       const lastStore = await loadLastVisitedStore();
-      if (lastStore && !selectedStore) {
-        console.log('🔄 Auto-setting last visited store as selected store:', lastStore);
+      if (lastStore && !selectedStore && lastStore.type === 'pharma') {
+        console.log('🔄 Auto-setting last visited pharmacy store as selected store:', lastStore);
         setSelectedStore(lastStore);
       }
     };
@@ -158,18 +167,20 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   }, []);
 
   // Automatically set selectedStore from last visited stores when they are loaded and selectedStore is null
+  // Priority: pharmacy store first (default), then general store if pharmacy, never grocery on initial load
   useEffect(() => {
     if (!selectedStore) {
-      // Priority: lastVisitedStore > lastVisitedGroceryStore > lastVisitedPharmacyStore
-      if (lastVisitedStore) {
-        console.log('🔄 Auto-setting lastVisitedStore as selectedStore:', lastVisitedStore);
+      // Priority: lastVisitedPharmacyStore > lastVisitedStore (if pharma) > lastVisitedGroceryStore
+      if (lastVisitedPharmacyStore) {
+        console.log('🔄 Auto-setting lastVisitedPharmacyStore as selectedStore (default):', lastVisitedPharmacyStore);
+        setSelectedStore(lastVisitedPharmacyStore);
+      } else if (lastVisitedStore && lastVisitedStore.type === 'pharma') {
+        console.log('🔄 Auto-setting lastVisitedStore (pharma) as selectedStore:', lastVisitedStore);
         setSelectedStore(lastVisitedStore);
       } else if (lastVisitedGroceryStore) {
-        console.log('🔄 Auto-setting lastVisitedGroceryStore as selectedStore:', lastVisitedGroceryStore);
+        // Only use grocery as last resort
+        console.log('🔄 Auto-setting lastVisitedGroceryStore as selectedStore (fallback):', lastVisitedGroceryStore);
         setSelectedStore(lastVisitedGroceryStore);
-      } else if (lastVisitedPharmacyStore) {
-        console.log('🔄 Auto-setting lastVisitedPharmacyStore as selectedStore:', lastVisitedPharmacyStore);
-        setSelectedStore(lastVisitedPharmacyStore);
       }
     }
   }, [selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore, setSelectedStore]);

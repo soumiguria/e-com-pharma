@@ -188,7 +188,7 @@ const SearchResults = ({ results, onProductPress, activeTab, themedStyles }: { r
 };
 
 const HomeScreen = () => {
-  const { theme, setSection } = useTheme();
+  const { theme, section, setSection } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<HomeRouteProp>();
   const { addToGroceryCart } = useCart();
@@ -207,47 +207,42 @@ const HomeScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
 
   // Get the effective store to use (selectedStore or fallback to last visited stores)
-  const effectiveStore = selectedStore || lastVisitedStore || lastVisitedGroceryStore || lastVisitedPharmacyStore;
+  // Prioritize pharmacy store in fallback to match AppContext startup logic
+  const effectiveStore = selectedStore || lastVisitedPharmacyStore || (lastVisitedStore?.type === 'pharma' ? lastVisitedStore : null) || lastVisitedStore || lastVisitedGroceryStore;
 
-  // Determine if current store is pharmacy or grocery
+  // Determine if current store is pharmacy or grocery - default to pharma
   const isPharmacyStore = effectiveStore?.type === 'pharma';
-  const currentSection = isPharmacyStore ? 'pharma' : 'grocery';
+  const currentSection = isPharmacyStore ? 'pharma' : (effectiveStore?.type === 'grocery' ? 'grocery' : 'pharma'); // Default to pharma
 
-  // Set section based on store type
+  // Set section based on store type - default to pharma if no store
   useEffect(() => {
     if (effectiveStore) {
       setSection(currentSection);
+    } else {
+      // No store selected - default to pharma
+      setSection('pharma');
     }
   }, [effectiveStore, currentSection, setSection]);
 
-  // Adopt last visited store on mount if no selectedStore
+  // Adopt last visited store on mount if no selectedStore - prioritize pharmacy
   useEffect(() => {
     if (!selectedStore) {
-      // Try to set from lastVisitedStore first
-      if (lastVisitedStore) {
-        console.log('🔄 Setting lastVisitedStore as selectedStore:', lastVisitedStore);
-      setSelectedStore(lastVisitedStore);
-    }
-      // If no lastVisitedStore, try grocery or pharmacy based on current section
-      else if (lastVisitedGroceryStore && currentSection === 'grocery') {
-        console.log('🔄 Setting lastVisitedGroceryStore as selectedStore:', lastVisitedGroceryStore);
-        setSelectedStore(lastVisitedGroceryStore);
-      } 
-      else if (lastVisitedPharmacyStore && currentSection === 'pharma') {
-        console.log('🔄 Setting lastVisitedPharmacyStore as selectedStore:', lastVisitedPharmacyStore);
+      // Priority: pharmacy store first (default), then general store if pharmacy type
+      if (lastVisitedPharmacyStore) {
+        console.log('🔄 Setting lastVisitedPharmacyStore as selectedStore (default):', lastVisitedPharmacyStore);
         setSelectedStore(lastVisitedPharmacyStore);
-      }
-      // Fallback: use any available last visited store
-      else if (lastVisitedGroceryStore) {
+      } else if (lastVisitedStore && lastVisitedStore.type === 'pharma') {
+        console.log('🔄 Setting lastVisitedStore (pharma) as selectedStore:', lastVisitedStore);
+        setSelectedStore(lastVisitedStore);
+      } else if (lastVisitedStore) {
+        console.log('🔄 Setting lastVisitedStore as selectedStore:', lastVisitedStore);
+        setSelectedStore(lastVisitedStore);
+      } else if (lastVisitedGroceryStore) {
         console.log('🔄 Setting lastVisitedGroceryStore as selectedStore (fallback):', lastVisitedGroceryStore);
         setSelectedStore(lastVisitedGroceryStore);
-      } 
-      else if (lastVisitedPharmacyStore) {
-        console.log('🔄 Setting lastVisitedPharmacyStore as selectedStore (fallback):', lastVisitedPharmacyStore);
-        setSelectedStore(lastVisitedPharmacyStore);
       }
     }
-  }, [selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore, setSelectedStore, currentSection]);
+  }, [selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore, setSelectedStore]);
 
   // Deep link handling is now done in DeepLinkHandler component
   // HomeScreen just uses the selectedStore from AppContext
@@ -654,7 +649,7 @@ const HomeScreen = () => {
                 paddingVertical: 12, 
                 borderRadius: 8 
               }}
-              onPress={() => navigation.navigate('StoreList' as any)}
+              onPress={() => navigation.navigate('StoreList' as any, { storeType: section })}
             >
               <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
                 Browse Stores

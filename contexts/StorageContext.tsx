@@ -41,17 +41,33 @@ export const StorageProvider: React.FC<{ children: ReactNode }> = ({ children })
   useEffect(() => {
     const loadData = async () => {
       try {
-        const storeData = await AsyncStorage.getItem('selectedStore');
-        const cartData = await AsyncStorage.getItem('cart');
+        // Clear app state on every startup to ensure fresh restart
+        console.log('🔄 App restarting - clearing previous state');
+        
+        // Load only essential data, clear store selection to force fresh start
         const userData = await AsyncStorage.getItem('user');
         const sectionData = await AsyncStorage.getItem('appSection');
 
-        if (storeData) setSelectedStore(JSON.parse(storeData));
-        if (cartData) setCart(JSON.parse(cartData));
+        // Don't load selectedStore on startup - let app initialize fresh
+        // if (storeData) setSelectedStore(JSON.parse(storeData));
+        // Don't load cart on startup - start fresh
+        // if (cartData) setCart(JSON.parse(cartData));
+        
         if (userData) setUser(JSON.parse(userData));
-        if (sectionData) setAppSection(sectionData);
+        
+        // Default to pharmacy section regardless of saved section to ensure clean start
+        // if (sectionData) {
+        //   setAppSection(sectionData);
+        // } else {
+          // Set default to pharmacy
+          console.log('🔄 Setting default app section to pharma');
+          setAppSection('pharma');
+          await AsyncStorage.setItem('appSection', 'pharma');
+        // }
       } catch (error) {
         console.error('Error loading data from AsyncStorage:', error);
+        // Set default to pharmacy on error
+        setAppSection('pharma');
       }
     };
 

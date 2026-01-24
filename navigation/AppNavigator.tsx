@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { BackHandler, Platform } from 'react-native';
+import { useNavigationState } from '@react-navigation/native';
 import { RootStackParamList } from './types';
 import SplashScreen from '../screens/auth/SplashScreen';
 import PincodeScreen from '../screens/location/PincodeScreen';
@@ -51,6 +53,46 @@ import OrderSummaryScreen from '../screens/order/OrderSummaryScreen';
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 const AppNavigator = () => {
+  // Handle back button to exit app when on home/main screen
+  const navigationState = useNavigationState(state => state);
+  
+  useEffect(() => {
+    const backHandler = BackHandler.addEventListener('hardwareBackPress', () => {
+      // Get the current route and check nested routes
+      const getCurrentRouteName = (navState: any): string | null => {
+        if (!navState || !navState.routes || navState.routes.length === 0) return null;
+        const route = navState.routes[navState.index ?? navState.routes.length - 1];
+        
+        // Check if route has nested state (like Main -> Home)
+        if (route.state && route.state.routes) {
+          const nestedRoute = route.state.routes[route.state.index ?? route.state.routes.length - 1];
+          // Check if nested route has further nesting (like Home -> HomeRoot)
+          if (nestedRoute.state && nestedRoute.state.routes) {
+            const deepRoute = nestedRoute.state.routes[nestedRoute.state.index ?? nestedRoute.state.routes.length - 1];
+            return deepRoute.name;
+          }
+          return nestedRoute.name;
+        }
+        return route.name;
+      };
+      
+      const currentRouteName = getCurrentRouteName(navigationState);
+      
+      // If we're on Main/Home screen, exit the app
+      if (currentRouteName === 'Main' || currentRouteName === 'Home' || currentRouteName === 'HomeRoot') {
+        if (Platform.OS === 'android') {
+          BackHandler.exitApp();
+        }
+        return true; // Prevent default back action
+      }
+      
+      // Otherwise, let navigation handle it
+      return false;
+    });
+
+    return () => backHandler.remove();
+  }, [navigationState]);
+
   return (
     <Stack.Navigator
       screenOptions={{

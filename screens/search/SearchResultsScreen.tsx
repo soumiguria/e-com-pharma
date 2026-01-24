@@ -131,7 +131,7 @@ const SearchResultsScreen = () => {
     const productImage = product.signedImage || product.image || 
       (Array.isArray(product.signedImages) && product.signedImages.length > 0 ? product.signedImages[0] : undefined) ||
       (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : undefined) ||
-      'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center';
+      '';
     
     const transformedProduct = {
       id: product._id,
@@ -370,7 +370,7 @@ const SearchResultsScreen = () => {
                 <>
                   <Text style={styles.sectionTitle}>Categories</Text>
                   {searchResults.categories.map((category: Category) => {
-                    const categoryImage = category.signedImage || category.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center';
+                    const categoryImage = category.signedImage || category.image || '';
                     
                     return (
                       <TouchableOpacity
@@ -396,7 +396,7 @@ const SearchResultsScreen = () => {
                 <>
                   <Text style={styles.sectionTitle}>Subcategories</Text>
                   {searchResults.subcategories.map((subcategory: Subcategory) => {
-                    const subcategoryImage = subcategory.signedImage || subcategory.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center';
+                    const subcategoryImage = subcategory.signedImage || subcategory.image || '';
                     
                     return (
                       <TouchableOpacity
@@ -426,7 +426,7 @@ const SearchResultsScreen = () => {
                       const productImage = product.signedImage || product.image || 
                         (Array.isArray(product.signedImages) && product.signedImages.length > 0 ? product.signedImages[0] : undefined) ||
                         (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : undefined) ||
-                        'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center';
+                        '';
                       
                       return (
                         <TouchableOpacity

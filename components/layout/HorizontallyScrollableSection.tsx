@@ -8,34 +8,34 @@ import { RootStackParamList } from '../../navigation/types';
 import { useAppContext } from '../../contexts/AppContext';
 import { storeProductService } from '../../services/api/storeProductService';
 
-// Fallback data for grocery
+// Fallback data for grocery (not used - API data is used instead)
 const groceryRecentlyBoughtItems = [
-    { id: '1', name: 'Fresh Organic Apples', price: 3.99, image: 'https://images.pexels.com/photos/102104/pexels-photo-102104.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-    { id: '2', name: 'Organic Carrots', price: 1.29, image: 'https://images.pexels.com/photos/143133/pexels-photo-143133.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-    { id: '3', name: 'Whole Wheat Bread', price: 2.49, image: 'https://images.pexels.com/photos/1775043/pexels-photo-1775043.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-    { id: '4', name: 'Free-Range Eggs', price: 4.99, image: 'https://images.pexels.com/photos/162712/egg-white-food-protein-162712.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    { id: '1', name: 'Fresh Organic Apples', price: 3.99, image: '' },
+    { id: '2', name: 'Organic Carrots', price: 1.29, image: '' },
+    { id: '3', name: 'Whole Wheat Bread', price: 2.49, image: '' },
+    { id: '4', name: 'Free-Range Eggs', price: 4.99, image: '' },
 ];
 
 const groceryGrandOffersItems = [
-    { id: '1', name: 'Family Snack Pack', price: 9.99, image: 'https://images.pexels.com/photos/212936/pexels-photo-212936.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-    { id: '2', name: 'Breakfast Essentials Combo', price: 15.99, image: 'https://images.pexels.com/photos/2641886/pexels-photo-2641886.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-    { id: '3', name: 'Organic Veggie Box', price: 22.49, image: 'https://images.pexels.com/photos/2255935/pexels-photo-2255935.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-    { id: '4', name: 'Gourmet Cheese Platter', price: 18.99, image: 'https://images.pexels.com/photos/1482803/pexels-photo-1482803.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    { id: '1', name: 'Family Snack Pack', price: 9.99, image: '' },
+    { id: '2', name: 'Breakfast Essentials Combo', price: 15.99, image: '' },
+    { id: '3', name: 'Organic Veggie Box', price: 22.49, image: '' },
+    { id: '4', name: 'Gourmet Cheese Platter', price: 18.99, image: '' },
 ];
 
-// Fallback data for pharmacy
+// Fallback data for pharmacy (not used - API data is used instead)
 const pharmacyRecentlyBoughtItems = [
-    { id: '1', name: 'Ibuprofen 400mg', price: 5.99, image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-    { id: '2', name: 'Vitamin C Tablets', price: 8.99, image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-    { id: '3', name: 'Cold Syrup', price: 12.49, image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-    { id: '4', name: 'Blood Pressure Monitor', price: 45.99, image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    { id: '1', name: 'Ibuprofen 400mg', price: 5.99, image: '' },
+    { id: '2', name: 'Vitamin C Tablets', price: 8.99, image: '' },
+    { id: '3', name: 'Cold Syrup', price: 12.49, image: '' },
+    { id: '4', name: 'Blood Pressure Monitor', price: 45.99, image: '' },
 ];
 
 const pharmacyGrandOffersItems = [
-    { id: '1', name: 'First Aid Kit', price: 25.99, image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-    { id: '2', name: 'Health Supplements Pack', price: 35.99, image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-    { id: '3', name: 'Diabetes Care Kit', price: 42.49, image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
-    { id: '4', name: 'Heart Health Supplements', price: 28.99, image: 'https://images.pexels.com/photos/3376790/pexels-photo-3376790.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1' },
+    { id: '1', name: 'First Aid Kit', price: 25.99, image: '' },
+    { id: '2', name: 'Health Supplements Pack', price: 35.99, image: '' },
+    { id: '3', name: 'Diabetes Care Kit', price: 42.49, image: '' },
+    { id: '4', name: 'Heart Health Supplements', price: 28.99, image: '' },
 ];
 
 interface Item {

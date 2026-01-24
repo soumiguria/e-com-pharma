@@ -62,8 +62,8 @@ const OrderConfirmationScreen = () => {
     orderId,
     totalAmount,
     items: [
-      { id: '1', name: 'Sample Product 1', price: 200, quantity: 2, image: 'https://via.placeholder.com/50' },
-      { id: '2', name: 'Sample Product 2', price: 150, quantity: 1, image: 'https://via.placeholder.com/50' },
+      { id: '1', name: 'Sample Product 1', price: 200, quantity: 2, image: '' },
+      { id: '2', name: 'Sample Product 2', price: 150, quantity: 1, image: '' },
     ],
     shippingAddress: '123 Main St, City, State - 12345',
     deliveryMethod: 'Home Delivery',

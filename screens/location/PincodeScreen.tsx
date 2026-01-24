@@ -21,7 +21,7 @@ interface LocationData {
 
 const PincodeScreen = () => {
   const navigation = useNavigation<NavigationProp>();
-  const { theme } = useTheme();
+  const { theme, section } = useTheme();
   const { colors, typography, spacing, borderRadius } = theme;
   const [pincode, setPincode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -93,7 +93,8 @@ const PincodeScreen = () => {
       navigation.navigate('StoreList' as any, { 
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
-        address: currentLocation.address || 'Current Location'
+        address: currentLocation.address || 'Current Location',
+        storeType: section,
       });
     }
   };
@@ -104,7 +105,8 @@ const PincodeScreen = () => {
       navigation.navigate('StoreList' as any, { 
         latitude: currentLocation.latitude,
         longitude: currentLocation.longitude,
-        address: currentLocation.address || 'Current Location'
+        address: currentLocation.address || 'Current Location',
+        storeType: section,
       });
       setIsLoading(false);
     }
@@ -120,7 +122,8 @@ const PincodeScreen = () => {
           navigation.navigate('StoreList' as any, { 
             latitude: geocodeResult.latitude,
             longitude: geocodeResult.longitude,
-            address: geocodeResult.formattedAddress
+            address: geocodeResult.formattedAddress,
+            storeType: section,
           });
         } else {
           // Fallback to expo location
@@ -129,7 +132,8 @@ const PincodeScreen = () => {
             navigation.navigate('StoreList' as any, { 
               latitude: coordinates.latitude,
               longitude: coordinates.longitude,
-              address: `Pincode: ${pincode}`
+              address: `Pincode: ${pincode}`,
+              storeType: section,
             });
           } else {
             Alert.alert('Error', 'Could not find location for this pincode');

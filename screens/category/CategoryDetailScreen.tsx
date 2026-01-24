@@ -339,8 +339,8 @@ const CategoryDetailScreen = () => {
     setFavProducts(favs => favs.includes(productId) ? favs.filter(id => id !== productId) : [...favs, productId]);
   };
 
-  // Add a placeholder image for subcategories if not present
-  const SUBCATEGORY_PLACEHOLDER_IMAGE = 'https://cdn-icons-png.flaticon.com/512/3081/3081559.png';
+  // No placeholder image - use empty string if image not present
+  const SUBCATEGORY_PLACEHOLDER_IMAGE = '';
 
   // --- UI ---
   return (

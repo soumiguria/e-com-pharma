@@ -215,7 +215,7 @@ const CategoriesScreen = () => {
     >
       <Image 
         source={{ 
-          uri: item.signedImage || item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center' 
+          uri: item.signedImage || item.image || '' 
         }} 
         style={styles.image} 
       />
@@ -372,7 +372,7 @@ const styles = StyleSheet.create({
   },
   name: {
     textAlign: 'center',
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '500',
     marginTop: 4,
     width: '100%',

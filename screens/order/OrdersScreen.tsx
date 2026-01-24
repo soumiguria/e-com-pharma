@@ -496,13 +496,38 @@ const OrdersScreen = () => {
           <Card key={order.id} style={[styles.orderCard, { backgroundColor: theme.colors.surface }]}>
             <TouchableOpacity onPress={() => handleOrderPress(order)}>
               <View style={styles.cardContent}>
-                {/* Item Images and Status Row */}
+                {/* Status Row - Moved to top */}
+                {order.status === 'pending' && (
+                  <View style={styles.statusRowTop}>
+                    <View
+                      style={[
+                        styles.statusChip,
+                        {
+                          backgroundColor: getStatusColor(order.status) + '22',
+                          borderWidth: 1.5,
+                          borderColor: getStatusColor(order.status),
+                          paddingHorizontal: 14,
+                          paddingVertical: 8,
+                          borderRadius: 18,
+                          alignSelf: 'flex-start',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        },
+                      ]}
+                    >
+                      <Text style={{ color: getStatusColor(order.status), fontSize: 13, fontWeight: '700' }}>
+                        {getStatusText(order.status)}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+                {/* Item Images Row */}
                 <View style={styles.orderTopRow}>
                   <View style={styles.itemImagesContainer}>
                     {order.items.slice(0, 3).map((item, index) => (
                       <Image
                         key={index}
-                        source={{ uri: item.image || 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=150&h=150&fit=crop&crop=center' }}
+                        source={{ uri: item.image || '' }}
                         style={styles.itemImage}
                       />
                     ))}
@@ -512,26 +537,28 @@ const OrdersScreen = () => {
                       </View>
                     )}
                   </View>
-                  <View
-                    style={[
-                      styles.statusChip,
-                      {
-                        backgroundColor: getStatusColor(order.status) + '22',
-                        borderWidth: 1.5,
-                        borderColor: getStatusColor(order.status),
-                        paddingHorizontal: 14,
-                        paddingVertical: 8,
-                        borderRadius: 18,
-                        alignSelf: 'flex-start',
-                        justifyContent: 'center',
-                        alignItems: 'center',
-                      },
-                    ]}
-                  >
-                    <Text style={{ color: getStatusColor(order.status), fontSize: 13, fontWeight: '700' }}>
-                      {getStatusText(order.status)}
-                    </Text>
-                  </View>
+                  {order.status !== 'pending' && (
+                    <View
+                      style={[
+                        styles.statusChip,
+                        {
+                          backgroundColor: getStatusColor(order.status) + '22',
+                          borderWidth: 1.5,
+                          borderColor: getStatusColor(order.status),
+                          paddingHorizontal: 14,
+                          paddingVertical: 8,
+                          borderRadius: 18,
+                          alignSelf: 'flex-start',
+                          justifyContent: 'center',
+                          alignItems: 'center',
+                        },
+                      ]}
+                    >
+                      <Text style={{ color: getStatusColor(order.status), fontSize: 13, fontWeight: '700' }}>
+                        {getStatusText(order.status)}
+                      </Text>
+                    </View>
+                  )}
                 </View>
 
                 {/* Order Details */}
@@ -700,6 +727,10 @@ const OrdersScreen = () => {
     cardContent: {
       paddingVertical: 24,
       paddingHorizontal: 20,
+    },
+    statusRowTop: {
+      marginBottom: 12,
+      alignItems: 'flex-start',
     },
     orderTopRow: {
       flexDirection: 'row',

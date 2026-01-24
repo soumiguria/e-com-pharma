@@ -947,7 +947,7 @@ type LocationPickerScreenNavigationProp = StackNavigationProp<RootStackParamList
 const { width, height } = Dimensions.get('window');
 
 const LocationPickerScreen = () => {
-  const { theme } = useTheme();
+  const { theme, section } = useTheme();
   const navigation = useNavigation<LocationPickerScreenNavigationProp>();
   const route = useRoute();
   const insets = useSafeAreaInsets();
@@ -1152,7 +1152,8 @@ const LocationPickerScreen = () => {
       navigation.navigate('StoreList' as any, {
         latitude: selectedLocation.latitude,
         longitude: selectedLocation.longitude,
-        address: selectedLocation.address
+        address: selectedLocation.address,
+        storeType: section,
       });
     }
   };

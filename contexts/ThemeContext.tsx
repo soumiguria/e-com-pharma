@@ -71,7 +71,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     <ThemeContext.Provider value={{ 
       theme, 
       themeMode,
-      section: (appSection || 'grocery') as AppSection,
+      section: (appSection || 'pharma') as AppSection,
       setThemeMode,
       toggleTheme, 
       setSection: setAppSection 

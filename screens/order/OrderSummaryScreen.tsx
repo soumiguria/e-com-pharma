@@ -169,7 +169,7 @@ const OrderSummaryScreen = () => {
             originalPrice: Number(item.mrp || item.originalPrice || price),
             quantity: quantity, // Qty
             amount: amount, // Amount = Rate × Qty
-            image: item.productImage || item.image || item.images?.primary || 'https://via.placeholder.com/150',
+            image: item.productImage || item.image || item.images?.primary || '',
             // Additional fields if available
             variant: item.variant,
             packing: item.packing || item.variant?.unit || '',
@@ -496,9 +496,8 @@ const OrderSummaryScreen = () => {
           {orderSummary.items.map((item, index) => (
             <View key={item.id || index} style={styles.itemRow}>
               <Image
-                source={{ uri: item.image || 'https://via.placeholder.com/60' }}
+                source={{ uri: item.image || '' }}
                 style={styles.itemImage}
-                defaultSource={{ uri: 'https://via.placeholder.com/60' }}
               />
               
               <View style={styles.itemDetails}>

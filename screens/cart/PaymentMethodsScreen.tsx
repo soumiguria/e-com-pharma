@@ -358,7 +358,7 @@ const PaymentMethodsScreen = () => {
               name: item.name,
               price: item.price,
               quantity: item.quantity,
-              image: 'https://images.unsplash.com/photo-1560472354-b33ff0c44a43?w=200&h=200&fit=crop&crop=center'
+              image: ''
             })),
             itemTotal: currentItemTotal,
             deliveryFee: 0,
