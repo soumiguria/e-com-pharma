@@ -40,7 +40,7 @@ export type RootStackParamList = {
   };
   Profile: undefined;
   Orders: undefined;
-  OrderDetail: { order: any };
+  OrderDetail: { order: any; scrollToBottom?: boolean; highlightReorder?: boolean };
   OrderSummary: { orderData: any };
   PaymentMethods: { 
     selectedAddress?: any;

@@ -560,6 +560,7 @@ const SearchScreen = () => {
                 onSubmit={handleSearchSubmit}
                 placeholder="Search for products, brands..."
                 value={searchQuery}
+                autoFocus
               />
             </View>
           </View>

@@ -394,6 +394,14 @@ const OrdersScreen = () => {
     navigation.navigate('OrderDetail', { order: order });
   };
 
+  const handleReorderPress = (order: Order) => {
+    navigation.navigate('OrderDetail', {
+      order,
+      scrollToBottom: true,
+      highlightReorder: true,
+    });
+  };
+
   const handlePayNow = (order: Order) => {
     if (order.status === 'pending' && order.paymentMethod === 'online') {
       // Navigate to payment screen
@@ -605,7 +613,7 @@ const OrdersScreen = () => {
                 <View style={styles.actionButtonsContainer}>
                   <TouchableOpacity
                     style={[styles.actionButton, styles.reorderButton, { borderColor: theme.colors.primary }]}
-                    onPress={() => handleOrderPress(order)}
+                    onPress={() => handleReorderPress(order)}
                   >
                     <Text style={[styles.actionButtonText, { color: theme.colors.primary }]}>Re-order</Text>
                   </TouchableOpacity>

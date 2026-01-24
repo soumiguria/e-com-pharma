@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   ScrollView,
   Alert,
   Linking,
+  Animated,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -31,6 +32,12 @@ const OrderDetailScreen = () => {
   const params = route.params as any;
   const passedOrder = params?.order;
   const passedOrderId = params?.orderId as string | undefined;
+  const scrollToBottom = params?.scrollToBottom === true;
+  const highlightReorder = params?.highlightReorder === true;
+
+  const scrollViewRef = useRef<any>(null);
+  const reorderPulse = useRef(new Animated.Value(0)).current;
+  const [isReorderHighlighted, setIsReorderHighlighted] = useState(false);
   const [loading, setLoading] = useState<boolean>(true);
   const [apiOrder, setApiOrder] = useState<any>(null);
   const [storeDetails, setStoreDetails] = useState<any>(null);
@@ -96,6 +103,35 @@ const OrderDetailScreen = () => {
 
     fetchOrderData();
   }, [passedOrderId, passedOrder?.orderId, passedOrder?.id]);
+
+  // If user tapped "Re-order" from Orders list, scroll to bottom + highlight Reorder CTA
+  useEffect(() => {
+    if (!scrollToBottom && !highlightReorder) return;
+    if (loading) return;
+
+    if (scrollToBottom) {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          scrollViewRef.current?.scrollToEnd?.({ animated: true });
+        }, 200);
+      });
+    }
+
+    if (highlightReorder) {
+      setIsReorderHighlighted(true);
+      reorderPulse.setValue(0);
+      Animated.sequence([
+        Animated.timing(reorderPulse, { toValue: 1, duration: 220, useNativeDriver: true }),
+        Animated.timing(reorderPulse, { toValue: 0, duration: 220, useNativeDriver: true }),
+        Animated.timing(reorderPulse, { toValue: 1, duration: 220, useNativeDriver: true }),
+        Animated.timing(reorderPulse, { toValue: 0, duration: 220, useNativeDriver: true }),
+      ]).start(() => {
+        setIsReorderHighlighted(false);
+      });
+    }
+
+    navigation.setParams({ scrollToBottom: undefined, highlightReorder: undefined } as any);
+  }, [scrollToBottom, highlightReorder, loading, navigation, reorderPulse]);
 
   // Fetch store details for store address display
   useEffect(() => {
@@ -1112,7 +1148,7 @@ const OrderDetailScreen = () => {
           </TouchableOpacity>
         </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView ref={scrollViewRef} style={styles.content} showsVerticalScrollIndicator={false}>
           {/* Order Info */}
           <View style={[styles.orderInfoCard, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.orderInfoRow}>
@@ -1352,13 +1388,41 @@ const OrderDetailScreen = () => {
                 <MaterialCommunityIcons name="phone" size={20} color="#fff" />
                 <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', marginLeft: 8 }}>Call Store</Text>
               </TouchableOpacity>
-              <TouchableOpacity
-                onPress={handleReorder}
-                style={styles.helpButton}
+              <Animated.View
+                style={{
+                  flex: 1,
+                  marginHorizontal: 4,
+                  transform: [
+                    {
+                      scale: reorderPulse.interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [1, 1.06],
+                      }),
+                    },
+                  ],
+                }}
               >
-                <MaterialCommunityIcons name="refresh" size={20} color="#fff" />
-                <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', marginLeft: 8 }}>Reorder</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={handleReorder}
+                  style={[
+                    styles.helpButton,
+                    isReorderHighlighted
+                      ? {
+                          borderWidth: 2,
+                          borderColor: '#FFD700',
+                          shadowColor: '#FFD700',
+                          shadowOpacity: 0.35,
+                          shadowRadius: 10,
+                          shadowOffset: { width: 0, height: 0 },
+                          elevation: 10,
+                        }
+                      : null,
+                  ]}
+                >
+                  <MaterialCommunityIcons name="refresh" size={20} color="#fff" />
+                  <Text style={{ color: '#fff', fontSize: 14, fontWeight: '600', marginLeft: 8 }}>Reorder</Text>
+                </TouchableOpacity>
+              </Animated.View>
             </View>
           </View>
         </ScrollView>

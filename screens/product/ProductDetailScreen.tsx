@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  Image, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  Image,
   TouchableOpacity,
   Dimensions,
   Platform,
@@ -59,7 +59,7 @@ const ProductDetailScreen = () => {
   const fadeAnim = new Animated.Value(0);
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const [detailsExpanded, setDetailsExpanded] = useState(false);
-  
+
   // Helper to ensure image URLs are full URLs (in case they're relative paths)
   const ensureFullImageUrl = (imgPath: string | undefined | null): string => {
     if (!imgPath) return 'https://images.pexels.com/photos/461382/pexels-photo-461382.jpeg';
@@ -70,19 +70,19 @@ const ProductDetailScreen = () => {
     }
     return imgPath;
   };
-  
+
   // Ensure initial product has full image URLs
   const initialProduct = {
     ...extendedProduct,
     image: extendedProduct.image ? ensureFullImageUrl(extendedProduct.image) : undefined,
     images: extendedProduct.images ? extendedProduct.images.map(ensureFullImageUrl) : undefined,
   };
-  
+
   const [productDetails, setProductDetails] = useState<any>(initialProduct);
-  
+
   // Use original product ID for cart operations (consistent with ProductCard)
   const originalProductId = extendedProduct.id;
-  
+
   // Debug product IDs
   console.log('🔍 ProductDetailScreen IDs:', {
     originalProductId: originalProductId,
@@ -104,7 +104,7 @@ const ProductDetailScreen = () => {
       try {
         setLoading(true);
         console.log(`🔄 Fetching ${section} product details:`, { storeId: selectedStore.id, productId: extendedProduct.id });
-        
+
         if (section === 'pharma') {
           const response = await storeProductService.getPharmaProductDetails(selectedStore.id, extendedProduct.id);
           if (response.success && response.data) {
@@ -137,12 +137,12 @@ const ProductDetailScreen = () => {
   let images = productDetails.images && productDetails.images.length > 0
     ? productDetails.images.map(ensureFullImageUrl)
     : productDetails.image ? [ensureFullImageUrl(productDetails.image)] : [];
-  
+
   // If no images at all, use placeholder
   if (images.length === 0) {
     images = ['https://images.pexels.com/photos/461382/pexels-photo-461382.jpeg'];
   }
-  
+
   // If only one image, add dummy images for demo (but keep the real one first)
   if (images.length === 1) {
     images = [
@@ -219,11 +219,11 @@ const ProductDetailScreen = () => {
   // Variants - check if API provides variants, otherwise use empty array
   const variants: ProductVariant[] = productDetails.variants && Array.isArray(productDetails.variants) && productDetails.variants.length > 0
     ? productDetails.variants.map((v: any, idx: number) => ({
-        id: v.id || v.variantId || String(idx),
-        name: v.name || v.packing || v.quantity || 'Default',
-        price: isValidPrice(v.price || v.sp) ? (typeof (v.price || v.sp) === 'string' ? parseFloat(v.price || v.sp) : (v.price || v.sp)) : 0,
-        stock: isValidQuantity(v.stock || v.availableQty || v.quantity) ? (typeof (v.stock || v.availableQty || v.quantity) === 'string' ? parseInt(String(v.stock || v.availableQty || v.quantity).trim(), 10) : (v.stock || v.availableQty || v.quantity)) : 0,
-      }))
+      id: v.id || v.variantId || String(idx),
+      name: v.name || v.packing || v.quantity || 'Default',
+      price: isValidPrice(v.price || v.sp) ? (typeof (v.price || v.sp) === 'string' ? parseFloat(v.price || v.sp) : (v.price || v.sp)) : 0,
+      stock: isValidQuantity(v.stock || v.availableQty || v.quantity) ? (typeof (v.stock || v.availableQty || v.quantity) === 'string' ? parseInt(String(v.stock || v.availableQty || v.quantity).trim(), 10) : (v.stock || v.availableQty || v.quantity)) : 0,
+    }))
     : [];
 
   // Set first variant as default when component loads (only if variants exist)
@@ -252,12 +252,12 @@ const ProductDetailScreen = () => {
     const cartItems = category === 'pharma' ? pharmacyItems : groceryItems;
     const cartItem = cartItems.find(item => item.id === itemId);
     const quantity = cartItem ? cartItem.quantity : 0;
-    console.log('🔍 getCartQuantity:', { 
-      productId, 
-      variantId, 
-      itemId, 
-      category, 
-      quantity, 
+    console.log('🔍 getCartQuantity:', {
+      productId,
+      variantId,
+      itemId,
+      category,
+      quantity,
       cartItems: cartItems.length,
       allCartItemIds: cartItems.map(item => item.id),
       foundItem: cartItem
@@ -285,13 +285,13 @@ const ProductDetailScreen = () => {
       productId: productDetails.productId || originalProductId,
       originalPrice: productDetails.originalPrice
     };
-    
+
     addToCorrectCart(itemToAdd);
   };
-  
+
   const percentOff = product.originalPrice && product.originalPrice > product.price
-  ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-  : 0;
+    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+    : 0;
 
   const styles = StyleSheet.create({
     container: {
@@ -527,9 +527,32 @@ const ProductDetailScreen = () => {
             <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.colors.primary }}>₹{getValidPrice().toFixed(2)}</Text>
             {getValidPrice() > 0 && (
               <>
-                <Text style={{ fontSize: 15, color: '#888', textDecorationLine: 'line-through', marginLeft: 10 }}>₹{product.originalPrice.toFixed(2)}</Text>
-                <Text style={{ fontSize: 14, color: '#27ae60', fontWeight: 'bold', marginLeft: 10 }}>{percentOff}% OFF</Text>
-              </>
+                {percentOff > 0 && (
+  <>
+    <Text
+      style={{
+        fontSize: 15,
+        color: '#888',
+        textDecorationLine: 'line-through',
+        marginLeft: 10,
+      }}
+    >
+      ₹{product.originalPrice.toFixed(2)}
+    </Text>
+
+    <Text
+      style={{
+        fontSize: 14,
+        color: '#27ae60',
+        fontWeight: 'bold',
+        marginLeft: 10,
+      }}
+    >
+      {percentOff}% OFF
+    </Text>
+  </>
+)}
+</>
             )}
           </View>
           {/* Available Quantity Section */}
@@ -570,91 +593,91 @@ const ProductDetailScreen = () => {
             {variants.map((variant, idx) => {
               const variantCanAdd = isValidPrice(variant.price) && isValidQuantity(variant.stock);
               return (
-            <TouchableOpacity
-              key={variant.id}
-              activeOpacity={0.85}
-              onPress={() => setSelectedVariant(variant)}
-              style={{
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                backgroundColor: selectedVariant?.id === variant.id ? '#E6FFF2' : (idx === 0 ? '#F7FFF7' : '#F7F7F7'),
-                borderRadius: 10,
-                padding: 12,
-                marginBottom: idx === variants.length - 1 ? 0 : 10,
-                borderWidth: selectedVariant?.id === variant.id ? 2 : (idx === 0 ? 1.5 : 1),
-                borderColor: selectedVariant?.id === variant.id ? theme.colors.primary : (idx === 0 ? '#27ae60' : '#eee'),
-                shadowColor: selectedVariant?.id === variant.id ? theme.colors.primary : (idx === 0 ? '#27ae60' : '#000'),
-                shadowOpacity: selectedVariant?.id === variant.id ? 0.12 : (idx === 0 ? 0.08 : 0.03),
-                shadowRadius: 4,
-              }}
-            >
-              <View style={{ flex: 1 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
-                  <Text style={{ fontSize: 15, fontWeight: 'bold', color: theme.colors.text }}>{variant.name}</Text>
-                  {idx === 0 && (
-                    <View style={{ backgroundColor: '#27ae60', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, marginLeft: 8 }}>
-                      <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>Best Seller</Text>
+                <TouchableOpacity
+                  key={variant.id}
+                  activeOpacity={0.85}
+                  onPress={() => setSelectedVariant(variant)}
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    backgroundColor: selectedVariant?.id === variant.id ? '#E6FFF2' : (idx === 0 ? '#F7FFF7' : '#F7F7F7'),
+                    borderRadius: 10,
+                    padding: 12,
+                    marginBottom: idx === variants.length - 1 ? 0 : 10,
+                    borderWidth: selectedVariant?.id === variant.id ? 2 : (idx === 0 ? 1.5 : 1),
+                    borderColor: selectedVariant?.id === variant.id ? theme.colors.primary : (idx === 0 ? '#27ae60' : '#eee'),
+                    shadowColor: selectedVariant?.id === variant.id ? theme.colors.primary : (idx === 0 ? '#27ae60' : '#000'),
+                    shadowOpacity: selectedVariant?.id === variant.id ? 0.12 : (idx === 0 ? 0.08 : 0.03),
+                    shadowRadius: 4,
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
+                      <Text style={{ fontSize: 15, fontWeight: 'bold', color: theme.colors.text }}>{variant.name}</Text>
+                      {idx === 0 && (
+                        <View style={{ backgroundColor: '#27ae60', borderRadius: 6, paddingHorizontal: 8, paddingVertical: 2, marginLeft: 8 }}>
+                          <Text style={{ color: '#fff', fontSize: 11, fontWeight: 'bold' }}>Best Seller</Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={{ fontSize: 15, color: theme.colors.primary, fontWeight: 'bold' }}>
+                      {isValidPrice(variant.price) ? `₹${variant.price.toFixed(2)}` : 'Price not available'}
+                    </Text>
+                  </View>
+                  {variantCanAdd ? (
+                    getCartQuantity(originalProductId, variant.id) > 0 ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, borderWidth: 1.5, borderColor: '#27ae60', height: 34, minWidth: 80, paddingHorizontal: 6, margin: 0, shadowColor: '#27ae60', shadowOpacity: 0.08, shadowRadius: 4 }}>
+                        <TouchableOpacity onPress={() => {
+                          const currentQty = getCartQuantity(originalProductId, variant.id);
+                          const newQty = Math.max(0, currentQty - 1);
+                          const itemId = `${originalProductId}-${variant.id}`;
+                          const category = productDetails.category || 'grocery';
+                          console.log('🛒 Variant decrement:', { itemId, currentQty, newQty, category });
+                          updateQuantity(itemId, newQty, category);
+                        }} style={{ width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}>
+                          <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>-</Text>
+                        </TouchableOpacity>
+                        <Text style={{ width: 28, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>{getCartQuantity(originalProductId, variant.id)}</Text>
+                        <TouchableOpacity onPress={() => {
+                          const itemId = `${originalProductId}-${variant.id}`;
+                          const category = productDetails.category || 'grocery';
+                          const items = category === 'pharma' ? pharmacyItems : groceryItems;
+                          const existing = items.find(item => item.id === itemId);
+
+                          if (existing) {
+                            updateQuantity(itemId, existing.quantity + 1, category);
+                          } else {
+                            addToCorrectCart({
+                              id: itemId,
+                              name: productDetails.name,
+                              price: variant.price,
+                              image: productDetails.image || '',
+                              variant: { name: variant.name, unit: variant.name.split(' ')[1]?.replace(/[()]/g, '') || '' },
+                              productId: productDetails.productId || originalProductId,
+                              originalPrice: productDetails.originalPrice
+                            });
+                          }
+                        }} style={{ width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}>
+                          <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>+</Text>
+                        </TouchableOpacity>
+                      </View>
+                    ) : null
+                  ) : (
+                    <View style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#fee', borderRadius: 6 }}>
+                      <Text style={{ fontSize: 12, color: '#dc3545', fontStyle: 'italic', fontWeight: '500' }}>Out of stock</Text>
                     </View>
                   )}
-                </View>
-                <Text style={{ fontSize: 15, color: theme.colors.primary, fontWeight: 'bold' }}>
-                  {isValidPrice(variant.price) ? `₹${variant.price.toFixed(2)}` : 'Price not available'}
-                </Text>
-              </View>
-              {variantCanAdd ? (
-                getCartQuantity(originalProductId, variant.id) > 0 ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, borderWidth: 1.5, borderColor: '#27ae60', height: 34, minWidth: 80, paddingHorizontal: 6, margin: 0, shadowColor: '#27ae60', shadowOpacity: 0.08, shadowRadius: 4 }}>
-                    <TouchableOpacity onPress={() => {
-                      const currentQty = getCartQuantity(originalProductId, variant.id);
-                      const newQty = Math.max(0, currentQty - 1);
-                      const itemId = `${originalProductId}-${variant.id}`;
-                      const category = productDetails.category || 'grocery';
-                      console.log('🛒 Variant decrement:', { itemId, currentQty, newQty, category });
-                      updateQuantity(itemId, newQty, category);
-                    }} style={{ width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}>
-                      <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>-</Text>
-                    </TouchableOpacity>
-                    <Text style={{ width: 28, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>{getCartQuantity(originalProductId, variant.id)}</Text>
-                    <TouchableOpacity onPress={() => {
-                      const itemId = `${originalProductId}-${variant.id}`;
-                      const category = productDetails.category || 'grocery';
-                      const items = category === 'pharma' ? pharmacyItems : groceryItems;
-                      const existing = items.find(item => item.id === itemId);
-                      
-                      if (existing) {
-                        updateQuantity(itemId, existing.quantity + 1, category);
-                      } else {
-                        addToCorrectCart({ 
-                          id: itemId, 
-                          name: productDetails.name, 
-                          price: variant.price, 
-                          image: productDetails.image || '', 
-                          variant: { name: variant.name, unit: variant.name.split(' ')[1]?.replace(/[()]/g, '') || '' },
-                          productId: productDetails.productId || originalProductId,
-                          originalPrice: productDetails.originalPrice
-                        });
-                      }
-                    }} style={{ width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}>
-                      <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>+</Text>
-                    </TouchableOpacity>
-                  </View>
-                ) : null
-              ) : (
-                <View style={{ paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#fee', borderRadius: 6 }}>
-                  <Text style={{ fontSize: 12, color: '#dc3545', fontStyle: 'italic', fontWeight: '500' }}>Out of stock</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+                </TouchableOpacity>
               );
             })}
           </View>
         )}
         {/* Similar Products Section */}
-        <View style={{ marginTop: 8, marginBottom: 24 }}>
-          <Text style={{ fontSize: 18, fontWeight: 'bold', marginLeft: 16, marginBottom: 8, color: theme.colors.text }}>Similar Products</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: 16, paddingRight: 16, paddingVertical: 4 }}>
-            {/* Fetch similar products from API or show placeholder */}
+        {/* <View style={{ marginTop: 8, marginBottom: 24 }}> */}
+        {/* <Text style={{ fontSize: 18, fontWeight: 'bold', marginLeft: 16, marginBottom: 8, color: theme.colors.text }}>Similar Products</Text> */}
+        {/* <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: 16, paddingRight: 16, paddingVertical: 4 }}> */}
+        {/* Fetch similar products from API or show placeholder
             {[1, 2, 3, 4, 5].map((item, idx) => (
               <TouchableOpacity
                 key={idx}
@@ -682,17 +705,17 @@ const ProductDetailScreen = () => {
                 }}
                 activeOpacity={0.88}
               >
-                <View style={{ width: 95, height: 110, borderRadius: 12, marginBottom: 12, backgroundColor: '#f7f7f7', justifyContent: 'center', alignItems: 'center' }}>
+                {/* <View style={{ width: 95, height: 110, borderRadius: 12, marginBottom: 12, backgroundColor: '#f7f7f7', justifyContent: 'center', alignItems: 'center' }}>
                   <MaterialIcons name="image" size={40} color="#ccc" />
-                </View>
-                <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, marginBottom: 6, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>
+                </View> */}
+        {/* <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, marginBottom: 6, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>
                   Similar Product {idx + 1}
-                </Text>
-                <Text style={{ fontSize: 16, color: theme.colors.primary, fontWeight: 'bold', textAlign: 'center', marginBottom: 4 }}>₹{getValidPrice().toFixed(2)}</Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+                </Text> */}
+        {/* <Text style={{ fontSize: 16, color: theme.colors.primary, fontWeight: 'bold', textAlign: 'center', marginBottom: 4 }}>₹{getValidPrice().toFixed(2)}</Text> */}
+        {/* </TouchableOpacity> */}
+        {/* ))} */}
+        {/* </ScrollView> */}
+        {/* </View> */}
       </ScrollView>
       {/* Fixed Bottom Bar with Add to Cart +1/-1 counter for selected variant */}
       // add margin botton of 48 after the button
@@ -718,15 +741,15 @@ const ProductDetailScreen = () => {
                 const category = productDetails.category || 'grocery';
                 const items = category === 'pharma' ? pharmacyItems : groceryItems;
                 const existing = items.find(item => item.id === itemId);
-                
+
                 if (existing) {
                   updateQuantity(itemId, existing.quantity + 1, category);
                 } else {
-                  addToCorrectCart({ 
-                    id: itemId, 
-                    name: productDetails.name, 
-                    price: selectedVariant.price, 
-                    image: productDetails.image || '', 
+                  addToCorrectCart({
+                    id: itemId,
+                    name: productDetails.name,
+                    price: selectedVariant.price,
+                    image: productDetails.image || '',
                     variant: { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1]?.replace(/[()]/g, '') || '' },
                     productId: productDetails.productId || originalProductId,
                     originalPrice: productDetails.originalPrice
@@ -738,11 +761,11 @@ const ProductDetailScreen = () => {
             </View>
           ) : (
             <TouchableOpacity
-              style={{ 
-                backgroundColor: canAddToCart() ? theme.colors.primary : '#dc3545', 
-                borderRadius: 8, 
-                paddingHorizontal: 40, 
-                paddingVertical: 12, 
+              style={{
+                backgroundColor: canAddToCart() ? theme.colors.primary : '#dc3545',
+                borderRadius: 8,
+                paddingHorizontal: 40,
+                paddingVertical: 12,
                 alignSelf: 'center',
                 opacity: canAddToCart() ? 1 : 1
               }}
@@ -750,12 +773,12 @@ const ProductDetailScreen = () => {
                 if (!selectedVariant && variants.length > 0) return;
                 if (!canAddToCart()) return;
                 const price = selectedVariant ? selectedVariant.price : getValidPrice();
-                addToCorrectCart({ 
-                  id: selectedVariant ? `${originalProductId}-${selectedVariant.id}` : originalProductId, 
-                  name: productDetails.name, 
-                  price: price, 
-                  image: productDetails.image || '', 
-                  variant: selectedVariant ? { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1]?.replace(/[()]/g, '') || '' } : undefined 
+                addToCorrectCart({
+                  id: selectedVariant ? `${originalProductId}-${selectedVariant.id}` : originalProductId,
+                  name: productDetails.name,
+                  price: price,
+                  image: productDetails.image || '',
+                  variant: selectedVariant ? { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1]?.replace(/[()]/g, '') || '' } : undefined
                 });
               }}
               disabled={!canAddToCart()}
@@ -784,14 +807,14 @@ const ProductDetailScreen = () => {
                 const category = productDetails.category || 'grocery';
                 const items = category === 'pharma' ? pharmacyItems : groceryItems;
                 const existing = items.find(item => item.id === originalProductId);
-                
+
                 if (existing) {
                   updateQuantity(originalProductId, existing.quantity + 1, category);
                 } else {
-                  addToCorrectCart({ 
-                    id: originalProductId, 
-                    name: productDetails.name, 
-                    price: price, 
+                  addToCorrectCart({
+                    id: originalProductId,
+                    name: productDetails.name,
+                    price: price,
                     image: productDetails.image || '',
                     productId: productDetails.productId || originalProductId,
                     originalPrice: productDetails.originalPrice
@@ -803,11 +826,11 @@ const ProductDetailScreen = () => {
             </View>
           ) : (
             <TouchableOpacity
-              style={{ 
-                backgroundColor: canAddToCart() ? theme.colors.primary : '#dc3545', 
-                borderRadius: 8, 
-                paddingHorizontal: 40, 
-                paddingVertical: 12, 
+              style={{
+                backgroundColor: canAddToCart() ? theme.colors.primary : '#dc3545',
+                borderRadius: 8,
+                paddingHorizontal: 40,
+                paddingVertical: 12,
                 alignSelf: 'center',
                 opacity: canAddToCart() ? 1 : 1
               }}
