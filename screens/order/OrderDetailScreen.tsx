@@ -1187,8 +1187,13 @@ const OrderDetailScreen = () => {
             
             {orderData.items.map((item: any, index: number) => (
               <View key={item.id || index} style={styles.itemRow}>
-                <Image
+                {/* <Image
                   source={{ uri: item.image || '' }}
+                  style={styles.itemImage}
+                /> */}
+                // take the image from the signedImage field if available, otherwise use the image field
+                <Image
+                  source={{ uri: item.signedImage || item.image || '' }}
                   style={styles.itemImage}
                 />
                 

@@ -176,7 +176,7 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
       items: [
         { icon: 'store-edit', label: 'Change Store', onPress: handleChangeStorePress },
         { icon: 'cog', label: 'Settings', onPress: handleSettingsPress },
-        { icon: 'bell', label: 'Notifications', onPress: handleNotificationsPress },
+        // { icon: 'bell', label: 'Notifications', onPress: handleNotificationsPress },
         { icon: 'logout', label: 'Logout', onPress: handleLogoutPress },
       ],
     },

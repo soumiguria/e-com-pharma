@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ThemedButton from '../../components/ui/ThemedButton';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -32,8 +32,15 @@ const HelpCenterScreen = () => {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <Text style={styles.title}>Help Center</Text>
-      <Text style={styles.helpText}>Need help? Contact us at support@example.com</Text>
-      <ThemedButton title="Contact Support" onPress={() => {}} />
+      <Text style={styles.helpText}>Need help? Contact us at support@passkidukaan.com</Text>
+      // modify the button to open email client
+      <ThemedButton title="Contact Support" onPress={() => {
+        const email = 'support@passkidukaan.com';
+        const subject = 'Support Request';
+        const body = 'Please describe your issue here.';
+        const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        Linking.openURL(mailtoUrl);
+      }} />
     </SafeAreaView>
   );
 };

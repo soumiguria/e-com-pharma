@@ -7,25 +7,6 @@ import { RootStackParamList } from '../../navigation/types';
 import { useAppContext } from '../../contexts/AppContext';
 import { storeProductService } from '../../services/api/storeProductService';
 
-// Fallback categories for grocery (not used - API data is used instead)
-
-
-// Fallback categories for pharmacy (not used - API data is used instead)
-const pharmacyCategories = [
-    { id: '1', name: 'Pain Relief', image: '' },
-    { id: '2', name: 'Cold & Flu', image: '' },
-    { id: '3', name: 'Fever & Headache', image: '' },
-    { id: '4', name: 'Digestive Health', image: '' },
-    { id: '5', name: 'Vitamins & Supplements', image: '' },
-    { id: '6', name: 'Diabetes Care', image: '' },
-    { id: '7', name: 'Heart Health', image: '' },
-    { id: '8', name: 'Skin Care', image: '' },
-    { id: '9', name: 'Oral Care', image: '' },
-    { id: '10', name: 'Hair Care', image: '' },
-    { id: '11', name: 'Baby Care', image: '' },
-    { id: '12', name: 'First Aid', image: '' },
-];
-
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const { width: screenWidth } = Dimensions.get('window');

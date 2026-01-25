@@ -786,6 +786,8 @@ const ProductDetailScreen = () => {
               <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
                 {canAddToCart() ? 'Add' : 'Out of Stock'}
               </Text>
+              // Add some space below the button
+              <View style={{ height: 80 }} />
             </TouchableOpacity>
           )
         ) : variants.length === 0 ? (

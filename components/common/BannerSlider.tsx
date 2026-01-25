@@ -18,26 +18,50 @@ type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 interface Banner {
   id: string;
   image: string;
-  link: string;
+  // link: string;
 }
 
 // Fallback banners data
+// I want to use different banner images for grocery store and pharmacy stores
 const fallbackBanners: Banner[] = [
   {
     id: '1',
     image: 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    link: 'banner1',
+    // link: 'banner1',
   },
   {
     id: '2',
     image: 'https://images.pexels.com/photos/376464/pexels-photo-376464.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    link: 'banner2',
+    // link: 'banner2',
   },
   {
     id: '3',
     image: 'https://images.pexels.com/photos/2983101/pexels-photo-2983101.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=1',
-    link: 'banner3',
+    // link: 'banner3',
   },
+];
+
+const fallbackPharmacyBanners: Banner[] = [
+  {
+    id: '1',
+    image: 'https://i.ibb.co/DHSpgQXh/file-00000000002471fa9e5bed97c53bd2ce.png',
+    // link: 'pharmacy_banner1',
+  },
+  {
+    id: '2',
+    image: 'https://i.ibb.co/0RkqZyJq/file-000000007a9871faa17809e455b6bf0f.png',
+    // link: 'pharmacy_banner2',
+  },
+  {
+    id: '3',
+    image: 'https://i.ibb.co/20JWjY0k/file-000000000df471fab228d900b1f3c2ae.png',
+    // link: 'pharmacy_banner3',
+  },
+  // {
+  //   id: '4',
+  //   image: 'https://i.ibb.co/LzyTrVH2/file-000000006b8c71faa38214040f9f9993.png',
+  //   // link: 'pharmacy_banner4',
+  // },
 ];
 
 const { width } = Dimensions.get('window');
@@ -110,7 +134,7 @@ const BannerSlider = () => {
   const renderItem = ({ item }: { item: Banner }) => (
     <TouchableOpacity
       style={styles.bannerContainer}
-      onPress={() => handleBannerPress(item.link)}
+      // onPress={() => handleBannerPress(item.link)}
       activeOpacity={0.9}
     >
       <Image source={{ uri: item.image }} style={styles.bannerImage} />
@@ -123,11 +147,39 @@ const BannerSlider = () => {
     setCurrentIndex(index);
   };
 
+  // return (
+  //   <View style={styles.container}>
+  //     <FlatList
+  //       ref={flatListRef}
+  //       data={banners}
+  //       renderItem={renderItem}
+  //       keyExtractor={(item) => item.id}
+  //       horizontal
+  //       pagingEnabled
+  //       showsHorizontalScrollIndicator={false}
+  //       onScroll={handleScroll}
+  //       scrollEventThrottle={16}
+  //     />
+  //     <View style={styles.paginationContainer}>
+  //       {banners.map((_, index) => (
+  //         <View
+  //           key={index}
+  //           style={[
+  //             styles.paginationDot,
+  //             index === currentIndex && styles.paginationDotActive,
+  //           ]}
+  //         />
+  //       ))}
+  //     </View>
+  //   </View>
+  // );
+
+  // See update the above return to show different banners for grocery and pharmacy stores
   return (
     <View style={styles.container}>
       <FlatList
         ref={flatListRef}
-        data={banners}
+        data={selectedStore?.type === 'pharma' ? fallbackPharmacyBanners : fallbackBanners}
         renderItem={renderItem}
         keyExtractor={(item) => item.id}
         horizontal
@@ -137,7 +189,7 @@ const BannerSlider = () => {
         scrollEventThrottle={16}
       />
       <View style={styles.paginationContainer}>
-        {banners.map((_, index) => (
+        {(selectedStore?.type === 'pharma' ? fallbackPharmacyBanners : fallbackBanners).map((_, index) => (
           <View
             key={index}
             style={[
