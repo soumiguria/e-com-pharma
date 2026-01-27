@@ -628,6 +628,7 @@ const ProductDetailScreen = () => {
                   {variantCanAdd ? (
                     getCartQuantity(originalProductId, variant.id) > 0 ? (
                       <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, borderWidth: 1.5, borderColor: '#27ae60', height: 34, minWidth: 80, paddingHorizontal: 6, margin: 0, shadowColor: '#27ae60', shadowOpacity: 0.08, shadowRadius: 4 }}>
+                        <>
                         <TouchableOpacity onPress={() => {
                           const currentQty = getCartQuantity(originalProductId, variant.id);
                           const newQty = Math.max(0, currentQty - 1);
@@ -638,7 +639,11 @@ const ProductDetailScreen = () => {
                         }} style={{ width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}>
                           <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>-</Text>
                         </TouchableOpacity>
+                        // Add some space below the button
+                        <View style={{ height: 120 }} />
+                        </>
                         <Text style={{ width: 28, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>{getCartQuantity(originalProductId, variant.id)}</Text>
+                        <>
                         <TouchableOpacity onPress={() => {
                           const itemId = `${originalProductId}-${variant.id}`;
                           const category = productDetails.category || 'grocery';
@@ -661,6 +666,9 @@ const ProductDetailScreen = () => {
                         }} style={{ width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}>
                           <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>+</Text>
                         </TouchableOpacity>
+                        // Add some space below the button
+                        <View style={{ height: 120 }} />
+                        </>
                       </View>
                     ) : null
                   ) : (
@@ -717,9 +725,8 @@ const ProductDetailScreen = () => {
         {/* </ScrollView> */}
         {/* </View> */}
       </ScrollView>
-      {/* Fixed Bottom Bar with Add to Cart +1/-1 counter for selected variant */}
-      // add margin botton of 48 after the button
-      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', elevation: 12, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12 }}>
+      {/* Fixed Bottom Bar with Add to Cart +1/-1 counter for selected variant (height 120) */}
+      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, height: 150, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', elevation: 12, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12 }}>
         {selectedVariant ? (
           getCartQuantity(originalProductId, selectedVariant.id) > 0 ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 6, borderWidth: 1.5, borderColor: '#27ae60', height: 40, minWidth: 100, paddingHorizontal: 8 }}>
@@ -789,12 +796,13 @@ const ProductDetailScreen = () => {
               </Text>
             </TouchableOpacity>
             // Add some space below the button
-              <View style={{ height: 80 }} />
+              <View style={{ height: 120 }} />
               </>
           )
         ) : variants.length === 0 ? (
           getCurrentCartQuantity() > 0 ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 6, borderWidth: 1.5, borderColor: '#27ae60', height: 40, minWidth: 100, paddingHorizontal: 8 }}>
+              <>
               <TouchableOpacity onPress={() => {
                 const currentQty = getCurrentCartQuantity();
                 const newQty = Math.max(0, currentQty - 1);
@@ -827,6 +835,9 @@ const ProductDetailScreen = () => {
               }} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
                 <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>+</Text>
               </TouchableOpacity>
+              // Add some space below the button
+              <View style={{ height: 120 }} />
+              </>
             </View>
           ) : (
             <>
@@ -850,7 +861,7 @@ const ProductDetailScreen = () => {
               </Text>
             </TouchableOpacity>
             // Add some space below the button
-              <View style={{ height: 80 }} />
+              <View style={{ height: 120 }} />
               </>
           )
         ) : (

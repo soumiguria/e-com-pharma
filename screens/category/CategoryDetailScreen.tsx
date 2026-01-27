@@ -125,7 +125,12 @@ const CategoryDetailScreen = () => {
         console.log('🔍 CategoryDetailScreen: Fetching subcategories for category:', category.id, 'section:', section);
         
         // Fetch subcategories for this specific category only - use current section (pharma or grocery)
-        const subcategoriesResponse = await storeService.getCategorySubcategories(category.id, section);
+        // NOTE: Backend expects categoryId in filters[categoryId] query param; pass storeId as well.
+        const subcategoriesResponse = await storeService.getCategorySubcategories(
+          category.id,
+          section as 'pharma' | 'grocery',
+          effectiveStore.id,
+        );
         console.log('🔍 CategoryDetailScreen: Subcategories response for category', category.id, ':', JSON.stringify(subcategoriesResponse, null, 2));
         
         if (subcategoriesResponse.success && subcategoriesResponse.data) {

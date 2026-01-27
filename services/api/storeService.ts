@@ -135,8 +135,23 @@ export class StoreService {
   }
 
   // Get subcategories for a specific category
-  async getCategorySubcategories(categoryId: string, type: 'pharma' | 'grocery' = 'pharma'): Promise<ApiResponse<any[]>> {
-    return apiClient.get(`/v1/store/${categoryId}/subcategory/${type}`);
+  // NOTE: Backend expects categoryId in filters[categoryId] query param, NOT as part of the store path segment.
+  async getCategorySubcategories(
+    categoryId: string,
+    type: 'pharma' | 'grocery' = 'pharma',
+    storeId?: string,
+  ): Promise<ApiResponse<any[]>> {
+    // When storeId is known, use the proper store path; otherwise fall back to generic
+    if (storeId) {
+      return apiClient.get(`/v1/store/${storeId}/subcategory/${type}`, {
+        'filters[categoryId]': categoryId,
+      });
+    }
+
+    // Fallback: hit type-specific subcategory endpoint with filters[categoryId]
+    return apiClient.get(`/v1/store/${type}/subcategory`, {
+      'filters[categoryId]': categoryId,
+    });
   }
 
   // Get stores with pagination

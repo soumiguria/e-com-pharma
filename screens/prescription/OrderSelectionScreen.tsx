@@ -34,6 +34,7 @@ interface Order {
   prescriptionUrl?: string;
   storeId?: string;
   storeName?: string;
+  type?: 'grocery' | 'pharma';
 }
 
 const OrderSelectionScreen = () => {
@@ -87,56 +88,65 @@ const OrderSelectionScreen = () => {
       // Fetch both grocery and pharmacy orders
       const [groceryResponse, pharmacyResponse] = await Promise.all([
         orderListService.getOrders('grocery'),
-        orderListService.getOrders('pharma')
+        orderListService.getOrders('pharma'),
       ]);
 
       const allOrders: Order[] = [];
       
       if (groceryResponse.success && groceryResponse.data) {
-        console.log('🛒 Grocery orders response:', groceryResponse.data);
-        allOrders.push(...groceryResponse.data.map((order: any) => {
-          console.log('🛒 Processing grocery order:', order);
-          return {
-            orderId: order.orderId || order.id,
-            orderNo: order.orderNo || order.orderNumber || `#${order.orderId}`,
-            status: normalizeStatus(order.status),
-            totalAmount: order.totalAmount || order.total || 0,
-            createdAt: order.createdAt || order.orderDate,
-            deliveryMethod: order.deliveryMethod || 'Home Delivery',
-            signedPresciptionUrl: order.signedPresciptionUrl,
-            signedPrescriptionUrl: order.signedPrescriptionUrl,
-            prescriptionUrl: order.prescriptionUrl,
-            storeId: order.storeId,
-            storeName: order.store?.name || order.storeName || 'Store',
-          };
-        }));
+        console.log('🛒 Grocery orders response (will be ignored for prescription selection):', groceryResponse.data);
+        allOrders.push(
+          ...groceryResponse.data.map((order: any) => {
+            console.log('🛒 Processing grocery order:', order);
+            return {
+              orderId: order.orderId || order.id,
+              orderNo: order.orderNo || order.orderNumber || `#${order.orderId}`,
+              status: normalizeStatus(order.status),
+              totalAmount: order.totalAmount || order.total || 0,
+              createdAt: order.createdAt || order.orderDate,
+              deliveryMethod: order.deliveryMethod || 'Home Delivery',
+              signedPresciptionUrl: order.signedPresciptionUrl,
+              signedPrescriptionUrl: order.signedPrescriptionUrl,
+              prescriptionUrl: order.prescriptionUrl,
+              storeId: order.storeId,
+              storeName: order.store?.name || order.storeName || 'Store',
+              type: order.type || 'grocery',
+            };
+          }),
+        );
       }
 
       if (pharmacyResponse.success && pharmacyResponse.data) {
         console.log('💊 Pharmacy orders response:', pharmacyResponse.data);
-        allOrders.push(...pharmacyResponse.data.map((order: any) => {
-          console.log('💊 Processing pharmacy order:', order);
-          return {
-            orderId: order.orderId || order.id,
-            orderNo: order.orderNo || order.orderNumber || `#${order.orderId}`,
-            status: normalizeStatus(order.status),
-            totalAmount: order.totalAmount || order.total || 0,
-            createdAt: order.createdAt || order.orderDate,
-            deliveryMethod: order.deliveryMethod || 'Home Delivery',
-            signedPresciptionUrl: order.signedPresciptionUrl,
-            signedPrescriptionUrl: order.signedPrescriptionUrl,
-            prescriptionUrl: order.prescriptionUrl,
-            storeId: order.storeId,
-            storeName: order.store?.name || order.storeName || 'Store',
-          };
-        }));
+        allOrders.push(
+          ...pharmacyResponse.data.map((order: any) => {
+            console.log('💊 Processing pharmacy order:', order);
+            return {
+              orderId: order.orderId || order.id,
+              orderNo: order.orderNo || order.orderNumber || `#${order.orderId}`,
+              status: normalizeStatus(order.status),
+              totalAmount: order.totalAmount || order.total || 0,
+              createdAt: order.createdAt || order.orderDate,
+              deliveryMethod: order.deliveryMethod || 'Home Delivery',
+              signedPresciptionUrl: order.signedPresciptionUrl,
+              signedPrescriptionUrl: order.signedPrescriptionUrl,
+              prescriptionUrl: order.prescriptionUrl,
+              storeId: order.storeId,
+              storeName: order.store?.name || order.storeName || 'Store',
+              type: order.type || 'pharma',
+            };
+          }),
+        );
       }
 
+      // Filter to only pharma orders for prescription upload
+      const pharmaOrdersOnly = allOrders.filter((o) => (o.type || '').toLowerCase() === 'pharma');
+
       // Sort by creation date (newest first)
-      allOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      pharmaOrdersOnly.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       
-      console.log('📋 Fetched orders:', allOrders.length);
-      setOrders(allOrders);
+      console.log('📋 Fetched pharma orders for prescription selection:', pharmaOrdersOnly.length);
+      setOrders(pharmaOrdersOnly);
     } catch (error) {
       console.error('❌ Error fetching orders:', error);
       Alert.alert('Error', 'Failed to fetch orders. Please try again.');

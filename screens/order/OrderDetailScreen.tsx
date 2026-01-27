@@ -341,7 +341,7 @@ const OrderDetailScreen = () => {
     items: (order?.orderItems || order?.items || order?.products || []).map((it: any) => {
       // Try multiple possible product ID fields from different API response structures
       const productId = it.productId || it.product_id || it.id || it._id || it.productERPId || it.productNumber || `product_${Math.random().toString(36).substr(2, 9)}`;
-      const name = it.name || it.productName || it.product_name || 'Product';
+      const name = it.fullName || it.name || it.productName || it.product_name || 'Product';
       const price = Number(it.actual ?? it.price ?? it.sp ?? it.selling_price ?? 0); // Rate
       const quantity = Number(it.quantity ?? 1); // Qty
       const amount = price * quantity; // Amount = Rate × Qty

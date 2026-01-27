@@ -121,7 +121,8 @@ const mapProduct = (raw: any, category: 'grocery' | 'pharma'): Product => {
   
   return {
     id: raw.productId || raw.id || String(Math.random()),
-    name: raw.name || raw.productName || 'Product',
+    // Prefer fullName (used by backend), then name/productName
+    name: raw.fullName || raw.name || raw.productName || 'Product',
     price: pickPrice(raw),
     originalPrice: (() => { const n = toNumber(raw.mrp); return n > 0 ? n : undefined; })(),
     image: finalImage,
