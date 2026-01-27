@@ -521,7 +521,7 @@ const ProductDetailScreen = () => {
         <View style={{ backgroundColor: '#fff', borderRadius: 18, marginHorizontal: 12, marginTop: 0, marginBottom: 18, padding: 18, elevation: 2, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, zIndex: 2 }}>
           <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.colors.text, marginBottom: 2 }}>{extendedProduct.name}</Text>
           {/* Show selected variant name dynamically */}
-          <Text style={{ fontSize: 15, color: theme.colors.secondary, marginBottom: 8 }}>{selectedVariant ? selectedVariant.name : (variants[0]?.name || '5 kg')}</Text>
+          <Text style={{ fontSize: 15, color: theme.colors.secondary, marginBottom: 8 }}>{selectedVariant ? selectedVariant.name : (variants[0]?.name || '')}</Text>
           {/* Price Block */}
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, backgroundColor: '#F7F7F7', borderRadius: 8, padding: 8, alignSelf: 'flex-start' }}>
             <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.colors.primary }}>₹{getValidPrice().toFixed(2)}</Text>

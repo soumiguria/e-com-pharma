@@ -59,9 +59,13 @@ const OrderDetailScreen = () => {
   // Final prescription URL with correct priority
   const finalPrescriptionUrl = prescriptionUrls.signedPresciptionUrl || prescriptionUrls.signedPrescriptionUrl || prescriptionUrls.prescriptionUrl;
   
+  // Determine if this is a pharma order (only then show prescription section)
+  const storeType = (apiOrder?.type || apiOrder?.store?.type || (order as any)?.originalOrderData?.type || order?.type || order?.store?.type || '').toString().toLowerCase();
+  const isPharmaOrder = storeType === 'pharma';
+  
   console.log('💊 Prescription URLs extracted:', prescriptionUrls);
   console.log('💊 Final prescription URL (PRIORITY: signedPresciptionUrl):', finalPrescriptionUrl);
-
+  console.log('💊 Order store type for prescription section:', { storeType, isPharmaOrder });
 
   // Fetch order details from API when screen loads
   useEffect(() => {
@@ -1191,7 +1195,7 @@ const OrderDetailScreen = () => {
                   source={{ uri: item.image || '' }}
                   style={styles.itemImage}
                 /> */}
-                // take the image from the signedImage field if available, otherwise use the image field
+                {/* take the image from the signedImage field if available, otherwise use the image field */}
                 <Image
                   source={{ uri: item.signedImage || item.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg' }}
                   style={styles.itemImage}
@@ -1254,7 +1258,8 @@ const OrderDetailScreen = () => {
             )}
           </View>
 
-          {/* Prescription Section - Always show, either uploaded or upload button */}
+          {/* Prescription Section - Render only when the order is placed from a pharmacy store */}
+          {isPharmaOrder && (
           <View style={[styles.prescriptionCard, { backgroundColor: theme.colors.surface }]}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
               Prescription
@@ -1359,6 +1364,7 @@ const OrderDetailScreen = () => {
               );
             })()}
           </View>
+          )}
 
           {/* Payment Status - API driven (paid/pending/cancelled/failed) */}
           <View style={[styles.totalCard, { backgroundColor: theme.colors.surface }]}>

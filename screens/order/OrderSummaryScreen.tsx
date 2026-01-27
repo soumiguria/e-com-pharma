@@ -195,7 +195,8 @@ const OrderSummaryScreen = () => {
           status: freshOrderData.status || 'completed',
           storeId: freshOrderData.storeId || selectedStore?.id,
           storeName: selectedStore?.name || freshOrderData.storeName || freshOrderData.store?.name || 'Store',
-          type: freshOrderData.type || selectedStore?.type || 'grocery',
+          // Determine store type from order data first, then fallback to selected store, default to grocery
+          type: freshOrderData.type || freshOrderData.store?.type || selectedStore?.type || 'grocery',
           signedPresciptionUrl: freshOrderData.signedPresciptionUrl || freshOrderData.signedPrescriptionUrl,
           signedPrescriptionUrl: freshOrderData.signedPrescriptionUrl,
           prescriptionUrl: freshOrderData.prescriptionUrl,
@@ -406,6 +407,8 @@ const OrderSummaryScreen = () => {
     );
   }
 
+  const isPharmaOrder = orderSummary?.type === 'pharma';
+
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.colors.background }]} edges={['top']}>
       {/* Header */}
@@ -537,7 +540,8 @@ const OrderSummaryScreen = () => {
           )}
         </View>
 
-        {/* Prescription Section - Always show, either uploaded or upload button */}
+        {/* Prescription Section - Render only when the order is placed from a pharmacy store */}
+        {isPharmaOrder && (
         <View style={[styles.prescriptionCard, { backgroundColor: theme.colors.surface }]}>
           <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
             Prescription
@@ -642,8 +646,9 @@ const OrderSummaryScreen = () => {
                 <Text style={styles.uploadPrescriptionButtonText}>Upload Prescription</Text>
               </TouchableOpacity>
             );
-          })()}
-        </View>
+            })()}
+          </View>
+        )}
 
         {/* Payment Status - API driven (paid/pending/cancelled/failed) */}
         <View style={[styles.totalCard, { backgroundColor: theme.colors.surface }]}>

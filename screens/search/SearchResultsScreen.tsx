@@ -370,7 +370,7 @@ const SearchResultsScreen = () => {
                 <>
                   <Text style={styles.sectionTitle}>Categories</Text>
                   {searchResults.categories.map((category: Category) => {
-                    const categoryImage = category.signedImage || category.image || '';
+                    const categoryImage = category.signedImage || category.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg';
                     
                     return (
                       <TouchableOpacity
@@ -396,7 +396,7 @@ const SearchResultsScreen = () => {
                 <>
                   <Text style={styles.sectionTitle}>Subcategories</Text>
                   {searchResults.subcategories.map((subcategory: Subcategory) => {
-                    const subcategoryImage = subcategory.signedImage || subcategory.image || '';
+                    const subcategoryImage = subcategory.signedImage || subcategory.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg';
                     
                     return (
                       <TouchableOpacity

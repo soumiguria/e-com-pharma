@@ -340,7 +340,7 @@ const CategoryDetailScreen = () => {
   };
 
   // No placeholder image - use empty string if image not present
-  const SUBCATEGORY_PLACEHOLDER_IMAGE = '';
+  const SUBCATEGORY_PLACEHOLDER_IMAGE = 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg';
 
   // --- UI ---
   return (

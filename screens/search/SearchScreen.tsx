@@ -221,15 +221,15 @@ const SearchScreen = () => {
       id: actualProductId, // Use the actual productId from API
       name: product.name,
       price: parseFloat(product.sp || product.mrp || '0'),
-      image: product.image || '',
+      image: product.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
       category: selectedStore?.type || 'grocery',
-      description: product.description || '',
+      description: product.description || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
       productId: actualProductId, // Use the same ID for consistency
       // Add additional product details
       brand: product.brand || '',
       availableQty: product.quantity || 0,
       variants: product.variants || [],
-      images: product.images || [product.image || ''],
+      images: product.images || [product.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg'],
       originalPrice: parseFloat(product.mrp || '0'),
       // API specific fields
       _id: product._id,
@@ -620,7 +620,7 @@ const SearchScreen = () => {
                             <Text style={styles.sectionTitle}>Categories</Text>
                             {searchResults.categories.map((category: any, index: number) => {
                               console.log(`🔍 Rendering category ${index}:`, JSON.stringify(category, null, 2));
-                              const categoryImage = category.signedImage || category.image || '';
+                              const categoryImage = category.signedImage || category.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg';
                               
                               return (
                                 <TouchableOpacity
@@ -647,7 +647,7 @@ const SearchScreen = () => {
                             <Text style={styles.sectionTitle}>Subcategories</Text>
                             {searchResults.subcategories.map((subcategory: any, index: number) => {
                               console.log(`🔍 Rendering subcategory ${index}:`, JSON.stringify(subcategory, null, 2));
-                              const subcategoryImage = subcategory.signedImage || subcategory.image || '';
+                              const subcategoryImage = subcategory.signedImage || subcategory.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg';
                               
                               return (
                                 <TouchableOpacity

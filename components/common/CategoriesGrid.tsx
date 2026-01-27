@@ -109,7 +109,7 @@ const CategoryGrid = () => {
                 navigation.navigate('CategoryDetail', { category: item as any });
             }
         }}>
-            <Image source={{ uri: item.image }} style={styles.image} />
+            <Image source={{ uri: item.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg' }} style={styles.image} />
             <Text 
               style={[styles.name, { color: theme.colors.text }]} 
               numberOfLines={2} 
