@@ -60,13 +60,13 @@ const styles = StyleSheet.create({
     marginBottom: 0,
   },
   price: {
-    fontSize: 15,
+    fontSize: 13,
     fontWeight: 'bold',
     color: '#1A7B50', // Blinkit green
     marginRight: 5,
   },
   mrp: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#888',
     textDecorationLine: 'line-through',
     marginRight: 5,
