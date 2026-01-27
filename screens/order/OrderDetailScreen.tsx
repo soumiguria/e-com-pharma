@@ -350,7 +350,7 @@ const OrderDetailScreen = () => {
         originalPrice: Number(it.mrp ?? it.original_price ?? 0),
         quantity: quantity, // Qty
         amount: amount, // Amount = Rate × Qty
-        image: it.images?.primary || it.signedImages?.primary || it.image || '',
+        image: it.images?.primary || it.signedImages?.primary || it.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
         // Additional fields if available
         variant: it.variant,
         packing: it.packing || it.variant?.unit || '',
@@ -1193,7 +1193,7 @@ const OrderDetailScreen = () => {
                 /> */}
                 // take the image from the signedImage field if available, otherwise use the image field
                 <Image
-                  source={{ uri: item.signedImage || item.image || '' }}
+                  source={{ uri: item.signedImage || item.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg' }}
                   style={styles.itemImage}
                 />
                 

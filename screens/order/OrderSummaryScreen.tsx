@@ -172,7 +172,7 @@ const OrderSummaryScreen = () => {
             image: item.productImage || item.image || item.images?.primary || '',
             // Additional fields if available
             variant: item.variant,
-            packing: item.packing || item.variant?.unit || '',
+            packing: item.packing || item.variant?.unit || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
             discount: Number(item.discount || item.discountAmount || 0),
             tax: Number(item.tax || item.taxAmount || 0),
           };

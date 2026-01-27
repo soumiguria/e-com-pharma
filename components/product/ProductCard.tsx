@@ -131,7 +131,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
       id: product.id,
       name: product.name,
       price: getValidPrice(),
-      image: typeof product.image === 'string' ? product.image : '',
+      image: typeof product.image === 'string' ? product.image : 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
       originalPrice: product.originalPrice,
       productId: (product as any).productId || product.id,
     };

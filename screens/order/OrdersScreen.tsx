@@ -535,7 +535,7 @@ const OrdersScreen = () => {
                     {order.items.slice(0, 3).map((item, index) => (
                       <Image
                         key={index}
-                        source={{ uri: item.image || '' }}
+                        source={{ uri: item.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg' }}
                         style={styles.itemImage}
                       />
                     ))}

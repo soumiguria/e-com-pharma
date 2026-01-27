@@ -215,7 +215,7 @@ const CategoriesScreen = () => {
     >
       <Image 
         source={{ 
-          uri: item.signedImage || item.image || '' 
+          uri: item.signedImage || item.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg' 
         }} 
         style={styles.image} 
       />

@@ -275,7 +275,7 @@ const ProductDetailScreen = () => {
       id: selectedVariant ? `${originalProductId}-${selectedVariant.id}` : originalProductId,
       name: productDetails.name,
       price: selectedVariant ? selectedVariant.price : getValidPrice(),
-      image: productDetails.image || '',
+      image: productDetails.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
       variant: selectedVariant ? {
         name: selectedVariant.name,
         unit: selectedVariant.name.split(' ')[1]?.replace(/[()]/g, '') || ''
@@ -652,7 +652,7 @@ const ProductDetailScreen = () => {
                               id: itemId,
                               name: productDetails.name,
                               price: variant.price,
-                              image: productDetails.image || '',
+                              image: productDetails.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
                               variant: { name: variant.name, unit: variant.name.split(' ')[1]?.replace(/[()]/g, '') || '' },
                               productId: productDetails.productId || originalProductId,
                               originalPrice: productDetails.originalPrice
@@ -749,7 +749,7 @@ const ProductDetailScreen = () => {
                     id: itemId,
                     name: productDetails.name,
                     price: selectedVariant.price,
-                    image: productDetails.image || '',
+                    image: productDetails.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
                     variant: { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1]?.replace(/[()]/g, '') || '' },
                     productId: productDetails.productId || originalProductId,
                     originalPrice: productDetails.originalPrice
@@ -760,6 +760,7 @@ const ProductDetailScreen = () => {
               </TouchableOpacity>
             </View>
           ) : (
+            <>
             <TouchableOpacity
               style={{
                 backgroundColor: canAddToCart() ? theme.colors.primary : '#dc3545',
@@ -777,7 +778,7 @@ const ProductDetailScreen = () => {
                   id: selectedVariant ? `${originalProductId}-${selectedVariant.id}` : originalProductId,
                   name: productDetails.name,
                   price: price,
-                  image: productDetails.image || '',
+                  image: productDetails.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
                   variant: selectedVariant ? { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1]?.replace(/[()]/g, '') || '' } : undefined
                 });
               }}
@@ -786,9 +787,10 @@ const ProductDetailScreen = () => {
               <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
                 {canAddToCart() ? 'Add' : 'Out of Stock'}
               </Text>
-              // Add some space below the button
-              <View style={{ height: 80 }} />
             </TouchableOpacity>
+            // Add some space below the button
+              <View style={{ height: 80 }} />
+              </>
           )
         ) : variants.length === 0 ? (
           getCurrentCartQuantity() > 0 ? (
@@ -817,7 +819,7 @@ const ProductDetailScreen = () => {
                     id: originalProductId,
                     name: productDetails.name,
                     price: price,
-                    image: productDetails.image || '',
+                    image: productDetails.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
                     productId: productDetails.productId || originalProductId,
                     originalPrice: productDetails.originalPrice
                   });
@@ -827,6 +829,7 @@ const ProductDetailScreen = () => {
               </TouchableOpacity>
             </View>
           ) : (
+            <>
             <TouchableOpacity
               style={{
                 backgroundColor: canAddToCart() ? theme.colors.primary : '#dc3545',
@@ -846,6 +849,9 @@ const ProductDetailScreen = () => {
                 {canAddToCart() ? 'Add' : 'Out of Stock'}
               </Text>
             </TouchableOpacity>
+            // Add some space below the button
+              <View style={{ height: 80 }} />
+              </>
           )
         ) : (
           <TouchableOpacity
