@@ -13,6 +13,7 @@ interface ProductDetailModalProps {
     price: number;
     image: string;
     description?: string;
+    productDescription?: string;
   } | null;
   onClose: () => void;
 }
@@ -118,7 +119,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ visible, produc
           <Text style={styles.productName}>{product.name}</Text>
           <Text style={styles.productPrice}>${product.price.toFixed(2)}</Text>
           <Text style={styles.productDescription}>
-            {product.description || 'No description available'}
+            {product.description || product.productDescription || 'No description available'}
           </Text>
           
           <View style={styles.buttonContainer}>

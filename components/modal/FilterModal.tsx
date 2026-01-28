@@ -160,7 +160,8 @@ const FilterModal: React.FC<FilterModalProps> = ({
               borderRadius: 8, 
               paddingVertical: 12, 
               alignItems: 'center', 
-              marginRight: 8 
+              marginRight: 8,
+              height: 100,
             }} 
             onPress={clearAllFilters}
           >

@@ -1258,8 +1258,8 @@ const OrderDetailScreen = () => {
             )}
           </View>
 
-          {/* Prescription Section - Render only when the order is placed from a pharmacy store */}
-          {isPharmaOrder && (
+          {/* Prescription Section - Render only when the order is placed from a pharmacy store here we also need to check from the if prescriptionRequired field is true in the api response or not */}
+          {isPharmaOrder && order?.prescriptionRequired && (
           <View style={[styles.prescriptionCard, { backgroundColor: theme.colors.surface }]}>
             <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>
               Prescription

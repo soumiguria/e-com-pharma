@@ -505,6 +505,7 @@ const OrdersScreen = () => {
             <TouchableOpacity onPress={() => handleOrderPress(order)}>
               <View style={styles.cardContent}>
                 {/* Status Row - Moved to top */}
+                {/* In the same row as of the status show another tag if prescriptionRequired field is true */}
                 {order.status === 'pending' && (
                   <View style={styles.statusRowTop}>
                     <View
@@ -527,6 +528,28 @@ const OrdersScreen = () => {
                         {getStatusText(order.status)}
                       </Text>
                     </View>
+                    {/* {order.originalOrderData?.prescriptionRequired && (
+                      <View
+                        style={[
+                          styles.statusChip,
+                          {
+                            backgroundColor: '#dc3545' + '22',
+                            borderWidth: 1.5,
+                            borderColor: '#dc3545',
+                            paddingHorizontal: 14,
+                            paddingVertical: 8,
+                            borderRadius: 18,
+                            alignSelf: 'flex-start',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          },
+                        ]}
+                      >
+                        <Text style={{ color: '#dc3545', fontSize: 13, fontWeight: '700' }}>
+                          Prescription Required
+                        </Text> */}
+                      {/* </View> */}
+                    {/* )} */}
                   </View>
                 )}
                 {/* Item Images Row */}

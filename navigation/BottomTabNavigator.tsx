@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { Ionicons } from '@expo/vector-icons';
+import { getFocusedRouteNameFromRoute } from '@react-navigation/native';
 import { View, Text } from 'react-native';
 import HomeScreen from '../screens/home/HomeScreen';
 import OrdersScreen from '../screens/order/OrdersScreen';
@@ -19,6 +20,15 @@ import { RootStackParamList } from './types';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { useAppContext } from '../contexts/AppContext';
 
+const getTabBarStyle = (route: any) => {
+  const routeName = getFocusedRouteNameFromRoute(route) ?? '';
+
+  if (routeName === 'ProductDetail' || routeName === 'MedicineDetail') {
+    return { display: 'none' };
+  }
+
+  return { display: 'flex' };
+};
 const Tab = createBottomTabNavigator();
 const HomeStack = createNativeStackNavigator();
 const OrdersStack = createNativeStackNavigator();
@@ -139,9 +149,11 @@ const BottomTabNavigator = () => {
     <Tab.Navigator
       initialRouteName="Home"
       screenOptions={({ route }) => ({
+        tabBarStyle: getTabBarStyle(route) as any,
+        headerShown: false,
         tabBarIcon: ({ focused, color, size }) => {
           let iconName: keyof typeof Ionicons.glyphMap = 'home';
-
+  
           if (route.name === 'Home') {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Order Again') {
@@ -149,40 +161,40 @@ const BottomTabNavigator = () => {
           } else if (route.name === 'Categories') {
             iconName = focused ? 'apps' : 'apps-outline';
           } else if (route.name === 'Pharmacy' || route.name === 'Grocery') {
-            if(section === 'grocery') {
-              iconName = focused ? 'medical' : 'medical-outline';
-            } else {
-              iconName = focused ? 'basket' : 'basket-outline';
-            }
+            iconName =
+              section === 'grocery'
+                ? focused
+                  ? 'medical'
+                  : 'medical-outline'
+                : focused
+                ? 'basket'
+                : 'basket-outline';
           }
-
+  
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        headerShown: false,
       })}
     >
       <Tab.Screen name="Home" component={HomeStackNavigator} />
       <Tab.Screen name="Order Again" component={OrdersStackNavigator} />
       <Tab.Screen name="Categories" component={CategoriesScreen} />
+  
       {section === 'grocery' ? (
         <Tab.Screen
           name="Pharmacy"
           component={PharmacyStackNavigator}
-          listeners={{
-            tabPress: handlePharmacyTabPress,
-          }}
+          listeners={{ tabPress: handlePharmacyTabPress }}
         />
       ) : (
         <Tab.Screen
           name="Grocery"
           component={HomeStackNavigator}
-          listeners={{
-            tabPress: handleGroceryTabPress,
-          }}
+          listeners={{ tabPress: handleGroceryTabPress }}
         />
       )}
     </Tab.Navigator>
   );
+  
 };
 
 export default BottomTabNavigator; 

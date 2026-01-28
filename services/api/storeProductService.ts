@@ -152,6 +152,10 @@ const mapExtendedProduct = (raw: any, category: 'grocery' | 'pharma'): ExtendedP
     similarProducts: Array.isArray(raw.similarProducts) ? raw.similarProducts.map((p: any) => mapProduct(p, category)) : undefined,
     reviews: raw.reviews || undefined,
     specifications: raw.specifications || undefined,
+    // Pass through long form description fields so screens can render them
+    productDescription: raw.productDescription || raw.description || undefined,
+    servingSize: raw.servingSize || raw.howToUse || raw.servingsPerPack || undefined,
+    prescriptionRequired: raw.prescriptionRequired,
   } as ExtendedProduct;
 };
 

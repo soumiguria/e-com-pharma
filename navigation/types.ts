@@ -36,6 +36,7 @@ export type RootStackParamList = {
       grandTotal: number;
       deliveryMethod: string;
       shippingAddress?: string;
+      prescriptionRequired?: boolean;
     };
   };
   Profile: undefined;

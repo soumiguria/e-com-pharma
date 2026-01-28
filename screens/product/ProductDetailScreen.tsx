@@ -41,6 +41,7 @@ interface ExtendedProduct {
   price: number;
   image?: string;
   description?: string;
+  productDescription?: string;
   brand?: string;
   images?: string[];
   availableQty?: number;
@@ -270,6 +271,26 @@ const ProductDetailScreen = () => {
     return getCartQuantity(originalProductId);
   };
 
+  // Format long text into bullet points for better readability
+  const toBulletPoints = (text?: string): string[] => {
+    if (!text) return [];
+    // Split on new lines or sentence boundaries, then trim out empties
+    return text
+      .split(/\n|(?<!\w\.\w.)(?<=\.|\?|!)\s+/)
+      .map(part => part.trim())
+      .filter(Boolean);
+  };
+
+  const renderBullets = (items: string[]) => {
+    if (items.length === 0) return null;
+    return items.map((line, idx) => (
+      <View key={idx} style={{ flexDirection: 'row', alignItems: 'flex-start', marginBottom: 6 }}>
+        <Text style={{ marginRight: 8, color: theme.colors.text }}>{'\u2022'}</Text>
+        <Text style={{ flex: 1, color: theme.colors.text, fontSize: 15, lineHeight: 22 }}>{line}</Text>
+      </View>
+    ));
+  };
+
   const handleAddToCart = () => {
     const itemToAdd = {
       id: selectedVariant ? `${originalProductId}-${selectedVariant.id}` : originalProductId,
@@ -333,6 +354,12 @@ const ProductDetailScreen = () => {
       marginBottom: theme.spacing.lg,
     },
     description: {
+      fontSize: 16,
+      color: theme.colors.text,
+      lineHeight: 24,
+      marginBottom: theme.spacing.xl,
+    },
+    productDescription: {
       fontSize: 16,
       color: theme.colors.text,
       lineHeight: 24,
@@ -574,15 +601,40 @@ const ProductDetailScreen = () => {
               </View>
             </TouchableOpacity>
           )}
-          <View style={{ height: 1, backgroundColor: '#eee', marginVertical: 10 }} />
+          
           {/* View Product Details (Expandable) */}
           <TouchableOpacity onPress={() => setDetailsExpanded(e => !e)} style={{ flexDirection: 'row', alignItems: 'center', marginTop: 10, marginBottom: 2 }}>
             <Text style={{ fontSize: 16, color: theme.colors.primary, fontWeight: 'bold', marginRight: 6 }}>View product details</Text>
             <MaterialIcons name={detailsExpanded ? 'expand-less' : 'expand-more'} size={22} color={theme.colors.primary} />
           </TouchableOpacity>
+          
           {detailsExpanded && (
             <View style={{ marginTop: 6 }}>
-              <Text style={{ fontSize: 15, color: theme.colors.text, marginBottom: 8 }}>{extendedProduct.description || 'No description available for this product.'}</Text>
+              {/* Product Description */}
+              {(productDetails.productDescription || productDetails.description) && (
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={{ fontSize: 14, fontWeight: 'bold', color: theme.colors.text, marginBottom: 4 }}>Description</Text>
+                  <Text style={{ fontSize: 15, color: theme.colors.text, lineHeight: 22 }}>
+                    {productDetails.productDescription || productDetails.description}
+                  </Text>
+                </View>
+              )}
+              
+              {/* Serving Size / Usage Instructions */}
+              {productDetails.servingSize && (
+                <View style={{ marginBottom: 12 }}>
+                  <Text style={{ fontSize: 14, fontWeight: 'bold', color: theme.colors.text, marginBottom: 4 }}>How to Use</Text>
+                  <Text style={{ fontSize: 15, color: theme.colors.text, lineHeight: 22 }}>
+                    {productDetails.servingSize}
+                  </Text>
+                </View>
+              )}
+              
+              {!productDetails.productDescription && !productDetails.description && !productDetails.servingSize && (
+                <Text style={{ fontSize: 15, color: theme.colors.text, fontStyle: 'italic' }}>
+                  No additional details available for this product.
+                </Text>
+              )}
             </View>
           )}
         </View>
@@ -681,6 +733,15 @@ const ProductDetailScreen = () => {
             })}
           </View>
         )}
+
+        {/* Add a tag to mention if the product requires prescription if yes then show a red colored tag stating prescription required */}
+        {productDetails.prescriptionRequired && (
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 12, marginBottom: 18, padding: 10, backgroundColor: '#ffe6e6', borderRadius: 8 }}>
+            <MaterialIcons name="medical-services" size={20} color="#dc3545" style={{ marginRight: 8 }} />
+            <Text style={{ color: '#dc3545', fontWeight: 'bold', fontSize: 15 }}>Prescription Required</Text>
+          </View>
+        )}
+
         {/* Similar Products Section */}
         {/* <View style={{ marginTop: 8, marginBottom: 24 }}> */}
         {/* <Text style={{ fontSize: 18, fontWeight: 'bold', marginLeft: 16, marginBottom: 8, color: theme.colors.text }}>Similar Products</Text> */}

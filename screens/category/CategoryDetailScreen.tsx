@@ -43,6 +43,7 @@ interface Product {
   brand?: string;
   variants?: { id: string; name: string; price: number; stock: number }[];
   availableQty?: number;
+  prescriptionRequired?: boolean;
 }
 
 interface SubCategory {
@@ -417,6 +418,7 @@ const CategoryDetailScreen = () => {
           />
         </View>
         {/* Right: Products List */}
+        {/* Here we need to show a tag on the product that require prescription should be shown on the product card as well */}
         <View style={styles.rightSection}>
           <FlatList
             data={products}
@@ -456,6 +458,11 @@ const CategoryDetailScreen = () => {
                     <Text style={[styles.qtyText, { color: theme.colors.secondary }]}>
                       {product.availableQty ? `In stock: ${product.availableQty}` : 'Available'}
                     </Text>
+                    {product.prescriptionRequired && (
+                      <View style={styles.prescriptionRequiredContainer}>
+                        <Text style={styles.prescriptionRequiredText}>Prescription Required</Text>
+                      </View>
+                    )}
                     <View style={styles.addRowList}>
                       {getCartQuantity(product.id) > 0 ? (
                         <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 6, borderWidth: 1.5, borderColor: '#27ae60', height: 28, minWidth: 70, paddingHorizontal: 4, margin: 0 }}>
@@ -834,6 +841,19 @@ const styles = StyleSheet.create({
     color: '#888',
     marginLeft: 8,
     marginBottom: 8,
+  },
+  prescriptionRequiredContainer: {
+    backgroundColor: '#ffe5e5',
+    paddingVertical: 4,
+    paddingHorizontal: 6,
+    borderRadius: 6,
+    alignSelf: 'flex-start',
+    marginBottom: 6,
+  },
+  prescriptionRequiredText: {
+    color: '#d9534f',
+    fontSize: 12,
+    fontWeight: '600',
   },
   favBtn: {
     marginLeft: 8,
