@@ -35,6 +35,7 @@ interface Order {
   storeId?: string;
   storeName?: string;
   type?: 'grocery' | 'pharma';
+  prescriptionRequired?: boolean;
 }
 
 const OrderSelectionScreen = () => {
@@ -111,6 +112,7 @@ const OrderSelectionScreen = () => {
               storeId: order.storeId,
               storeName: order.store?.name || order.storeName || 'Store',
               type: order.type || 'grocery',
+              prescriptionRequired: order.prescriptionRequired,
             };
           }),
         );
@@ -134,13 +136,17 @@ const OrderSelectionScreen = () => {
               storeId: order.storeId,
               storeName: order.store?.name || order.storeName || 'Store',
               type: order.type || 'pharma',
+              prescriptionRequired: order.prescriptionRequired,
             };
           }),
         );
       }
 
       // Filter to only pharma orders for prescription upload
-      const pharmaOrdersOnly = allOrders.filter((o) => (o.type || '').toLowerCase() === 'pharma');
+      // Additionally, only include orders where prescriptionRequired is true
+      const pharmaOrdersOnly = allOrders.filter(
+        (o) => (o.type || '').toLowerCase() === 'pharma' && o.prescriptionRequired === true,
+      );
 
       // Sort by creation date (newest first)
       pharmaOrdersOnly.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

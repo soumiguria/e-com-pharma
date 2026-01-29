@@ -40,6 +40,7 @@ interface Order {
   address?: string;
   storeName?: string; // Added store name property
   storeType?: 'pharma' | 'grocery'; // Added store type from API response
+  prescriptionRequired?: boolean;
   // Amount breakdown from backend
   subtotalAmount?: number;
   storeDiscount?: number;
@@ -239,6 +240,7 @@ const OrdersScreen = () => {
             address: order.shippingAddress?.address || 'Store Pickup',
             storeName: order.storeName || order.store?.name,
             storeType: order.type || 'grocery', // Use order type from API response
+            prescriptionRequired: order.prescriptionRequired,
             // Amount breakdown from backend - no dummy data
             subtotalAmount: Number(order.subtotalAmount ?? 0),
             storeDiscount: Number(order.storeDiscount ?? 0),
@@ -528,12 +530,13 @@ const OrdersScreen = () => {
                         {getStatusText(order.status)}
                       </Text>
                     </View>
-                    {/* {order.originalOrderData?.prescriptionRequired && (
+                    // Add some space between the two tags
+                    {order.prescriptionRequired && (
                       <View
                         style={[
                           styles.statusChip,
                           {
-                            backgroundColor: '#dc3545' + '22',
+                            backgroundColor: '#fff',
                             borderWidth: 1.5,
                             borderColor: '#dc3545',
                             paddingHorizontal: 14,
@@ -542,14 +545,15 @@ const OrdersScreen = () => {
                             alignSelf: 'flex-start',
                             justifyContent: 'center',
                             alignItems: 'center',
+                            // marginLeft: 8,
                           },
                         ]}
                       >
                         <Text style={{ color: '#dc3545', fontSize: 13, fontWeight: '700' }}>
                           Prescription Required
-                        </Text> */}
-                      {/* </View> */}
-                    {/* )} */}
+                        </Text>
+                      </View>
+                    )}
                   </View>
                 )}
                 {/* Item Images Row */}
@@ -569,25 +573,50 @@ const OrdersScreen = () => {
                     )}
                   </View>
                   {order.status !== 'pending' && (
-                    <View
-                      style={[
-                        styles.statusChip,
-                        {
-                          backgroundColor: getStatusColor(order.status) + '22',
-                          borderWidth: 1.5,
-                          borderColor: getStatusColor(order.status),
-                          paddingHorizontal: 14,
-                          paddingVertical: 8,
-                          borderRadius: 18,
-                          alignSelf: 'flex-start',
-                          justifyContent: 'center',
-                          alignItems: 'center',
-                        },
-                      ]}
-                    >
-                      <Text style={{ color: getStatusColor(order.status), fontSize: 13, fontWeight: '700' }}>
-                        {getStatusText(order.status)}
-                      </Text>
+                    <View style={styles.statusRowTop}>
+                      <View
+                        style={[
+                          styles.statusChip,
+                          {
+                            backgroundColor: getStatusColor(order.status) + '22',
+                            borderWidth: 1.5,
+                            borderColor: getStatusColor(order.status),
+                            paddingHorizontal: 14,
+                            paddingVertical: 8,
+                            borderRadius: 18,
+                            alignSelf: 'flex-start',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                          },
+                        ]}
+                      >
+                        <Text style={{ color: getStatusColor(order.status), fontSize: 13, fontWeight: '700' }}>
+                          {getStatusText(order.status)}
+                        </Text>
+                      </View>
+                      {order.prescriptionRequired && (
+                        <View
+                          style={[
+                            styles.statusChip,
+                            {
+                              backgroundColor: '#dc3545' + '22',
+                              borderWidth: 1.5,
+                              borderColor: '#dc3545',
+                              paddingHorizontal: 14,
+                              paddingVertical: 8,
+                              borderRadius: 18,
+                              alignSelf: 'flex-start',
+                              justifyContent: 'center',
+                              alignItems: 'center',
+                              marginLeft: 8,
+                            },
+                          ]}
+                        >
+                          <Text style={{ color: '#dc3545', fontSize: 13, fontWeight: '700' }}>
+                            Prescription Required
+                          </Text>
+                        </View>
+                      )}
                     </View>
                   )}
                 </View>
@@ -761,7 +790,9 @@ const OrdersScreen = () => {
     },
     statusRowTop: {
       marginBottom: 12,
-      alignItems: 'flex-start',
+      flexDirection: 'row',
+      alignItems: 'center',
+      flexWrap: 'wrap',
     },
     orderTopRow: {
       flexDirection: 'row',
@@ -905,4 +936,4 @@ const OrdersScreen = () => {
     },
   });
 
-export default OrdersScreen; 
+export default OrdersScreen;

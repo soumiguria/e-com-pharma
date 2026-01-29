@@ -142,6 +142,8 @@ const mapProduct = (raw: any, category: 'grocery' | 'pharma'): Product => {
     reviewCount: raw.reviewCount || undefined,
     variants: raw.variants || undefined,
     tags: raw.tags || undefined,
+    // Only meaningful for pharma products; ensure boolean
+    prescriptionRequired: category === 'pharma' ? raw.prescriptionRequired === true : false,
   } as Product;
 };
 

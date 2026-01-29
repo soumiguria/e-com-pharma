@@ -17,6 +17,7 @@ interface Product {
   isOnSale?: boolean;
   category?: 'grocery' | 'pharma';
   perUnit?: string;
+  prescriptionRequired?: boolean;
 }
 
 interface ProductCardProps {
@@ -239,6 +240,11 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
       </View>
       <View style={[styles.infoContainer, compact && styles.compactInfoContainer]}>
         <Text style={[styles.name, compact && styles.compactName, { color: theme.colors.text }]} numberOfLines={2}>{product.name}</Text>
+        {product.prescriptionRequired && (
+          <View style={styles.prescriptionContainer}>
+            <Text style={styles.prescriptionText}>Prescription Required</Text>
+          </View>
+        )}
         <PriceBlock price={product.price} originalPrice={displayOriginalPrice} perUnit={product.perUnit || ''} />
       </View>
     </TouchableOpacity>
@@ -424,6 +430,20 @@ const styles = StyleSheet.create({
   },
   compactOriginalPrice: {
     fontSize: 12,
+  },
+  prescriptionContainer: {
+    backgroundColor: '#ffe5e5',
+    paddingVertical: 2,
+    paddingHorizontal: 6,
+    borderRadius: 4,
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+    marginTop: 2,
+  },
+  prescriptionText: {
+    color: '#d9534f',
+    fontSize: 10,
+    fontWeight: '600',
   },
 });
 

@@ -681,6 +681,7 @@ const SearchScreen = () => {
                                   '';
                                 
                                 return (
+                                  <>
                                   <TouchableOpacity
                                     key={product._id || product.productId || index}
                                     style={styles.productCard}
@@ -701,6 +702,9 @@ const SearchScreen = () => {
                                       ₹{parseFloat(product.sp || product.mrp || '0').toFixed(2)}
                                     </Text>
                                   </TouchableOpacity>
+                                  // Add some space below the button
+              <View style={{ height: 200 }} />
+              </>
                                 );
                               })}
                             </View>
