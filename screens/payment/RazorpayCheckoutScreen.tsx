@@ -595,6 +595,7 @@ import { addressService } from '../../services/api/addressService';
 import { PlaceOrderRequest, InitiatePaymentResponse } from '../../services/api/orderService';
 import { Address } from '../../services/api/addressService';
 import { useToast } from '../../contexts/ToastContext';
+import { validateCartItemsForStore } from '../../utils/orderValidation';
 
 type RazorpayCheckoutRouteProp = RouteProp<RootStackParamList, 'RazorpayCheckout'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'RazorpayCheckout'>;
@@ -845,10 +846,22 @@ const RazorpayCheckoutScreen = () => {
         }
         
       } else {
-        // For new orders, place the order first
+        // For new orders, validate cart items are in the selected store then place the order
         console.log('🆕 Creating new order...');
         const isStoreDelivery = deliveryMethod === 'Store Pickup';
         const cartItems = getCartItems();
+
+        // Validate all cart items are present in the selected store (grocery and pharmacy)
+        const validation = await validateCartItemsForStore(
+          selectedStore?.id,
+          cartType as 'grocery' | 'pharma',
+          cartItems.map((item: any) => ({ productId: item.productId, quantity: item.quantity, name: item.name }))
+        );
+        if (!validation.valid) {
+          const msg = validation.message || 'Some items are not available in the selected store.';
+          Alert.alert('Items Not Available', msg, [{ text: 'OK' }]);
+          throw new Error(msg);
+        }
         
         console.log('📦 Cart items:', cartItems);
         console.log('📦 Cart items detailed:', JSON.stringify(cartItems, null, 2));

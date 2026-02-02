@@ -117,11 +117,12 @@ const PhoneAuthScreen = () => {
     phoneInput: {
       flexDirection: 'row',
       alignItems: 'center',
-      borderWidth: 1,
-      borderColor: theme.colors.border,
+      borderWidth: 2,
+      // make the border color darker adn brighter shade of blue
+      borderColor: theme.colors.primary,
       borderRadius: theme.borderRadius.md,
       paddingHorizontal: theme.spacing.md,
-      backgroundColor: theme.colors.surface,
+      backgroundColor: '#fff',
     },
     input: {
       flex: 1,
@@ -175,7 +176,7 @@ const PhoneAuthScreen = () => {
               maxLength={15}
               value={mobileNumber}
               onChangeText={setMobileNumber}
-              placeholderTextColor={theme.colors.secondary}
+              placeholderTextColor={theme.colors.primary}
               autoComplete="tel"
               textContentType="telephoneNumber"
               importantForAutofill="yes"

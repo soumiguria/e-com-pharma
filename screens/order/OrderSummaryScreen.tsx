@@ -169,7 +169,7 @@ const OrderSummaryScreen = () => {
             originalPrice: Number(item.mrp || item.originalPrice || price),
             quantity: quantity, // Qty
             amount: amount, // Amount = Rate × Qty
-            image: item.productImage || item.image || item.images?.primary || '',
+            image: item.signedImage || item.image || item.productImage || (Array.isArray(item.images) ? item.images[0] : item.images?.primary) || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
             // Additional fields if available
             variant: item.variant,
             packing: item.packing || item.variant?.unit || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
@@ -499,7 +499,7 @@ const OrderSummaryScreen = () => {
           {orderSummary.items.map((item, index) => (
             <View key={item.id || index} style={styles.itemRow}>
               <Image
-                source={{ uri: item.image || '' }}
+                source={{ uri: item.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg' }}
                 style={styles.itemImage}
               />
               

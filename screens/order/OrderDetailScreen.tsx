@@ -354,7 +354,7 @@ const OrderDetailScreen = () => {
         originalPrice: Number(it.mrp ?? it.original_price ?? 0),
         quantity: quantity, // Qty
         amount: amount, // Amount = Rate × Qty
-        image: it.images?.primary || it.signedImages?.primary || it.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
+        image: it.signedImage || it.image || it.images?.primary || (Array.isArray(it.images) ? it.images[0] : undefined) || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
         // Additional fields if available
         variant: it.variant,
         packing: it.packing || it.variant?.unit || '',

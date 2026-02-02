@@ -1,7 +1,8 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { authService } from '../services/api/authService';
 import { jwtDecode } from 'jwt-decode';
+import { onTokenExpired } from '../utils/authEvents';
 
 export type UserPayload = {
   _id: string;
@@ -70,6 +71,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   // Load user data from storage on app start
   useEffect(() => {
     loadUserFromStorage();
+  }, []);
+
+  // When token is expired/invalid (e.g. API returns 401), show user as logged out. Backend determines expiry; frontend does not set expiry.
+  useEffect(() => {
+    const unsubscribe = onTokenExpired(() => {
+      setUser(null);
+      setToken(null);
+      clearUserFromStorage();
+    });
+    return unsubscribe;
   }, []);
 
   const loadUserFromStorage = async () => {

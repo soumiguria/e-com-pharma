@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,18 +9,22 @@ import {
   TextInput,
   ScrollView,
   ActivityIndicator,
+  useWindowDimensions,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation } from '@react-navigation/native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import ProductCard from '../../components/product/ProductCard';
 import SearchBar from '../../components/ui/SearchBar';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppContext } from '../../contexts/AppContext';
+import { useCart } from '../../contexts/CartContext';
 import storeService from '../../services/api/storeService';
+
+const PRODUCTS_PAGE_SIZE = 10;
+const MAX_PRODUCTS = 100;
 
 type SearchScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'SearchScreen'>;
 
@@ -33,7 +37,9 @@ interface SearchResult {
 const SearchScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<SearchScreenNavigationProp>();
+  const insets = useSafeAreaInsets();
   const { selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore } = useAppContext();
+  const { addToGroceryCart, addToPharmacyCart, updateQuantity, groceryItems, pharmacyItems } = useCart();
 
   // Get the effective store to use (selectedStore or fallback to last visited stores)
   const effectiveStore = selectedStore || lastVisitedStore || lastVisitedGroceryStore || lastVisitedPharmacyStore;
@@ -42,6 +48,8 @@ const SearchScreen = () => {
   const [searchResults, setSearchResults] = useState<SearchResult | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [productsPageSize, setProductsPageSize] = useState(PRODUCTS_PAGE_SIZE);
+  const loadMoreTriggered = React.useRef(false);
 
   // Load search history from local storage
   useEffect(() => {
@@ -108,6 +116,8 @@ const SearchScreen = () => {
           console.log('📊 === END BREAKDOWN ===');
           
           setSearchResults(searchData);
+          setProductsPageSize(PRODUCTS_PAGE_SIZE);
+          loadMoreTriggered.current = false;
         } else {
           console.error('❌ Search failed:', response.error);
           setSearchError(response.error || 'Search failed');
@@ -123,6 +133,22 @@ const SearchScreen = () => {
     }, 500),
     [effectiveStore?.id]
   );
+
+  const allProducts = searchResults?.products ?? [];
+  const displayedProducts = useMemo(
+    () => allProducts.slice(0, Math.min(productsPageSize, MAX_PRODUCTS)),
+    [allProducts, productsPageSize]
+  );
+  const hasMoreProducts = displayedProducts.length < Math.min(allProducts.length, MAX_PRODUCTS);
+  const loadMoreProducts = useCallback(() => {
+    setProductsPageSize(prev => Math.min(prev + PRODUCTS_PAGE_SIZE, MAX_PRODUCTS));
+  }, []);
+
+  const cartType = effectiveStore?.type === 'pharma' ? 'pharma' : 'grocery';
+  const addToCart = cartType === 'pharma' ? addToPharmacyCart : addToGroceryCart;
+  const cartItems = cartType === 'pharma' ? pharmacyItems : groceryItems;
+  const getCartQty = (productId: string) => cartItems.find(item => item.id === productId)?.quantity ?? 0;
+  const getValidQty = (p: any) => Math.max(0, parseInt(String(p.quantity ?? p.availableQty ?? 0), 10) || 0);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -565,7 +591,20 @@ const SearchScreen = () => {
             </View>
           </View>
 
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView
+          style={styles.content}
+          showsVerticalScrollIndicator={false}
+          onScroll={(e) => {
+            const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+            const padding = 400;
+            if (hasMoreProducts && contentSize.height - layoutMeasurement.height - contentOffset.y < padding && !loadMoreTriggered.current) {
+              loadMoreTriggered.current = true;
+              loadMoreProducts();
+              setTimeout(() => { loadMoreTriggered.current = false; }, 800);
+            }
+          }}
+          scrollEventThrottle={200}
+        >
           {/* Show search results if searching or has results */}
           {searchQuery.trim() ? (
             <View style={styles.searchResultsContainer}>
@@ -668,46 +707,97 @@ const SearchScreen = () => {
                           </>
                         )}
 
-                        {/* Products */}
+                        {/* Products - paginated 10 at a time, max 100 */}
                         {searchResults.products && searchResults.products.length > 0 && (
                           <>
                             <Text style={styles.sectionTitle}>Products</Text>
                             <View style={styles.productsGrid}>
-                              {searchResults.products.map((product: any, index: number) => {
-                                console.log(`🔍 Rendering product ${index}:`, JSON.stringify(product, null, 2));
-                                const productImage = product.signedImage || product.image || 
+                              {displayedProducts.map((product: any, index: number) => {
+                                const productImage = product.signedImage || product.image ||
                                   (Array.isArray(product.signedImages) && product.signedImages.length > 0 ? product.signedImages[0] : undefined) ||
-                                  (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : undefined) ||
-                                  '';
-                                
+                                  (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : undefined) || '';
+                                const sp = parseFloat(product.sp || product.mrp || '0');
+                                const mrp = parseFloat(product.mrp || '0');
+                                const productId = product.productId || product._id;
+                                const canAdd = (product.quantity ?? product.availableQty ?? 1) > 0;
+                                const qty = getCartQty(productId);
+                                const maxQty = getValidQty(product);
+                                const pctOff = mrp > sp && sp > 0 ? Math.round(((mrp - sp) / mrp) * 100) : 0;
                                 return (
-                                  <>
-                                  <TouchableOpacity
-                                    key={product._id || product.productId || index}
-                                    style={styles.productCard}
-                                    onPress={() => handleProductPress(product)}
-                                    activeOpacity={0.88}
-                                  >
-                                    <Image 
-                                      source={{ uri: productImage }} 
-                                      style={{ width: 90, height: 90, borderRadius: 12, marginBottom: 10, backgroundColor: '#f7f7f7' }} 
-                                    />
-                                    <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, marginBottom: 6, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>
-                                      {product.name}
-                                    </Text>
-                                    <Text style={{ fontSize: 12, color: theme.colors.secondary, textAlign: 'center', marginBottom: 4 }}>
-                                      {product.manufacturer || 'Generic'}
-                                    </Text>
-                                    <Text style={{ fontSize: 14, color: theme.colors.primary, fontWeight: 'bold', textAlign: 'center' }}>
-                                      ₹{parseFloat(product.sp || product.mrp || '0').toFixed(2)}
-                                    </Text>
-                                  </TouchableOpacity>
-                                  // Add some space below the button
-              <View style={{ height: 200 }} />
-              </>
+                                  <View key={productId || index} style={styles.productCard}>
+                                    <TouchableOpacity
+                                      style={{ flex: 1 }}
+                                      onPress={() => handleProductPress(product)}
+                                      activeOpacity={0.88}
+                                    >
+                                      <Image
+                                        source={{ uri: productImage }}
+                                        style={{ width: 90, height: 90, borderRadius: 12, marginBottom: 10, backgroundColor: '#f7f7f7', alignSelf: 'center' }}
+                                      />
+                                      <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, marginBottom: 6, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>
+                                        {product.name}
+                                      </Text>
+                                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 4 }}>
+                                        <Text style={{ fontSize: 14, color: theme.colors.primary, fontWeight: 'bold' }}>
+                                          ₹{sp.toFixed(2)}
+                                        </Text>
+                                        {mrp > sp && (
+                                          <Text style={{ fontSize: 12, color: theme.colors.secondary, textDecorationLine: 'line-through' }}>
+                                            ₹{mrp.toFixed(2)}
+                                          </Text>
+                                        )}
+                                        {pctOff > 0 && (
+                                          <Text style={{ fontSize: 11, fontWeight: 'bold', color: '#27ae60' }}>{pctOff}% OFF</Text>
+                                        )}
+                                      </View>
+                                    </TouchableOpacity>
+                                    {qty > 0 ? (
+                                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 8, backgroundColor: theme.colors.primary, borderRadius: 8, paddingVertical: 4, paddingHorizontal: 8, alignSelf: 'center' }}>
+                                        <TouchableOpacity onPress={() => updateQuantity(productId, Math.max(0, qty - 1), cartType)} style={{ padding: 6 }}>
+                                          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>-</Text>
+                                        </TouchableOpacity>
+                                        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14, minWidth: 24, textAlign: 'center' }}>{qty}</Text>
+                                        <TouchableOpacity onPress={() => { if (qty >= maxQty) return; updateQuantity(productId, qty + 1, cartType); }} style={{ padding: 6 }} disabled={qty >= maxQty}>
+                                          <Text style={{ color: qty >= maxQty ? 'rgba(255,255,255,0.6)' : '#fff', fontWeight: 'bold', fontSize: 16 }}>+</Text>
+                                        </TouchableOpacity>
+                                      </View>
+                                    ) : (
+                                      <TouchableOpacity
+                                        style={{
+                                          marginTop: 8,
+                                          paddingVertical: 6,
+                                          paddingHorizontal: 12,
+                                          backgroundColor: canAdd ? theme.colors.primary : theme.colors.border,
+                                          borderRadius: 8,
+                                          alignSelf: 'center',
+                                        }}
+                                        onPress={() => {
+                                          if (!canAdd || !productId) return;
+                                          addToCart({
+                                            id: productId,
+                                            name: product.name,
+                                            price: sp,
+                                            image: productImage,
+                                            productId,
+                                            originalPrice: mrp > 0 ? mrp : undefined,
+                                          });
+                                        }}
+                                        disabled={!canAdd}
+                                      >
+                                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#fff' }}>ADD</Text>
+                                      </TouchableOpacity>
+                                    )}
+                                  </View>
                                 );
                               })}
                             </View>
+                            {hasMoreProducts && displayedProducts.length >= PRODUCTS_PAGE_SIZE && (
+                              <View style={styles.loadingContainer}>
+                                <ActivityIndicator size="small" color={theme.colors.primary} />
+                                <Text style={styles.loadingText}>Scroll for more</Text>
+                              </View>
+                            )}
+                            <View style={{ height: (insets?.bottom || 24) + 80 }} />
                           </>
                         )}
                       </>

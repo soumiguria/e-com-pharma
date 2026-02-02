@@ -782,10 +782,6 @@ const StoreListScreen = () => {
                   <View style={styles.cardContent}>
                     <View style={styles.storeHeader}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                        <Image
-                          source={store.image ? { uri: store.image } : require('../../assets/icon.png')}
-                          style={{ width: 32, height: 32, borderRadius: 16, marginRight: 10 }}
-                        />
                         <Text style={styles.storeName}>{store.name}</Text>
                       </View>
                       <TouchableOpacity onPress={() => store.mobile && handleCallStore(store.mobile)}>

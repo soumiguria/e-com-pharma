@@ -160,8 +160,6 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
       key: 'store',
       items: [
         { icon: 'store', label: 'About Store', onPress: handleAboutStorePress },
-        { icon: 'phone', label: 'Contact Store', onPress: handleContactStorePress },
-        { icon: 'map-marker-radius', label: 'Locate this Store', onPress: handleLocateStorePress },
       ],
     },
     {
@@ -195,8 +193,6 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
       items: [
         { icon: 'store-edit', label: 'Change Store', onPress: handleChangeStorePress },
         { icon: 'store', label: 'About Store', onPress: handleAboutStorePress },
-        { icon: 'phone', label: 'Contact Store', onPress: handleContactStorePress },
-        { icon: 'map-marker-radius', label: 'Locate this Store', onPress: handleLocateStorePress },
       ],
     },
     {

@@ -1,7 +1,8 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, StyleProp, ViewStyle, ImageURISource } from 'react-native';
 import { useCart } from '../../contexts/CartContext';
-import { MaterialIcons } from '@expo/vector-icons';
+import { useWishlist } from '../../contexts/WishlistContext';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useToast } from '../../contexts/ToastContext';
 import PriceBlock from '../ui/PriceBlock';
@@ -26,12 +27,17 @@ interface ProductCardProps {
   style?: StyleProp<ViewStyle>;
   compact?: boolean;
   hideCartButton?: boolean;
+  hidePercentOff?: boolean;
+  hideWishlist?: boolean;
+  showFullName?: boolean;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, compact, hideCartButton }) => {
+const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, compact, hideCartButton, hidePercentOff, hideWishlist, showFullName }) => {
   const { addToGroceryCart, addToPharmacyCart, groceryItems, pharmacyItems, updateQuantity } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { theme } = useTheme();
   const { showToast } = useToast();
+  const inWishlist = isInWishlist(product.id);
 
   const imageSource = typeof product.image === 'string' 
     ? { uri: product.image } 
@@ -203,12 +209,36 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
               <Text style={styles.badgeText}>Sale</Text>
             </View>
           )}
-          {percentOff && (
+          {!hidePercentOff && percentOff && (
             <View style={[styles.badge, { backgroundColor: '#FF9800', marginLeft: 4 }]}> 
               <Text style={styles.badgeText}>{percentOff}% off</Text>
             </View>
           )}
         </View>
+        {/* Wishlist heart - inside card, top-right, responsive */}
+        {!hideWishlist && (
+        <TouchableOpacity
+          style={styles.wishlistIconBtn}
+          onPress={(e) => {
+            e.stopPropagation();
+            if (inWishlist) removeFromWishlist(product.id);
+            else addToWishlist({
+              id: product.id,
+              name: product.name,
+              price: getValidPrice(),
+              image: typeof product.image === 'string' ? product.image : undefined,
+              originalPrice: product.originalPrice,
+            });
+          }}
+          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+        >
+          <MaterialCommunityIcons
+            name={inWishlist ? 'heart' : 'heart-outline'}
+            size={20}
+            color={inWishlist ? (theme.colors.primary || '#e91e63') : theme.colors.text}
+          />
+        </TouchableOpacity>
+        )}
         {!hideCartButton && (
           currentQuantity === 0 ? (
             <TouchableOpacity 
@@ -238,8 +268,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
           )
         )}
       </View>
-      <View style={[styles.infoContainer, compact && styles.compactInfoContainer]}>
-        <Text style={[styles.name, compact && styles.compactName, { color: theme.colors.text }]} numberOfLines={2}>{product.name}</Text>
+      <View style={[styles.infoContainer, compact && styles.compactInfoContainer, showFullName && { paddingHorizontal: 4 }]}>
+        <Text style={[styles.name, compact && styles.compactName, showFullName && styles.nameFull, { color: theme.colors.text }]} numberOfLines={showFullName ? undefined : 2}>{product.name}</Text>
         {product.prescriptionRequired && (
           <View style={styles.prescriptionContainer}>
             <Text style={styles.prescriptionText}>Prescription Required</Text>
@@ -261,11 +291,28 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 6,
     elevation: 5,
-    minHeight: 220, // Increased for better fit
+    minHeight: 220,
   },
   imageContainer: {
     position: 'relative',
     aspectRatio: 1,
+    overflow: 'hidden',
+  },
+  wishlistIconBtn: {
+    position: 'absolute',
+    top: 6,
+    right: 6,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
   },
   compactImageContainer: {
     width: 56,
@@ -327,24 +374,25 @@ const styles = StyleSheet.create({
   },
   addButton: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
-    minWidth: 100,
+    bottom: 8,
+    left: 8,
+    right: 8,
     minHeight: 36,
-    borderRadius: 6,
+    maxWidth: '100%',
+    borderRadius: 8,
     borderWidth: 1.5,
     borderColor: '#27ae60',
     backgroundColor: '#fff',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 6,
-    paddingVertical: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
     shadowColor: 'rgba(39, 174, 96, 0.08)',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 2,
     elevation: 1,
-    margin: 0, // No spacing between image border and button
+    alignSelf: 'center',
   },
   addButtonText: {
     color: '#27ae60',
@@ -355,18 +403,21 @@ const styles = StyleSheet.create({
   },
   counterContainer: {
     position: 'absolute',
-    bottom: 0,
-    right: 0,
+    bottom: 8,
+    left: 8,
+    right: 8,
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: '#fff',
-    borderRadius: 6,
+    borderRadius: 8,
     borderWidth: 1.5,
     borderColor: '#27ae60',
-    height: 28,
+    height: 36,
     minWidth: 70,
-    paddingHorizontal: 4,
-    margin: 0,
+    paddingHorizontal: 8,
+    maxWidth: '100%',
+    alignSelf: 'center',
   },
   counterBtn: {
     width: 28,
@@ -400,6 +451,10 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     marginBottom: 4,
     height: 36,
+  },
+  nameFull: {
+    height: undefined,
+    marginRight: 0,
   },
   compactName: {
     fontSize: 13,

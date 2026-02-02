@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,7 +8,7 @@ import {
   Alert,
   Image,
   Platform,
-  RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
@@ -37,32 +37,29 @@ const UploadPrescriptionScreen = () => {
     isImage?: boolean;
   } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  // Voice recognition removed from this screen; available on Search only
+  const [uploadingDots, setUploadingDots] = useState('');
+  const [imageLoading, setImageLoading] = useState(false);
 
-  // Reload/refresh order data when screen comes into focus
+  // Animated dots for "Uploading..." (cycle . / .. / ...)
+  useEffect(() => {
+    if (!isUploading) {
+      setUploadingDots('');
+      return;
+    }
+    const frames = ['.', '..', '...'];
+    let i = 0;
+    const id = setInterval(() => {
+      setUploadingDots(frames[i % 3]);
+      i++;
+    }, 400);
+    return () => clearInterval(id);
+  }, [isUploading]);
+
   useFocusEffect(
     useCallback(() => {
-      // Optionally refresh order data when screen is focused
-      // This ensures users see the latest order status
       console.log('📋 UploadPrescription screen focused');
     }, [])
   );
-
-  const onRefresh = useCallback(async () => {
-    setRefreshing(true);
-    // Reload order data if needed
-    // Navigate to OrderSelection to refresh order list
-    try {
-      navigation.navigate('OrderSelection' as any);
-      // Wait a bit before returning to allow navigation
-      setTimeout(() => {
-        setRefreshing(false);
-      }, 1000);
-    } catch (error) {
-      setRefreshing(false);
-    }
-  }, [navigation]);
 
   const requestPermissions = async () => {
     if (Platform.OS !== 'web') {
@@ -92,6 +89,7 @@ const UploadPrescriptionScreen = () => {
       });
 
       if (!result.canceled && result.assets[0]) {
+        setImageLoading(true);
         const asset = result.assets[0];
         
         // Extract filename from URI or use default
@@ -130,8 +128,10 @@ const UploadPrescriptionScreen = () => {
           mimeType: mimeType,
           isImage: true,
         });
+        // Keep imageLoading true until Image onLoad fires (see Image below)
       }
     } catch (error) {
+      setImageLoading(false);
       console.error('Error taking photo:', error);
       Alert.alert('Error', 'Failed to take photo. Please try again.');
     }
@@ -152,6 +152,7 @@ const UploadPrescriptionScreen = () => {
       // New API shape: result.assets
       const asset = (result as any).assets?.[0] || (result as any);
       if (asset && asset.uri) {
+        setImageLoading(true);
         const mimeType: string | null =
           asset.mimeType || asset.type || null;
 
@@ -165,8 +166,10 @@ const UploadPrescriptionScreen = () => {
           mimeType,
           isImage,
         });
+        if (!isImage) setImageLoading(false);
       }
     } catch (error) {
+      setImageLoading(false);
       console.error('Error choosing from documents:', error);
       Alert.alert('Error', 'Failed to select file from documents. Please try again.');
     }
@@ -449,31 +452,13 @@ const UploadPrescriptionScreen = () => {
           <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={themedStyles.headerTitle}>Upload Prescription</Text>
-        <TouchableOpacity 
-          style={themedStyles.reloadButton}
-          onPress={onRefresh}
-          disabled={refreshing}
-        >
-          <Ionicons 
-            name="reload" 
-            size={22} 
-            color={refreshing ? theme.colors.secondary : theme.colors.primary} 
-          />
-        </TouchableOpacity>
+        <View style={{ width: 40, marginLeft: 8 }} />
       </View>
 
       <ScrollView 
         style={themedStyles.content} 
         showsVerticalScrollIndicator={false}
         contentContainerStyle={themedStyles.scrollContent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={[theme.colors.primary]}
-            tintColor={theme.colors.primary}
-          />
-        }
       >
         {/* Action Buttons */}
         <View style={themedStyles.actionButtonsContainer}>
@@ -490,35 +475,53 @@ const UploadPrescriptionScreen = () => {
 
         {/* Voice input is only on Search screen */}
 
-        {/* Selected File Preview */}
-        {selectedFile && (
+        {/* Selected File Preview - render Image when we have image so onLoad can fire */}
+        {selectedFile && selectedFile.isImage && (
           <View style={themedStyles.selectedImageContainer}>
-            {selectedFile.isImage ? (
-              <Image source={{ uri: selectedFile.uri }} style={themedStyles.selectedImage} />
-            ) : (
-              <View
-                style={{
-                  height: 200,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: 16,
-                }}
-              >
-                <MaterialIcons name="picture-as-pdf" size={48} color={theme.colors.primary} />
-                <Text
-                  style={{
-                    marginTop: 8,
-                    color: theme.colors.text,
-                    fontSize: 14,
-                    textAlign: 'center',
-                  }}
-                  numberOfLines={2}
-                >
-                  {selectedFile.name || 'Selected document'}
-                </Text>
+            <Image
+              source={{ uri: selectedFile.uri }}
+              style={themedStyles.selectedImage}
+              onLoad={() => setImageLoading(false)}
+              onError={() => setImageLoading(false)}
+            />
+            {imageLoading && (
+              <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }}>
+                <ActivityIndicator size="large" color={theme.colors.primary} />
+                <Text style={{ marginTop: 12, fontSize: 14, color: theme.colors.secondary }}>Loading...</Text>
               </View>
             )}
-            <TouchableOpacity 
+            <TouchableOpacity
+              style={themedStyles.removeImageButton}
+              onPress={() => { setSelectedFile(null); setImageLoading(false); }}
+            >
+              <MaterialIcons name="close" size={20} color="white" />
+            </TouchableOpacity>
+          </View>
+        )}
+        {selectedFile && !selectedFile.isImage && (
+          <View style={themedStyles.selectedImageContainer}>
+            <View
+              style={{
+                height: 200,
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: 16,
+              }}
+            >
+              <MaterialIcons name="picture-as-pdf" size={48} color={theme.colors.primary} />
+              <Text
+                style={{
+                  marginTop: 8,
+                  color: theme.colors.text,
+                  fontSize: 14,
+                  textAlign: 'center',
+                }}
+                numberOfLines={2}
+              >
+                {selectedFile.name || 'Selected document'}
+              </Text>
+            </View>
+            <TouchableOpacity
               style={themedStyles.removeImageButton}
               onPress={() => setSelectedFile(null)}
             >
@@ -587,9 +590,14 @@ const UploadPrescriptionScreen = () => {
             onPress={handleUpload}
             disabled={isUploading}
           >
-            <Text style={themedStyles.uploadButtonText}>
-              {isUploading ? 'Uploading...' : 'Upload Prescription'}
-            </Text>
+            {isUploading ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
+                <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                <Text style={themedStyles.uploadButtonText}>Uploading{uploadingDots}</Text>
+              </View>
+            ) : (
+              <Text style={themedStyles.uploadButtonText}>Upload Prescription</Text>
+            )}
           </TouchableOpacity>
         )}
       </ScrollView>

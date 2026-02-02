@@ -1,17 +1,15 @@
 import React from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
-  Image,
   Dimensions,
-  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { GestureHandlerRootView, Gesture, GestureDetector } from 'react-native-gesture-handler';
+import Animated, { useSharedValue, useAnimatedStyle } from 'react-native-reanimated';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -22,21 +20,34 @@ type ImageViewerRouteProp = {
   };
 };
 
+const AnimatedImage = Animated.createAnimatedComponent(
+  require('react-native').Image as React.ComponentType<any>
+);
+
 const ImageViewerScreen = () => {
-  const { theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute() as ImageViewerRouteProp;
-  const { imageUrl, title = 'Image' } = route.params;
+  const { imageUrl } = route.params;
+
+  const scale = useSharedValue(1);
+  const savedScale = useSharedValue(1);
+
+  const pinchGesture = Gesture.Pinch()
+    .onUpdate((e) => {
+      const newScale = savedScale.value * e.scale;
+      scale.value = Math.min(Math.max(newScale, 0.5), 5);
+    })
+    .onEnd(() => {
+      savedScale.value = scale.value;
+    });
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
 
   const styles = StyleSheet.create({
-    safeArea: {
-      flex: 1,
-      backgroundColor: '#000',
-    },
-    container: {
-      flex: 1,
-      backgroundColor: '#000',
-    },
+    safeArea: { flex: 1, backgroundColor: '#000' },
+    container: { flex: 1, backgroundColor: '#000' },
     header: {
       position: 'absolute',
       top: 0,
@@ -45,25 +56,12 @@ const ImageViewerScreen = () => {
       zIndex: 1000,
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
       paddingHorizontal: 16,
       paddingTop: 50,
       paddingBottom: 16,
       backgroundColor: 'rgba(0, 0, 0, 0.5)',
     },
-    headerLeft: {
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    backButton: {
-      padding: 8,
-      marginRight: 12,
-    },
-    headerTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: '#fff',
-    },
+    backButton: { padding: 8 },
     imageContainer: {
       flex: 1,
       justifyContent: 'center',
@@ -74,55 +72,30 @@ const ImageViewerScreen = () => {
       height: screenHeight * 0.8,
       resizeMode: 'contain',
     },
-    errorContainer: {
-      flex: 1,
-      justifyContent: 'center',
-      alignItems: 'center',
-      padding: 20,
-    },
-    errorText: {
-      fontSize: 16,
-      color: '#fff',
-      textAlign: 'center',
-      marginTop: 16,
-    },
   });
 
   return (
-    <SafeAreaView style={styles.safeArea} edges={['top']}>
-      <View style={styles.container}>
-        {/* Header */}
-        <View style={styles.header}>
-          <View style={styles.headerLeft}>
-            <TouchableOpacity
-              onPress={() => navigation.goBack()}
-              style={styles.backButton}
-            >
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <View style={styles.container}>
+          <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
               <MaterialIcons name="arrow-back" size={24} color="#fff" />
             </TouchableOpacity>
-            <Text style={styles.headerTitle}>{title}</Text>
           </View>
+          <GestureDetector gesture={pinchGesture}>
+            <Animated.View style={[styles.imageContainer, animatedStyle]}>
+              <AnimatedImage
+                source={{ uri: imageUrl }}
+                style={styles.image}
+                resizeMode="contain"
+                onError={() => console.error('Failed to load image:', imageUrl)}
+              />
+            </Animated.View>
+          </GestureDetector>
         </View>
-
-        {/* Image */}
-        <ScrollView
-          contentContainerStyle={styles.imageContainer}
-          maximumZoomScale={3}
-          minimumZoomScale={1}
-          showsHorizontalScrollIndicator={false}
-          showsVerticalScrollIndicator={false}
-        >
-          <Image
-            source={{ uri: imageUrl }}
-            style={styles.image}
-            resizeMode="contain"
-            onError={() => {
-              console.error('Failed to load image:', imageUrl);
-            }}
-          />
-        </ScrollView>
-      </View>
-    </SafeAreaView>
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 };
 

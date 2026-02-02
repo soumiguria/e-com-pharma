@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -6,17 +6,14 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useWishlist } from '../../contexts/WishlistContext';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 const MyWishlistScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const [wishlistItems, setWishlistItems] = useState<any[]>([]);
-
-  const removeFromWishlist = (itemId: string) => {
-    setWishlistItems(prev => prev.filter(item => item.id !== itemId));
-  };
+  const { wishlistItems, removeFromWishlist } = useWishlist();
 
   const renderWishlistItem = ({ item }: { item: any }) => (
     <View style={[styles.wishlistItem, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border }]}>
@@ -26,7 +23,7 @@ const MyWishlistScreen = () => {
         <Text style={[styles.itemBrand, { color: theme.colors.secondary }]}>{item.brand}</Text>
         <View style={styles.priceRow}>
           <Text style={[styles.itemPrice, { color: theme.colors.primary }]}>₹{Number(item.price).toFixed(2)}</Text>
-          <Text style={[styles.originalPrice, { color: theme.colors.secondary }]}>₹{Number(item.originalPrice).toFixed(2)}</Text>
+          {/* <Text style={[styles.originalPrice, { color: theme.colors.secondary }]}>₹{Number(item.originalPrice).toFixed(2)}</Text> */}
         </View>
         {!item.inStock && (
           <Text style={[styles.outOfStock, { color: theme.colors.error }]}>Out of Stock</Text>

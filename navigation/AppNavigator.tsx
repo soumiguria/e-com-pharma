@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { BackHandler, Platform } from 'react-native';
+import { BackHandler, Platform, Alert } from 'react-native';
 import { useNavigationState } from '@react-navigation/native';
 import { RootStackParamList } from './types';
 import SplashScreen from '../screens/auth/SplashScreen';
@@ -78,11 +78,17 @@ const AppNavigator = () => {
       
       const currentRouteName = getCurrentRouteName(navigationState);
       
-      // If we're on Main/Home screen, exit the app
+      // If we're on Main/Home screen, show exit confirmation
       if (currentRouteName === 'Main' || currentRouteName === 'Home' || currentRouteName === 'HomeRoot') {
-        if (Platform.OS === 'android') {
-          BackHandler.exitApp();
-        }
+        Alert.alert(
+          'Exit App',
+          'Do you want to exit the app?',
+          [
+            { text: 'No', style: 'cancel', onPress: () => {} },
+            { text: 'Yes', onPress: () => { if (Platform.OS === 'android') BackHandler.exitApp(); } },
+          ],
+          { cancelable: true }
+        );
         return true; // Prevent default back action
       }
       

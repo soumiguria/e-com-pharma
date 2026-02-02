@@ -1,44 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Linking, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import deepLinkingService from '../../services/deepLinkingService';
+import { useAppContext } from '../../contexts/AppContext';
 import storeService, { formatStoreAddress } from '../../services/api/storeService';
 
 const AboutStoreScreen = () => {
   const { theme } = useTheme();
   const navigation = useNavigation();
   const route = useRoute();
+  const { selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore } = useAppContext();
   const [storeData, setStoreData] = useState<any>(null);
   const [formattedStoreAddress, setFormattedStoreAddress] = useState<string>('');
   const [loading, setLoading] = useState(false);
-  
-  // Debug route parameters
-  console.log('🏪 AboutStoreScreen: Route params:', route.params);
-  console.log('🏪 AboutStoreScreen: Route name:', route.name);
-  
-  // Check if store data is available
+
   const params = route.params as any;
-  const storeId = params?.storeId;
-  
+  const storeId = params?.storeId || selectedStore?.id;
+  const displayStore = selectedStore || lastVisitedStore || lastVisitedGroceryStore || lastVisitedPharmacyStore;
+
   useEffect(() => {
     if (storeId) {
-      console.log('🏪 AboutStoreScreen: Store ID from params:', storeId);
-      console.log('🏪 AboutStoreScreen: Store data from params:', params?.store);
-      
-      // If we have store data from deep link, use it
       if (params?.store) {
-        console.log('🏪 AboutStoreScreen: Using store data from deep link');
         setStoreData(params.store);
+        const coords = params.store?.location?.coordinates;
+        if (params.store?.address || coords) {
+          setFormattedStoreAddress(formatStoreAddress(params.store.address || {}, coords));
+        }
       } else {
-        // Fetch store details using storeId
-        console.log('🏪 AboutStoreScreen: Fetching store details for ID:', storeId);
         fetchStoreDetails(storeId);
       }
+    } else if (selectedStore) {
+      fetchStoreDetails(selectedStore.id);
     }
-  }, [storeId, params?.store]);
+  }, [storeId, params?.store, selectedStore?.id]);
 
   const fetchStoreDetails = async (storeId: string) => {
     setLoading(true);
@@ -81,70 +77,75 @@ const AboutStoreScreen = () => {
     }
   };
 
+  const storeName = storeData?.name || selectedStore?.name || 'About Store';
+  const address = formattedStoreAddress || storeData?.address || (storeData?.config?.address && typeof storeData.config.address === 'string' ? storeData.config.address : null) || 'Address not available';
+  const phone = storeData?.mobile || storeData?.phone || (storeData?.config as any)?.phone;
+  const email = storeData?.email || (storeData?.config as any)?.email;
+  const coordinates = storeData?.location?.coordinates as [number, number] | undefined;
+
+  const handleCall = () => {
+    if (!phone) { Alert.alert('', 'Phone number not available'); return; }
+    Linking.openURL(`tel:${phone}`).catch(() => Alert.alert('', 'Unable to make call'));
+  };
+  const handleEmail = () => {
+    if (!email) { Alert.alert('', 'Email not available'); return; }
+    Linking.openURL(`mailto:${email}`).catch(() => Alert.alert('', 'Unable to open email'));
+  };
+  const handleLocate = () => {
+    if (coordinates && coordinates.length === 2) {
+      const [lat, lng] = coordinates;
+      Linking.openURL(`https://www.google.com/maps?q=${lat},${lng}`).catch(() => Alert.alert('', 'Unable to open maps'));
+    } else if (address && address !== 'Address not available') {
+      Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`).catch(() => Alert.alert('', 'Unable to open maps'));
+    } else {
+      Alert.alert('', 'Location not available');
+    }
+  };
+
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.colors.background }} edges={['top']}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
           <MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.text} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>
-          {storeData?.name || 'About Store'}
-        </Text>
+        <Text style={[styles.headerTitle, { color: theme.colors.text }]}>About Store</Text>
         <View style={styles.placeholder} />
       </View>
-      
+
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
         {loading ? (
-          <View style={[styles.section, { backgroundColor: theme.colors.surface, alignItems: 'center', padding: 20 }]}>
-            <Text style={[styles.description, { color: theme.colors.text }]}>Loading store details...</Text>
+          <View style={[styles.section, { backgroundColor: theme.colors.surface, alignItems: 'center', padding: 24 }]}>
+            <ActivityIndicator size="large" color={theme.colors.primary} />
+            <Text style={[styles.description, { color: theme.colors.text, marginTop: 12 }]}>Loading store details...</Text>
           </View>
         ) : (
           <>
             <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-              <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Store Information</Text>
-              <Text style={[styles.description, { color: theme.colors.text }]}>
-                {storeData?.description || 'Welcome to our store! We are committed to providing fresh, high-quality products to our customers.'}
-              </Text>
-       {(formattedStoreAddress || storeData?.address) && (
-         <Text style={[styles.description, { color: theme.colors.text, marginTop: 10 }]}>
-           📍 Address: {formattedStoreAddress || 'Address not available'}
-         </Text>
-       )}
-              {storeData?.phone && (
-                <Text style={[styles.description, { color: theme.colors.text, marginTop: 5 }]}>
-                  📞 Phone: {storeData.phone}
-                </Text>
-              )}
+              <Text style={[styles.sectionTitle, { color: theme.colors.text, fontSize: 20 }]}>{storeName}</Text>
+              {/* <Text style={[styles.description, { color: theme.colors.text, marginTop: 12 }]}>
+                {formattedStoreAddress || storeData?.address}
+              </Text> */}
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', marginTop: 16, gap: 12 }}>
+                {phone ? (
+                  <TouchableOpacity style={[styles.contactBtn, { backgroundColor: theme.colors.primary }]} onPress={handleCall}>
+                    <MaterialCommunityIcons name="phone" size={20} color="#fff" />
+                    <Text style={styles.contactBtnText}>Call</Text>
+                  </TouchableOpacity>
+                ) : null}
+                {email ? (
+                  <TouchableOpacity style={[styles.contactBtn, { backgroundColor: theme.colors.primary }]} onPress={handleEmail}>
+                    <MaterialCommunityIcons name="email" size={20} color="#fff" />
+                    <Text style={styles.contactBtnText}>Email</Text>
+                  </TouchableOpacity>
+                ) : null}
+                <TouchableOpacity style={[styles.contactBtn, { backgroundColor: theme.colors.primary }]} onPress={handleLocate}>
+                  <MaterialCommunityIcons name="map-marker" size={20} color="#fff" />
+                  <Text style={styles.contactBtnText}>Locate</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </>
         )}
-
-        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Our Mission</Text>
-          <Text style={[styles.description, { color: theme.colors.text }]}>
-            To provide fresh, quality groceries and household essentials at competitive prices, 
-            while ensuring excellent customer service and convenience.
-          </Text>
-        </View>
-
-        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Store Hours</Text>
-          <Text style={[styles.description, { color: theme.colors.text }]}>
-            Monday - Friday: 7:00 AM - 10:00 PM{'\n'}
-            Saturday - Sunday: 8:00 AM - 9:00 PM
-          </Text>
-        </View>
-
-        <View style={[styles.section, { backgroundColor: theme.colors.surface }]}>
-          <Text style={[styles.sectionTitle, { color: theme.colors.text }]}>Services</Text>
-          <Text style={[styles.description, { color: theme.colors.text }]}>
-            • Home Delivery{'\n'}
-            • Online Ordering{'\n'}
-            • Fresh Produce{'\n'}
-            • Quality Assurance{'\n'}
-            • Customer Support
-          </Text>
-        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -192,6 +193,19 @@ const styles = StyleSheet.create({
   description: {
     fontSize: 16,
     lineHeight: 24,
+  },
+  contactBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    gap: 8,
+  },
+  contactBtnText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#fff',
   },
 });
 

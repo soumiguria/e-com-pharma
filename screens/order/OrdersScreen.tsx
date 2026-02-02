@@ -143,7 +143,7 @@ const OrdersScreen = () => {
             quantity: Number(item.quantity) || 1,
             price: Number(item.actual ?? item.price ?? item.sp ?? 0),
             type: orderType as 'grocery' | 'pharma',
-            image: item.images?.primary || item.signedImages?.primary || item.image,
+            image: item.signedImage || item.image || item.images?.primary || (Array.isArray(item.images) ? item.images[0] : undefined) || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
           }));
 
           // Use actual payment status if available, otherwise fallback to payment object status

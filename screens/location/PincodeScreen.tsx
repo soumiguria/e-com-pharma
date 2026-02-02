@@ -64,12 +64,19 @@ const PincodeScreen = () => {
     checkLocationPermission();
   }, []);
 
-  // Handle back button to close app when on pincode screen
+  // Handle back button: show exit confirmation when on pincode screen
   useFocusEffect(
     React.useCallback(() => {
       const onBackPress = () => {
-        // Close the app when back button is pressed on pincode screen
-        BackHandler.exitApp();
+        Alert.alert(
+          'Exit App',
+          'Do you want to exit the app?',
+          [
+            { text: 'No', style: 'cancel', onPress: () => {} },
+            { text: 'Yes', onPress: () => BackHandler.exitApp() },
+          ],
+          { cancelable: true }
+        );
         return true; // Prevent default back action
       };
 
@@ -293,7 +300,7 @@ const PincodeScreen = () => {
               keyboardType="numeric"
               maxLength={6}
               style={styles.input}
-              placeholderTextColor={theme.colors.secondary}
+              placeholderTextColor={theme.colors.primary}
             />
 
             <Button

@@ -23,6 +23,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, HomeStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useCart } from '../../contexts/CartContext';
+import { useWishlist } from '../../contexts/WishlistContext';
 import { useAppContext } from '../../contexts/AppContext';
 import { useAuth } from '../../contexts/AuthContext';
 import Drawer from '../../components/profile/ProfileDrawer';
@@ -65,6 +66,7 @@ const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { 
   const navigation = useNavigation<NavigationProp>();
   const { selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore, setSelectedStore } = useAppContext();
   const { groceryItems, totalItems } = useCart();
+  const { wishlistCount } = useWishlist();
   const { isAuthenticated } = useAuth();
 
   // Show last visited store name if user is logged in and no store is currently selected
@@ -111,8 +113,8 @@ const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { 
     numberOfLines={1}
   >
     {displayStore?.name
-      ? displayStore.name.length > 15
-        ? `${displayStore.name.slice(0, 15)}...`
+      ? displayStore.name.length > 18
+        ? `${displayStore.name.slice(0, 18)}...`
         : displayStore.name
       : 'Unknown Store'}
   </Text>
@@ -120,8 +122,23 @@ const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { 
 
         </View>
         
-        {/* Right side - Cart Icon with slight left shift */}
+        {/* Right side - Wishlist and Cart */}
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: 8 }}>
+          <TouchableOpacity 
+            style={[themedStyles.headerIcon, { marginRight: 12 }]}
+            onPress={() => navigation.navigate('MyWishlist' as any)}
+          >
+            <MaterialCommunityIcons 
+              name="heart-outline" 
+              size={24} 
+              color={theme.colors.text} 
+            />
+            {wishlistCount > 0 && (
+              <View style={[themedStyles.cartBadge, { backgroundColor: theme.colors.primary }]}> 
+                <Text style={themedStyles.cartBadgeText}>{wishlistCount}</Text>
+              </View>
+            )}
+          </TouchableOpacity>
           <TouchableOpacity 
             style={[themedStyles.headerIcon, { marginRight: 8 }]}
             onPress={() => navigation.navigate('Cart')}
@@ -715,6 +732,9 @@ const HomeScreen = () => {
                 <HorizontallyScrollableSection 
                   title={isPharmacyStore ? 'Recently Bought Medicines' : 'Recently Bought'}
                   itemsOverride={homeProducts.map(p => ({...p, category: isPharmacyStore ? 'pharma' : 'grocery'}))}
+                  hidePercentOff
+                  hideWishlist
+                  showFullName
                 />
               ) : (
                 <View style={{ padding: 20, alignItems: 'center' }}>

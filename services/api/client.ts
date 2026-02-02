@@ -4,6 +4,7 @@ import axios, { AxiosRequestConfig, AxiosResponse } from 'axios';
 import { Platform } from 'react-native';
 import { ApiResponse, ApiError } from './types';
 import { isSSLError } from '../../utils/networkSecurity';
+import { emitTokenExpired } from '../../utils/authEvents';
 
 // API Configuration
 const API_CONFIG = {
@@ -382,10 +383,12 @@ class ApiClient {
       console.error('   Error Message:', apiError.message);
       console.error('   Error Details:', JSON.stringify(apiError.details, null, 2));
       
-      // Handle authentication errors
-      if (apiError.code === 'UNAUTHORIZED' || apiError.code === 'TOKEN_EXPIRED') {
+      // When backend returns 401 (token expired/invalid), clear auth and notify app. Frontend does not set token expiry; backend determines it.
+      const is401 = error?.response?.status === 401 || apiError.code === 'UNAUTHORIZED' || apiError.code === 'TOKEN_EXPIRED' || apiError.code === 'HTTP_401';
+      if (is401) {
         await this.clearAuthToken();
-        // You might want to trigger a logout or redirect to login
+        try { await AsyncStorage.removeItem('user_data'); } catch (_) {}
+        emitTokenExpired();
       }
 
       return {

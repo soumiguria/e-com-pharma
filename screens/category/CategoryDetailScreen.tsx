@@ -13,6 +13,7 @@ import {
   Pressable,
   Animated,
   TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
@@ -22,6 +23,7 @@ import { useTheme } from '../../contexts/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ThemedButton from '../../components/ui/ThemedButton';
 import { useCart } from '../../contexts/CartContext';
+import { useWishlist } from '../../contexts/WishlistContext';
 import { useAppContext } from '../../contexts/AppContext';
 import { storeService } from '../../services/api/storeService';
 import { storeProductService } from '../../services/api/storeProductService';
@@ -87,6 +89,7 @@ const CategoryDetailScreen = () => {
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { theme, section } = useTheme();
   const { addToGroceryCart, addToPharmacyCart, removeFromCart, updateQuantity, groceryItems, pharmacyItems } = useCart();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore } = useAppContext();
   const { category } = route.params;
   
@@ -113,7 +116,6 @@ const CategoryDetailScreen = () => {
   const [selectedPrice, setSelectedPrice] = useState<string | null>(null);
   const [selectedPackSizes, setSelectedPackSizes] = useState<string[]>([]);
   const [selectedDiscount, setSelectedDiscount] = useState<string | null>(null);
-  const [favProducts, setFavProducts] = useState<string[]>([]);
   const [selectedVariants, setSelectedVariants] = useState<{ [productId: string]: { id: string; name: string; price: number; stock: number } | undefined }>({});
 
   // Fetch subcategories when component mounts
@@ -341,8 +343,10 @@ const CategoryDetailScreen = () => {
       variant: variant ? { name: variant.name, unit: 'unit' } : undefined,
     });
   };
-  const handleFavToggle = (productId: string) => {
-    setFavProducts(favs => favs.includes(productId) ? favs.filter(id => id !== productId) : [...favs, productId]);
+  const handleFavToggle = (product: Product) => (e: any) => {
+    e?.stopPropagation?.();
+    if (isInWishlist(product.id)) removeFromWishlist(product.id);
+    else addToWishlist({ id: product.id, name: product.name, price: product.price, image: product.image, brand: product.brand });
   };
 
   // No placeholder image - use empty string if image not present
@@ -425,17 +429,47 @@ const CategoryDetailScreen = () => {
             keyExtractor={item => item.id}
             showsVerticalScrollIndicator={true}
             contentContainerStyle={styles.productList}
-            ListEmptyComponent={<Text style={[styles.noProducts, { color: theme.colors.secondary }]}>No products available</Text>}
+            ListEmptyComponent={
+              loading ? (
+                <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+                  <ActivityIndicator size="large" color={theme.colors.primary} />
+                  <Text style={[styles.noProducts, { color: theme.colors.secondary, marginTop: 12 }]}>Loading...</Text>
+                </View>
+              ) : (
+                <Text style={[styles.noProducts, { color: theme.colors.secondary }]}>No products available</Text>
+              )
+            }
             renderItem={({ item: product }) => {
               const selectedVariant = selectedVariants[product.id] ?? (product.variants ? product.variants[0] : undefined);
-              const isFav = favProducts.includes(product.id);
+              const isFav = isInWishlist(product.id);
               return (
                 <TouchableOpacity style={[styles.productCardList, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, shadowColor: theme.colors.text }]} onPress={() => navigation.navigate('ProductDetail', { product })} activeOpacity={0.85}>
-                  <Image source={{ uri: product.image }} style={styles.productImageList} />
+                  <View style={styles.productImageColumn}>
+                    <Image source={{ uri: product.image }} style={styles.productImageList} />
+                    <TouchableOpacity style={styles.favBtnBelowImage} onPress={handleFavToggle(product)}>
+                      <MaterialCommunityIcons name={isFav ? 'heart' : 'heart-outline'} size={22} color={isFav ? theme.colors.primary : theme.colors.secondary} />
+                    </TouchableOpacity>
+                  </View>
                   <View style={styles.productInfoList}>
                     <Text style={[styles.productName, { color: theme.colors.text }]}>{product.name}</Text>
                     {product.brand && <Text style={[styles.productBrand, { color: theme.colors.secondary }]}>{product.brand}</Text>}
-                    <Text style={[styles.productPrice, { color: theme.colors.primary }]}>{selectedVariant ? selectedVariant.price.toFixed(2) : product.price.toFixed(2)}</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
+                      <Text style={[styles.productPrice, { color: theme.colors.primary }]}>₹{selectedVariant ? selectedVariant.price.toFixed(2) : Number(product.price || product.sp || 0).toFixed(2)}</Text>
+                      {(() => {
+                        const sp = selectedVariant ? selectedVariant.price : Number(product.price || product.sp || 0);
+                        const mrp = Number((product as any).mrp || product.originalPrice || product.price || 0);
+                        if (mrp > sp && sp > 0) {
+                          const pct = Math.round(((mrp - sp) / mrp) * 100);
+                          return (
+                            <>
+                              <Text style={[styles.productPrice, { color: theme.colors.secondary, textDecorationLine: 'line-through', marginLeft: 8, fontSize: 13 }]}>₹{mrp.toFixed(2)}</Text>
+                              <Text style={{ fontSize: 12, fontWeight: 'bold', color: '#27ae60', marginLeft: 6 }}>{pct}% OFF</Text>
+                            </>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </View>
                     {product.variants && (
                       <View style={styles.productVariants}>
                         {product.variants.map((variant: { id: string; name: string; price: number; stock: number }) => (
@@ -464,84 +498,59 @@ const CategoryDetailScreen = () => {
                       </View>
                     )}
                     <View style={styles.addRowList}>
-                      {getCartQuantity(product.id) > 0 ? (
-                        <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 6, borderWidth: 1.5, borderColor: '#27ae60', height: 28, minWidth: 70, paddingHorizontal: 4, margin: 0 }}>
-                          <TouchableOpacity onPress={() => {
-                            const currentQty = getCartQuantity(product.id);
-                            const newQty = Math.max(0, currentQty - 1);
-                            const category = isPharma ? 'pharma' : 'grocery';
-                            updateQuantity(product.id, newQty, category);
-                          }} style={{ width: 28, height: 28, justifyContent: 'center', alignItems: 'center' }}>
-                            <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>-</Text>
-                          </TouchableOpacity>
-                          <Text style={{ width: 24, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 16 }}>{getCartQuantity(product.id)}</Text>
-                          <TouchableOpacity 
-                            onPress={() => {
+                      <View style={styles.addButtonWrapper}>
+                        {getCartQuantity(product.id) > 0 ? (
+                          <View style={styles.counterRow}>
+                            <TouchableOpacity onPress={() => {
                               const currentQty = getCartQuantity(product.id);
-                              const availableQty = getValidQuantity(product);
+                              const newQty = Math.max(0, currentQty - 1);
                               const category = isPharma ? 'pharma' : 'grocery';
-                              
-                              if (currentQty < availableQty) {
-                                const cartItems = isPharma ? pharmacyItems : groceryItems;
-                                const existing = cartItems.find(item => item.id === product.id);
-                                
-                                if (existing) {
-                                  updateQuantity(product.id, currentQty + 1, category);
-                                } else {
-                                  if (isPharma) {
-                                    addToPharmacyCart({ id: product.id, name: product.name, price: product.price, image: product.image, productId: (product as any).productId || product.id });
-                                  } else {
-                                    addToGroceryCart({ id: product.id, name: product.name, price: product.price, image: product.image, productId: (product as any).productId || product.id });
-                                  }
+                              updateQuantity(product.id, newQty, category);
+                            }} style={styles.counterBtnSmall}>
+                              <Text style={styles.counterBtnTextSmall}>-</Text>
+                            </TouchableOpacity>
+                            <Text style={styles.counterValueSmall}>{getCartQuantity(product.id)}</Text>
+                            <TouchableOpacity 
+                              onPress={() => {
+                                const currentQty = getCartQuantity(product.id);
+                                const availableQty = getValidQuantity(product);
+                                const category = isPharma ? 'pharma' : 'grocery';
+                                if (currentQty < availableQty) {
+                                  const cartItems = isPharma ? pharmacyItems : groceryItems;
+                                  const existing = cartItems.find(item => item.id === product.id);
+                                  if (existing) updateQuantity(product.id, currentQty + 1, category);
+                                  else if (isPharma) addToPharmacyCart({ id: product.id, name: product.name, price: product.price, image: product.image, productId: (product as any).productId || product.id });
+                                  else addToGroceryCart({ id: product.id, name: product.name, price: product.price, image: product.image, productId: (product as any).productId || product.id });
                                 }
+                              }} 
+                              style={[styles.counterBtnSmall, getCartQuantity(product.id) >= getValidQuantity(product) && { opacity: 0.5 }]}
+                              disabled={getCartQuantity(product.id) >= getValidQuantity(product)}
+                            >
+                              <Text style={styles.counterBtnTextSmall}>+</Text>
+                            </TouchableOpacity>
+                          </View>
+                        ) : (
+                          <TouchableOpacity
+                            style={[
+                              styles.addBtn, 
+                              { 
+                                backgroundColor: canAddToCart(product) ? theme.colors.primary : '#dc3545',
+                                shadowColor: canAddToCart(product) ? theme.colors.primary : '#dc3545',
+                                opacity: canAddToCart(product) ? 1 : 0.7
                               }
-                            }} 
-                            style={{ 
-                              width: 28, 
-                              height: 28, 
-                              justifyContent: 'center', 
-                              alignItems: 'center',
-                              opacity: getCartQuantity(product.id) < getValidQuantity(product) ? 1 : 0.5
+                            ]}
+                            onPress={() => {
+                              if (!canAddToCart(product)) return;
+                              const category = isPharma ? 'pharma' : 'grocery';
+                              if (isPharma) addToPharmacyCart({ id: product.id, name: product.name, price: product.price, image: product.image, productId: (product as any).productId || product.id });
+                              else addToGroceryCart({ id: product.id, name: product.name, price: product.price, image: product.image, productId: (product as any).productId || product.id });
                             }}
-                            disabled={getCartQuantity(product.id) >= getValidQuantity(product)}
+                            disabled={!canAddToCart(product)}
                           >
-                            <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>+</Text>
+                            <Text style={styles.addBtnText}>{canAddToCart(product) ? 'ADD' : 'OUT OF STOCK'}</Text>
                           </TouchableOpacity>
-                        </View>
-                      ) : (
-                        <TouchableOpacity
-                          style={[
-                            styles.addBtn, 
-                            { 
-                              backgroundColor: canAddToCart(product) ? theme.colors.primary : '#dc3545',
-                              shadowColor: canAddToCart(product) ? theme.colors.primary : '#dc3545',
-                              opacity: canAddToCart(product) ? 1 : 0.7
-                            }
-                          ]}
-                          onPress={() => {
-                            if (!canAddToCart(product)) return;
-                            const category = isPharma ? 'pharma' : 'grocery';
-                            if (isPharma) {
-                              addToPharmacyCart({ id: product.id, name: product.name, price: product.price, image: product.image, productId: (product as any).productId || product.id });
-                            } else {
-                              addToGroceryCart({ id: product.id, name: product.name, price: product.price, image: product.image, productId: (product as any).productId || product.id });
-                            }
-                          }}
-                          disabled={!canAddToCart(product)}
-                        >
-                          <Text style={styles.addBtnText}>{canAddToCart(product) ? 'ADD' : 'OUT OF STOCK'}</Text>
-                        </TouchableOpacity>
-                      )}
-                      <TouchableOpacity
-                        style={styles.favBtn}
-                        onPress={() => handleFavToggle(product.id)}
-                      >
-                        <MaterialCommunityIcons
-                          name={isFav ? 'heart' : 'heart-outline'}
-                          size={22}
-                          color={isFav ? theme.colors.primary : theme.colors.secondary}
-                        />
-                      </TouchableOpacity>
+                        )}
+                      </View>
                     </View>
                   </View>
                 </TouchableOpacity>
@@ -787,13 +796,26 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#f2f2f2',
     position: 'relative',
+    overflow: 'hidden',
+  },
+  productImageColumn: {
+    marginRight: 12,
+    alignItems: 'center',
   },
   productImageList: {
     width: 80,
     height: 80,
     borderRadius: 10,
-    marginRight: 12,
+    marginBottom: 6,
     backgroundColor: '#f0f0f0',
+  },
+  favBtnBelowImage: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.04)',
   },
   productInfoList: {
     flex: 1,
@@ -855,8 +877,49 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '600',
   },
+  addButtonWrapper: {
+    flex: 1,
+    minWidth: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  counterRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: '#27ae60',
+    height: 42,
+    minWidth: 88,
+    paddingHorizontal: 8,
+  },
+  counterBtnSmall: {
+    width: 34,
+    height: 34,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  counterBtnTextSmall: {
+    color: '#27ae60',
+    fontWeight: 'bold',
+    fontSize: 20,
+  },
+  counterValueSmall: {
+    width: 28,
+    textAlign: 'center',
+    color: '#27ae60',
+    fontWeight: 'bold',
+    fontSize: 17,
+  },
   favBtn: {
     marginLeft: 8,
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.04)',
   },
   noProducts: {
     color: '#888',
@@ -866,21 +929,21 @@ const styles = StyleSheet.create({
   },
   addRowList: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    marginTop: 4,
-    gap: 10,
+    alignItems: 'center',
+    marginTop: 8,
+    gap: 8,
+    flexWrap: 'nowrap',
   },
   addBtn: {
     flex: 1,
+    maxWidth: '100%',
     backgroundColor: '#00b14f',
-    borderRadius: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 8,
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 8,
-    minWidth: 100,
-    minHeight: 40,
+    minHeight: 44,
     shadowColor: '#00b14f',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.08,
@@ -890,7 +953,7 @@ const styles = StyleSheet.create({
   addBtnText: {
     color: '#fff',
     fontWeight: 'bold',
-    fontSize: 11,
+    fontSize: 13,
     letterSpacing: 0.2,
   },
 });

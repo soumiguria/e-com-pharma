@@ -7,6 +7,7 @@ import AppNavigator from './navigation/AppNavigator';
 import { ThemeProvider, useTheme } from './contexts/ThemeContext';
 import { StorageProvider } from './contexts/StorageContext';
 import { CartProvider, useCart } from './contexts/CartContext';
+import { WishlistProvider } from './contexts/WishlistContext';
 import { AppProvider } from './contexts/AppContext';
 import { ToastProvider } from './contexts/ToastContext';
 import { AuthProvider } from './contexts/AuthContext';
@@ -62,33 +63,31 @@ const FloatingCartButton = () => {
     ].includes(currentRoute)
   ) return null;
 
-  // Adjust position for SearchScreen
-  const isSearchScreen = currentRoute === 'SearchScreen';
-
   return (
     <TouchableOpacity
       onPress={() => navigation.navigate('Cart')}
       style={{
         position: 'absolute',
-        top: isSearchScreen ? (insets.top + 70) : (insets.top + 20), // Use safe area insets for proper positioning
-        right: 14,
+        top: (insets.top || 16) + 8,
+        right: 16,
+        minWidth: 44,
+        height: 44,
         backgroundColor: '#1A7B50',
         borderRadius: 22,
         paddingHorizontal: 12,
-        paddingVertical: 7,
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center',
         elevation: 8,
         zIndex: 9999,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.2,
         shadowRadius: 6,
-        maxWidth: 120,
       }}
     >
-      <MaterialCommunityIcons name="cart" size={18} color="#fff" />
-      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 13, marginLeft: 6 }}>{totalItems}</Text>
+      <MaterialCommunityIcons name="cart" size={20} color="#fff" />
+      <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14, marginLeft: 6 }}>{totalItems}</Text>
     </TouchableOpacity>
   );
 };
@@ -130,8 +129,9 @@ const AppContent = () => {
   return (
       <NavigationContainer theme={theme} linking={linking}>
         <NativeBaseProvider>
-          <AppProvider>
+            <AppProvider>
             <StorageProvider>
+              <WishlistProvider>
               <CartProvider>
                 <ToastProvider>
                   <DeepLinkProvider>
@@ -145,6 +145,7 @@ const AppContent = () => {
                   <CustomToast />
                 </ToastProvider>
               </CartProvider>
+              </WishlistProvider>
             </StorageProvider>
           </AppProvider>
         </NativeBaseProvider>

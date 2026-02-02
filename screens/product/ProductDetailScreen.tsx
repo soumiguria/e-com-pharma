@@ -524,9 +524,13 @@ const ProductDetailScreen = () => {
             showsHorizontalScrollIndicator={false}
             keyExtractor={(_, idx) => idx.toString()}
             renderItem={({ item }) => (
-              <View style={{ width, height: width * 0.7, alignItems: 'center', justifyContent: 'center' }}>
+              <TouchableOpacity
+                activeOpacity={1}
+                style={{ width, height: width * 0.7, alignItems: 'center', justifyContent: 'center' }}
+                onPress={() => navigation.navigate('ImageViewer', { imageUrl: item, title: extendedProduct.name })}
+              >
                 <Image source={{ uri: item }} style={{ width: width * 0.8, height: width * 0.6, resizeMode: 'contain', borderRadius: 16, backgroundColor: '#f7f7f7' }} />
-              </View>
+              </TouchableOpacity>
             )}
             onScroll={e => {
               const index = Math.round(e.nativeEvent.contentOffset.x / width);
@@ -549,38 +553,61 @@ const ProductDetailScreen = () => {
           <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.colors.text, marginBottom: 2 }}>{extendedProduct.name}</Text>
           {/* Show selected variant name dynamically */}
           <Text style={{ fontSize: 15, color: theme.colors.secondary, marginBottom: 8 }}>{selectedVariant ? selectedVariant.name : (variants[0]?.name || '')}</Text>
-          {/* Price Block */}
-          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, backgroundColor: '#F7F7F7', borderRadius: 8, padding: 8, alignSelf: 'flex-start' }}>
-            <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.colors.primary }}>₹{getValidPrice().toFixed(2)}</Text>
-            {getValidPrice() > 0 && (
-              <>
-                {percentOff > 0 && (
-  <>
-    <Text
-      style={{
-        fontSize: 15,
-        color: '#888',
-        textDecorationLine: 'line-through',
-        marginLeft: 10,
-      }}
-    >
-      ₹{product.originalPrice.toFixed(2)}
-    </Text>
-
-    <Text
-      style={{
-        fontSize: 14,
-        color: '#27ae60',
-        fontWeight: 'bold',
-        marginLeft: 10,
-      }}
-    >
-      {percentOff}% OFF
-    </Text>
-  </>
-)}
-</>
+          {/* Price block on left, Add/counter on extreme right */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12, width: '100%', flexWrap: 'wrap' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', backgroundColor: '#F7F7F7', borderRadius: 8, padding: 8, gap: 8 }}>
+              <Text style={{ fontSize: 22, fontWeight: 'bold', color: theme.colors.primary }}>₹{getValidPrice().toFixed(2)}</Text>
+              {getValidPrice() > 0 && percentOff > 0 && (
+                <>
+                  <Text style={{ fontSize: 15, color: '#888', textDecorationLine: 'line-through' }}>₹{product.originalPrice.toFixed(2)}</Text>
+                  <Text style={{ fontSize: 14, color: '#27ae60', fontWeight: 'bold' }}>{percentOff}% OFF</Text>
+                </>
+              )}
+            </View>
+            <View style={{ marginLeft: 8 }}>
+            {selectedVariant ? (
+              getCartQuantity(originalProductId, selectedVariant.id) > 0 ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, borderWidth: 1.5, borderColor: '#27ae60', height: 40, paddingHorizontal: 6, marginLeft: 8 }}>
+                  <TouchableOpacity onPress={() => { const id = `${originalProductId}-${selectedVariant.id}`; updateQuantity(id, Math.max(0, getCartQuantity(originalProductId, selectedVariant.id) - 1), productDetails.category || 'grocery'); }} style={{ width: 36, height: 36, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 20 }}>-</Text>
+                  </TouchableOpacity>
+                  <Text style={{ width: 28, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>{getCartQuantity(originalProductId, selectedVariant.id)}</Text>
+                  <TouchableOpacity onPress={() => {
+                    const id = `${originalProductId}-${selectedVariant.id}`;
+                    const cat = productDetails.category || 'grocery';
+                    const items = cat === 'pharma' ? pharmacyItems : groceryItems;
+                    const ex = items.find(item => item.id === id);
+                    if (ex) updateQuantity(id, ex.quantity + 1, cat);
+                    else addToCorrectCart({ id, name: productDetails.name, price: selectedVariant.price, image: productDetails.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg', variant: { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1]?.replace(/[()]/g, '') || '' }, productId: productDetails.productId || originalProductId, originalPrice: productDetails.originalPrice });
+                  }} style={{ width: 36, height: 36, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 20 }}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity style={{ backgroundColor: canAddToCart() ? theme.colors.primary : '#dc3545', borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10, marginLeft: 8 }} onPress={() => { if (!canAddToCart()) return; addToCorrectCart({ id: `${originalProductId}-${selectedVariant.id}`, name: productDetails.name, price: selectedVariant.price, image: productDetails.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg', variant: { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1]?.replace(/[()]/g, '') || '' }, productId: productDetails.productId || originalProductId, originalPrice: productDetails.originalPrice }); }} disabled={!canAddToCart()}>
+                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{canAddToCart() ? 'ADD' : 'Out of Stock'}</Text>
+                </TouchableOpacity>
+              )
+            ) : variants.length === 0 ? (
+              getCurrentCartQuantity() > 0 ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, borderWidth: 1.5, borderColor: '#27ae60', height: 40, paddingHorizontal: 6, marginLeft: 8 }}>
+                  <TouchableOpacity onPress={() => updateQuantity(originalProductId, Math.max(0, getCurrentCartQuantity() - 1), productDetails.category || 'grocery')} style={{ width: 36, height: 36, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 20 }}>-</Text>
+                  </TouchableOpacity>
+                  <Text style={{ width: 28, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>{getCurrentCartQuantity()}</Text>
+                  <TouchableOpacity onPress={() => { if (!canAddToCart()) return; const cat = productDetails.category || 'grocery'; const items = cat === 'pharma' ? pharmacyItems : groceryItems; const ex = items.find(item => item.id === originalProductId); if (ex) updateQuantity(originalProductId, ex.quantity + 1, cat); else addToCorrectCart({ id: originalProductId, name: productDetails.name, price: getValidPrice(), image: productDetails.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg', productId: productDetails.productId || originalProductId, originalPrice: productDetails.originalPrice }); }} style={{ width: 36, height: 36, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 20 }}>+</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : (
+                <TouchableOpacity style={{ backgroundColor: canAddToCart() ? theme.colors.primary : '#dc3545', borderRadius: 8, paddingHorizontal: 20, paddingVertical: 10, marginLeft: 8 }} onPress={() => { if (!canAddToCart()) return; handleAddToCart(); }} disabled={!canAddToCart()}>
+                  <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{canAddToCart() ? 'ADD' : 'Out of Stock'}</Text>
+                </TouchableOpacity>
+              )
+            ) : (
+              <Text style={{ fontSize: 14, color: theme.colors.secondary }}>Select a variant</Text>
             )}
+            </View>
           </View>
           {/* Available Quantity Section */}
           {getValidQuantity() > 0 && (
@@ -680,7 +707,6 @@ const ProductDetailScreen = () => {
                   {variantCanAdd ? (
                     getCartQuantity(originalProductId, variant.id) > 0 ? (
                       <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 8, borderWidth: 1.5, borderColor: '#27ae60', height: 34, minWidth: 80, paddingHorizontal: 6, margin: 0, shadowColor: '#27ae60', shadowOpacity: 0.08, shadowRadius: 4 }}>
-                        <>
                         <TouchableOpacity onPress={() => {
                           const currentQty = getCartQuantity(originalProductId, variant.id);
                           const newQty = Math.max(0, currentQty - 1);
@@ -691,11 +717,7 @@ const ProductDetailScreen = () => {
                         }} style={{ width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}>
                           <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>-</Text>
                         </TouchableOpacity>
-                        // Add some space below the button
-                        <View style={{ height: 120 }} />
-                        </>
                         <Text style={{ width: 28, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 18 }}>{getCartQuantity(originalProductId, variant.id)}</Text>
-                        <>
                         <TouchableOpacity onPress={() => {
                           const itemId = `${originalProductId}-${variant.id}`;
                           const category = productDetails.category || 'grocery';
@@ -718,9 +740,6 @@ const ProductDetailScreen = () => {
                         }} style={{ width: 32, height: 32, justifyContent: 'center', alignItems: 'center' }}>
                           <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>+</Text>
                         </TouchableOpacity>
-                        // Add some space below the button
-                        <View style={{ height: 120 }} />
-                        </>
                       </View>
                     ) : null
                   ) : (
@@ -786,154 +805,6 @@ const ProductDetailScreen = () => {
         {/* </ScrollView> */}
         {/* </View> */}
       </ScrollView>
-      {/* Fixed Bottom Bar with Add to Cart +1/-1 counter for selected variant (height 120) */}
-      <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: '#fff', borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 16, height: 150, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', elevation: 12, shadowColor: '#000', shadowOpacity: 0.08, shadowRadius: 12 }}>
-        {selectedVariant ? (
-          getCartQuantity(originalProductId, selectedVariant.id) > 0 ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 6, borderWidth: 1.5, borderColor: '#27ae60', height: 40, minWidth: 100, paddingHorizontal: 8 }}>
-              <TouchableOpacity onPress={() => {
-                if (!selectedVariant) return;
-                const currentQty = getCartQuantity(originalProductId, selectedVariant.id);
-                const newQty = Math.max(0, currentQty - 1);
-                const itemId = `${originalProductId}-${selectedVariant.id}`;
-                const category = productDetails.category || 'grocery';
-                console.log('🛒 Bottom bar decrement:', { itemId, currentQty, newQty, category });
-                updateQuantity(itemId, newQty, category);
-              }} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>-</Text>
-              </TouchableOpacity>
-              <Text style={{ width: 32, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 20 }}>{getCartQuantity(originalProductId, selectedVariant.id)}</Text>
-              <TouchableOpacity onPress={() => {
-                if (!selectedVariant) return;
-                const itemId = `${originalProductId}-${selectedVariant.id}`;
-                const category = productDetails.category || 'grocery';
-                const items = category === 'pharma' ? pharmacyItems : groceryItems;
-                const existing = items.find(item => item.id === itemId);
-
-                if (existing) {
-                  updateQuantity(itemId, existing.quantity + 1, category);
-                } else {
-                  addToCorrectCart({
-                    id: itemId,
-                    name: productDetails.name,
-                    price: selectedVariant.price,
-                    image: productDetails.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
-                    variant: { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1]?.replace(/[()]/g, '') || '' },
-                    productId: productDetails.productId || originalProductId,
-                    originalPrice: productDetails.originalPrice
-                  });
-                }
-              }} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>+</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <>
-            <TouchableOpacity
-              style={{
-                backgroundColor: canAddToCart() ? theme.colors.primary : '#dc3545',
-                borderRadius: 8,
-                paddingHorizontal: 40,
-                paddingVertical: 12,
-                alignSelf: 'center',
-                opacity: canAddToCart() ? 1 : 1
-              }}
-              onPress={() => {
-                if (!selectedVariant && variants.length > 0) return;
-                if (!canAddToCart()) return;
-                const price = selectedVariant ? selectedVariant.price : getValidPrice();
-                addToCorrectCart({
-                  id: selectedVariant ? `${originalProductId}-${selectedVariant.id}` : originalProductId,
-                  name: productDetails.name,
-                  price: price,
-                  image: productDetails.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
-                  variant: selectedVariant ? { name: selectedVariant.name, unit: selectedVariant.name.split(' ')[1]?.replace(/[()]/g, '') || '' } : undefined
-                });
-              }}
-              disabled={!canAddToCart()}
-            >
-              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
-                {canAddToCart() ? 'Add' : 'Out of Stock'}
-              </Text>
-            </TouchableOpacity>
-            // Add some space below the button
-              <View style={{ height: 120 }} />
-              </>
-          )
-        ) : variants.length === 0 ? (
-          getCurrentCartQuantity() > 0 ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderRadius: 6, borderWidth: 1.5, borderColor: '#27ae60', height: 40, minWidth: 100, paddingHorizontal: 8 }}>
-              <>
-              <TouchableOpacity onPress={() => {
-                const currentQty = getCurrentCartQuantity();
-                const newQty = Math.max(0, currentQty - 1);
-                const category = productDetails.category || 'grocery';
-                console.log('🛒 Bottom bar decrement (no variant):', { itemId: originalProductId, currentQty, newQty, category });
-                updateQuantity(originalProductId, newQty, category);
-              }} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>-</Text>
-              </TouchableOpacity>
-              <Text style={{ width: 32, textAlign: 'center', color: '#27ae60', fontWeight: 'bold', fontSize: 20 }}>{getCurrentCartQuantity()}</Text>
-              <TouchableOpacity onPress={() => {
-                if (!canAddToCart()) return;
-                const price = getValidPrice();
-                const category = productDetails.category || 'grocery';
-                const items = category === 'pharma' ? pharmacyItems : groceryItems;
-                const existing = items.find(item => item.id === originalProductId);
-
-                if (existing) {
-                  updateQuantity(originalProductId, existing.quantity + 1, category);
-                } else {
-                  addToCorrectCart({
-                    id: originalProductId,
-                    name: productDetails.name,
-                    price: price,
-                    image: productDetails.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
-                    productId: productDetails.productId || originalProductId,
-                    originalPrice: productDetails.originalPrice
-                  });
-                }
-              }} style={{ width: 40, height: 40, justifyContent: 'center', alignItems: 'center' }}>
-                <Text style={{ color: '#27ae60', fontWeight: 'bold', fontSize: 22 }}>+</Text>
-              </TouchableOpacity>
-              // Add some space below the button
-              <View style={{ height: 120 }} />
-              </>
-            </View>
-          ) : (
-            <>
-            <TouchableOpacity
-              style={{
-                backgroundColor: canAddToCart() ? theme.colors.primary : '#dc3545',
-                borderRadius: 8,
-                paddingHorizontal: 40,
-                paddingVertical: 12,
-                alignSelf: 'center',
-                opacity: canAddToCart() ? 1 : 1
-              }}
-              onPress={() => {
-                if (!canAddToCart()) return;
-                handleAddToCart();
-              }}
-              disabled={!canAddToCart()}
-            >
-              <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>
-                {canAddToCart() ? 'Add' : 'Out of Stock'}
-              </Text>
-            </TouchableOpacity>
-            // Add some space below the button
-              <View style={{ height: 120 }} />
-              </>
-          )
-        ) : (
-          <TouchableOpacity
-            style={{ backgroundColor: '#ccc', borderRadius: 8, paddingHorizontal: 40, paddingVertical: 12, alignSelf: 'center', opacity: 0.7 }}
-            disabled={true}
-          >
-            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 18 }}>Select a variant to add</Text>
-          </TouchableOpacity>
-        )}
-      </View>
     </SafeAreaView>
   );
 };
