@@ -1143,13 +1143,7 @@ const OrderDetailScreen = () => {
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { flexShrink: 1 }]} numberOfLines={1} ellipsizeMode="tail">Order Summary</Text>
           </View>
-          <TouchableOpacity
-            onPress={handleDownloadInvoice}
-            style={styles.downloadButton}
-          >
-            <MaterialIcons name="file-download" size={16} color="#fff" />
-            <Text style={styles.downloadButtonText} numberOfLines={1} ellipsizeMode="tail">Preview Invoice</Text>
-          </TouchableOpacity>
+          
         </View>
 
         <ScrollView ref={scrollViewRef} style={styles.content} showsVerticalScrollIndicator={false}>
@@ -1385,6 +1379,21 @@ const OrderDetailScreen = () => {
               <Text style={[styles.totalAmount, { color: theme.colors.primary }]}>
                 ₹{(orderData.grandTotal || 0).toFixed(2)}
               </Text>
+            </View>
+          </View>
+
+          <View style={[styles.totalCard, { backgroundColor: theme.colors.surface }]}>
+            <View style={styles.totalRow}>
+              <Text style={[styles.totalLabel, { color: theme.colors.text }]}>
+                View Invoice:
+              </Text>
+              <TouchableOpacity
+            onPress={handleDownloadInvoice}
+            style={styles.downloadButton}
+          >
+            <MaterialIcons name="file-download" size={16} color="#fff" />
+            <Text style={styles.downloadButtonText} numberOfLines={1} ellipsizeMode="tail">View Invoice</Text>
+          </TouchableOpacity>
             </View>
           </View>
 

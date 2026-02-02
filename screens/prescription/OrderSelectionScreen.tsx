@@ -359,7 +359,7 @@ const OrderSelectionScreen = () => {
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: theme.colors.secondary,
+      backgroundColor: theme.colors.primary,
       paddingVertical: 12,
       paddingHorizontal: 16,
       borderRadius: 8,

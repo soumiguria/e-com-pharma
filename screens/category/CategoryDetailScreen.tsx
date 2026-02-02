@@ -454,10 +454,10 @@ const CategoryDetailScreen = () => {
                     <Text style={[styles.productName, { color: theme.colors.text }]}>{product.name}</Text>
                     {product.brand && <Text style={[styles.productBrand, { color: theme.colors.secondary }]}>{product.brand}</Text>}
                     <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
-                      <Text style={[styles.productPrice, { color: theme.colors.primary }]}>₹{selectedVariant ? selectedVariant.price.toFixed(2) : Number(product.price || product.sp || 0).toFixed(2)}</Text>
+                      <Text style={[styles.productPrice, { color: theme.colors.primary }]}>₹{selectedVariant ? selectedVariant.price.toFixed(2) : Number(product.price || (product as any).sp || 0).toFixed(2)}</Text>
                       {(() => {
-                        const sp = selectedVariant ? selectedVariant.price : Number(product.price || product.sp || 0);
-                        const mrp = Number((product as any).mrp || product.originalPrice || product.price || 0);
+                        const sp = selectedVariant ? selectedVariant.price : Number(product.price || (product as any).sp || 0);
+                        const mrp = Number((product as any).mrp || (product as any).originalPrice || product.price || 0);
                         if (mrp > sp && sp > 0) {
                           const pct = Math.round(((mrp - sp) / mrp) * 100);
                           return (
@@ -489,7 +489,7 @@ const CategoryDetailScreen = () => {
                         ))}
                       </View>
                     )}
-                    <Text style={[styles.qtyText, { color: theme.colors.secondary }]}>
+                    <Text style={[styles.qtyText, { color: theme.colors.primary }]}>
                       {product.availableQty ? `In stock: ${product.availableQty}` : 'Available'}
                     </Text>
                     {product.prescriptionRequired && (
