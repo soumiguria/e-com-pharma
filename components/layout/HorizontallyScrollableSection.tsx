@@ -259,7 +259,7 @@ const HorizontallyScrollableSection: React.FC<HorizontallyScrollableSectionProps
                 minHeight: 240,
                 marginRight: 6,
                 borderRadius: 10,
-                backgroundColor: theme.dark ? '#4B3F1D' : '#FFF9E5',
+                backgroundColor: theme.dark ? '#4B3F1D' : 'white',
                 shadowColor: theme.dark ? '#000' : '#FFD700',
                 shadowOffset: { width: 0, height: 2 },
                 shadowOpacity: 0.08,

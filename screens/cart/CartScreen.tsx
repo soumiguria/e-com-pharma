@@ -310,7 +310,8 @@ const styles = StyleSheet.create({
   },
   cartItem: {
     marginBottom: 16,
-    elevation: 2,
+    elevation: 0,
+    borderWidth: 0.5,
   },
   itemHeader: {
     flexDirection: 'row',

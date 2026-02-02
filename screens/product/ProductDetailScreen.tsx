@@ -14,6 +14,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import ThemedButton from '../../components/ui/ThemedButton';
+import PrescriptionRequiredTag from '../../components/ui/PrescriptionRequiredTag';
 import { HomeStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useCart } from '../../contexts/CartContext';
@@ -756,7 +757,7 @@ const ProductDetailScreen = () => {
         {/* Add a tag to mention if the product requires prescription if yes then show a red colored tag stating prescription required */}
         {productDetails.prescriptionRequired && (
           <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 12, marginBottom: 18, padding: 10, backgroundColor: '#ffe6e6', borderRadius: 8 }}>
-            <MaterialIcons name="medical-services" size={20} color="#dc3545" style={{ marginRight: 8 }} />
+            <PrescriptionRequiredTag style={{ marginRight: 8 }} />
             <Text style={{ color: '#dc3545', fontWeight: 'bold', fontSize: 15 }}>Prescription Required</Text>
           </View>
         )}

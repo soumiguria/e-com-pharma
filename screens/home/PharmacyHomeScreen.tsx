@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import ProductCard from '../../components/product/ProductCard';
+import PrescriptionRequiredTag from '../../components/ui/PrescriptionRequiredTag';
 import StoreSection from '../../components/store/StoreSection';
 import NearbyStores from '../../components/store/NearbyStores';
 import { RootStackParamList, PharmacyStackParamList } from '../../navigation/types';
@@ -170,13 +171,14 @@ const PharmacyHomeScreen = () => {
   const renderProductItem = ({ item }: { item: Product }) => (
     <View style={styles.productContainer}>
       <ProductCard 
-        product={item} 
+        product={{... item, prescriptionRequired: item.prescription}} 
         onPress={() => handleProductPress(item)} 
       />
       {item.prescription && (
-        <View style={styles.prescriptionBadge}>
-          <Text style={styles.prescriptionText}>PRESCRIPTION REQUIRED</Text>
-        </View>
+        // <View style={styles.prescriptionBadge}>
+        //   <Text style={styles.prescriptionText}>PRESCRIPTION REQUIRED</Text>
+        // </View>
+        <PrescriptionRequiredTag style={{ marginRight: 8 }} />
       )}
     </View>
   );

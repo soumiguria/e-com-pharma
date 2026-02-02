@@ -22,6 +22,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import ThemedButton from '../../components/ui/ThemedButton';
+import PrescriptionRequiredTag from '../../components/ui/PrescriptionRequiredTag';
 import { useCart } from '../../contexts/CartContext';
 import { useWishlist } from '../../contexts/WishlistContext';
 import { useAppContext } from '../../contexts/AppContext';
@@ -40,6 +41,7 @@ interface Product {
   id: string;
   name: string;
   price: number;
+  originalPrice?: number;
   image: string;
   description?: string;
   brand?: string;
@@ -454,10 +456,12 @@ const CategoryDetailScreen = () => {
                     <Text style={[styles.productName, { color: theme.colors.text }]}>{product.name}</Text>
                     {product.brand && <Text style={[styles.productBrand, { color: theme.colors.secondary }]}>{product.brand}</Text>}
                     <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', marginBottom: 4 }}>
-                      <Text style={[styles.productPrice, { color: theme.colors.primary }]}>₹{selectedVariant ? selectedVariant.price.toFixed(2) : Number(product.price || (product as any).sp || 0).toFixed(2)}</Text>
+                      <Text style={[styles.productPrice, { color: theme.colors.primary }]}>₹{selectedVariant ? selectedVariant.price.toFixed(2) : Number(product.price || product.price || 0).toFixed(2)}</Text>
                       {(() => {
-                        const sp = selectedVariant ? selectedVariant.price : Number(product.price || (product as any).sp || 0);
-                        const mrp = Number((product as any).mrp || (product as any).originalPrice || product.price || 0);
+                        // I want to get the price of the product sp and mrp
+                        const sp = selectedVariant ? selectedVariant.price : Number(product.price || product.price || 0);
+                        const mrp = Number(product.originalPrice || 0);
+                        
                         if (mrp > sp && sp > 0) {
                           const pct = Math.round(((mrp - sp) / mrp) * 100);
                           return (
@@ -494,6 +498,7 @@ const CategoryDetailScreen = () => {
                     </Text>
                     {product.prescriptionRequired && (
                       <View style={styles.prescriptionRequiredContainer}>
+                        <PrescriptionRequiredTag compact/>
                         <Text style={styles.prescriptionRequiredText}>Prescription Required</Text>
                       </View>
                     )}

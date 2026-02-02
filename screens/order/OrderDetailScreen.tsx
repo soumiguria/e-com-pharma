@@ -10,6 +10,7 @@ import {
   Linking,
   Animated,
 } from 'react-native';
+import { RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -41,6 +42,7 @@ const OrderDetailScreen = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [apiOrder, setApiOrder] = useState<any>(null);
   const [storeDetails, setStoreDetails] = useState<any>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [formattedStoreAddress, setFormattedStoreAddress] = useState<string>('');
   
   // Import orderListService to fetch order details
@@ -233,6 +235,43 @@ const OrderDetailScreen = () => {
 
     fetchStoreDetails();
   }, [apiOrder, passedOrder, storeDetails]);
+
+  const handleRefresh = async () => {
+    try {
+      setRefreshing(true);
+  
+      const orderIdToFetch =
+        passedOrderId || passedOrder?.orderId || passedOrder?.id;
+  
+      if (!orderIdToFetch) return;
+  
+      console.log('🔄 Pull-to-refresh triggered');
+  
+      // Re-fetch order
+      const res = await orderListService.getOrderById(orderIdToFetch);
+      if (res.success && res.data) {
+        setApiOrder(res.data);
+      }
+  
+      // Re-fetch store details if available
+      const storeId =
+        res?.data?.storeId ||
+        passedOrder?.storeId ||
+        storeDetails?.id;
+  
+      if (storeId) {
+        const storeRes = await storeService.getStoreDetailsById(storeId);
+        if (storeRes.success && storeRes.data) {
+          const storeData = (storeRes.data as any).data || storeRes.data;
+          setStoreDetails(storeData);
+        }
+      }
+    } catch (err) {
+      console.error('❌ Error refreshing order:', err);
+    } finally {
+      setRefreshing(false);
+    }
+  };  
 
     // Add default values to prevent undefined errors
   // Normalize payment status/mode for consistent UI
@@ -1143,10 +1182,29 @@ const OrderDetailScreen = () => {
             </TouchableOpacity>
             <Text style={[styles.headerTitle, { flexShrink: 1 }]} numberOfLines={1} ellipsizeMode="tail">Order Summary</Text>
           </View>
-          
+          {/* <TouchableOpacity
+            onPress={handleDownloadInvoice}
+            style={styles.downloadButton}
+          >
+            <MaterialIcons name="file-download" size={16} color="#fff" />
+            <Text style={styles.downloadButtonText} numberOfLines={1} ellipsizeMode="tail">Preview Invoice</Text>
+          </TouchableOpacity> */}
         </View>
 
-        <ScrollView ref={scrollViewRef} style={styles.content} showsVerticalScrollIndicator={false}>
+        <ScrollView
+  ref={scrollViewRef}
+  style={styles.content}
+  showsVerticalScrollIndicator={false}
+  refreshControl={
+    <RefreshControl
+      refreshing={refreshing}
+      onRefresh={handleRefresh}
+      tintColor={theme.colors.primary}          // iOS spinner
+      colors={[theme.colors.primary]}           // Android spinner
+    />
+  }
+>
+
           {/* Order Info */}
           <View style={[styles.orderInfoCard, { backgroundColor: theme.colors.surface }]}>
             <View style={styles.orderInfoRow}>
@@ -1341,6 +1399,15 @@ const OrderDetailScreen = () => {
                   <Text style={[styles.prescriptionText, { color: '#4CAF50' }]}>
                     ✓ Prescription uploaded successfully
                   </Text>
+                  <TouchableOpacity 
+                style={[styles.uploadPrescriptionButton, { backgroundColor: theme.colors.primary, marginTop: 8 }]}
+                onPress={() => {
+                  console.log('Re-uploading prescription for order:', order.orderId);
+                  navigation.navigate('UploadPrescription', { orderId: order.orderId, storeId: order.storeId } as any);
+                }}>
+                  <MaterialIcons name="upload" size={20} color="fff"/>
+                  <Text style={styles.uploadPrescriptionButtonText}>Re-upload Prescription</Text>
+                </TouchableOpacity>
                 </>
               ) : (
                 <TouchableOpacity

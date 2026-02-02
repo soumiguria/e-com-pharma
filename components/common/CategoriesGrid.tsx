@@ -77,7 +77,7 @@ const CategoryGrid = () => {
         <TouchableOpacity style={[
             styles.card,
             {
-                backgroundColor: theme.dark ? '#4B3F1D' : '#FFF9E5',
+                backgroundColor: theme.dark ? '#4B3F1D' : 'white',
                 borderColor: theme.colors.border,
                 shadowColor: theme.dark ? '#000' : '#FFD700',
                 shadowOffset: { width: 0, height: 2 },
@@ -161,9 +161,9 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     image: {
-        width: 50,
-        height: 50,
-        borderRadius: 8,
+        width: 60,
+        height: 60,
+        borderRadius: 12,
         marginBottom: 8,
     },
     name: {

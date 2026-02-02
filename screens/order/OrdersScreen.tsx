@@ -18,6 +18,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { Card } from 'native-base';
 import { Ionicons } from '@expo/vector-icons';
+import PrescriptionRequiredTag from '../../components/ui/PrescriptionRequiredTag';
 import orderListService from '../../services/api/orderListService';
 import orderService from '../../services/api/orderService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -514,9 +515,9 @@ const OrdersScreen = () => {
                       style={[
                         styles.statusChip,
                         {
-                          backgroundColor: getStatusColor(order.status) + '22',
+                          backgroundColor: '#fff',
                           borderWidth: 1.5,
-                          borderColor: getStatusColor(order.status),
+                          borderColor: 'orange',
                           paddingHorizontal: 14,
                           paddingVertical: 8,
                           borderRadius: 18,
@@ -526,7 +527,7 @@ const OrdersScreen = () => {
                         },
                       ]}
                     >
-                      <Text style={{ color: getStatusColor(order.status), fontSize: 13, fontWeight: '700' }}>
+                      <Text style={{ color: 'orange', fontSize: 13, fontWeight: '700' }}>
                         {getStatusText(order.status)}
                       </Text>
                     </View>
@@ -549,9 +550,7 @@ const OrdersScreen = () => {
                           },
                         ]}
                       >
-                        <Text style={{ color: '#dc3545', fontSize: 13, fontWeight: '700' }}>
-                          Prescription Required
-                        </Text>
+                        <PrescriptionRequiredTag style={{ marginRight: 8 }} />
                       </View>
                     )}
                   </View>
@@ -612,9 +611,9 @@ const OrdersScreen = () => {
                             },
                           ]}
                         >
-                          <Text style={{ color: '#dc3545', fontSize: 13, fontWeight: '700' }}>
-                            Prescription Required
-                          </Text>
+                          <View>
+                            <PrescriptionRequiredTag  style={{ marginRight: 8 }}/>
+                          </View>
                         </View>
                       )}
                     </View>

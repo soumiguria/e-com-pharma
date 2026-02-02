@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useToast } from '../../contexts/ToastContext';
 import PriceBlock from '../ui/PriceBlock';
+import PrescriptionRequiredTag from '../ui/PrescriptionRequiredTag';
 
 interface Product {
   id: string;
@@ -179,8 +180,9 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
         styles.card,
         style,
         {
-          backgroundColor: theme.dark ? '#4B3F1D' : '#FFF9E5',
+          backgroundColor: theme.dark ? '#4B3F1D' : 'white',
           borderColor: theme.colors.border,
+          borderWidth: 1,
           margin: 8,
           padding: 10,
           borderRadius: 12,
@@ -272,6 +274,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
         <Text style={[styles.name, compact && styles.compactName, showFullName && styles.nameFull, { color: theme.colors.text }]} numberOfLines={showFullName ? undefined : 2}>{product.name}</Text>
         {product.prescriptionRequired && (
           <View style={styles.prescriptionContainer}>
+          <PrescriptionRequiredTag compact={compact} />
             <Text style={styles.prescriptionText}>Prescription Required</Text>
           </View>
         )}
@@ -377,8 +380,8 @@ const styles = StyleSheet.create({
     bottom: 8,
     left: 8,
     right: 8,
-    minHeight: 36,
-    maxWidth: '100%',
+    minHeight: 30,
+    maxWidth: '80%',
     borderRadius: 8,
     borderWidth: 1.5,
     borderColor: '#27ae60',
@@ -413,7 +416,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1.5,
     borderColor: '#27ae60',
-    height: 36,
+    height: 30,
     minWidth: 70,
     paddingHorizontal: 8,
     maxWidth: '100%',
@@ -501,5 +504,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
 });
-
 export default ProductCard;

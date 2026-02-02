@@ -633,6 +633,15 @@ const OrderSummaryScreen = () => {
                 <Text style={[styles.prescriptionText, { color: '#4CAF50' }]}>
                   ✓ Prescription uploaded successfully
                 </Text>
+                <TouchableOpacity 
+                style={[styles.uploadPrescriptionButton, { backgroundColor: theme.colors.primary, marginTop: 8 }]}
+                onPress={() => {
+                  console.log('Re-uploading prescription for order:', orderSummary.orderId);
+                  navigation.navigate('UploadPrescription', { orderId: orderSummary.orderId, storeId: orderSummary.storeId } as any);
+                }}>
+                  <MaterialIcons name="upload" size={20} color="fff"/>
+                  <Text style={styles.uploadPrescriptionButtonText}>Re-upload Prescription</Text>
+                </TouchableOpacity>
               </>
             ) : (
               <TouchableOpacity

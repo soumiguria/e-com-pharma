@@ -289,7 +289,7 @@ const OrderSelectionScreen = () => {
     },
     orderNumberLabel: {
       fontSize: 12,
-      color: theme.colors.secondary,
+      color: theme.colors.primary,
       marginBottom: 4,
     },
     orderNumber: {
@@ -321,7 +321,7 @@ const OrderSelectionScreen = () => {
     },
     detailLabel: {
       fontSize: 14,
-      color: theme.colors.secondary,
+      color: theme.colors.primary,
     },
     detailValue: {
       fontSize: 14,

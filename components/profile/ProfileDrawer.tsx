@@ -166,7 +166,7 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
       key: 'app',
       items: [
         { icon: 'share-variant', label: 'Share this App', onPress: handleShareAppPress },
-        { icon: 'information', label: 'About Pass ki Dukaan', onPress: handleAboutPassKiDukaanPress },
+        // { icon: 'information', label: 'About Pass ki Dukaan', onPress: handleAboutPassKiDukaanPress },
       ],
     },
     {
@@ -199,7 +199,7 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
       key: 'app',
       items: [
         { icon: 'share-variant', label: 'Share this App', onPress: handleShareAppPress },
-        { icon: 'information', label: 'About Pass ki Dukaan', onPress: handleAboutPassKiDukaanPress },
+        // { icon: 'information', label: 'About Pass ki Dukaan', onPress: handleAboutPassKiDukaanPress },
       ],
     },
   ];
