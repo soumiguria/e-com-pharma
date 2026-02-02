@@ -420,7 +420,8 @@ const InvoicePreviewScreen = () => {
           <MaterialIcons name="arrow-back" size={24} color={theme.colors.text} />
         </TouchableOpacity>
         <Text style={[styles.headerTitle, { color: theme.colors.text }]}>Invoice Preview</Text>
-        <TouchableOpacity
+        // move the download button a bit left side by 10px
+        {/* <TouchableOpacity
           onPress={handleDownload}
           style={[styles.downloadButton, { backgroundColor: theme.colors.primary }]}
           disabled={isGenerating}
@@ -429,7 +430,7 @@ const InvoicePreviewScreen = () => {
           <Text style={styles.downloadButtonText}>
             {isGenerating ? 'Generating...' : 'Download'}
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
       </View>
 
       <ScrollView style={styles.content}>
@@ -563,6 +564,25 @@ const InvoicePreviewScreen = () => {
               </Text>
             </View>
           )}
+        </View>
+
+        {/* Download invoice section */}
+        <View style={[styles.totalCard, { backgroundColor: theme.colors.surface, marginBottom: 58 }]}>
+          <View style={styles.totalRow}>
+            <Text style={[styles.totalLabel, { color: theme.colors.text }]}>
+              Download Invoice:
+            </Text>
+            <TouchableOpacity
+              onPress={handleDownload}
+              style={[styles.downloadButton, { backgroundColor: theme.colors.primary }]}
+              disabled={isGenerating}
+            >
+              <MaterialIcons name="download" size={20} color="#fff" />
+              <Text style={styles.downloadButtonText}>
+                {isGenerating ? 'Generating...' : 'Download'}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </ScrollView>
     </SafeAreaView>
