@@ -9,6 +9,7 @@ import {
   Image,
   Platform,
   ActivityIndicator,
+  PermissionsAndroid,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
@@ -16,7 +17,7 @@ import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useTheme } from '../../contexts/ThemeContext';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-import * as ImagePicker from 'expo-image-picker';
+import { launchCamera, CameraOptions } from 'react-native-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import { LinearGradient } from 'expo-linear-gradient';
 import orderService from '../../services/api/orderService';
@@ -62,10 +63,9 @@ const UploadPrescriptionScreen = () => {
   );
 
   const requestPermissions = async () => {
-    if (Platform.OS !== 'web') {
-      const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync();
-      
-      if (cameraStatus !== 'granted') {
+    if (Platform.OS === 'android') {
+      const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.CAMERA);
+      if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
         Alert.alert(
           'Permissions Required',
           'Camera permission is required to take prescription photos.',
@@ -82,13 +82,16 @@ const UploadPrescriptionScreen = () => {
     if (!hasPermissions) return;
 
     try {
-      const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: false,
+      const options: CameraOptions = {
+        mediaType: 'photo',
         quality: 0.8,
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      });
+        cameraType: 'back',
+        saveToPhotos: false,
+      };
 
-      if (!result.canceled && result.assets[0]) {
+      const result: any = await new Promise(resolve => launchCamera(options, resolve));
+
+      if (result && !result.didCancel && result.assets && result.assets[0]) {
         setImageLoading(true);
         const asset = result.assets[0];
         

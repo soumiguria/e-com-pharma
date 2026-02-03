@@ -112,7 +112,8 @@ const AllProductsScreen = () => {
       image: product.image,
       category: section,
       // Store the actual product ID that the API expects
-      productId: product.id
+      productId: product.id,
+      prescriptionRequired: product.prescriptionRequired || false,
     };
     
     if (section === 'pharma') {

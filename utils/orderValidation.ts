@@ -61,7 +61,7 @@ export async function validateCartItemsForStore(
       }
 
       const product = response.data;
-      const availableQty = product.availableQty ?? product.quantity ?? 0;
+      const availableQty = product.availableQty ?? 0;
       const isAvailable = product.isAvailable !== false && availableQty > 0;
 
       if (!isAvailable) {

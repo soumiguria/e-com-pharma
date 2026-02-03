@@ -17,6 +17,8 @@ interface CartItem {
   };
   // Store the actual product ID that the API expects for order placement
   productId?: string;
+  // Prescription requirement
+  prescriptionRequired?: boolean;
 }
 
 interface CartContextType {

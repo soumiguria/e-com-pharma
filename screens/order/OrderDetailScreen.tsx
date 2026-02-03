@@ -639,7 +639,8 @@ const OrderDetailScreen = () => {
             expiryDate: currentProduct.expiryDate || item.expiryDate || '',
             // manufacturer: currentProduct.manufacturer || item.manufacturer || '',
             productId: productId,
-            availableQty: availableQty // Store available quantity
+            availableQty: availableQty, // Store available quantity
+            prescriptionRequired: currentProduct.prescriptionRequired || false,
           };
           
           console.log('✅ Valid product with current details:', productData);

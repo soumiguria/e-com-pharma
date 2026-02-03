@@ -345,6 +345,7 @@ const CategoryDetailScreen = () => {
       price: variant ? variant.price : product.price,
       image: product.image,
       variant: variant ? { name: variant.name, unit: 'unit' } : undefined,
+      prescriptionRequired: product.prescriptionRequired || false,
     });
   };
   const handleFavToggle = (product: Product) => (e: any) => {

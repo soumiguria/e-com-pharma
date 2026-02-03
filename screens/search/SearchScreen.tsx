@@ -786,6 +786,7 @@ const SearchScreen = () => {
                                             image: productImage,
                                             productId: productId,
                                             originalPrice: mrp > 0 ? mrp : undefined,
+                                            prescriptionRequired: product.prescriptionRequired || false,
                                           });
                                         }}
                                         disabled={!canAdd || !productId}

@@ -305,7 +305,8 @@ const ProductDetailScreen = () => {
       // Store the actual product ID that the API expects
       // Use the productId from API response if available, otherwise use originalProductId
       productId: productDetails.productId || originalProductId,
-      originalPrice: productDetails.originalPrice
+      originalPrice: productDetails.originalPrice,
+      prescriptionRequired: productDetails.prescriptionRequired || false,
     };
 
     addToCorrectCart(itemToAdd);

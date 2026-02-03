@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'; 
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal, Platform, PermissionsAndroid } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ThemedButton from '../../components/ui/ThemedButton';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -16,7 +16,10 @@ import { Address } from '../../services/api/addressService';
 import storeService from '../../services/api/storeService';
 import { useAppContext } from '../../contexts/AppContext';
 import { validateCartItemsForStore } from '../../utils/orderValidation';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { launchCamera, CameraOptions } from 'react-native-image-picker';
+import * as DocumentPicker from 'expo-document-picker';
+import prescriptionService, { PrescriptionFile } from '../../services/api/prescriptionService';
 
 const deliveryMethods = [
   { id: '1', label: 'Store Pickup' },
@@ -71,6 +74,10 @@ const PaymentMethodsScreen = () => {
   const [availablePaymentMethods, setAvailablePaymentMethods] = useState<any[]>([]);
   const [availableDeliveryMethods, setAvailableDeliveryMethods] = useState<any[]>([]);
 
+  // Prescription state
+  const [requiresPrescription, setRequiresPrescription] = useState(false);
+  const [selectedPrescription, setSelectedPrescription] = useState<any | null>(null);
+
   // Check route params for selected address on mount
   useEffect(() => {
     const routeParams = (route.params as any) || {};
@@ -87,6 +94,15 @@ const PaymentMethodsScreen = () => {
   useEffect(() => {
     loadAddresses();
   }, []);
+
+  // Check if cart has prescription-required items
+  useEffect(() => {
+    const allItems = isReorder ? reorderItems : [...groceryItems, ...pharmacyItems];
+    const hasPrescriptionRequired = allItems.some(
+      (item: any) => item.prescriptionRequired === true && item.quantity > 0
+    );
+    setRequiresPrescription(hasPrescriptionRequired);
+  }, [groceryItems, pharmacyItems, reorderItems, isReorder]);
 
   // Load store details and payment methods
   useEffect(() => {
@@ -380,6 +396,33 @@ const PaymentMethodsScreen = () => {
       
       if (response.success && response.data) {
         console.log('✅ Offline order placed successfully:', response.data.orderNo);
+        const orderId = String(response.data.orderId);
+        
+        // Auto-upload prescription if available and required (pharmacy orders only)
+        if (cartType === 'pharma' && requiresPrescription && selectedPrescription) {
+          try {
+            console.log('📤 Auto-uploading prescription for order:', orderId);
+            await prescriptionService.storePrescriptionForOrder(orderId, selectedPrescription);
+            
+            // Call API to upload prescription
+            const uploadResponse = await orderService.uploadPrescription(
+              orderId,
+              selectedPrescription.uri,
+              selectedPrescription.mimeType
+            );
+            
+            if (uploadResponse.success) {
+              console.log('✅ Prescription auto-uploaded successfully');
+              // Remove from local storage after successful upload
+              await prescriptionService.removePrescriptionForOrder(orderId);
+            } else {
+              console.warn('⚠️ Prescription auto-upload failed, stored locally for manual upload');
+            }
+          } catch (uploadError) {
+            console.error('❌ Error auto-uploading prescription:', uploadError);
+            // Keep prescription in local storage for manual upload later
+          }
+        }
         
         // Clear cart after successful order
         await clearCart();
@@ -569,6 +612,93 @@ const PaymentMethodsScreen = () => {
     navigation.navigate('LocationPicker' as any, { forAddress: true });
   };
 
+  // Handle prescription photo capture
+  const handleTakePrescriptionPhoto = async () => {
+    try {
+      // Request camera permission on Android (iOS permission is handled by native module)
+      if (Platform.OS === 'android') {
+        const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.CAMERA);
+        if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
+          Alert.alert('Permission Required', 'Camera permission is required to take a photo.');
+          return;
+        }
+      }
+
+      const options: CameraOptions = {
+        mediaType: 'photo',
+        quality: 0.8,
+        cameraType: 'back',
+        saveToPhotos: false,
+      };
+
+      const result: any = await new Promise(resolve => launchCamera(options, resolve));
+
+      if (result && !result.didCancel && result.assets && result.assets[0]) {
+        const asset = result.assets[0];
+        const prescriptionFile: PrescriptionFile = {
+          uri: asset.uri,
+          name: asset.fileName || `Prescription_${Date.now()}.jpg`,
+          mimeType: asset.type || 'image/jpeg',
+          sizeBytes: asset.fileSize,
+        };
+
+        // Validate file
+        const validation = await prescriptionService.validateFile(prescriptionFile);
+        if (!validation.valid) {
+          Alert.alert('Invalid File', validation.error || 'Failed to validate file');
+          return;
+        }
+
+        setSelectedPrescription(prescriptionFile);
+        console.log('📷 Prescription photo captured and validated:', asset.uri);
+      }
+    } catch (error) {
+      console.error('Error taking prescription photo:', error);
+      Alert.alert('Error', 'Failed to capture photo. Please try again.');
+    }
+  };
+
+  // Handle prescription file selection
+  const handleSelectPrescription = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({
+        type: ['image/*', 'application/pdf'], // Allow images and PDFs
+        copyToCacheDirectory: true,
+        multiple: false,
+      });
+
+      if ((result as any).canceled) return;
+
+      const asset = (result as any).assets?.[0] || (result as any);
+      if (asset && asset.uri) {
+        const mimeType: string | null = asset.mimeType || asset.type || null;
+
+        const isImage =
+          mimeType?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp)$/i.test(asset.name || asset.uri);
+
+        const prescriptionFile: PrescriptionFile = {
+          uri: asset.uri,
+          name: asset.name || (isImage ? 'Prescription image' : 'Prescription document'),
+          mimeType: mimeType || 'application/octet-stream',
+          sizeBytes: (asset as any).fileSize || (asset as any).size,
+        };
+
+        // Validate file
+        const validation = await prescriptionService.validateFile(prescriptionFile);
+        if (!validation.valid) {
+          Alert.alert('Invalid File', validation.error || 'Failed to validate file');
+          return;
+        }
+
+        setSelectedPrescription(prescriptionFile);
+        console.log('📄 Prescription file selected and validated:', prescriptionFile.name);
+      }
+    } catch (error) {
+      console.error('Error selecting prescription:', error);
+      Alert.alert('Error', 'Failed to select file. Please try again.');
+    }
+  };
+
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -753,6 +883,89 @@ const PaymentMethodsScreen = () => {
       fontWeight: '600',
       marginLeft: 8,
     },
+    prescriptionContainer: {
+      marginBottom: 16,
+    },
+    prescriptionSelectedCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: theme.colors.primary,
+      borderStyle: 'solid',
+    },
+    prescriptionFileInfo: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    prescriptionTextContainer: {
+      flex: 1,
+      marginLeft: 12,
+    },
+    prescriptionFileName: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginBottom: 4,
+    },
+    prescriptionHint: {
+      fontSize: 12,
+      color: theme.colors.secondary,
+    },
+    prescriptionRemoveButton: {
+      padding: 8,
+    },
+    prescriptionUploadCard: {
+      backgroundColor: theme.colors.surface,
+      borderRadius: 12,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      borderStyle: 'dashed',
+    },
+    prescriptionTitle: {
+      fontSize: 16,
+      fontWeight: '600',
+      color: theme.colors.text,
+      marginBottom: 8,
+    },
+    prescriptionDescription: {
+      fontSize: 14,
+      color: theme.colors.secondary,
+      marginBottom: 16,
+      lineHeight: 20,
+    },
+    prescriptionValidationHint: {
+      fontSize: 13,
+      color: theme.colors.secondary,
+      backgroundColor: theme.colors.surface,
+      paddingHorizontal: 10,
+      paddingVertical: 8,
+      borderRadius: 6,
+      marginBottom: 12,
+      lineHeight: 18,
+    },
+    prescriptionButtonsRow: {
+      flexDirection: 'row',
+      gap: 12,
+    },
+    prescriptionButton: {
+      flex: 1,
+      backgroundColor: theme.colors.primary + '15',
+      borderRadius: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      alignItems: 'center',
+      borderWidth: 1,
+      borderColor: theme.colors.primary + '40',
+    },
+    prescriptionButtonText: {
+      fontSize: 14,
+      fontWeight: '500',
+      color: theme.colors.primary,
+      marginTop: 8,
+    },
   });
 
 
@@ -864,6 +1077,71 @@ const PaymentMethodsScreen = () => {
           ))}
         </View>
 
+        {/* section to upload prescription if the cart items include 
+        any of the items with prescriptionRequired as true after 
+        uploading store the prescription in local state and as soon as 
+        the order is being placed autoupload the prescription*/}
+
+        {/* 🔴 NEW: Prescription Upload Section - Only show if cart has prescription-required items */}
+        {requiresPrescription && (
+          <>
+            <Text style={styles.sectionTitle}>Prescription Upload</Text>
+            <View style={styles.prescriptionContainer}>
+              {selectedPrescription ? (
+                <View style={styles.prescriptionSelectedCard}>
+                  <View style={styles.prescriptionFileInfo}>
+                    <MaterialIcons 
+                      name={selectedPrescription.mimeType?.includes('pdf') ? 'picture-as-pdf' : 'image'} 
+                      size={32} 
+                      color={theme.colors.primary} 
+                    />
+                    <View style={styles.prescriptionTextContainer}>
+                      <Text style={styles.prescriptionFileName} numberOfLines={1}>
+                        {selectedPrescription.name || 'Prescription'}
+                      </Text>
+                      <Text style={styles.prescriptionHint}>
+                        Will be uploaded after order placement
+                      </Text>
+                    </View>
+                    <TouchableOpacity 
+                      onPress={() => setSelectedPrescription(null)}
+                      style={styles.prescriptionRemoveButton}
+                    >
+                      <MaterialIcons name="close" size={20} color={theme.colors.error} />
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : (
+                <View style={styles.prescriptionUploadCard}>
+                  <Text style={styles.prescriptionTitle}>Upload Prescription (Compulsory)</Text>
+                  <Text style={styles.prescriptionDescription}>
+                    You can re-upload your prescription later from order details
+                  </Text>
+                  <Text style={styles.prescriptionValidationHint}>
+                    ℹ️ Files under 1MB can only be uploaded. Supported formats: JPG, PNG, WebP, GIF, PDF
+                  </Text>
+                  <View style={styles.prescriptionButtonsRow}>
+                    <TouchableOpacity 
+                      style={styles.prescriptionButton}
+                      onPress={handleTakePrescriptionPhoto}
+                    >
+                      <MaterialIcons name="camera-alt" size={24} color={theme.colors.primary} />
+                      <Text style={styles.prescriptionButtonText}>Take Photo</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={styles.prescriptionButton}
+                      onPress={handleSelectPrescription}
+                    >
+                      <MaterialIcons name="upload-file" size={24} color={theme.colors.primary} />
+                      <Text style={styles.prescriptionButtonText}>Choose File</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </View>
+          </>
+        )}
+
         {/* Bill Details */}
         <Text style={styles.sectionTitle}>Bill Details</Text>
         <View style={styles.billRow}><Text>MRP Total</Text><Text>₹{Number(billDetails.mrp).toFixed(2)}</Text></View>
@@ -878,7 +1156,8 @@ const PaymentMethodsScreen = () => {
         <ThemedButton 
           title={isReorder ? "Reorder Items" : "Place Order"} 
           onPress={handlePlaceOrder} 
-          style={{ marginTop: 24, marginBottom: 80 }} 
+          style={{ marginTop: 24, marginBottom: 80 }}
+          disabled={cartType === 'pharma' && requiresPrescription && !selectedPrescription}
         />
               </ScrollView>
       </SafeAreaView>
@@ -940,4 +1219,4 @@ const PaymentMethodsScreen = () => {
   );
 };
 
-export default PaymentMethodsScreen; 
+export default PaymentMethodsScreen;

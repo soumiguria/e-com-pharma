@@ -191,7 +191,8 @@ const CartScreen = () => {
                         id: product.id,
                         name: product.name,
                         price: product.price,
-                        image: product.image
+                        image: product.image,
+                        prescriptionRequired: product.prescriptionRequired || false,
                       };
                       addToGroceryCart(cartItem);
                     }}
