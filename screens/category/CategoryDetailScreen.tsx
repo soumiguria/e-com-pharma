@@ -450,9 +450,9 @@ const CategoryDetailScreen = () => {
                 <TouchableOpacity style={[styles.productCardList, { backgroundColor: theme.colors.surface, borderColor: theme.colors.border, shadowColor: theme.colors.text }]} onPress={() => navigation.navigate('ProductDetail', { product })} activeOpacity={0.85}>
                   <View style={styles.productImageColumn}>
                     <Image source={{ uri: product.image }} style={styles.productImageList} />
-                    <TouchableOpacity style={styles.favBtnBelowImage} onPress={handleFavToggle(product)}>
+                    {/* <TouchableOpacity style={styles.favBtnBelowImage} onPress={handleFavToggle(product)}>
                       <MaterialCommunityIcons name={isFav ? 'heart' : 'heart-outline'} size={22} color={isFav ? theme.colors.primary : theme.colors.secondary} />
-                    </TouchableOpacity>
+                    </TouchableOpacity> */}
                   </View>
                   <View style={styles.productInfoList}>
                     <Text style={[styles.productName, { color: theme.colors.text }]}>{product.name}</Text>

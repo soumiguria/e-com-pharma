@@ -153,7 +153,7 @@ const Drawer: React.FC<DrawerProps> = ({ onClose }) => {
         { icon: 'clipboard-list', label: 'My Orders', onPress: handleMyOrdersPress },
         { icon: 'map-marker', label: 'Address List', onPress: handleAddressListPress },
         { icon: 'account', label: 'My Profile', onPress: handleMyProfilePress },
-        { icon: 'heart', label: 'My Wishlist', onPress: handleMyWishlistPress },
+        // { icon: 'heart', label: 'My Wishlist', onPress: handleMyWishlistPress },
       ],
     },
     {

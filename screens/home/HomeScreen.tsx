@@ -124,7 +124,7 @@ const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { 
         
         {/* Right side - Wishlist and Cart */}
         <View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: 8 }}>
-          <TouchableOpacity 
+          {/* <TouchableOpacity 
             style={[themedStyles.headerIcon, { marginRight: 12 }]}
             onPress={() => navigation.navigate('MyWishlist' as any)}
           >
@@ -138,7 +138,7 @@ const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { 
                 <Text style={themedStyles.cartBadgeText}>{wishlistCount}</Text>
               </View>
             )}
-          </TouchableOpacity>
+          </TouchableOpacity> */}
           <TouchableOpacity 
             style={[themedStyles.headerIcon, { marginRight: 8 }]}
             onPress={() => navigation.navigate('Cart')}
