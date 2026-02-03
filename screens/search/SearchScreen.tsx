@@ -149,7 +149,11 @@ const SearchScreen = () => {
   const cartItems = cartType === 'pharma' ? pharmacyItems : groceryItems;
   const getCartQty = (productId: string) => cartItems.find(item => item.id === productId)?.quantity ?? 0;
   const getValidQty = (p: any) => Math.max(0, parseInt(String(p.quantity ?? p.availableQty ?? 0), 10) || 0);
-  const getValidPrice = (p: any) => Math.max(0, parseFloat(String(p.price ?? 0)) || 0);
+  const getValidPrice = (p: any) =>
+  Math.max(
+    0,
+    parseFloat(String(p.sp ?? p.price ?? p.mrp ?? 0)) || 0
+  );
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);

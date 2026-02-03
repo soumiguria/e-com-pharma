@@ -424,6 +424,8 @@ const CategoryDetailScreen = () => {
               </TouchableOpacity>
             )}
           />
+          {/* Add some space at the bottom of the subcategory ending scrolllist */}
+          <View style={{ height: 40 }} />
         </View>
         {/* Right: Products List */}
         {/* Here we need to show a tag on the product that require prescription should be shown on the product card as well */}
