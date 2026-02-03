@@ -7,6 +7,7 @@ import {
   FlatList,
   Alert,
   RefreshControl,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '../../contexts/ThemeContext';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -46,6 +47,7 @@ const OrderSelectionScreen = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [loadSucceeded, setLoadSucceeded] = useState(false);
 
   useEffect(() => {
     fetchOrders();
@@ -84,6 +86,7 @@ const OrderSelectionScreen = () => {
   const fetchOrders = async () => {
     try {
       setLoading(true);
+      setLoadSucceeded(false);
       console.log('📋 Fetching orders for prescription upload...');
       
       // Fetch both grocery and pharmacy orders
@@ -147,14 +150,15 @@ const OrderSelectionScreen = () => {
       const pharmaOrdersOnly = allOrders.filter(
         (o) => (o.type || '').toLowerCase() === 'pharma' && o.prescriptionRequired === true,
       );
-
       // Sort by creation date (newest first)
       pharmaOrdersOnly.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-      
       console.log('📋 Fetched pharma orders for prescription selection:', pharmaOrdersOnly.length);
       setOrders(pharmaOrdersOnly);
+      const pharmaSuccess = !!(pharmacyResponse && pharmacyResponse.success && pharmacyResponse.data);
+      setLoadSucceeded(pharmaSuccess);
     } catch (error) {
       console.error('❌ Error fetching orders:', error);
+      setLoadSucceeded(false);
       Alert.alert('Error', 'Failed to fetch orders. Please try again.');
     } finally {
       setLoading(false);
@@ -456,6 +460,7 @@ const OrderSelectionScreen = () => {
             </View>
           </View>
           <View style={styles.emptyContainer}>
+            <ActivityIndicator size="small" color={theme.colors.primary} />
             <Text style={[styles.emptyText, { fontWeight: '600', textAlign: 'center' }]}>
               Loading your orders...
             </Text>
@@ -494,7 +499,7 @@ const OrderSelectionScreen = () => {
 
         {/* Orders List */}
         <View style={styles.content}>
-          {orders.length === 0 ? (
+          {loadSucceeded && orders.length === 0 ? (
             <View style={styles.emptyContainer}>
               <MaterialIcons name="receipt" size={64} color={theme.colors.secondary} />
               <Text style={styles.emptyText}>

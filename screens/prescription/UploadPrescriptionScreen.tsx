@@ -474,9 +474,30 @@ const UploadPrescriptionScreen = () => {
         </View>
 
         {/* Voice input is only on Search screen */}
+        {/* Loader placeholder while image preview is being prepared */}
+{imageLoading && !selectedFile && (
+  <View
+    style={{
+      height: 200,
+      borderRadius: 12,
+      backgroundColor: theme.colors.surface,
+      borderWidth: 1,
+      borderColor: theme.colors.border,
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginBottom: 24,
+    }}
+  >
+    <ActivityIndicator size="large" color={theme.colors.primary} />
+    <Text style={{ marginTop: 12, fontSize: 14, color: theme.colors.secondary }}>
+      Loading...
+    </Text>
+  </View>
+)}
+
 
         {/* Selected File Preview - render Image when we have image so onLoad can fire */}
-        {selectedFile && selectedFile.isImage && (
+        {/* {selectedFile && selectedFile.isImage && (
           <View style={themedStyles.selectedImageContainer}>
             <Image
               source={{ uri: selectedFile.uri }}
@@ -497,7 +518,57 @@ const UploadPrescriptionScreen = () => {
               <MaterialIcons name="close" size={20} color="white" />
             </TouchableOpacity>
           </View>
-        )}
+        )} */}
+
+          {/* Selected File Preview - Image */}
+{(imageLoading || (selectedFile && selectedFile.isImage)) && (
+  <View style={themedStyles.selectedImageContainer}>
+
+    {selectedFile && (
+      <Image
+        source={{ uri: selectedFile.uri }}
+        style={themedStyles.selectedImage}
+        onLoad={() => setImageLoading(false)}
+        onError={() => setImageLoading(false)}
+      />
+    )}
+
+    {imageLoading && (
+      <View
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: theme.colors.background,
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        <ActivityIndicator size="large" color={theme.colors.primary} />
+        <Text style={{ marginTop: 12, fontSize: 14, color: theme.colors.secondary }}>
+          Loading...
+        </Text>
+      </View>
+    )}
+
+    {selectedFile && (
+      <TouchableOpacity
+        style={themedStyles.removeImageButton}
+        onPress={() => {
+          setSelectedFile(null);
+          setImageLoading(false);
+        }}
+      >
+        <MaterialIcons name="close" size={20} color="white" />
+      </TouchableOpacity>
+    )}
+
+  </View>
+)}
+
+
         {selectedFile && !selectedFile.isImage && (
           <View style={themedStyles.selectedImageContainer}>
             <View
@@ -606,5 +677,3 @@ const UploadPrescriptionScreen = () => {
 };
 
 export default UploadPrescriptionScreen;
-
-
