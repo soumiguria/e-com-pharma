@@ -149,6 +149,7 @@ const SearchScreen = () => {
   const cartItems = cartType === 'pharma' ? pharmacyItems : groceryItems;
   const getCartQty = (productId: string) => cartItems.find(item => item.id === productId)?.quantity ?? 0;
   const getValidQty = (p: any) => Math.max(0, parseInt(String(p.quantity ?? p.availableQty ?? 0), 10) || 0);
+  const getValidPrice = (p: any) => Math.max(0, parseFloat(String(p.price ?? 0)) || 0);
 
   const handleSearch = (query: string) => {
     setSearchQuery(query);
@@ -225,9 +226,8 @@ const SearchScreen = () => {
     // Add current search query to history since user tapped on a result
     handleSearchResultTap(searchQuery);
     
-    // Use the actual productId from API response for navigation
-    // The API expects the productId field, not _id or productMasterId
-    const actualProductId = product.productId;
+    // Resolve the actual product id for navigation and cart sync
+    const actualProductId = product.productId || product.id || product._id;
     
     if (!actualProductId) {
       console.error('❌ No productId found in search result:', product);
@@ -236,6 +236,7 @@ const SearchScreen = () => {
     
     console.log('🔍 Product ID mapping:', {
       fromSearch: product.productId,
+      idField: product.id,
       _id: product._id,
       productMasterId: product.productMasterId,
       finalId: actualProductId,
@@ -244,7 +245,7 @@ const SearchScreen = () => {
     
     // Transform API product to expected format for ProductDetailScreen
     const transformedProduct = {
-      id: actualProductId, // Use the actual productId from API
+      id: actualProductId, // Use the resolved product id
       name: product.name,
       price: parseFloat(product.sp || product.mrp || '0'),
       image: product.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
@@ -253,7 +254,7 @@ const SearchScreen = () => {
       productId: actualProductId, // Use the same ID for consistency
       // Add additional product details
       brand: product.brand || '',
-      availableQty: product.quantity || 0,
+      availableQty: getValidQty(product),
       variants: product.variants || [],
       images: product.images || [product.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg'],
       originalPrice: parseFloat(product.mrp || '0'),
@@ -718,10 +719,11 @@ const SearchScreen = () => {
                                   (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : undefined) || '';
                                 const sp = parseFloat(product.sp || product.mrp || '0');
                                 const mrp = parseFloat(product.mrp || '0');
-                                const productId = product.productId || product._id;
-                                const canAdd = (product.quantity ?? product.availableQty ?? 1) > 0;
-                                const qty = getCartQty(productId);
+                                const productId = product.productId || product.id || product._id;
                                 const maxQty = getValidQty(product);
+                                const minPrc = getValidPrice(product);
+                                const canAdd = maxQty > 0 && minPrc > 0;
+                                const qty = productId ? getCartQty(productId) : 0;
                                 const pctOff = mrp > sp && sp > 0 ? Math.round(((mrp - sp) / mrp) * 100) : 0;
                                 return (
                                   <View key={productId || index} style={styles.productCard}>
@@ -753,11 +755,11 @@ const SearchScreen = () => {
                                     </TouchableOpacity>
                                     {qty > 0 ? (
                                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginTop: 8, backgroundColor: theme.colors.primary, borderRadius: 8, paddingVertical: 4, paddingHorizontal: 8, alignSelf: 'center' }}>
-                                        <TouchableOpacity onPress={() => updateQuantity(productId, Math.max(0, qty - 1), cartType)} style={{ padding: 6 }}>
+                                        <TouchableOpacity onPress={() => productId && updateQuantity(productId, Math.max(0, qty - 1), cartType)} style={{ padding: 6 }}>
                                           <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>-</Text>
                                         </TouchableOpacity>
                                         <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14, minWidth: 24, textAlign: 'center' }}>{qty}</Text>
-                                        <TouchableOpacity onPress={() => { if (qty >= maxQty) return; updateQuantity(productId, qty + 1, cartType); }} style={{ padding: 6 }} disabled={qty >= maxQty}>
+                                        <TouchableOpacity onPress={() => { if (!productId || qty >= maxQty) return; updateQuantity(productId, qty + 1, cartType); }} style={{ padding: 6 }} disabled={qty >= maxQty || !productId}>
                                           <Text style={{ color: qty >= maxQty ? 'rgba(255,255,255,0.6)' : '#fff', fontWeight: 'bold', fontSize: 16 }}>+</Text>
                                         </TouchableOpacity>
                                       </View>
@@ -767,7 +769,7 @@ const SearchScreen = () => {
                                           marginTop: 8,
                                           paddingVertical: 6,
                                           paddingHorizontal: 12,
-                                          backgroundColor: canAdd ? theme.colors.primary : theme.colors.border,
+                                          backgroundColor: canAdd ? theme.colors.primary : '#dc3545',
                                           borderRadius: 8,
                                           alignSelf: 'center',
                                         }}
@@ -778,13 +780,13 @@ const SearchScreen = () => {
                                             name: product.name,
                                             price: sp,
                                             image: productImage,
-                                            productId,
+                                            productId: productId,
                                             originalPrice: mrp > 0 ? mrp : undefined,
                                           });
                                         }}
-                                        disabled={!canAdd}
+                                        disabled={!canAdd || !productId}
                                       >
-                                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#fff' }}>ADD</Text>
+                                        <Text style={{ fontSize: 12, fontWeight: '600', color: '#fff' }}>{canAdd ? 'ADD' : 'Out of Stock'}</Text>
                                       </TouchableOpacity>
                                     )}
                                   </View>
@@ -846,4 +848,4 @@ const SearchScreen = () => {
   );
 };
 
-export default SearchScreen; 
+export default SearchScreen;
