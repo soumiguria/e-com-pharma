@@ -158,6 +158,8 @@ const BottomTabNavigator = () => {
             iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Order Again') {
             iconName = focused ? 'repeat' : 'repeat-outline';
+          } else if (route.name === 'Cart') {
+            iconName = focused ? 'cart' : 'cart-outline';
           } else if (route.name === 'Categories') {
             iconName = focused ? 'apps' : 'apps-outline';
           } else if (route.name === 'Pharmacy' || route.name === 'Grocery') {
@@ -177,6 +179,7 @@ const BottomTabNavigator = () => {
     >
       <Tab.Screen name="Home" component={HomeStackNavigator} />
       <Tab.Screen name="Order Again" component={OrdersStackNavigator} />
+      <Tab.Screen name="Cart" component={CartScreen} />
       <Tab.Screen name="Categories" component={CategoriesScreen} />
   
       {section === 'grocery' ? (

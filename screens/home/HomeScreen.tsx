@@ -113,8 +113,8 @@ const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { 
     numberOfLines={1}
   >
     {displayStore?.name
-      ? displayStore.name.length > 18
-        ? `${displayStore.name.slice(0, 18)}...`
+      ? displayStore.name.length > 33
+        ? `${displayStore.name.slice(0, 33)}...`
         : displayStore.name
       : 'Unknown Store'}
   </Text>
@@ -139,7 +139,7 @@ const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { 
               </View>
             )}
           </TouchableOpacity> */}
-          <TouchableOpacity 
+          {/* <TouchableOpacity 
             style={[themedStyles.headerIcon, { marginRight: 8 }]}
             onPress={() => navigation.navigate('Cart')}
           >
@@ -153,7 +153,7 @@ const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { 
                 <Text style={themedStyles.cartBadgeText}>{totalItems}</Text>
               </View>
             )}
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
     </Animated.View>
