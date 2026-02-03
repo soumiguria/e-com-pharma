@@ -15,6 +15,7 @@ import {
   TextInput,
   ActivityIndicator,
 } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -90,6 +91,7 @@ const CategoryDetailScreen = () => {
   const route = useRoute<RouteProp<RootStackParamList, 'CategoryDetail'>>();
   const navigation = useNavigation<NativeStackNavigationProp<RootStackParamList>>();
   const { theme, section } = useTheme();
+  const insets = useSafeAreaInsets();
   const { addToGroceryCart, addToPharmacyCart, removeFromCart, updateQuantity, groceryItems, pharmacyItems } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore } = useAppContext();
@@ -636,7 +638,7 @@ const CategoryDetailScreen = () => {
             </View>
           </View>
           {/* Bottom Buttons */}
-          <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#eee', padding: 12, backgroundColor: '#fff' }}>
+          <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#eee', padding: 12, backgroundColor: '#fff', paddingBottom: 12 + insets.bottom, }}>
             <TouchableOpacity style={{ flex: 1, backgroundColor: '#F4F4F4', borderRadius: 8, paddingVertical: 12, alignItems: 'center', marginRight: 8 }} onPress={clearAllFilters}>
               <Text style={{ color: '#888', fontWeight: 'bold', fontSize: 15 }}>Clear filters</Text>
             </TouchableOpacity>

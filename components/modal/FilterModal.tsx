@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Modal, Pressable, ScrollView, TextInput } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTheme } from '../../contexts/ThemeContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface FilterModalProps {
   visible: boolean;
@@ -10,7 +11,7 @@ interface FilterModalProps {
   allBrands: string[];
   selectedBrands: string[];
   setSelectedBrands: (brands: string[]) => void;
-  clearAllFilters: () => void;
+  // clearAllFilters: () => void;
 }
 
 const FilterModal: React.FC<FilterModalProps> = ({
@@ -19,9 +20,10 @@ const FilterModal: React.FC<FilterModalProps> = ({
   allBrands,
   selectedBrands,
   setSelectedBrands,
-  clearAllFilters,
+  // clearAllFilters,
 }) => {
   const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const [selectedFilterTab, setSelectedFilterTab] = useState('Brand');
   const [brandSearch, setBrandSearch] = useState('');
   
@@ -146,12 +148,14 @@ const FilterModal: React.FC<FilterModalProps> = ({
           </View>
         </View>
         {/* Bottom Buttons */}
-        <View style={{ 
+        {/* <View style={{ 
           flexDirection: 'row', 
           borderTopWidth: 1, 
           borderTopColor: '#eee', 
           padding: 12, 
-          backgroundColor: '#fff' 
+          backgroundColor: '#fff', 
+          // Apply some space below the buttons
+          paddingBottom: 12 + insets.bottom,
         }}>
           <TouchableOpacity 
             style={{ 
@@ -179,7 +183,8 @@ const FilterModal: React.FC<FilterModalProps> = ({
           >
             <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 15 }}>Apply</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
+
       </View>
     </Modal>
   );
