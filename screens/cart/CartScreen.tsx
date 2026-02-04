@@ -292,7 +292,7 @@ const CartScreen = () => {
               colorScheme="primary"
               size="lg"
             >
-              {isAuthenticated ? 'Process to Checkout' : 'Proceed to Checkout'}
+              {isAuthenticated ? 'Proceed to Checkout' : 'Proceed to Checkout'}
             </Button>
           </View>
         </>

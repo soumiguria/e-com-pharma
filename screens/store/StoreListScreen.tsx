@@ -816,16 +816,19 @@ const StoreListScreen = () => {
                 </Card>
               ))
             ) : (
-              <View style={styles.emptyState}>
-                <MaterialCommunityIcons name="store-off" size={64} color="#FFFFFF" />
-                <Text style={styles.emptyStateTitle}>No Stores Found</Text>
-                <Text style={styles.emptyStateSubtitle}>
-                  Sorry, we couldn't find any {activeTab === 'grocery' ? 'grocery' : 'pharmacy'} stores in your area.
-                </Text>
-                <Text style={styles.emptyStateSubtitle}>
-                  Please try a different location or check back later.
-                </Text>
-              </View>
+              // Don't show the empty state while we're still loading or refreshing
+              (!loading && !refreshing) ? (
+                <View style={styles.emptyState}>
+                  <MaterialCommunityIcons name="store-off" size={64} color="#FFFFFF" />
+                  <Text style={styles.emptyStateTitle}>No Stores Found</Text>
+                  <Text style={styles.emptyStateSubtitle}>
+                    Sorry, we couldn't find any {activeTab === 'grocery' ? 'grocery' : 'pharmacy'} stores in your area.
+                  </Text>
+                  <Text style={styles.emptyStateSubtitle}>
+                    Please try a different location or check back later.
+                  </Text>
+                </View>
+              ) : null
             )}
         </ScrollView>
         )}

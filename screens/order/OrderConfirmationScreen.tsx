@@ -515,7 +515,7 @@ const OrderConfirmationScreen = () => {
         </View>
 
         {/* Prescription Upload Section - Show only if prescriptionRequired is true */}
-        {prescriptionRequired && (
+        {/* {prescriptionRequired && (
           <View style={styles.prescriptionSection}>
             <TouchableOpacity
               style={styles.prescriptionButton}
@@ -535,7 +535,7 @@ const OrderConfirmationScreen = () => {
               Please upload your prescription to complete the order
             </Text>
           </View>
-        )}
+        )} */}
 
         <View style={styles.divider} />
 

@@ -1,7 +1,5 @@
-import { Platform } from 'react-native';
 import * as FileSystem from 'expo-file-system';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ApiResponse } from './types';
 
 export type PrescriptionFile = {
   uri: string;
@@ -19,7 +17,7 @@ export type PrescriptionFile = {
  * - Auto-upload to API when order is placed
  */
 class PrescriptionService {
-  private readonly MAX_FILE_SIZE_BYTES = 1024 * 1024; // 1MB
+  private readonly MAX_FILE_SIZE_BYTES = 10 *1024 * 1024; // 1MB
   private readonly STORAGE_KEY = 'prescription_cart_data';
 
   /**
@@ -32,21 +30,21 @@ class PrescriptionService {
     error?: string;
   }> {
     try {
-      // Check file size
-      if (!file.sizeBytes) {
+      // Check file size: only try lookup if sizeBytes is not provided
+      if (typeof file.sizeBytes !== 'number') {
         try {
           const fileInfo = await FileSystem.getInfoAsync(file.uri);
-          if (fileInfo.size === undefined) {
+          // FileInfo may be a union type that doesn't always include `size`.
+          // Use a safe runtime check before accessing.
+          if (!('size' in fileInfo) || typeof (fileInfo as any).size !== 'number') {
             return {
               valid: false,
               error: 'Unable to determine file size',
             };
           }
-          file.sizeBytes = fileInfo.size;
+          file.sizeBytes = (fileInfo as any).size;
         } catch (error) {
           console.warn('getInfoAsync failed, attempting legacy approach:', error);
-          // If the new approach fails, try getting file size from the system
-          // For now, we'll estimate or require the caller to provide sizeBytes
           return {
             valid: false,
             error: 'Unable to determine file size. Please try again.',
@@ -55,7 +53,7 @@ class PrescriptionService {
       }
 
       // Validate file size (1KB max)
-      if (file.sizeBytes > this.MAX_FILE_SIZE_BYTES) {
+      if (typeof file.sizeBytes === 'number' && file.sizeBytes > this.MAX_FILE_SIZE_BYTES) {
         const sizeInKB = (file.sizeBytes / 1024).toFixed(2);
         return {
           valid: false,
@@ -73,7 +71,7 @@ class PrescriptionService {
         'application/pdf',
       ];
 
-      const normalizedMimeType = file.mimeType.toLowerCase();
+      const normalizedMimeType = (file.mimeType || '').toLowerCase();
       if (!allowedMimeTypes.includes(normalizedMimeType)) {
         return {
           valid: false,
@@ -95,11 +93,11 @@ class PrescriptionService {
    * @param orderId Order ID to associate prescription with
    * @param file Prescription file
    */
-  async storePrescriptionForOrder(orderId: string, file: PrescriptionFile): Promise<void> {
+    async storePrescriptionForOrder(orderId: string, file: PrescriptionFile): Promise<void> {
     try {
-      const existing = await this.getPrescriptionForOrder(orderId);
-      const updatedData = {
-        ...existing,
+      const all = await this.getAllPrescriptions();
+      const updated = {
+        ...all,
         [orderId]: {
           uri: file.uri,
           name: file.name,
@@ -108,10 +106,7 @@ class PrescriptionService {
           storedAt: new Date().toISOString(),
         },
       };
-      await AsyncStorage.setItem(
-        this.STORAGE_KEY,
-        JSON.stringify(updatedData)
-      );
+      await AsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify(updated));
       console.log('💊 Prescription stored locally for order:', orderId);
     } catch (error) {
       console.error('❌ Error storing prescription:', error);

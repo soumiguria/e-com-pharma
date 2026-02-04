@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'; 
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal, Platform, PermissionsAndroid } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ScrollView, TextInput, Alert, Modal, Platform, PermissionsAndroid, Image, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ThemedButton from '../../components/ui/ThemedButton';
 import { useTheme } from '../../contexts/ThemeContext';
@@ -27,7 +27,7 @@ const deliveryMethods = [
 ];
 
 const paymentMethods = [
-  { id: 'offline', label: 'Offline Payment', description: 'Pay at store or delivery' },
+  { id: 'offline', label: 'Pay on delivery', description: 'Pay at store or delivery' },
   { id: 'online', label: 'Online Payment', description: 'Pay now with Razorpay' },
 ];
 
@@ -77,6 +77,8 @@ const PaymentMethodsScreen = () => {
   // Prescription state
   const [requiresPrescription, setRequiresPrescription] = useState(false);
   const [selectedPrescription, setSelectedPrescription] = useState<any | null>(null);
+  const [prescriptionPreviewLoading, setPrescriptionPreviewLoading] = useState(false);
+  const [prescriptionLoadingProgress, setPrescriptionLoadingProgress] = useState(0);
 
   // Check route params for selected address on mount
   useEffect(() => {
@@ -603,6 +605,25 @@ const PaymentMethodsScreen = () => {
     return `${name}, ${addressObj.line1}, ${addressObj.city}, ${addressObj.state} - ${addressObj.pincode}, ${addressObj.country}`;
   };
 
+  const getPaymentMethodDisplay = (methodId: string) => {
+    const isStore = selectedDeliveryMethod === '1';
+    if (methodId === 'offline') {
+      return {
+        label: isStore ? 'Pay At Store' : 'Pay At Delivery',
+        description: isStore
+          ? 'Pay directly at store when you pickup your order'
+          : 'Pay directly at the time of delivery',
+      };
+    }
+    if (methodId === 'online') {
+      return {
+        label: 'Online Payment',
+        description: 'Pay now for a hassle free experience',
+      };
+    }
+    return { label: methodId, description: '' };
+  };
+
   const handleAddressChange = () => {
     // Navigate to address selection screen
     navigation.navigate('MyAddresses' as any, { fromPaymentMethods: true });
@@ -649,6 +670,9 @@ const PaymentMethodsScreen = () => {
           return;
         }
 
+        // Start preview loading/progress
+        setPrescriptionLoadingProgress(0);
+        setPrescriptionPreviewLoading(true);
         setSelectedPrescription(prescriptionFile);
         console.log('📷 Prescription photo captured and validated:', asset.uri);
       }
@@ -690,6 +714,9 @@ const PaymentMethodsScreen = () => {
           return;
         }
 
+        // Start preview loading/progress
+        setPrescriptionLoadingProgress(0);
+        setPrescriptionPreviewLoading(true);
         setSelectedPrescription(prescriptionFile);
         console.log('📄 Prescription file selected and validated:', prescriptionFile.name);
       }
@@ -698,6 +725,22 @@ const PaymentMethodsScreen = () => {
       Alert.alert('Error', 'Failed to select file. Please try again.');
     }
   };
+
+  // Progress simulation while preview is loading
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+    if (prescriptionPreviewLoading) {
+      interval = setInterval(() => {
+        setPrescriptionLoadingProgress(prev => {
+          if (prev >= 90) return prev; // wait for actual load to finish
+          return Math.min(90, prev + Math.floor(Math.random() * 10) + 5);
+        });
+      }, 300);
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [prescriptionPreviewLoading]);
 
   const styles = StyleSheet.create({
     container: {
@@ -1047,34 +1090,37 @@ const PaymentMethodsScreen = () => {
         {/* Payment Method */}
         <Text style={styles.sectionTitle}>Payment Method</Text>
         <View style={styles.paymentMethodContainer}>
-          {availablePaymentMethods.map((method) => (
-            <TouchableOpacity
-              key={method.id}
-              style={[
-                styles.paymentMethodCard,
-                selectedPaymentMethod === method.id && styles.paymentMethodSelected
-              ]}
-              onPress={() => setSelectedPaymentMethod(method.id)}
-            >
-              <View style={styles.paymentMethodHeader}>
-                <View style={styles.radioButton}>
-                  {selectedPaymentMethod === method.id && <View style={styles.radioButtonSelected} />}
-                </View>
+          {availablePaymentMethods.map((method) => {
+            const display = getPaymentMethodDisplay(method.id);
+            return (
+              <TouchableOpacity
+                key={method.id}
+                style={[
+                  styles.paymentMethodCard,
+                  selectedPaymentMethod === method.id && styles.paymentMethodSelected
+                ]}
+                onPress={() => setSelectedPaymentMethod(method.id)}
+              >
+                <View style={styles.paymentMethodHeader}>
+                  <View style={styles.radioButton}>
+                    {selectedPaymentMethod === method.id && <View style={styles.radioButtonSelected} />}
+                  </View>
+                  <Text style={[
+                    styles.paymentMethodLabel,
+                    selectedPaymentMethod === method.id && styles.paymentMethodLabelSelected
+                  ]}>
+                    {display.label}
+                  </Text>
+          </View>
                 <Text style={[
-                  styles.paymentMethodLabel,
-                  selectedPaymentMethod === method.id && styles.paymentMethodLabelSelected
+                  styles.paymentMethodDescription,
+                  selectedPaymentMethod === method.id && styles.paymentMethodDescriptionSelected
                 ]}>
-                  {method.label}
+                  {display.description}
                 </Text>
-        </View>
-              <Text style={[
-                styles.paymentMethodDescription,
-                selectedPaymentMethod === method.id && styles.paymentMethodDescriptionSelected
-              ]}>
-                {method.description}
-              </Text>
-            </TouchableOpacity>
-          ))}
+              </TouchableOpacity>
+            );
+          })}
         </View>
 
         {/* section to upload prescription if the cart items include 
@@ -1090,18 +1136,41 @@ const PaymentMethodsScreen = () => {
               {selectedPrescription ? (
                 <View style={styles.prescriptionSelectedCard}>
                   <View style={styles.prescriptionFileInfo}>
-                    <MaterialIcons 
-                      name={selectedPrescription.mimeType?.includes('pdf') ? 'picture-as-pdf' : 'image'} 
-                      size={32} 
-                      color={theme.colors.primary} 
-                    />
+                    {/* Show image preview if image, otherwise show PDF icon */}
+                    {selectedPrescription.mimeType?.includes('pdf') ? (
+                      <MaterialIcons name="picture-as-pdf" size={48} color={theme.colors.primary} />
+                    ) : (
+                      <View style={{ width: 48, height: 48, borderRadius: 6, overflow: 'hidden', backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }}>
+                        <Image
+                          source={{ uri: selectedPrescription.uri }}
+                          style={{ width: 48, height: 48 }}
+                          resizeMode="cover"
+                          onLoadStart={() => {
+                            setPrescriptionPreviewLoading(true);
+                            setPrescriptionLoadingProgress(0);
+                          }}
+                          onLoadEnd={() => {
+                            setPrescriptionLoadingProgress(100);
+                            // give a small delay so progress bar reaches 100
+                            setTimeout(() => setPrescriptionPreviewLoading(false), 250);
+                          }}
+                        />
+                        {prescriptionPreviewLoading && (
+                          <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}>
+                            <View style={{ height: 4, backgroundColor: '#eee' }}>
+                              <View style={{ height: 4, backgroundColor: theme.colors.primary, width: `${prescriptionLoadingProgress}%` }} />
+                            </View>
+                          </View>
+                        )}
+                      </View>
+                    )}
                     <View style={styles.prescriptionTextContainer}>
                       <Text style={styles.prescriptionFileName} numberOfLines={1}>
                         {selectedPrescription.name || 'Prescription'}
                       </Text>
-                      <Text style={styles.prescriptionHint}>
+                      {/* <Text style={styles.prescriptionHint}>
                         Will be uploaded after order placement
-                      </Text>
+                      </Text> */}
                     </View>
                     <TouchableOpacity 
                       onPress={() => setSelectedPrescription(null)}
@@ -1110,16 +1179,24 @@ const PaymentMethodsScreen = () => {
                       <MaterialIcons name="close" size={20} color={theme.colors.error} />
                     </TouchableOpacity>
                   </View>
+                  {/* Show progress bar for non-image files as well while previewing */}
+                  {prescriptionPreviewLoading && !selectedPrescription.mimeType?.includes('pdf') && (
+                    <View style={{ marginTop: 8 }}>
+                      <View style={{ height: 6, backgroundColor: '#eee', borderRadius: 6, overflow: 'hidden' }}>
+                        <View style={{ height: 6, backgroundColor: theme.colors.primary, width: `${prescriptionLoadingProgress}%` }} />
+                      </View>
+                    </View>
+                  )}
                 </View>
               ) : (
                 <View style={styles.prescriptionUploadCard}>
-                  <Text style={styles.prescriptionTitle}>Upload Prescription (Compulsory)</Text>
+                  <Text style={styles.prescriptionTitle}>Upload Prescription</Text>
                   <Text style={styles.prescriptionDescription}>
                     You can re-upload your prescription later from order details
                   </Text>
-                  <Text style={styles.prescriptionValidationHint}>
+                  {/* <Text style={styles.prescriptionValidationHint}>
                     ℹ️ Files under 1MB can only be uploaded. Supported formats: JPG, PNG, WebP, GIF, PDF
-                  </Text>
+                  </Text> */}
                   <View style={styles.prescriptionButtonsRow}>
                     <TouchableOpacity 
                       style={styles.prescriptionButton}
@@ -1156,7 +1233,7 @@ const PaymentMethodsScreen = () => {
         <ThemedButton 
           title={isReorder ? "Reorder Items" : "Place Order"} 
           onPress={handlePlaceOrder} 
-          style={{ marginTop: 24, marginBottom: 80 }}
+          style={{ marginTop: 24, marginBottom: 120 }}
           disabled={cartType === 'pharma' && requiresPrescription && !selectedPrescription}
         />
               </ScrollView>
