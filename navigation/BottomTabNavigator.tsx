@@ -6,7 +6,7 @@ import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
 import { View, Text } from "react-native";
 import HomeScreen from "../screens/home/HomeScreen";
 import OrdersScreen from "../screens/order/OrdersScreen";
-import PharmacyHomeScreen from "../screens/home/PharmacyHomeScreen";
+// import PharmacyHomeScreen from "../screens/home/PharmacyHomeScreen";
 import { useTheme } from "../contexts/ThemeContext";
 import CategoryDetailScreen from "../screens/category/CategoryDetailScreen";
 import CategoriesScreen from "../screens/category/CategoriesScreen";
@@ -60,7 +60,7 @@ const OrdersStackNavigator = () => (
 
 const PharmacyStackNavigator = () => (
   <PharmacyStack.Navigator screenOptions={{ headerShown: false }}>
-    <PharmacyStack.Screen name="PharmacyRoot" component={PharmacyHomeScreen} />
+    {/* <PharmacyStack.Screen name="PharmacyRoot" component={PharmacyHomeScreen} /> */}
     <PharmacyStack.Screen
       name="ProductDetail"
       component={ProductDetailScreen}
@@ -148,12 +148,14 @@ const BottomTabNavigator = () => {
 
       // Navigate directly to Pharmacy Home with the store
       navigation.navigate("Main", {
-        screen: "Pharmacy",
+        screen: "Home",
         params: {
-          screen: "PharmacyRoot",
+          screen: "HomeRoot",
           params: {
             storeId: pharmacyStore.id,
-            pincode: pharmacyStore.pincode || "",
+            pincode: pharmacyStore.pincode,
+            storeType: "pharma",
+            storeName: pharmacyStore.name,
           },
         },
       });
@@ -214,7 +216,7 @@ const BottomTabNavigator = () => {
       {section === "grocery" ? (
         <Tab.Screen
           name="Pharmacy"
-          component={PharmacyStackNavigator}
+          component={HomeStackNavigator}
           listeners={{ tabPress: handlePharmacyTabPress }}
         />
       ) : (

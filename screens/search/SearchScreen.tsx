@@ -744,7 +744,7 @@ const SearchScreen = () => {
                                       />
                                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 6, gap: 4, flexWrap: 'wrap' }}>
                                         <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, textAlign: 'center', lineHeight: 18, flex: 1 }} numberOfLines={2}>
-                                          {product.name}
+                                          {product.name || product.fullName || product.productName || 'Product'}
                                         </Text>
                                         {product.prescriptionRequired && (
                                           <PrescriptionRequiredTag compact={true} />
