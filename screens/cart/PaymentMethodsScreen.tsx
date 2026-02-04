@@ -975,7 +975,7 @@ const PaymentMethodsScreen = () => {
     },
     prescriptionDescription: {
       fontSize: 14,
-      color: theme.colors.secondary,
+      color: theme.colors.primary,
       marginBottom: 16,
       lineHeight: 20,
     },

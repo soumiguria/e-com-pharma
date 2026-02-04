@@ -18,6 +18,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { RootStackParamList } from '../../navigation/types';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import SearchBar from '../../components/ui/SearchBar';
+import PrescriptionRequiredTag from '../../components/ui/PrescriptionRequiredTag';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppContext } from '../../contexts/AppContext';
 import { useCart } from '../../contexts/CartContext';
@@ -262,6 +263,7 @@ const SearchScreen = () => {
       variants: product.variants || [],
       images: product.images || [product.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg'],
       originalPrice: parseFloat(product.mrp || '0'),
+      prescriptionRequired: product.prescriptionRequired || false,
       // API specific fields
       _id: product._id,
       productMasterId: product.productMasterId,
@@ -740,9 +742,14 @@ const SearchScreen = () => {
                                         source={{ uri: productImage }}
                                         style={{ width: 90, height: 90, borderRadius: 12, marginBottom: 10, backgroundColor: '#f7f7f7', alignSelf: 'center' }}
                                       />
-                                      <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, marginBottom: 6, textAlign: 'center', lineHeight: 18 }} numberOfLines={2}>
-                                        {product.name}
-                                      </Text>
+                                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 6, gap: 4, flexWrap: 'wrap' }}>
+                                        <Text style={{ fontSize: 15, fontWeight: '700', color: theme.colors.text, textAlign: 'center', lineHeight: 18, flex: 1 }} numberOfLines={2}>
+                                          {product.name}
+                                        </Text>
+                                        {product.prescriptionRequired && (
+                                          <PrescriptionRequiredTag compact={true} />
+                                        )}
+                                      </View>
                                       <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap', gap: 4 }}>
                                         <Text style={{ fontSize: 14, color: theme.colors.primary, fontWeight: 'bold' }}>
                                           ₹{sp.toFixed(2)}

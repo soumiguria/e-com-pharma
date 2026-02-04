@@ -46,6 +46,7 @@ interface ExtendedProduct {
   brand?: string;
   images?: string[];
   availableQty?: number;
+  prescriptionRequired?: boolean;
 }
 
 const ProductDetailScreen = () => {
@@ -552,7 +553,12 @@ const ProductDetailScreen = () => {
         </View>
         {/* Product Info Card */}
         <View style={{ backgroundColor: '#fff', borderRadius: 18, marginHorizontal: 12, marginTop: 0, marginBottom: 18, padding: 18, elevation: 2, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, zIndex: 2 }}>
-          <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.colors.text, marginBottom: 2 }}>{extendedProduct.name}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.colors.text, flex: 1 }}>{extendedProduct.name}</Text>
+            {extendedProduct.prescriptionRequired && (
+              <PrescriptionRequiredTag />
+            )}
+          </View>
           {/* Show selected variant name dynamically */}
           <Text style={{ fontSize: 15, color: theme.colors.secondary, marginBottom: 8 }}>{selectedVariant ? selectedVariant.name : (variants[0]?.name || '')}</Text>
           {/* Price block on left, Add/counter on extreme right */}
