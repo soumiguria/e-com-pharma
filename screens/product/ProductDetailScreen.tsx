@@ -554,8 +554,8 @@ const ProductDetailScreen = () => {
         {/* Product Info Card */}
         <View style={{ backgroundColor: '#fff', borderRadius: 18, marginHorizontal: 12, marginTop: 0, marginBottom: 18, padding: 18, elevation: 2, shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 8, zIndex: 2 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 8 }}>
-            <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.colors.text, flex: 1 }}>{extendedProduct.name}</Text>
-            {extendedProduct.prescriptionRequired && (
+            <Text style={{ fontSize: 20, fontWeight: 'bold', color: theme.colors.text, flex: 1 }}>{productDetails.name}</Text>
+            {productDetails.prescriptionRequired && (
               <PrescriptionRequiredTag />
             )}
           </View>

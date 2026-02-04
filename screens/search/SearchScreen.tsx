@@ -448,7 +448,8 @@ const SearchScreen = () => {
     recentSearchesGrid: {
       flexDirection: 'row',
       flexWrap: 'wrap',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start',
+      gap: 8,
     },
     recentSearchChip: {
       flexDirection: 'row',
@@ -456,7 +457,6 @@ const SearchScreen = () => {
       padding: 8,
       backgroundColor: theme.colors.surface,
       borderRadius: 8,
-      marginBottom: 8,
     },
     recentSearchChipText: {
       fontSize: 16,

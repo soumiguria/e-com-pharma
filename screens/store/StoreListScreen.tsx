@@ -380,7 +380,7 @@
 
 
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, Platform, TouchableOpacity, Image, ActivityIndicator, Linking, RefreshControl } from 'react-native';
+import { View, StyleSheet, ScrollView, Platform, TouchableOpacity, Image, ActivityIndicator, Linking, RefreshControl, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card, Text, Button } from 'native-base';
 import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
@@ -391,6 +391,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons, MaterialIcons } from '@expo/vector-icons';
 import { useAppContext } from '../../contexts/AppContext';
 import { useAuth } from '../../contexts/AuthContext';
+import { useCart } from '../../contexts/CartContext';
 import * as Location from 'expo-location';
 import storeService, { formatStoreAddress, createAddressFromCoordinates } from '../../services/api/storeService';
 
@@ -419,8 +420,9 @@ const StoreListScreen = () => {
   const [activeTab, setActiveTab] = useState<'grocery' | 'pharma'>(
     route.params?.storeType ?? section
   );
-  const { setSelectedStore, saveLastVisitedStore } = useAppContext();
+  const { setSelectedStore, saveLastVisitedStore, selectedStore } = useAppContext();
   const { isAuthenticated } = useAuth();
+  const { clearCart, groceryItems, pharmacyItems } = useCart();
 
   const [stores, setStores] = useState<Store[]>([]);
   const [loading, setLoading] = useState(true);
@@ -442,6 +444,33 @@ const StoreListScreen = () => {
       pincode: store.pincode || pincode,
     };
     
+    // Check if switching to a different store and if cart has items
+    const hasCartItems = groceryItems.some(item => item.quantity > 0) || pharmacyItems.some(item => item.quantity > 0);
+    const isDifferentStore = selectedStore?.id !== storeWithType.id;
+    
+    if (isDifferentStore && hasCartItems) {
+      // Show confirmation dialog
+      Alert.alert(
+        'Change Store',
+        'All items in your cart will be cleared when you change the store. Continue?',
+        [
+          { text: 'No', onPress: () => {} },
+          {
+            text: 'Yes',
+            onPress: async () => {
+              await clearCart();
+              proceedWithStoreSelection(storeWithType);
+            },
+            style: 'destructive'
+          }
+        ]
+      );
+    } else {
+      proceedWithStoreSelection(storeWithType);
+    }
+  };
+
+  const proceedWithStoreSelection = (storeWithType: Store) => {
     setSelectedStore(storeWithType);
     // Always save as last visited store (both grocery and pharmacy separately)
     console.log('💾 Saving store as last visited in StoreListScreen:', storeWithType);

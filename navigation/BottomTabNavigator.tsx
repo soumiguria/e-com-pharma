@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
-import { View, Text } from "react-native";
+import { View, Text, Alert } from "react-native";
 import HomeScreen from "../screens/home/HomeScreen";
 import OrdersScreen from "../screens/order/OrdersScreen";
 // import PharmacyHomeScreen from "../screens/home/PharmacyHomeScreen";
@@ -19,6 +19,7 @@ import { useNavigation } from "@react-navigation/native";
 import { RootStackParamList } from "./types";
 import { StackNavigationProp } from "@react-navigation/stack";
 import { useAppContext } from "../contexts/AppContext";
+import { useCart } from "../contexts/CartContext";
 
 const getTabBarStyle = (route: any) => {
   const routeName = getFocusedRouteNameFromRoute(route) ?? "";
@@ -97,9 +98,38 @@ const BottomTabNavigator = () => {
     loadLastVisitedGroceryStore,
     loadLastVisitedPharmacyStore,
   } = useAppContext();
+  const { clearCart, groceryItems, pharmacyItems } = useCart();
 
   const handleGroceryTabPress = async (e: any) => {
     e.preventDefault();
+    
+    // Check if switching from pharmacy to grocery and if cart has items
+    const hasCartItems = groceryItems.some(item => item.quantity > 0) || pharmacyItems.some(item => item.quantity > 0);
+    const isSwitchingSection = section === "pharma"; // Currently in pharma, switching to grocery
+    
+    if (isSwitchingSection && hasCartItems) {
+      // Show confirmation dialog
+      Alert.alert(
+        'Change Store',
+        'All items in your cart will be cleared when you change the store. Continue?',
+        [
+          { text: 'No', onPress: () => {} },
+          {
+            text: 'Yes',
+            onPress: async () => {
+              await clearCart();
+              proceedWithGrocerySwitch();
+            },
+            style: 'destructive'
+          }
+        ]
+      );
+    } else {
+      proceedWithGrocerySwitch();
+    }
+  };
+
+  const proceedWithGrocerySwitch = async () => {
     setSection("grocery");
 
     // Reload grocery store from storage to ensure we have latest
@@ -135,6 +165,34 @@ const BottomTabNavigator = () => {
 
   const handlePharmacyTabPress = async (e: any) => {
     e.preventDefault();
+    
+    // Check if switching from grocery to pharmacy and if cart has items
+    const hasCartItems = groceryItems.some(item => item.quantity > 0) || pharmacyItems.some(item => item.quantity > 0);
+    const isSwitchingSection = section === "grocery"; // Currently in grocery, switching to pharma
+    
+    if (isSwitchingSection && hasCartItems) {
+      // Show confirmation dialog
+      Alert.alert(
+        'Change Store',
+        'All items in your cart will be cleared when you change the store. Continue?',
+        [
+          { text: 'No', onPress: () => {} },
+          {
+            text: 'Yes',
+            onPress: async () => {
+              await clearCart();
+              proceedWithPharmacySwitch();
+            },
+            style: 'destructive'
+          }
+        ]
+      );
+    } else {
+      proceedWithPharmacySwitch();
+    }
+  };
+
+  const proceedWithPharmacySwitch = async () => {
     setSection("pharma");
 
     // Reload pharmacy store from storage to ensure we have latest
