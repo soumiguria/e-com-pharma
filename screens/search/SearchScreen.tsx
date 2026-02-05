@@ -220,12 +220,19 @@ const SearchScreen = () => {
   };
 
   const handleProductPress = (product: any) => {
-    console.log('🔍 Navigating to product:', product.name, 'ID:', product._id || product.productId);
+    // Ensure product name with fallback
+    const productName = product.name || product.fullName || 'Unknown Product';
+    const storeTypeCategory = selectedStore?.type || 'grocery';
+    
+    console.log('🔍 Navigating to product:', productName, 'ID:', product._id || product.productId);
     console.log('🔍 Product details for navigation:', {
+      apiName: product.name,
+      apiFullName: product.fullName,
+      finalName: productName,
       productId: product.productId,
       productMasterId: product.productMasterId,
       _id: product._id,
-      name: product.name
+      storeType: storeTypeCategory
     });
     
     // Add current search query to history since user tapped on a result
@@ -239,28 +246,36 @@ const SearchScreen = () => {
       return;
     }
     
+    // For grocery items, use productMasterId if available (UUID format)
+    // For pharmacy items, use MongoDB _id
+    const productIdForApi = storeTypeCategory === 'grocery' ? (product.productMasterId || actualProductId) : actualProductId;
+    
     console.log('🔍 Product ID mapping:', {
       fromSearch: product.productId,
       idField: product.id,
       _id: product._id,
       productMasterId: product.productMasterId,
       finalId: actualProductId,
-      productName: product.name
+      apiId: productIdForApi,
+      storeType: storeTypeCategory,
+      productName: productName
     });
     
     // Transform API product to expected format for ProductDetailScreen
     const transformedProduct = {
-      id: actualProductId, // Use the resolved product id
-      name: product.name,
+      id: productIdForApi, // Use API-facing ID (productMasterId for grocery, id for pharma) so cart keys are consistent
+      name: productName, // Use name with fallback to fullName
       price: parseFloat(product.sp || product.mrp || '0'),
       image: product.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
-      category: selectedStore?.type || 'grocery',
-      description: product.description || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
-      productId: actualProductId, // Use the same ID for consistency
+      category: storeTypeCategory,
+      description: product.description || product.productDescription,
+      servingSize: product.servingSize || '',
+      productId: productIdForApi, // Use API-facing ID (productMasterId for grocery, id for pharma)
       // Add additional product details
       brand: product.brand || '',
       availableQty: getValidQty(product),
       variants: product.variants || [],
+      signedImages: product.signedImages || [],
       images: product.images || [product.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg'],
       originalPrice: parseFloat(product.mrp || '0'),
       prescriptionRequired: product.prescriptionRequired || false,
@@ -722,13 +737,16 @@ const SearchScreen = () => {
                               {displayedProducts.map((product: any, index: number) => {
                                 const productImage = product.signedImage || product.image ||
                                   (Array.isArray(product.signedImages) && product.signedImages.length > 0 ? product.signedImages[0] : undefined) ||
-                                  (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : undefined) || '';
+                                  (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : undefined) ||  '';
                                 const sp = parseFloat(product.sp || product.mrp || '0');
                                 const mrp = parseFloat(product.mrp || '0');
-                                const productId = product.productId || product.id || product._id;
+                                // Calculate API-facing product id so cart keys match across all flows
+                                const productIdForApi = product.productId;
+                                const productId = productIdForApi;
                                 const maxQty = getValidQty(product);
                                 const minPrc = getValidPrice(product);
-                                const canAdd = maxQty > 0 && minPrc > 0;
+                                // Consider product not addable if API-facing productId is missing
+                                const canAdd = maxQty > 0 && minPrc > 0 && !!productId;
                                 const qty = productId ? getCartQty(productId) : 0;
                                 const pctOff = mrp > sp && sp > 0 ? Math.round(((mrp - sp) / mrp) * 100) : 0;
                                 return (
@@ -786,9 +804,10 @@ const SearchScreen = () => {
                                         }}
                                         onPress={() => {
                                           if (!canAdd || !productId) return;
+                                          const productName = product.name || product.fullName || 'Unknown Product';
                                           addToCart({
                                             id: productId,
-                                            name: product.name,
+                                            name: productName,
                                             price: sp,
                                             image: productImage,
                                             productId: productId,

@@ -47,6 +47,9 @@ interface ExtendedProduct {
   images?: string[];
   availableQty?: number;
   prescriptionRequired?: boolean;
+  fullName?: string;
+  productMasterId?: string;
+  productId?: string; // For grocery products to enable ID-based fetching
 }
 
 const ProductDetailScreen = () => {
@@ -87,7 +90,7 @@ const ProductDetailScreen = () => {
   const originalProductId = extendedProduct.id;
 
   // Debug product IDs
-  console.log('🔍 ProductDetailScreen IDs:', {
+  console.log('🔍 ProductDetailScreen initialized:', {
     originalProductId: originalProductId,
     extendedProductId: extendedProduct.id,
     productDetailsId: productDetails.id,
@@ -136,14 +139,46 @@ const ProductDetailScreen = () => {
     fetchProductDetails();
   }, [selectedStore?.id, section, extendedProduct.id]);
 
-  // Use images array if present, else fallback to single image
-  let images = productDetails.images && productDetails.images.length > 0
-    ? productDetails.images.map(ensureFullImageUrl)
-    : productDetails.image ? [ensureFullImageUrl(productDetails.image)] : [];
+  // Use images array with priority: signedImages > images > single image
+  // signedImages have pre-signed URLs that work for both pharmacy and grocery
+  let images: string[] = [];
+  
+  // Priority 1: Use signedImages array (preferred - has full signed URLs)
+  if (productDetails.signedImages && productDetails.signedImages.length > 0) {
+    images = productDetails.signedImages.map(ensureFullImageUrl);
+  } 
+  // Priority 2: Use images array
+  else if (productDetails.images && productDetails.images.length > 0) {
+    images = productDetails.images.map(ensureFullImageUrl);
+  }
+  // Priority 3: Use single image field
+  else if (productDetails.image) {
+    images = [ensureFullImageUrl(productDetails.image)];
+  }
+  // Priority 4: Fall back to extended product images if API response has none
+  else if (extendedProduct.images && extendedProduct.images.length > 0) {
+    images = extendedProduct.images.map(ensureFullImageUrl);
+  }
+  // Priority 5: Fall back to extended product single image
+  else if (extendedProduct.image) {
+    images = [ensureFullImageUrl(extendedProduct.image)];
+  }
+
+  console.log('🖼️ ProductDetailScreen images:', {
+    hasSignedImages: Array.isArray(productDetails.signedImages) && productDetails.signedImages.length > 0,
+    signedImagesCount: productDetails.signedImages?.length || 0,
+    hasImages: Array.isArray(productDetails.images) && productDetails.images.length > 0,
+    imagesCount: productDetails.images?.length || 0,
+    hasImage: !!productDetails.image,
+    mappedImagesCount: images.length,
+    extendedProductImages: extendedProduct.images?.length || 0,
+    extendedProductImage: extendedProduct.image?.substring(0, 50),
+  });
 
   // If no images at all, use placeholder
   if (images.length === 0) {
     images = ['https://images.pexels.com/photos/461382/pexels-photo-461382.jpeg'];
+    console.log('🖼️ No images found, using placeholder');
   }
 
   // If only one image, add dummy images for demo (but keep the real one first)
@@ -216,7 +251,9 @@ const ProductDetailScreen = () => {
   const canAddToCart = (): boolean => {
     const price = getValidPrice();
     const qty = getValidQuantity();
-    return price > 0 && qty > 0;
+    // Ensure we have an API-facing product id available before allowing add-to-cart
+    const apiProductId = productDetails.productId || extendedProduct.productId || originalProductId;
+    return price > 0 && qty > 0 && !!apiProductId;
   };
 
   // Variants - check if API provides variants, otherwise use empty array
@@ -294,11 +331,16 @@ const ProductDetailScreen = () => {
   };
 
   const handleAddToCart = () => {
+    // Ensure we have product name
+    const productName = productDetails.name || extendedProduct.name || extendedProduct.fullName || productDetails.fullName || extendedProduct.fullName || 'Unknown Product';
+    const productImage = productDetails.image || extendedProduct.image;
+    
+    // For grocery items, include productMasterId for ID-based fetching
     const itemToAdd = {
       id: selectedVariant ? `${originalProductId}-${selectedVariant.id}` : originalProductId,
-      name: productDetails.name,
+      name: productName, // Ensure name is always set
       price: selectedVariant ? selectedVariant.price : getValidPrice(),
-      image: productDetails.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
+      image: productImage,
       variant: selectedVariant ? {
         name: selectedVariant.name,
         unit: selectedVariant.name.split(' ')[1]?.replace(/[()]/g, '') || ''
@@ -309,6 +351,15 @@ const ProductDetailScreen = () => {
       originalPrice: productDetails.originalPrice,
       prescriptionRequired: productDetails.prescriptionRequired || false,
     };
+
+    console.log('🛒 Adding to cart with product name:', {
+      itemToAdd,
+      productName,
+      section,
+      // productMasterId: itemToAdd.productMasterId,
+      productDetailsName: productDetails.name,
+      extendedProductName: extendedProduct.name || extendedProduct.fullName,
+    });
 
     addToCorrectCart(itemToAdd);
   };
@@ -532,7 +583,19 @@ const ProductDetailScreen = () => {
                 style={{ width, height: width * 0.7, alignItems: 'center', justifyContent: 'center' }}
                 onPress={() => navigation.navigate('ImageViewer', { imageUrl: item, title: extendedProduct.name })}
               >
-                <Image source={{ uri: item }} style={{ width: width * 0.8, height: width * 0.6, resizeMode: 'contain', borderRadius: 16, backgroundColor: '#f7f7f7' }} />
+                <Image 
+                  source={{ uri: item }} 
+                  style={{ width: width * 0.8, height: width * 0.6, resizeMode: 'contain', borderRadius: 16, backgroundColor: '#f7f7f7' }}
+                  onError={(error) => {
+                    console.error('🖼️ Image load error:', {
+                      uri: item?.substring(0, 100),
+                      error: error.nativeEvent?.error,
+                    });
+                  }}
+                  onLoad={() => {
+                    console.log('🖼️ Image loaded successfully:', item?.substring(0, 100));
+                  }}
+                />
               </TouchableOpacity>
             )}
             onScroll={e => {
@@ -741,7 +804,9 @@ const ProductDetailScreen = () => {
                               price: variant.price,
                               image: productDetails.image || 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
                               variant: { name: variant.name, unit: variant.name.split(' ')[1]?.replace(/[()]/g, '') || '' },
-                              productId: productDetails.productId || originalProductId,
+                              productId: extendedProduct.productId || originalProductId,
+                              // Include productMasterId for grocery items
+                              // productMasterId: category === 'grocery' ? (productDetails.productMasterId || extendedProduct.productMasterId) : undefined,
                               originalPrice: productDetails.originalPrice
                             });
                           }

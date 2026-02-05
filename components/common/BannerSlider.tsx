@@ -6,12 +6,13 @@ import {
   Dimensions,
   TouchableOpacity,
   FlatList,
+  ActivityIndicator,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../../navigation/types';
 import { useAppContext } from '../../contexts/AppContext';
-import { bannerService } from '../../services/api/bannerService';
+import { margBannerService } from '../../services/api/margBannerService';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -71,31 +72,28 @@ const BannerSlider = () => {
   const { selectedStore } = useAppContext();
   const flatListRef = useRef<FlatList>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [banners, setBanners] = useState<Banner[]>(fallbackBanners);
+  const [banners, setBanners] = useState<Banner[]>([]);
   const [loading, setLoading] = useState(false);
 
-  // Lazy loading: Fetch banners in background after screen renders
+  // Lazy loading: Fetch banners from MargERP API only - NO FALLBACK
   useEffect(() => {
     const fetchBanners = async () => {
-      if (!selectedStore?.id) {
-        console.log('   No store selected, keeping fallback mock data for banners');
-        return;
-      }
-
       try {
         setLoading(true);
-        console.log('🔄 Fetching banners for store:', selectedStore.id);
+        console.log('🔄 Fetching banners from MargERP API');
         
-        const response = await bannerService.getBanners(selectedStore.id);
-        if (response.success && response.data) {
-          console.log('Banners loaded from API');
+        const response = await margBannerService.getBanners();
+        if (response.success && response.data && response.data.length > 0) {
+          console.log('✅ Banners loaded from MargERP API:', response.data.length);
           setBanners(response.data);
         } else {
-          console.log('   Banners API failed, keeping fallback mock data');
+          console.log('⚠️ MargERP API returned no banners - showing NO banners');
+          setBanners([]);
         }
       } catch (error) {
-        console.log('  Error fetching banners:', error);
-        console.log('   Keeping fallback mock data');
+        console.error('❌ Error fetching banners from MargERP:', error);
+        console.log('   Showing NO banners');
+        setBanners([]);
       } finally {
         setLoading(false);
       }
@@ -107,7 +105,7 @@ const BannerSlider = () => {
     }, 300);
 
     return () => clearTimeout(timer);
-  }, [selectedStore?.id]);
+  }, []);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -137,7 +135,19 @@ const BannerSlider = () => {
       // onPress={() => handleBannerPress(item.link)}
       activeOpacity={0.9}
     >
-      <Image source={{ uri: item.image }} style={styles.bannerImage} />
+      <Image
+        source={{ uri: item.image }}
+        style={styles.bannerImage}
+        onError={(error) => {
+          console.error('🖼️ Banner image load error:');
+          console.error('   Image URI:', item.image?.substring(0, 100));
+          console.error('   Error:', error.nativeEvent?.error || error);
+        }}
+        onLoad={() => {
+          console.log('✅ Banner image loaded successfully');
+          console.log('   Image URI:', item.image?.substring(0, 100));
+        }}
+      />
     </TouchableOpacity>
   );
 
@@ -175,30 +185,50 @@ const BannerSlider = () => {
   // );
 
   // See update the above return to show different banners for grocery and pharmacy stores
+  // Show nothing if no banners from API
+  if (banners.length === 0 && !loading) {
+    return null;
+  }
+
   return (
     <View style={styles.container}>
-      <FlatList
-        ref={flatListRef}
-        data={selectedStore?.type === 'pharma' ? fallbackPharmacyBanners : fallbackBanners}
-        renderItem={renderItem}
-        keyExtractor={(item) => item.id}
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        onScroll={handleScroll}
-        scrollEventThrottle={16}
-      />
-      <View style={styles.paginationContainer}>
-        {(selectedStore?.type === 'pharma' ? fallbackPharmacyBanners : fallbackBanners).map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.paginationDot,
-              index === currentIndex && styles.paginationDotActive,
-            ]}
+      {banners.length === 0 && loading ? (
+        // Show loading indicator when fetching
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color="#FF6B35" />
+        </View>
+      ) : (
+        <>
+          <FlatList
+            ref={flatListRef}
+            data={banners}
+            renderItem={renderItem}
+            keyExtractor={(item) => item.id}
+            horizontal
+            pagingEnabled
+            showsHorizontalScrollIndicator={false}
+            onScroll={handleScroll}
+            scrollEventThrottle={16}
           />
-        ))}
-      </View>
+          <View style={styles.paginationContainer}>
+            {banners.map((_, index) => (
+              <View
+                key={index}
+                style={[
+                  styles.paginationDot,
+                  index === currentIndex && styles.paginationDotActive,
+                ]}
+              />
+            ))}
+          </View>
+        </>
+      )}
+      {loading && banners.length > 0 && (
+        // Show loader overlay when refetching with existing banners
+        <View style={styles.loaderOverlay}>
+          <ActivityIndicator size="large" color="#FF6B35" />
+        </View>
+      )}
     </View>
   );
 };
@@ -233,6 +263,21 @@ const styles = StyleSheet.create({
   },
   paginationDotActive: {
     backgroundColor: '#fff',
+  },
+  loaderContainer: {
+    height: 220,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+    borderRadius: 12,
+    marginHorizontal: 16,
+  },
+  loaderOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    borderRadius: 12,
   },
 });
 

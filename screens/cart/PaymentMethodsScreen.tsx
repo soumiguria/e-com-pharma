@@ -15,7 +15,6 @@ import { PlaceOrderRequest } from '../../services/api/orderService';
 import { Address } from '../../services/api/addressService';
 import storeService from '../../services/api/storeService';
 import { useAppContext } from '../../contexts/AppContext';
-import { validateCartItemsForStore } from '../../utils/orderValidation';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { launchCamera, CameraOptions } from 'react-native-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
@@ -308,22 +307,6 @@ const PaymentMethodsScreen = () => {
       return;
     }
 
-    // Validate all cart items are from the selected store and available (grocery and pharmacy)
-    const itemsToValidate = getCartItems().map((item: any) => ({
-      productId: item.productId,
-      quantity: item.quantity,
-      name: item.name,
-    }));
-    const validation = await validateCartItemsForStore(selectedStore?.id, cartType, itemsToValidate);
-    if (!validation.valid) {
-      Alert.alert(
-        'Items Not Available',
-        validation.message || 'Some items do not belong to the selected store. Please remove them or change store.',
-        [{ text: 'OK' }]
-      );
-      return;
-    }
-
     // User is logged in, check payment method
     if (selectedPaymentMethod === 'online') {
       // Show Pay Now modal first
@@ -340,26 +323,6 @@ const PaymentMethodsScreen = () => {
     try {
       setIsLoading(true);
       setIsProcessingPayment(true);
-
-      // Validate cart items for selected store (skip for reorder; reorder validates elsewhere)
-      if (!isReorder) {
-        const itemsToValidate = getCartItems().map((item: any) => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          name: item.name,
-        }));
-        const validation = await validateCartItemsForStore(selectedStore?.id, cartType, itemsToValidate);
-        if (!validation.valid) {
-          Alert.alert(
-            'Items Not Available',
-            validation.message || 'Some items do not belong to the selected store. Please remove them or change store.',
-            [{ text: 'OK' }]
-          );
-          setIsLoading(false);
-          setIsProcessingPayment(false);
-          return;
-        }
-      }
       
       console.log('🛒 Placing offline order...');
       

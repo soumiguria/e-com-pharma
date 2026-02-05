@@ -452,11 +452,11 @@ const StoreListScreen = () => {
       // Show confirmation dialog
       Alert.alert(
         'Change Store',
-        'All items in your cart will be cleared when you change the store. Continue?',
+        'If you change the store, your products added into cart will be deleted',
         [
-          { text: 'No', onPress: () => {} },
+          { text: 'Cancel', onPress: () => {} },
           {
-            text: 'Yes',
+            text: 'Proceed',
             onPress: async () => {
               await clearCart();
               proceedWithStoreSelection(storeWithType);

@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { Ionicons } from "@expo/vector-icons";
 import { getFocusedRouteNameFromRoute } from "@react-navigation/native";
-import { View, Text, Alert } from "react-native";
+import { View, Text, Alert, StyleSheet } from "react-native";
 import HomeScreen from "../screens/home/HomeScreen";
 import OrdersScreen from "../screens/order/OrdersScreen";
 // import PharmacyHomeScreen from "../screens/home/PharmacyHomeScreen";
@@ -100,6 +100,15 @@ const BottomTabNavigator = () => {
   } = useAppContext();
   const { clearCart, groceryItems, pharmacyItems } = useCart();
 
+  // Calculate total cart items count
+  const getCartItemCount = () => {
+    const totalGrocery = groceryItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    const totalPharmacy = pharmacyItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+    return totalGrocery + totalPharmacy;
+  };
+
+  const cartItemCount = getCartItemCount();
+
   const handleGroceryTabPress = async (e: any) => {
     e.preventDefault();
     
@@ -111,11 +120,11 @@ const BottomTabNavigator = () => {
       // Show confirmation dialog
       Alert.alert(
         'Change Store',
-        'All items in your cart will be cleared when you change the store. Continue?',
+        'If you change the store, your products added into cart will be deleted',
         [
-          { text: 'No', onPress: () => {} },
+          { text: 'Cancel', onPress: () => {} },
           {
-            text: 'Yes',
+            text: 'Proceed',
             onPress: async () => {
               await clearCart();
               proceedWithGrocerySwitch();
@@ -174,11 +183,11 @@ const BottomTabNavigator = () => {
       // Show confirmation dialog
       Alert.alert(
         'Change Store',
-        'All items in your cart will be cleared when you change the store. Continue?',
+        'If you change the store your products added into th ecart will be deleted',
         [
-          { text: 'No', onPress: () => {} },
+          { text: 'Cancel', onPress: () => {} },
           {
-            text: 'Yes',
+            text: 'Proceed',
             onPress: async () => {
               await clearCart();
               proceedWithPharmacySwitch();
@@ -243,11 +252,20 @@ const BottomTabNavigator = () => {
             iconName = focused ? "cart" : "cart-outline";
 
             return (
-              <Ionicons
-                name={iconName}
-                size={focused ? size + 8 : size + 8}
-                color={focused ? "#2ecc71" : "#27ae60"}
-              />
+              <View>
+                <Ionicons
+                  name={iconName}
+                  size={focused ? size + 8 : size + 8}
+                  color={focused ? "#2ecc71" : "#27ae60"}
+                />
+                {cartItemCount > 0 && (
+                  <View style={styles.badge}>
+                    <Text style={styles.badgeText}>
+                      {cartItemCount > 99 ? '99+' : cartItemCount}
+                    </Text>
+                  </View>
+                )}
+              </View>
             );
           } else if (route.name === "Categories") {
             iconName = focused ? "apps" : "apps-outline";
@@ -287,5 +305,26 @@ const BottomTabNavigator = () => {
     </Tab.Navigator>
   );
 };
+
+const styles = StyleSheet.create({
+  badge: {
+    position: 'absolute',
+    right: -6,
+    top: -3,
+    backgroundColor: '#FF6B35',
+    borderRadius: 10,
+    width: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: 'bold',
+  },
+});
 
 export default BottomTabNavigator;

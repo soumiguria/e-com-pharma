@@ -47,6 +47,8 @@ interface Product {
   image?: string;
   signedImages?: string[];
   images?: string[];
+  fullName?: string; // Added fullName as fallback for product name
+  productId?: string; // Added productId for pharmacy products
 }
 
 interface Category {
@@ -128,21 +130,55 @@ const SearchResultsScreen = () => {
 
   const handleProductPress = (product: Product) => {
     // Transform API product to expected format
+    // Get all images in priority order
+    const imageArray = product.signedImages || product.images || [];
     const productImage = product.signedImage || product.image || 
-      (Array.isArray(product.signedImages) && product.signedImages.length > 0 ? product.signedImages[0] : undefined) ||
-      (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : undefined) ||
+      (Array.isArray(imageArray) && imageArray.length > 0 ? imageArray[0] : undefined) ||
       '';
     
+    // CRITICAL FIX: Ensure product name is set - use fullName as fallback
+    const productName = product.name || product.fullName || 'Unknown Product';
+    
+    console.log('🔍 handleProductPress DEBUG:', {
+      apiName: product.name,
+      apiFullName: product.fullName,
+      finalName: productName,
+      productMasterId: product.productMasterId,
+      hasSignedImages: Array.isArray(product.signedImages),
+      imageArrayLength: imageArray.length,
+    });
+    
+    // Normalize API-facing product id so all flows use the same id for cart and orders
+    const storeType = selectedStore?.type || 'grocery';
+    const actualProductId = product.productId || (product as any).id || product._id;
+    const productIdForApi = storeType === 'grocery'
+      ? (product.productMasterId || actualProductId)
+      : (product.productId || actualProductId);
+
     const transformedProduct = {
-      id: product._id,
-      name: product.name,
-      price: 0, // Price not available in search results
+      id: productIdForApi,
+      name: productName,
+      price: 0, // Price will be fetched from API in ProductDetail
       image: productImage,
-      images: product.signedImages || product.images || undefined,
-      category: selectedStore?.type || 'grocery',
+      images: imageArray.length > 0 ? imageArray : undefined,
+      category: storeType,
       description: product.description || '',
-      productId: product.productMasterId,
+      productDescription: product.description || product.introduction || '',
+      productId: productIdForApi,
+      productMasterId: product.productMasterId,
+      // Include all relevant API fields for cart operations
+      sp: 0, // Will be fetched from API
+      availableQty: 0, // Will be fetched from API
+      signedImages: product.signedImages || [],
     };
+    
+    console.log('🔍 Navigating to ProductDetail from search:', {
+      productName: transformedProduct.name,
+      productImage: transformedProduct.image?.substring(0, 50),
+      imagesCount: transformedProduct.images?.length || 0,
+      category: transformedProduct.category,
+    });
+    
     navigation.navigate('ProductDetail', { product: transformedProduct });
   };
 

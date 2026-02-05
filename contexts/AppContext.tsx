@@ -62,13 +62,13 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
   // Load last visited store on app start - prioritize pharmacy store
   useEffect(() => {
     const initializeStore = async () => {
-      // Always prioritize pharmacy store on app start
-      const pharmacyStore = await loadLastVisitedPharmacyStore();
-      if (pharmacyStore && !selectedStore) {
-        console.log('🔄 Auto-setting pharmacy store as selected store (default):', pharmacyStore);
-        setSelectedStore(pharmacyStore);
-        return;
-      }
+      // // Always prioritize pharmacy store on app start
+      // const pharmacyStore = await loadLastVisitedPharmacyStore();
+      // if (pharmacyStore && !selectedStore) {
+      //   console.log('🔄 Auto-setting pharmacy store as selected store (default):', pharmacyStore);
+      //   setSelectedStore(pharmacyStore);
+      //   return;
+      // }
       
       // Fallback to general last visited store only if no pharmacy store
       const lastStore = await loadLastVisitedStore();

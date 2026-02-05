@@ -86,28 +86,40 @@ export const CartProvider: React.FC<{children: React.ReactNode}> = ({ children }
   }, [groceryItems, pharmacyItems]);
 
   const addToGroceryCart = (product: Omit<CartItem, 'quantity' | 'category'>) => {
-    console.log('🛒 addToGroceryCart called:', product);
+    // Ensure product has a name
+    const normalizedProduct = {
+      ...product,
+      name: product.name || 'Unnamed Product',
+    };
+    
+    console.log('🛒 addToGroceryCart called:', normalizedProduct);
     setGroceryItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id);
+      const existingItem = prevItems.find(item => item.id === normalizedProduct.id);
       if (existingItem) {
-        console.log('🛒 Existing item found, incrementing quantity:', existingItem);
+        console.log('🛒 Existing item found, incrementing quantity:', existingItem.name);
         return prevItems.map(item =>
-          item.id === product.id 
+          item.id === normalizedProduct.id 
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
-      console.log('🛒 New item, adding to cart:', { ...product, quantity: 1, category: 'grocery' });
-      return [...prevItems, { ...product, quantity: 1, category: 'grocery' }];
+      console.log('🛒 New item, adding to cart:', { ...normalizedProduct, quantity: 1, category: 'grocery' });
+      return [...prevItems, { ...normalizedProduct, quantity: 1, category: 'grocery' }];
     });
   };
 
   const addToPharmacyCart = (product: Omit<CartItem, 'quantity' | 'category'>) => {
-    console.log('🛒 addToPharmacyCart called:', product);
+    // Ensure product has a name
+    const normalizedProduct = {
+      ...product,
+      name: product.name || 'Unnamed Product',
+    };
+    
+    console.log('🛒 addToPharmacyCart called:', normalizedProduct);
     setPharmacyItems(prevItems => {
-      const existingItem = prevItems.find(item => item.id === product.id);
+      const existingItem = prevItems.find(item => item.id === normalizedProduct.id);
       if (existingItem) {
-        console.log('🛒 Existing item found, incrementing quantity:', existingItem);
+        console.log('🛒 Existing item found, incrementing quantity:', existingItem.name);
         return prevItems.map(item =>
           item.id === product.id 
             ? { ...item, quantity: item.quantity + 1 }

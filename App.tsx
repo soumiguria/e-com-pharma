@@ -21,6 +21,7 @@ import { TouchableOpacity, Text } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { RootStackParamList } from './navigation/types';
+import { initializeMargBannerService } from './config/margBannerConfig';
 
 const getDeepestRouteName = (navState: any) => {
   if (!navState || !navState.routes || navState.routes.length === 0) return null;
@@ -94,6 +95,12 @@ const FloatingCartButton = () => {
 
 const AppContent = () => {
   const { theme } = useTheme();
+  
+  // Initialize MargERP Banner Service on app startup
+  React.useEffect(() => {
+    initializeMargBannerService();
+  }, []);
+  
   const linking = React.useMemo<LinkingOptions<RootStackParamList>>(() => ({
     prefixes: [
       'paaskidukaan://',
