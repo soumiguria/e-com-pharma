@@ -157,6 +157,8 @@ const SettingsScreen = () => {
         <Text style={styles.headerTitle}>Settings</Text>
       </View>
 
+      <View style={{ height: 20}}></View>
+
       <ScrollView style={styles.content}>
         {/* Current Store Info */}
         {selectedStore && (
@@ -193,7 +195,7 @@ const SettingsScreen = () => {
         </View>
 
         {/* Theme Toggle Section */}
-        <View style={styles.section}>
+        {/* <View style={styles.section}>
           <Text style={styles.sectionTitle}>Appearance</Text>
           
           <TouchableOpacity 
@@ -223,7 +225,7 @@ const SettingsScreen = () => {
               />
             </View>
           </TouchableOpacity>
-        </View>
+        </View> */}
       </ScrollView>
     </SafeAreaView>
   );
