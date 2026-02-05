@@ -641,7 +641,7 @@ const CategoryDetailScreen = () => {
             </View>
           </View>
           {/* Bottom Buttons */}
-          <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#eee', padding: 12, backgroundColor: '#fff', paddingBottom: 12 + insets.bottom, }}>
+          <View style={{ flexDirection: 'row', borderTopWidth: 1, borderTopColor: '#eee', padding: 12, backgroundColor: '#fff', paddingBottom: 20 + insets.bottom, }}>
             <TouchableOpacity style={{ flex: 1, backgroundColor: '#F4F4F4', borderRadius: 8, paddingVertical: 12, alignItems: 'center', marginRight: 8 }} onPress={clearAllFilters}>
               <Text style={{ color: '#888', fontWeight: 'bold', fontSize: 15 }}>Clear filters</Text>
             </TouchableOpacity>
