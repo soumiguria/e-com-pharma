@@ -559,16 +559,33 @@ const AddAddressScreen = () => {
             </View>
 
             <View style={styles.inputContainer}>
-              <Text style={[styles.inputLabel, styles.requiredLabel]}>Mobile Number *</Text>
-              <TextInput
-                style={styles.input}
-                value={formData.mobile}
-                onChangeText={(text) => handleTextChange('mobile', text)}
-                placeholder="Enter mobile number"
-                placeholderTextColor={theme.colors.secondary}
-                keyboardType="phone-pad"
-              />
-            </View>
+  <Text style={[styles.inputLabel, styles.requiredLabel]}>Mobile Number *</Text>
+  <TextInput
+    style={styles.input}
+    value={formData.mobile}
+    onChangeText={(text) => {
+      // Remove any non-digit characters
+      const numericText = text.replace(/[^0-9]/g, '');
+      
+      // Check if trying to enter more than 10 digits
+      if (numericText.length > 10) {
+        Alert.alert(
+          'Invalid Input',
+          'Mobile number cannot exceed 10 digits',
+          [{ text: 'OK' }]
+        );
+        return;
+      }
+      
+      // Update with valid input
+      handleTextChange('mobile', numericText);
+    }}
+    placeholder="Enter mobile number"
+    placeholderTextColor={theme.colors.secondary}
+    keyboardType="phone-pad"
+    maxLength={10}
+  />
+</View>
 
             <View style={styles.inputContainer}>
               <Text style={[styles.inputLabel, styles.requiredLabel]}>Email *</Text>
