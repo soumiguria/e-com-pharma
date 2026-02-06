@@ -27,7 +27,12 @@ const CategoryGrid = () => {
     const hasMoreCategories = categories.length > 8;
 
     // Get the effective store to use (selectedStore or fallback to last visited stores)
-    const effectiveStore = selectedStore || lastVisitedStore || lastVisitedGroceryStore || lastVisitedPharmacyStore;
+    const effectiveStore =
+  selectedStore ||
+  lastVisitedStore ||
+  (section === 'grocery'
+    ? lastVisitedGroceryStore
+    : lastVisitedPharmacyStore);
 
     // Fetch categories from API only - no hardcoded data
     useEffect(() => {
@@ -37,6 +42,16 @@ const CategoryGrid = () => {
                 setCategories([]);
                 return;
             }
+
+             if (section === 'pharma' && effectiveStore?.type !== 'pharma') {
+      console.log('🚫 Skipping pharma categories — store is not pharma');
+      return;
+    }
+
+    if (section === 'grocery' && effectiveStore?.type !== 'grocery') {
+      console.log('🚫 Skipping grocery categories — store is not grocery');
+      return;
+    }
 
             try {
                 setLoading(true);

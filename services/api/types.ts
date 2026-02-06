@@ -151,6 +151,7 @@ export interface Product {
   variants?: ProductVariant[];
   tags?: string[];
   nutritionalInfo?: NutritionalInfo;
+  prescriptionRequired?: boolean;
 }
 
 export interface ProductVariant {

@@ -58,6 +58,29 @@ const OrderDetailScreen = () => {
     prescriptionUrl: apiOrder?.prescriptionUrl || order?.prescriptionUrl || order?.originalOrderData?.prescriptionUrl,
   };
   
+const fetchOrderDetails = async () => {
+  const orderIdToFetch =
+    passedOrderId || passedOrder?.orderId || passedOrder?.id;
+
+  if (!orderIdToFetch) return;
+
+  try {
+    setLoading(true);
+    console.log('🔄 Reloading order details:', orderIdToFetch);
+
+    const res = await orderListService.getOrderById(orderIdToFetch);
+
+    if (res.success && res.data) {
+      setApiOrder(res.data);
+    }
+  } catch (error) {
+    console.error('❌ Error reloading order:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
+
   // Final prescription URL with correct priority
   const finalPrescriptionUrl = prescriptionUrls.signedPresciptionUrl || prescriptionUrls.signedPrescriptionUrl || prescriptionUrls.prescriptionUrl;
   
@@ -235,6 +258,11 @@ const OrderDetailScreen = () => {
 
     fetchStoreDetails();
   }, [apiOrder, passedOrder, storeDetails]);
+
+  useEffect(() => {
+  fetchOrderDetails();
+}, [passedOrderId, passedOrder?.orderId, passedOrder?.id]);
+
 
   const handleRefresh = async () => {
     try {
@@ -1404,7 +1432,7 @@ const OrderDetailScreen = () => {
                 style={[styles.uploadPrescriptionButton, { backgroundColor: theme.colors.primary, marginTop: 8 }]}
                 onPress={() => {
                   console.log('Re-uploading prescription for order:', order.orderId);
-                  navigation.navigate('UploadPrescription', { orderId: order.orderId, storeId: order.storeId } as any);
+                  navigation.navigate('UploadPrescription', { orderId: order.orderId, storeId: order.storeId, onSuccess: () => fetchOrderDetails(), } as any, );
                 }}>
                   <MaterialIcons name="upload" size={20} color="fff"/>
                   <Text style={styles.uploadPrescriptionButtonText}>Re-upload Prescription</Text>
