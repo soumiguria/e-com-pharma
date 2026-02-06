@@ -48,7 +48,7 @@ interface ExtendedProduct {
   availableQty?: number;
   prescriptionRequired?: boolean;
   fullName?: string;
-  productMasterId?: string;
+  // productMasterId?: string;
   productId?: string; // For grocery products to enable ID-based fetching
 }
 

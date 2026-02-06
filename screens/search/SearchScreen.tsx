@@ -230,7 +230,7 @@ const SearchScreen = () => {
       apiFullName: product.fullName,
       finalName: productName,
       productId: product.productId,
-      productMasterId: product.productMasterId,
+      // productMasterId: product.productMasterId,
       _id: product._id,
       storeType: storeTypeCategory
     });
@@ -248,13 +248,13 @@ const SearchScreen = () => {
     
     // For grocery items, use productMasterId if available (UUID format)
     // For pharmacy items, use MongoDB _id
-    const productIdForApi = storeTypeCategory === 'grocery' ? (product.productMasterId || actualProductId) : actualProductId;
+    const productIdForApi = product.productId ||actualProductId;
     
     console.log('🔍 Product ID mapping:', {
       fromSearch: product.productId,
       idField: product.id,
       _id: product._id,
-      productMasterId: product.productMasterId,
+      // productMasterId: product.productMasterId,
       finalId: actualProductId,
       apiId: productIdForApi,
       storeType: storeTypeCategory,
@@ -281,7 +281,7 @@ const SearchScreen = () => {
       prescriptionRequired: product.prescriptionRequired || false,
       // API specific fields
       _id: product._id,
-      productMasterId: product.productMasterId,
+      // productMasterId: product.productMasterId,
       storeId: product.storeId,
       status: product.status,
     };
@@ -737,7 +737,7 @@ const SearchScreen = () => {
                               {displayedProducts.map((product: any, index: number) => {
                                 const productImage = product.signedImage || product.image ||
                                   (Array.isArray(product.signedImages) && product.signedImages.length > 0 ? product.signedImages[0] : undefined) ||
-                                  (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : undefined) ||  '';
+                                  (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : undefined) ||  'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg';
                                 const sp = parseFloat(product.sp || product.mrp || '0');
                                 const mrp = parseFloat(product.mrp || '0');
                                 // Calculate API-facing product id so cart keys match across all flows

@@ -31,7 +31,7 @@ interface SearchResult {
 interface Product {
   _id: string;
   name: string;
-  productMasterId: string;
+  // productMasterId: string;
   productMasterERPId: string;
   hsnCode: string;
   introduction?: string;
@@ -143,7 +143,7 @@ const SearchResultsScreen = () => {
       apiName: product.name,
       apiFullName: product.fullName,
       finalName: productName,
-      productMasterId: product.productMasterId,
+      // productMasterId: product.productMasterId,
       hasSignedImages: Array.isArray(product.signedImages),
       imageArrayLength: imageArray.length,
     });
@@ -151,9 +151,7 @@ const SearchResultsScreen = () => {
     // Normalize API-facing product id so all flows use the same id for cart and orders
     const storeType = selectedStore?.type || 'grocery';
     const actualProductId = product.productId || (product as any).id || product._id;
-    const productIdForApi = storeType === 'grocery'
-      ? (product.productMasterId || actualProductId)
-      : (product.productId || actualProductId);
+    const productIdForApi = product.productId || actualProductId;
 
     const transformedProduct = {
       id: productIdForApi,
@@ -165,7 +163,7 @@ const SearchResultsScreen = () => {
       description: product.description || '',
       productDescription: product.description || product.introduction || '',
       productId: productIdForApi,
-      productMasterId: product.productMasterId,
+      // productMasterId: product.productMasterId,
       // Include all relevant API fields for cart operations
       sp: 0, // Will be fetched from API
       availableQty: 0, // Will be fetched from API

@@ -1,28 +1,44 @@
 // screens/CartScreen.tsx
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Platform, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Text, Button, Card, Box, HStack, IconButton } from 'native-base';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useCart } from '../../contexts/CartContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/types';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import ProductCard from '../../components/product/ProductCard';
-import { ScrollView as RNScrollView } from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  Image,
+  Platform,
+  Alert,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Text, Button, Card, Box, HStack, IconButton } from "native-base";
+import { useTheme } from "../../contexts/ThemeContext";
+import { useCart } from "../../contexts/CartContext";
+import { useAuth } from "../../contexts/AuthContext";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { RootStackParamList } from "../../navigation/types";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import ProductCard from "../../components/product/ProductCard";
+import { ScrollView as RNScrollView } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'Cart'>;
+type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Cart">;
 
 const CartScreen = () => {
-  const { groceryItems, pharmacyItems, removeFromCart, updateQuantity, groceryTotal, pharmacyTotal, addToGroceryCart, addToPharmacyCart } = useCart();
+  const {
+    groceryItems,
+    pharmacyItems,
+    removeFromCart,
+    updateQuantity,
+    groceryTotal,
+    pharmacyTotal,
+    addToGroceryCart,
+    addToPharmacyCart,
+  } = useCart();
   const { isAuthenticated } = useAuth();
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute();
-  
-  
+
   // Separate totals
   const hasGroceryItems = groceryItems.length > 0;
   const hasPharmacyItems = pharmacyItems.length > 0;
@@ -30,7 +46,7 @@ const CartScreen = () => {
   const totalAmount = groceryTotal + pharmacyTotal;
 
   const toNumber = (value: unknown): number => {
-    if (typeof value === 'number') return value;
+    if (typeof value === "number") return value;
     const parsed = Number(value);
     return Number.isFinite(parsed) ? parsed : 0;
   };
@@ -42,18 +58,50 @@ const CartScreen = () => {
 
   const handleCheckout = () => {
     // Navigate to payment methods/checkout screen
-    navigation.navigate('PaymentMethods', {});
+    navigation.navigate("PaymentMethods", {});
   };
 
-  const renderRecommendations = (items: any[], title: string, addToCart: (item: any) => void) => (
+  const formatNameTwoLines = (text: string, limit = 20) => {
+    if (!text) return "Unnamed";
+
+    if (text.length <= limit) return text;
+
+    const firstLine = text.slice(0, limit);
+    const remaining = text.slice(limit);
+
+    if (remaining.length <= limit) {
+      return `${firstLine}\n${remaining}`;
+    }
+
+    return `${firstLine}\n${remaining.slice(0, limit - 3)}...`;
+  };
+
+  const renderRecommendations = (
+    items: any[],
+    title: string,
+    addToCart: (item: any) => void,
+  ) => (
     <View style={{ marginTop: 12, marginBottom: 18 }}>
-      <Text style={{ fontSize: 18, fontWeight: 'bold', marginLeft: 16, marginBottom: 8 }}>{title}</Text>
-      <RNScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: 12, paddingRight: 8 }}>
-        {items.map(product => (
+      <Text
+        style={{
+          fontSize: 18,
+          fontWeight: "bold",
+          marginLeft: 16,
+          marginBottom: 8,
+        }}
+      >
+        {title}
+      </Text>
+      <RNScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingLeft: 12, paddingRight: 8 }}
+      >
+        {items.map((product) => (
           <ProductCard
             key={product.id}
             product={product}
-            onPress={() => navigation.navigate('ProductDetail', { product })}
+            onPress={() => navigation.navigate("ProductDetail", { product })}
             style={{ width: 140, marginRight: 12 }}
           />
         ))}
@@ -61,9 +109,14 @@ const CartScreen = () => {
     </View>
   );
 
-  const renderCartSection = (items: any[], title: string, total: number, addToCart: (item: any) => void) => {
+  const renderCartSection = (
+    items: any[],
+    title: string,
+    total: number,
+    addToCart: (item: any) => void,
+  ) => {
     // Only show items with quantity > 0
-    const activeItems = items.filter(item => item.quantity > 0);
+    const activeItems = items.filter((item) => item.quantity > 0);
     if (activeItems.length === 0) return null;
 
     return (
@@ -72,28 +125,62 @@ const CartScreen = () => {
         {activeItems.map((item) => (
           <Card key={item.id} style={styles.cartItem}>
             <View>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
                 {/* Product Image */}
                 {item.image && (
-                  <Image source={{ uri: item.image }} style={{ width: 48, height: 48, borderRadius: 8, marginRight: 12, backgroundColor: '#f0f0f0' }} />
+                  <Image
+                    source={{ uri: item.image }}
+                    style={{
+                      width: 48,
+                      height: 48,
+                      borderRadius: 8,
+                      marginRight: 12,
+                      backgroundColor: "#f0f0f0",
+                    }}
+                  />
                 )}
                 <View style={{ flex: 1 }}>
                   <View style={styles.itemHeader}>
                     <Text style={styles.itemName}>
-  {item?.name
-    ? item.name.length > 20
-      ? `${item.name.slice(0, 20)}...`
-      : item.name
-    : 'Unnamed'}
-</Text>
+                      {item?.name
+                        ? item.name.length > 20
+                          ? `${item.name.slice(0, 20)}...`
+                          : item.name
+                        : "Unnamed"}
+                    </Text>
 
-                    <Text style={styles.itemPrice}>₹{formatAmount(item.price)}</Text>
+                    <Text style={styles.itemPrice}>
+                      ₹{formatAmount(item.price)}
+                    </Text>
                   </View>
                   {toNumber(item.originalPrice) > toNumber(item.price) && (
-                    <Text style={[styles.itemPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{formatAmount(item.originalPrice)}</Text>
+                    <Text
+                      style={[
+                        styles.itemPrice,
+                        {
+                          textDecorationLine: "line-through",
+                          color: theme.colors.secondary,
+                          marginLeft: 6,
+                        },
+                      ]}
+                    >
+                      ₹{formatAmount(item.originalPrice)}
+                    </Text>
                   )}
                   {toNumber(item.originalPrice) > toNumber(item.price) && (
-                    <Text style={[styles.itemPrice, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((toNumber(item.originalPrice) - toNumber(item.price)) / toNumber(item.originalPrice)) * 100)}% off</Text>
+                    <Text
+                      style={[
+                        styles.itemPrice,
+                        { color: "#FF9800", marginLeft: 6 },
+                      ]}
+                    >
+                      {Math.round(
+                        ((toNumber(item.originalPrice) - toNumber(item.price)) /
+                          toNumber(item.originalPrice)) *
+                          100,
+                      )}
+                      % off
+                    </Text>
                   )}
                   {item.variant && (
                     <Text style={styles.variantText}>
@@ -102,19 +189,45 @@ const CartScreen = () => {
                   )}
                   <View style={styles.quantityContainer}>
                     <TouchableOpacity
-                      style={[styles.quantityButton, { backgroundColor: theme.colors.surface }]}
-                      onPress={() => updateQuantity(item.id, item.quantity - 1, item.category)}
+                      style={[
+                        styles.quantityButton,
+                        { backgroundColor: theme.colors.surface },
+                      ]}
+                      onPress={() =>
+                        updateQuantity(
+                          item.id,
+                          item.quantity - 1,
+                          item.category,
+                        )
+                      }
                       activeOpacity={0.7}
                     >
-                      <MaterialCommunityIcons name="minus" size={18} color={theme.colors.text} />
+                      <MaterialCommunityIcons
+                        name="minus"
+                        size={18}
+                        color={theme.colors.text}
+                      />
                     </TouchableOpacity>
                     <Text style={styles.quantityText}>{item.quantity}</Text>
                     <TouchableOpacity
-                      style={[styles.quantityButton, { backgroundColor: theme.colors.surface }]}
-                      onPress={() => updateQuantity(item.id, item.quantity + 1, item.category)}
+                      style={[
+                        styles.quantityButton,
+                        { backgroundColor: theme.colors.surface },
+                      ]}
+                      onPress={() =>
+                        updateQuantity(
+                          item.id,
+                          item.quantity + 1,
+                          item.category,
+                        )
+                      }
                       activeOpacity={0.7}
                     >
-                      <MaterialCommunityIcons name="plus" size={18} color={theme.colors.text} />
+                      <MaterialCommunityIcons
+                        name="plus"
+                        size={18}
+                        color={theme.colors.text}
+                      />
                     </TouchableOpacity>
                     <Button
                       variant="outline"
@@ -132,7 +245,9 @@ const CartScreen = () => {
           </Card>
         ))}
         <View style={styles.sectionTotal}>
-          <Text style={styles.sectionTotalText}>{title} Total: ₹{formatAmount(total)}</Text>
+          <Text style={styles.sectionTotalText}>
+            {title} Total: ₹{formatAmount(total)}
+          </Text>
         </View>
       </View>
     );
@@ -140,14 +255,32 @@ const CartScreen = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Box bg={theme.colors.card} px={4} py={3} flexDirection="row" alignItems="center">
+      <Box
+        bg={theme.colors.card}
+        px={4}
+        py={3}
+        flexDirection="row"
+        alignItems="center"
+      >
         <IconButton
-          icon={<MaterialCommunityIcons name="arrow-left" size={24} color={theme.colors.text} />}
+          icon={
+            <MaterialCommunityIcons
+              name="arrow-left"
+              size={24}
+              color={theme.colors.text}
+            />
+          }
           onPress={() => navigation.goBack()}
           variant="ghost"
           size="sm"
         />
-        <Text color={theme.colors.text} fontSize="lg" fontWeight="bold" flex={1} textAlign="center">
+        <Text
+          color={theme.colors.text}
+          fontSize="lg"
+          fontWeight="bold"
+          flex={1}
+          textAlign="center"
+        >
           My Cart
         </Text>
       </Box>
@@ -155,12 +288,16 @@ const CartScreen = () => {
       {allItems.length === 0 ? (
         <View style={styles.emptyCart}>
           <View style={styles.emptyCartContent}>
-            <Text style={[styles.emptyText, { color: theme.colors.text }]}>Your cart is empty</Text>
-            <Text style={[styles.emptySubtext, { color: theme.colors.secondary }]}>
+            <Text style={[styles.emptyText, { color: theme.colors.text }]}>
+              Your cart is empty
+            </Text>
+            <Text
+              style={[styles.emptySubtext, { color: theme.colors.secondary }]}
+            >
               Add some items to get started
             </Text>
           </View>
-          
+
           {/* Recommended for You section - HIDDEN */}
           {/* <View style={styles.recommendationsContainer}>
             <Text style={[styles.recommendationsTitle, { color: theme.colors.text }]}>
@@ -203,9 +340,17 @@ const CartScreen = () => {
               ))}
             </ScrollView>
           </View> */}
-          
+
           <Button
-            onPress={() => navigation.navigate('Main', { screen: 'Home', params: { screen: 'HomeRoot', params: { storeId: '', pincode: '' } } })}
+            onPress={() =>
+              navigation.navigate("Main", {
+                screen: "Home",
+                params: {
+                  screen: "HomeRoot",
+                  params: { storeId: "", pincode: "" },
+                },
+              })
+            }
             style={{ marginTop: 32, borderRadius: 24, paddingHorizontal: 24 }}
             colorScheme="primary"
             size="lg"
@@ -219,28 +364,67 @@ const CartScreen = () => {
             {allItems.map((item) => (
               <Card key={item.id} style={styles.cartItem}>
                 <View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
                     {/* Product Image */}
                     {item.image && (
-                      <Image source={{ uri: item.image }} style={{ width: 48, height: 48, borderRadius: 8, marginRight: 12, backgroundColor: '#f0f0f0' }} />
+                      <Image
+                        source={{ uri: item.image }}
+                        style={{
+                          width: 48,
+                          height: 48,
+                          borderRadius: 8,
+                          marginRight: 12,
+                          backgroundColor: "#f0f0f0",
+                        }}
+                      />
                     )}
                     <View style={{ flex: 1 }}>
                       <View style={styles.itemHeader}>
-                        <Text style={styles.itemName}>
+                        {/* <Text style={styles.itemName}>
   {item?.name
     ? item.name.length > 20
       ? `${item.name.slice(0, 20)}...`
       : item.name
     : 'Unnamed'}
-</Text>
+</Text> */}
 
-                        <Text style={styles.itemPrice}>₹{formatAmount(item.price)}</Text>
+                        <Text style={styles.itemName}>
+                          {formatNameTwoLines(item?.name)}
+                        </Text>
+
+                        <Text style={styles.itemPrice}>
+                          ₹{formatAmount(item.price)}
+                        </Text>
                       </View>
                       {toNumber(item.originalPrice) > toNumber(item.price) && (
-                        <Text style={[styles.itemPrice, { textDecorationLine: 'line-through', color: theme.colors.secondary, marginLeft: 6 }]}>₹{formatAmount(item.originalPrice)}</Text>
+                        <Text
+                          style={[
+                            styles.itemPrice,
+                            {
+                              textDecorationLine: "line-through",
+                              color: theme.colors.secondary,
+                              marginLeft: 6,
+                            },
+                          ]}
+                        >
+                          ₹{formatAmount(item.originalPrice)}
+                        </Text>
                       )}
                       {toNumber(item.originalPrice) > toNumber(item.price) && (
-                        <Text style={[styles.itemPrice, { color: '#FF9800', marginLeft: 6 }]}>{Math.round(((toNumber(item.originalPrice) - toNumber(item.price)) / toNumber(item.originalPrice)) * 100)}% off</Text>
+                        <Text
+                          style={[
+                            styles.itemPrice,
+                            { color: "#FF9800", marginLeft: 6 },
+                          ]}
+                        >
+                          {Math.round(
+                            ((toNumber(item.originalPrice) -
+                              toNumber(item.price)) /
+                              toNumber(item.originalPrice)) *
+                              100,
+                          )}
+                          % off
+                        </Text>
                       )}
                       {item.variant && (
                         <Text style={styles.variantText}>
@@ -249,19 +433,45 @@ const CartScreen = () => {
                       )}
                       <View style={styles.quantityContainer}>
                         <TouchableOpacity
-                          style={[styles.quantityButton, { backgroundColor: theme.colors.surface }]}
-                          onPress={() => updateQuantity(item.id, item.quantity - 1, item.category)}
+                          style={[
+                            styles.quantityButton,
+                            { backgroundColor: theme.colors.surface },
+                          ]}
+                          onPress={() =>
+                            updateQuantity(
+                              item.id,
+                              item.quantity - 1,
+                              item.category,
+                            )
+                          }
                           activeOpacity={0.7}
                         >
-                          <MaterialCommunityIcons name="minus" size={18} color={theme.colors.text} />
+                          <MaterialCommunityIcons
+                            name="minus"
+                            size={18}
+                            color={theme.colors.text}
+                          />
                         </TouchableOpacity>
                         <Text style={styles.quantityText}>{item.quantity}</Text>
                         <TouchableOpacity
-                          style={[styles.quantityButton, { backgroundColor: theme.colors.surface }]}
-                          onPress={() => updateQuantity(item.id, item.quantity + 1, item.category)}
+                          style={[
+                            styles.quantityButton,
+                            { backgroundColor: theme.colors.surface },
+                          ]}
+                          onPress={() =>
+                            updateQuantity(
+                              item.id,
+                              item.quantity + 1,
+                              item.category,
+                            )
+                          }
                           activeOpacity={0.7}
                         >
-                          <MaterialCommunityIcons name="plus" size={18} color={theme.colors.text} />
+                          <MaterialCommunityIcons
+                            name="plus"
+                            size={18}
+                            color={theme.colors.text}
+                          />
                         </TouchableOpacity>
                         <Button
                           variant="outline"
@@ -279,20 +489,22 @@ const CartScreen = () => {
               </Card>
             ))}
           </ScrollView>
-          
+
           {/* Recommendation sections - HIDDEN */}
           {/* {hasGroceryItems && renderRecommendations(groceryRecommendations, 'You Might Also Like', addToGroceryCart)}
           {hasPharmacyItems && renderRecommendations(pharmacyRecommendations, 'Recommended Medicines', addToPharmacyCart)} */}
-          
+
           <View style={styles.totalContainer}>
-            <Text style={styles.totalText}>Total: ₹{formatAmount(totalAmount)}</Text>
+            <Text style={styles.totalText}>
+              Total: ₹{formatAmount(totalAmount)}
+            </Text>
             <Button
               onPress={handleCheckout}
               isDisabled={allItems.length === 0}
               colorScheme="primary"
               size="lg"
             >
-              {isAuthenticated ? 'Proceed to Checkout' : 'Proceed to Checkout'}
+              {isAuthenticated ? "Proceed to Checkout" : "Proceed to Checkout"}
             </Button>
           </View>
         </>
@@ -315,14 +527,14 @@ const styles = StyleSheet.create({
     borderWidth: 0.5,
   },
   itemHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 8,
   },
   itemName: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   itemPrice: {
     fontSize: 16,
@@ -332,20 +544,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   quantityContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 8,
   },
   quantityButton: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginHorizontal: 4,
     ...Platform.select({
       ios: {
-        shadowColor: '#000',
+        shadowColor: "#000",
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
@@ -360,7 +572,7 @@ const styles = StyleSheet.create({
     marginHorizontal: 8,
   },
   removeButton: {
-    marginLeft: 'auto',
+    marginLeft: "auto",
   },
   totalContainer: {
     padding: 16,
@@ -368,39 +580,39 @@ const styles = StyleSheet.create({
   },
   totalText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 16,
   },
   emptyCart: {
     flex: 1,
     padding: 20,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
+    justifyContent: "flex-start",
+    alignItems: "center",
   },
   emptyCartContent: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 30,
     marginTop: 50,
   },
   emptyText: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 8,
-    textAlign: 'center',
+    textAlign: "center",
   },
   emptySubtext: {
     fontSize: 16,
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   recommendationsContainer: {
-    width: '100%',
+    width: "100%",
   },
   recommendationsTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
   recommendationsScroll: {
     paddingHorizontal: 16,
@@ -410,46 +622,46 @@ const styles = StyleSheet.create({
     marginRight: 16,
     borderRadius: 12,
     padding: 12,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
   },
   recommendationImage: {
-    width: '100%',
+    width: "100%",
     height: 120,
     borderRadius: 8,
     marginBottom: 12,
   },
   recommendationName: {
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 8,
     lineHeight: 18,
   },
   recommendationPrice: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 12,
   },
   addButton: {
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 6,
-    alignItems: 'center',
+    alignItems: "center",
   },
   addButtonText: {
     fontSize: 14,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontWeight: "bold",
+    color: "#fff",
   },
   cartSection: {
     marginBottom: 20,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 12,
     marginLeft: 16,
   },
@@ -460,7 +672,7 @@ const styles = StyleSheet.create({
   },
   sectionTotalText: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
 });
 
