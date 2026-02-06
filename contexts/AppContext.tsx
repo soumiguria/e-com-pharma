@@ -168,22 +168,25 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   // Automatically set selectedStore from last visited stores when they are loaded and selectedStore is null
   // Priority: pharmacy store first (default), then general store if pharmacy, never grocery on initial load
-  useEffect(() => {
-    if (!selectedStore) {
-      // Priority: lastVisitedPharmacyStore > lastVisitedStore (if pharma) > lastVisitedGroceryStore
-      if (lastVisitedPharmacyStore) {
-        console.log('🔄 Auto-setting lastVisitedPharmacyStore as selectedStore (default):', lastVisitedPharmacyStore);
-        setSelectedStore(lastVisitedPharmacyStore);
-      } else if (lastVisitedStore && lastVisitedStore.type === 'pharma') {
-        console.log('🔄 Auto-setting lastVisitedStore (pharma) as selectedStore:', lastVisitedStore);
-        setSelectedStore(lastVisitedStore);
-      } else if (lastVisitedGroceryStore) {
-        // Only use grocery as last resort
-        console.log('🔄 Auto-setting lastVisitedGroceryStore as selectedStore (fallback):', lastVisitedGroceryStore);
-        setSelectedStore(lastVisitedGroceryStore);
-      }
+useEffect(() => {
+  if (!selectedStore) {
+    if (lastVisitedStore) {
+      console.log('🔄 Auto-setting lastVisitedStore as selectedStore:', lastVisitedStore);
+      setSelectedStore(lastVisitedStore);
+    } else if (lastVisitedPharmacyStore) {
+      console.log('🔄 Fallback to lastVisitedPharmacyStore:', lastVisitedPharmacyStore);
+      setSelectedStore(lastVisitedPharmacyStore);
+    } else if (lastVisitedGroceryStore) {
+      console.log('🔄 Fallback to lastVisitedGroceryStore:', lastVisitedGroceryStore);
+      setSelectedStore(lastVisitedGroceryStore);
     }
-  }, [selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore, setSelectedStore]);
+  }
+}, [
+  selectedStore,
+  lastVisitedStore,
+  lastVisitedPharmacyStore,
+  lastVisitedGroceryStore,
+]);
 
   return (
     <AppContext.Provider value={{ 
