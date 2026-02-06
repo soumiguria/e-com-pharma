@@ -659,7 +659,7 @@ const CategoryDetailScreen = () => {
         onRequestClose={() => setShowSortModal(false)}
       >
         <Pressable style={{ flex: 1, backgroundColor: theme.colors.text + '55' }} onPress={() => setShowSortModal(false)} />
-        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: theme.colors.surface, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 24, minHeight: 220 }}>
+        <View style={{ position: 'absolute', left: 0, right: 0, bottom: 0, backgroundColor: theme.colors.surface, borderTopLeftRadius: 18, borderTopRightRadius: 18, padding: 24, minHeight: 220, paddingBottom: 20 + insets.bottom }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <Text style={{ fontSize: 18, fontWeight: 'bold', color: theme.colors.text }}>Sort By</Text>
             <TouchableOpacity onPress={() => setShowSortModal(false)}>
