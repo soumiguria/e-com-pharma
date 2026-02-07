@@ -209,7 +209,7 @@ const UploadPrescriptionScreen = () => {
 
       Alert.alert('Upload Successful', 'Prescription uploaded successfully.', [
         { text: 'View Order', onPress: () => navigation.navigate('OrderDetail', { orderId }) },
-        { text: 'OK', onPress: () => navigation.goBack() },
+        // { text: 'OK', onPress: () => navigation.goBack() },
       ]);
     } catch (error: any) {
       const message = (error?.message as string) || 'Failed to upload prescription. Please try again.';

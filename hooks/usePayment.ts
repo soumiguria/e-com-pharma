@@ -34,7 +34,7 @@ export const usePayment = ({ onSuccess, onError }: UsePaymentProps = {}) => {
           // For offline payment, show success message
           Alert.alert(
             'Order Placed Successfully!',
-            `Your order has been placed. Order ID: ${response.data.orderNo}`,
+            `Your order has been placed. Order No: ${response.data.orderNo}`,
             [
               {
                 text: 'OK',

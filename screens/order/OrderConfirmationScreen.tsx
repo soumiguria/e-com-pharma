@@ -35,9 +35,10 @@ const OrderConfirmationScreen = () => {
 
   // Get order details from route params or use defaults
   const routeParams: any = route.params || {};
-  const { paymentData, orderId: routeOrderId, amount: routeAmount, orderData: routeOrderData, prescriptionRequired: routePrescriptionRequired } = routeParams;
+  const { paymentData, orderId: routeOrderId, orderNo: routeOrderNo, amount: routeAmount, orderData: routeOrderData, prescriptionRequired: routePrescriptionRequired } = routeParams;
   const routeStoreId = routeParams.storeId;
-  const orderId = routeOrderId || `ORD${Date.now().toString().slice(-8)}`;
+  const orderId = routeOrderId;
+  const orderNo = routeOrderNo ;
   const totalAmount = routeAmount || 460;
   
   // Check prescriptionRequired from route params or orderData
@@ -49,6 +50,7 @@ const OrderConfirmationScreen = () => {
   // Use real order data if available, otherwise fallback to mock data
   const orderDetails = routeOrderData ? {
     orderId,
+    orderNo,
     totalAmount: routeOrderData.grandTotal || totalAmount,
     items: routeOrderData.items || [],
     shippingAddress: routeOrderData.shippingAddress || 'Address not available',
@@ -224,7 +226,7 @@ const OrderConfirmationScreen = () => {
         const orderData = { 
           id: orderId, 
           ...orderDetails,
-          orderNumber: orderId,
+          orderNo: orderNo,
           status: 'confirmed',
           orderDate: new Date().toISOString(),
           paymentStatus: paymentData ? 'paid' : 'pending'
@@ -509,9 +511,9 @@ const OrderConfirmationScreen = () => {
         {/* Order ID Section */}
         <View style={styles.orderIdSection}>
           <Text style={styles.orderIdLabel}>
-            {paymentData ? 'Order Number' : 'Order ID'}
+            {paymentData ? 'Order Number' : 'Order Number'}
           </Text>
-          <Text style={styles.orderId}>{orderDetails.orderId}</Text>
+          <Text style={styles.orderId}>{orderDetails.orderNo}</Text>
         </View>
 
         {/* Prescription Upload Section - Show only if prescriptionRequired is true */}

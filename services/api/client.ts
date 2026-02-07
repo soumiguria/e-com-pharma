@@ -384,7 +384,7 @@ class ApiClient {
       console.error('   Error Details:', JSON.stringify(apiError.details, null, 2));
       
       // When backend returns 401 (token expired/invalid), clear auth and notify app. Frontend does not set token expiry; backend determines it.
-      const is401 = error?.response?.status === 401 || apiError.code === 'UNAUTHORIZED' || apiError.code === 'TOKEN_EXPIRED' || apiError.code === 'HTTP_401';
+      const is401 = apiError.code === 'UNAUTHORIZED' || apiError.code === 'TOKEN_EXPIRED' || apiError.code === 'HTTP_401';
       if (is401) {
         await this.clearAuthToken();
         try { await AsyncStorage.removeItem('user_data'); } catch (_) {}

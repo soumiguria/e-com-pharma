@@ -21,6 +21,7 @@ export type RootStackParamList = {
   OrderConfirmation: {
     paymentData?: any;
     orderId?: string;
+    orderNo?: string;
     amount?: number;
     orderData?: {
       items: Array<{
@@ -61,6 +62,7 @@ export type RootStackParamList = {
       contact?: string;
     };
     orderId: string;
+    orderNumber: string;
     cartType: 'grocery' | 'pharma';
     deliveryMethod: string;
     isReorder?: boolean;

@@ -19,6 +19,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { launchCamera, CameraOptions } from 'react-native-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import prescriptionService, { PrescriptionFile } from '../../services/api/prescriptionService';
+import OrderDetailScreen from '../order/OrderDetailScreen';
 
 const deliveryMethods = [
   { id: '1', label: 'Store Pickup' },
@@ -397,6 +398,7 @@ const PaymentMethodsScreen = () => {
         navigation.navigate('OrderConfirmation', {
           orderId: String(response.data.orderId),
           // prescriptionRequired: response.data.prescriptionRequired || false, // Add prescriptionRequired field
+          orderNo: String(response.data.orderNo),
           orderData: {
             items: cartItems.map((item: any) => ({
               id: item.productId || item.id,
@@ -483,7 +485,8 @@ const PaymentMethodsScreen = () => {
         cartType: cartType,
         deliveryMethod: selectedDeliveryMethod === '1' ? 'Store Pickup' : 'Home Delivery',
         isReorder: isReorder,
-        reorderItems: reorderItems
+        reorderItems: reorderItems,
+        orderNumber: `ORD${Date.now().toString().slice(-8)}`,
       });
     } catch (error: any) {
       console.error('  Error opening Razorpay checkout:', error);
