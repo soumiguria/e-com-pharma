@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
 import { Linking } from 'react-native';
 import { NativeBaseProvider } from 'native-base';

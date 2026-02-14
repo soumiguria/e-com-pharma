@@ -609,9 +609,9 @@ const OrderConfirmationScreen = () => {
           {orderDetails.deliveryMethod === 'Store Pickup' ? (
             <View style={styles.addressSection}>
               <Text style={styles.addressLabel}>Store Pickup</Text>
-           <Text style={styles.addressText}>
-             {formattedStoreAddress || 'Please visit the store to collect your order. Order ID: ' + orderDetails.orderId}
-           </Text>
+            <Text style={styles.addressText}>
+              {formattedStoreAddress || 'Please visit the store to collect your order. '}
+            </Text>
             </View>
           ) : (
             <View style={styles.addressSection}>
