@@ -129,8 +129,8 @@ const AppNavigator = () => {
       <Stack.Screen name="CategoriesScreen" component={CategoriesScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BrandsScreen" component={BrandsScreen} options={{ headerShown: false }} />
       <Stack.Screen name="BrandDetail" component={BrandDetailScreen} />
-      <Stack.Screen name="RecentlyBoughtScreen" component={RecentlyBoughtScreen} options={{ headerShown: false }} />
-      <Stack.Screen name="GreatOffersScreen" component={GreatOffersScreen} options={{ headerShown: false }} />
+      {/* <Stack.Screen name="RecentlyBoughtScreen" component={RecentlyBoughtScreen} options={{ headerShown: false }} /> */}
+      {/* <Stack.Screen name="GreatOffersScreen" component={GreatOffersScreen} options={{ headerShown: false }} /> */}
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="MyAddresses" component={MyAddressesScreen} />
       <Stack.Screen name="AddAddress" component={AddAddressScreen} />

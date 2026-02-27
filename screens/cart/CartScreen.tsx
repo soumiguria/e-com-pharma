@@ -1,27 +1,31 @@
 // screens/CartScreen.tsx
-import React, { useState, useEffect } from "react";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useNavigation, useRoute } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { Box, Button, Card, Divider, IconButton, Text } from "native-base";
 import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
   Image,
-  Platform,
-  Alert,
+  ScrollView as RNScrollView,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Text, Button, Card, Box, HStack, IconButton } from "native-base";
-import { useTheme } from "../../contexts/ThemeContext";
-import { useCart } from "../../contexts/CartContext";
-import { useAuth } from "../../contexts/AuthContext";
-import { NativeStackNavigationProp } from "@react-navigation/native-stack";
-import { RootStackParamList } from "../../navigation/types";
-import { useNavigation, useRoute } from "@react-navigation/native";
 import ProductCard from "../../components/product/ProductCard";
-import { ScrollView as RNScrollView } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { RXRequiredNewTag } from "../../components/ui/RXRequiredTag";
+import { useAuth } from "../../contexts/AuthContext";
+import { useCart } from "../../contexts/CartContext";
+import { useTheme } from "../../contexts/ThemeContext";
+import { RootStackParamList } from "../../navigation/types";
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList, "Cart">;
+
+const toNumber = (value: unknown): number => {
+  if (typeof value === "number") return value;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 
 const CartScreen = () => {
   const {
@@ -45,11 +49,20 @@ const CartScreen = () => {
   const allItems = [...groceryItems, ...pharmacyItems];
   const totalAmount = groceryTotal + pharmacyTotal;
 
-  const toNumber = (value: unknown): number => {
-    if (typeof value === "number") return value;
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : 0;
-  };
+  const prescriptionItemsCount = allItems.filter(
+    (item) => item.prescriptionRequired,
+  ).length;
+
+  const itemsTotal = totalAmount;
+  const taxes = 0;
+  const youSaved = allItems.reduce((sum, item) => {
+    const original = toNumber((item as any).originalPrice);
+    const price = toNumber(item.price);
+    if (!original || original <= price) return sum;
+    const qty = toNumber((item as any).quantity || 1);
+    return sum + (original - price) * qty;
+  }, 0);
+  const grandTotal = itemsTotal + taxes;
 
   const formatAmount = (value: unknown): string => {
     const n = toNumber(value);
@@ -124,122 +137,108 @@ const CartScreen = () => {
         <Text style={styles.sectionTitle}>{title}</Text>
         {activeItems.map((item) => (
           <Card key={item.id} style={styles.cartItem}>
-            <View>
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <View style={styles.cartItemInner}>
+              {/* LEFT SIDE: Image, Name, Offer/Strike Price, RX Tag */}
+              <View style={styles.leftSection}>
                 {/* Product Image */}
                 {item.image && (
                   <Image
                     source={{ uri: item.image }}
-                    style={{
-                      width: 48,
-                      height: 48,
-                      borderRadius: 8,
-                      marginRight: 12,
-                      backgroundColor: "#f0f0f0",
-                    }}
+                    style={styles.productImage}
                   />
                 )}
-                <View style={{ flex: 1 }}>
-                  <View style={styles.itemHeader}>
-                    <Text style={styles.itemName}>
-                      {item?.name
-                        ? item.name.length > 20
-                          ? `${item.name.slice(0, 20)}...`
-                          : item.name
-                        : "Unnamed"}
-                    </Text>
 
-                    <Text style={styles.itemPrice}>
-                      ₹{formatAmount(item.price)}
-                    </Text>
-                  </View>
-                  {toNumber(item.originalPrice) > toNumber(item.price) && (
-                    <Text
-                      style={[
-                        styles.itemPrice,
-                        {
-                          textDecorationLine: "line-through",
-                          color: theme.colors.secondary,
-                          marginLeft: 6,
-                        },
-                      ]}
-                    >
-                      ₹{formatAmount(item.originalPrice)}
-                    </Text>
-                  )}
-                  {toNumber(item.originalPrice) > toNumber(item.price) && (
-                    <Text
-                      style={[
-                        styles.itemPrice,
-                        { color: "#FF9800", marginLeft: 6 },
-                      ]}
-                    >
-                      {Math.round(
-                        ((toNumber(item.originalPrice) - toNumber(item.price)) /
-                          toNumber(item.originalPrice)) *
-                          100,
-                      )}
-                      % off
-                    </Text>
-                  )}
+                <View style={styles.leftContent}>
+                  {/* Product Name */}
+                  <Text style={styles.itemName} numberOfLines={2}>
+                    {formatNameTwoLines(item?.name, 28)}
+                  </Text>
+
+                  {/* Variant Info */}
                   {item.variant && (
-                    <Text style={styles.variantText}>
+                    <Text style={styles.variantText} numberOfLines={1}>
                       {item.variant.name}: {item.variant.unit}
                     </Text>
                   )}
-                  <View style={styles.quantityContainer}>
-                    <TouchableOpacity
-                      style={[
-                        styles.quantityButton,
-                        { backgroundColor: theme.colors.surface },
-                      ]}
-                      onPress={() =>
-                        updateQuantity(
-                          item.id,
-                          item.quantity - 1,
-                          item.category,
-                        )
-                      }
-                      activeOpacity={0.7}
-                    >
-                      <MaterialCommunityIcons
-                        name="minus"
-                        size={18}
-                        color={theme.colors.text}
-                      />
-                    </TouchableOpacity>
-                    <Text style={styles.quantityText}>{item.quantity}</Text>
-                    <TouchableOpacity
-                      style={[
-                        styles.quantityButton,
-                        { backgroundColor: theme.colors.surface },
-                      ]}
-                      onPress={() =>
-                        updateQuantity(
-                          item.id,
-                          item.quantity + 1,
-                          item.category,
-                        )
-                      }
-                      activeOpacity={0.7}
-                    >
-                      <MaterialCommunityIcons
-                        name="plus"
-                        size={18}
-                        color={theme.colors.text}
-                      />
-                    </TouchableOpacity>
-                    <Button
-                      variant="outline"
-                      onPress={() => removeFromCart(item.id, item.category)}
-                      style={styles.removeButton}
-                      colorScheme="primary"
-                      size="sm"
-                    >
-                      Remove
-                    </Button>
-                  </View>
+
+                  {/* Offer/Strike Price - LEFT SIDE */}
+                  {toNumber(item.originalPrice) > toNumber(item.price) && (
+                    <View style={styles.offerPriceContainer}>
+                      <Text style={styles.originalPriceText}>
+                        ₹{formatAmount(item.originalPrice)}
+                      </Text>
+                      <Text style={styles.discountPercentText}>
+                        {Math.round(
+                          ((toNumber(item.originalPrice) -
+                            toNumber(item.price)) /
+                            toNumber(item.originalPrice)) *
+                            100,
+                        )}
+                        % off
+                      </Text>
+                    </View>
+                  )}
+
+                  {/* RX Required Tag */}
+                  {item.prescriptionRequired && (
+                    <View style={styles.rxTagWrapper}>
+                      <RXRequiredNewTag size={11} />
+                    </View>
+                  )}
                 </View>
+              </View>
+
+              {/* RIGHT SIDE: Price, Counter, Remove */}
+              <View style={styles.rightSection}>
+                {/* Current Price */}
+                <Text style={styles.itemPrice}>
+                  ₹{formatAmount(item.price)}
+                </Text>
+
+                {/* Quantity Counter */}
+                <View style={styles.counterRow}>
+                  <TouchableOpacity
+                    style={[
+                      styles.counterBtnSmall,
+                      { backgroundColor: theme.colors.surface },
+                    ]}
+                    onPress={() =>
+                      updateQuantity(item.id, item.quantity - 1, item.category)
+                    }
+                    activeOpacity={0.7}
+                  >
+                    <MaterialCommunityIcons
+                      name="minus"
+                      size={18}
+                      color={theme.colors.primary}
+                    />
+                  </TouchableOpacity>
+                  <Text style={styles.counterValueSmall}>{item.quantity}</Text>
+                  <TouchableOpacity
+                    style={[
+                      styles.counterBtnSmall,
+                      { backgroundColor: theme.colors.primary },
+                    ]}
+                    onPress={() =>
+                      updateQuantity(item.id, item.quantity + 1, item.category)
+                    }
+                    activeOpacity={0.7}
+                  >
+                    <MaterialCommunityIcons
+                      name="plus"
+                      size={18}
+                      color="#FFFFFF"
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Remove Button */}
+                <TouchableOpacity
+                  onPress={() => removeFromCart(item.id, item.category)}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.removeText}>Remove</Text>
+                </TouchableOpacity>
               </View>
             </View>
           </Card>
@@ -254,14 +253,8 @@ const CartScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Box
-        bg={theme.colors.card}
-        px={4}
-        py={3}
-        flexDirection="row"
-        alignItems="center"
-      >
+    <SafeAreaView style={styles.container} edges={["top"]}>
+      <Box px={4} py={2} flexDirection="row" alignItems="center">
         <IconButton
           icon={
             <MaterialCommunityIcons
@@ -284,6 +277,15 @@ const CartScreen = () => {
           My Cart
         </Text>
       </Box>
+
+      {allItems.length > 0 && (
+        <View style={styles.cartMetaContainer}>
+          <Text style={styles.cartMetaText}>
+            {allItems.length} {allItems.length === 1 ? "Item" : "Items"} ·{"  "}
+            Delivery in 20–25 mins
+          </Text>
+        </View>
+      )}
 
       {allItems.length === 0 ? (
         <View style={styles.emptyCart}>
@@ -360,153 +362,227 @@ const CartScreen = () => {
         </View>
       ) : (
         <>
-          <ScrollView style={styles.cartList}>
+          <ScrollView
+            style={styles.cartList}
+            contentContainerStyle={styles.cartListContent}
+            showsVerticalScrollIndicator={false}
+          >
             {allItems.map((item) => (
               <Card key={item.id} style={styles.cartItem}>
-                <View>
-                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View style={styles.cartItemInner}>
+                  {/* LEFT SIDE: Image, Name, Offer/Strike Price, RX Tag */}
+                  <View style={styles.leftSection}>
                     {/* Product Image */}
                     {item.image && (
                       <Image
                         source={{ uri: item.image }}
-                        style={{
-                          width: 48,
-                          height: 48,
-                          borderRadius: 8,
-                          marginRight: 12,
-                          backgroundColor: "#f0f0f0",
-                        }}
+                        style={styles.productImage}
                       />
                     )}
-                    <View style={{ flex: 1 }}>
-                      <View style={styles.itemHeader}>
-                        {/* <Text style={styles.itemName}>
-  {item?.name
-    ? item.name.length > 20
-      ? `${item.name.slice(0, 20)}...`
-      : item.name
-    : 'Unnamed'}
-</Text> */}
 
-                        <Text style={styles.itemName}>
-                          {formatNameTwoLines(item?.name)}
-                        </Text>
+                    <View style={styles.leftContent}>
+                      {/* Product Name */}
+                      <Text style={styles.itemName} numberOfLines={2}>
+                        {formatNameTwoLines(item?.name, 28)}
+                      </Text>
 
-                        <Text style={styles.itemPrice}>
-                          ₹{formatAmount(item.price)}
-                        </Text>
-                      </View>
-                      {toNumber(item.originalPrice) > toNumber(item.price) && (
-                        <Text
-                          style={[
-                            styles.itemPrice,
-                            {
-                              textDecorationLine: "line-through",
-                              color: theme.colors.secondary,
-                              marginLeft: 6,
-                            },
-                          ]}
-                        >
-                          ₹{formatAmount(item.originalPrice)}
-                        </Text>
-                      )}
-                      {toNumber(item.originalPrice) > toNumber(item.price) && (
-                        <Text
-                          style={[
-                            styles.itemPrice,
-                            { color: "#FF9800", marginLeft: 6 },
-                          ]}
-                        >
-                          {Math.round(
-                            ((toNumber(item.originalPrice) -
-                              toNumber(item.price)) /
-                              toNumber(item.originalPrice)) *
-                              100,
-                          )}
-                          % off
-                        </Text>
-                      )}
+                      {/* Variant Info */}
                       {item.variant && (
-                        <Text style={styles.variantText}>
+                        <Text style={styles.variantText} numberOfLines={1}>
                           {item.variant.name}: {item.variant.unit}
                         </Text>
                       )}
-                      <View style={styles.quantityContainer}>
-                        <TouchableOpacity
-                          style={[
-                            styles.quantityButton,
-                            { backgroundColor: theme.colors.surface },
-                          ]}
-                          onPress={() =>
-                            updateQuantity(
-                              item.id,
-                              item.quantity - 1,
-                              item.category,
-                            )
-                          }
-                          activeOpacity={0.7}
-                        >
-                          <MaterialCommunityIcons
-                            name="minus"
-                            size={18}
-                            color={theme.colors.text}
-                          />
-                        </TouchableOpacity>
-                        <Text style={styles.quantityText}>{item.quantity}</Text>
-                        <TouchableOpacity
-                          style={[
-                            styles.quantityButton,
-                            { backgroundColor: theme.colors.surface },
-                          ]}
-                          onPress={() =>
-                            updateQuantity(
-                              item.id,
-                              item.quantity + 1,
-                              item.category,
-                            )
-                          }
-                          activeOpacity={0.7}
-                        >
-                          <MaterialCommunityIcons
-                            name="plus"
-                            size={18}
-                            color={theme.colors.text}
-                          />
-                        </TouchableOpacity>
-                        <Button
-                          variant="outline"
-                          onPress={() => removeFromCart(item.id, item.category)}
-                          style={styles.removeButton}
-                          colorScheme="primary"
-                          size="sm"
-                        >
-                          Remove
-                        </Button>
-                      </View>
+
+                      {/* Offer/Strike Price - LEFT SIDE */}
+                      {toNumber((item as any).originalPrice) >
+                        toNumber(item.price) && (
+                        <View style={styles.offerPriceContainer}>
+                          <Text style={styles.originalPriceText}>
+                            ₹{formatAmount((item as any).originalPrice)}
+                          </Text>
+                          <Text style={styles.discountPercentText}>
+                            {Math.round(
+                              ((toNumber((item as any).originalPrice) -
+                                toNumber(item.price)) /
+                                toNumber((item as any).originalPrice)) *
+                                100,
+                            )}
+                            % off
+                          </Text>
+                        </View>
+                      )}
+
+                      {/* RX Required Tag */}
+                      {item.prescriptionRequired && (
+                        <View style={styles.rxTagWrapper}>
+                          <RXRequiredNewTag size={11} />
+                        </View>
+                      )}
                     </View>
                   </View>
+
+                  {/* RIGHT SIDE: Price, Counter, Remove */}
+                  <View style={styles.rightSection}>
+                    {/* Current Price */}
+                    <Text style={styles.itemPrice}>
+                      ₹{formatAmount(item.price)}
+                    </Text>
+
+                    {/* Quantity Counter */}
+                    <View
+                      style={[
+                        styles.counterRow,
+                        {
+                          backgroundColor: theme.colors.surface,
+                          borderColor: theme.colors.border,
+                        },
+                      ]}
+                    >
+                      <TouchableOpacity
+                        style={styles.counterBtnSmall}
+                        onPress={() =>
+                          updateQuantity(
+                            item.id,
+                            item.quantity - 1,
+                            item.category,
+                          )
+                        }
+                        activeOpacity={0.7}
+                      >
+                        <MaterialCommunityIcons
+                          name="minus"
+                          size={18}
+                          style={[
+                            styles.counterBtnTextSmall,
+                            { color: theme.colors.primary },
+                          ]}
+                        />
+                      </TouchableOpacity>
+                      <Text
+                        style={[
+                          styles.counterValueSmall,
+                          { color: theme.colors.primary },
+                        ]}
+                      >
+                        {item.quantity}
+                      </Text>
+                      <TouchableOpacity
+                        style={styles.counterBtnSmall}
+                        onPress={() =>
+                          updateQuantity(
+                            item.id,
+                            item.quantity + 1,
+                            item.category,
+                          )
+                        }
+                        activeOpacity={0.7}
+                      >
+                        <MaterialCommunityIcons
+                          name="plus"
+                          size={18}
+                          style={[
+                            styles.counterBtnTextSmall,
+                            { color: theme.colors.primary },
+                          ]}
+                        />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Remove Button */}
+                  </View>
                 </View>
+                <Divider
+                  style={{
+                    marginVertical: 10,
+                    backgroundColor: "#E3E6F5",
+                  }}
+                />
+                <TouchableOpacity
+                  onPress={() => removeFromCart(item.id, item.category)}
+                  activeOpacity={0.7}
+                  style={styles.removeButton}
+                >
+                  <Text style={styles.removeText}>Remove</Text>
+                </TouchableOpacity>
               </Card>
             ))}
+
+            {prescriptionItemsCount > 0 && (
+              <View style={styles.prescriptionBanner}>
+                <View style={styles.prescriptionIconCircle}>
+                  <MaterialCommunityIcons
+                    name="stethoscope"
+                    size={18}
+                    color="#F2A100"
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.prescriptionTitle}>
+                    Prescription required for {prescriptionItemsCount}{" "}
+                    {prescriptionItemsCount === 1 ? "item" : "items"}.
+                  </Text>
+                  <Text style={styles.prescriptionSubtitle}>
+                    You&apos;ll be asked to upload it during checkout.
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            <View style={styles.totalContainer}>
+              <View style={styles.orderSummaryCard}>
+                <Text style={styles.orderSummaryTitle}>Order Summary</Text>
+
+                <View style={styles.orderSummaryRow}>
+                  <Text style={styles.orderSummaryLabel}>Items Total</Text>
+                  <Text style={styles.orderSummaryValue}>
+                    ₹{formatAmount(itemsTotal)}
+                  </Text>
+                </View>
+
+                <View style={styles.orderSummaryRow}>
+                  <Text style={styles.orderSummaryLabel}>Taxes</Text>
+                  <Text style={styles.orderSummaryValue}>
+                    ₹{formatAmount(taxes)}
+                  </Text>
+                </View>
+
+                {youSaved > 0 && (
+                  <View style={styles.orderSummaryRow}>
+                    <Text style={styles.orderSummarySavingsLabel}>
+                      You Saved
+                    </Text>
+                    <Text style={styles.orderSummarySavingsValue}>
+                      ₹{formatAmount(youSaved)}
+                    </Text>
+                  </View>
+                )}
+
+                <View style={styles.orderSummaryDivider} />
+
+                <View style={styles.orderSummaryRow}>
+                  <Text style={styles.orderSummaryTotalLabel}>To Pay</Text>
+                  <Text style={styles.orderSummaryTotalValue}>
+                    ₹{formatAmount(grandTotal)}
+                  </Text>
+                </View>
+              </View>
+              <Button
+                onPress={handleCheckout}
+                isDisabled={allItems.length === 0 || grandTotal <= 0}
+                size="lg"
+                style={{
+                  backgroundColor: theme.colors.primary,
+                  borderRadius: 12,
+                }}
+              >
+                Proceed to Checkout
+              </Button>
+            </View>
           </ScrollView>
 
           {/* Recommendation sections - HIDDEN */}
           {/* {hasGroceryItems && renderRecommendations(groceryRecommendations, 'You Might Also Like', addToGroceryCart)}
           {hasPharmacyItems && renderRecommendations(pharmacyRecommendations, 'Recommended Medicines', addToPharmacyCart)} */}
-
-          <View style={styles.totalContainer}>
-            <Text style={styles.totalText}>
-              Total: ₹{formatAmount(totalAmount)}
-            </Text>
-            <Button
-              onPress={handleCheckout}
-              isDisabled={allItems.length === 0}
-              colorScheme="primary"
-              size="lg"
-            >
-              {isAuthenticated ? "Proceed to Checkout" : "Proceed to Checkout"}
-            </Button>
-          </View>
         </>
       )}
     </SafeAreaView>
@@ -516,72 +592,130 @@ const CartScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    backgroundColor: "#F6F7FF",
   },
   cartList: {
     flex: 1,
-    padding: 16,
+    marginTop: 12,
+  },
+  cartListContent: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 24,
   },
   cartItem: {
     marginBottom: 16,
-    elevation: 0,
-    borderWidth: 0.5,
+    elevation: 2,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "#E3E6F5",
+    backgroundColor: "#fff",
+    overflow: "hidden",
   },
-  itemHeader: {
+  cartItemInner: {
     flexDirection: "row",
+    alignItems: "flex-start",
+    paddingTop: 12,
+    paddingHorizontal: 12,
     justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 8,
+  },
+  // LEFT SIDE STYLES
+  leftSection: {
+    flexDirection: "row",
+    flex: 1,
+    alignItems: "flex-start",
+  },
+  productImage: {
+    width: 64,
+    height: 64,
+    borderRadius: 14,
+    marginRight: 12,
+    backgroundColor: "#E8ECFF",
+  },
+  leftContent: {
+    flex: 1,
   },
   itemName: {
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  itemPrice: {
-    fontSize: 16,
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#1E1E1E",
+    marginBottom: 4,
+    lineHeight: 20,
   },
   variantText: {
-    fontSize: 14,
-    marginBottom: 8,
+    fontSize: 13,
+    marginTop: 2,
+    marginBottom: 4,
+    color: "#6B6F82",
   },
-  quantityContainer: {
+  offerPriceContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 8,
+    marginTop: 4,
+    marginBottom: 4,
+    gap: 8,
   },
-  quantityButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    justifyContent: "center",
+  // RIGHT SIDE STYLES
+  rightSection: {
+    alignItems: "flex-end",
+    justifyContent: "flex-start",
+    marginLeft: 12,
+  },
+  itemPrice: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "#1E1E1E",
+    marginBottom: 8,
+    textAlign: "right",
+  },
+  counterRow: {
+    flexDirection: "row",
     alignItems: "center",
-    marginHorizontal: 4,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    borderRadius: 8,
+    borderWidth: 1,
+    height: 32,
+    paddingHorizontal: 6,
+    marginVertical: 12,
   },
-  quantityText: {
+  counterBtnSmall: {
+    width: 26,
+    height: 26,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  counterBtnTextSmall: {
     fontSize: 16,
-    marginHorizontal: 8,
+    fontWeight: "600",
+  },
+  counterValueSmall: {
+    width: 24,
+    textAlign: "center",
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#1E40AF",
   },
   removeButton: {
-    marginLeft: "auto",
+    marginRight: 12,
+    flex: 1,
+    justifyContent: "flex-end",
+    alignItems: "flex-end",
   },
   totalContainer: {
-    padding: 16,
-    borderTopWidth: 1,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    paddingBottom: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: "#E0E0E0",
+    backgroundColor: "#FFFFFF",
   },
   totalText: {
     fontSize: 18,
     fontWeight: "bold",
-    marginBottom: 16,
+    marginBottom: 2,
+  },
+  totalSubText: {
+    fontSize: 13,
+    color: "#6B6F82",
   },
   emptyCart: {
     flex: 1,
@@ -673,6 +807,118 @@ const styles = StyleSheet.create({
   sectionTotalText: {
     fontSize: 18,
     fontWeight: "bold",
+  },
+  rxTagWrapper: {
+    marginTop: 6,
+  },
+  originalPriceText: {
+    fontSize: 12,
+    color: "#9EA0B3",
+    textDecorationLine: "line-through",
+  },
+  discountPercentText: {
+    fontSize: 11,
+    color: "#27ae60",
+    fontWeight: "600",
+  },
+  removeText: {
+    fontSize: 14,
+    color: "#F26A6A",
+    fontWeight: "600",
+    textAlign: "center",
+  },
+  prescriptionBanner: {
+    flexDirection: "row",
+    alignItems: "center",
+    padding: 12,
+    borderRadius: 14,
+    backgroundColor: "#FFF7E5",
+    marginTop: 4,
+    marginBottom: 16,
+  },
+  prescriptionIconCircle: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: "#FFE3B5",
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: 12,
+  },
+  prescriptionTitle: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#8A5A00",
+    marginBottom: 2,
+  },
+  prescriptionSubtitle: {
+    fontSize: 13,
+    color: "#A68126",
+  },
+  orderSummaryCard: {
+    backgroundColor: "transparent",
+    padding: 0,
+    marginBottom: 12,
+  },
+  orderSummaryTitle: {
+    fontSize: 16,
+    fontWeight: "700",
+    marginBottom: 12,
+  },
+  orderSummaryRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginVertical: 4,
+  },
+  orderSummaryLabel: {
+    fontSize: 14,
+    color: "#6B6F82",
+  },
+  orderSummaryValue: {
+    fontSize: 14,
+    color: "#1E1E1E",
+    fontWeight: "500",
+  },
+  orderSummarySavingsLabel: {
+    fontSize: 14,
+    color: "#27ae60",
+    fontWeight: "600",
+  },
+  orderSummarySavingsValue: {
+    fontSize: 14,
+    color: "#27ae60",
+    fontWeight: "600",
+  },
+  orderSummaryDivider: {
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: "#E0E0E0",
+    marginVertical: 10,
+  },
+  orderSummaryTotalLabel: {
+    fontSize: 15,
+    fontWeight: "700",
+  },
+  orderSummaryTotalValue: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#1E1E1E",
+  },
+  cartMetaContainer: {
+    paddingHorizontal: 16,
+  },
+  cartMetaText: {
+    fontSize: 13,
+    color: "#6B6F82",
+    textAlign: "center",
+  },
+  storeHeader: {
+    marginBottom: 12,
+  },
+  storeNameText: {
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#6B6F82",
   },
 });
 

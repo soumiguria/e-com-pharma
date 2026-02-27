@@ -1,782 +1,788 @@
-import React, { useState, useEffect, useMemo } from 'react';
 import {
-  View,
-  StyleSheet,
-  TouchableOpacity,
-  Animated,
-  StatusBar,
-  TextInput,
-  Platform,
-  FlatList,
-  Text,
-  ScrollView,
+  Ionicons,
+  MaterialCommunityIcons,
+  MaterialIcons,
+} from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { LinearGradient } from "expo-linear-gradient";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import {
   BackHandler,
-  Image as RNImage,
+  Dimensions,
+  Image,
+  NativeScrollEvent,
+  NativeSyntheticEvent,
+  Platform,
   RefreshControl,
-} from 'react-native';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { MaterialCommunityIcons, Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList, HomeStackParamList } from '../../navigation/types';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useCart } from '../../contexts/CartContext';
-import { useWishlist } from '../../contexts/WishlistContext';
-import { useAppContext } from '../../contexts/AppContext';
-import { useAuth } from '../../contexts/AuthContext';
-import Drawer from '../../components/profile/ProfileDrawer';
-import ProductCard from '../../components/product/ProductCard'
-import BannerSlider from '../../components/common/BannerSlider';
-import { storeProductService } from '../../services/api/storeProductService';
-import CategoryGrid from '../../components/common/CategoriesGrid';
-import BrandsGrid from '../../components/common/BrandsGrid';
-import HorizontallyScrollableSection from '../../components/layout/HorizontallyScrollableSection';
-import SearchBar from '../../components/ui/SearchBar';
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { SafeAreaView } from "react-native-safe-area-context";
+import BannerSlider from "../../components/common/BannerSlider";
+import CategoryGrid from "../../components/common/CategoriesGrid";
+import HorizontallyScrollableSection from "../../components/layout/HorizontallyScrollableSection";
+import Drawer from "../../components/profile/ProfileDrawer";
+import { useAppContext } from "../../contexts/AppContext";
+import { useCart } from "../../contexts/CartContext";
+import { useTheme } from "../../contexts/ThemeContext";
+import { RootStackParamList } from "../../navigation/types";
+import { storeProductService } from "../../services/api/storeProductService";
+import { useAuth } from "../../contexts/AuthContext";
 
-const Tab = createBottomTabNavigator();
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
+
+// Responsive scaling functions
+const scale = (size: number) => (SCREEN_WIDTH / 375) * size;
+const verticalScale = (size: number) => (SCREEN_HEIGHT / 812) * size;
+const moderateScale = (size: number, factor = 0.5) =>
+  size + (scale(size) - size) * factor;
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
-type HomeRouteProp = RouteProp<HomeStackParamList, 'HomeRoot'>;
 
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  image: string;
-  category: 'grocery' | 'pharma';
+interface StoreInfo {
+  isOpen: boolean;
+  deliveryTime: string;
+  isCertified: boolean;
 }
 
-interface SubCategory {
-  id: string;
-  name: string;
-  products: Product[];
-}
+// Height of header content above the search bar - when scroll passes this, search bar sticks
+const HEADER_ABOVE_SEARCH_ESTIMATE = verticalScale(118);
 
-interface Category {
-  id: string;
-  name: string;
-  subCategories: SubCategory[];
-}
-
-
-const Header = React.memo(({ onProfilePress, themedStyles, isDrawerVisible }: { onProfilePress: () => void, themedStyles: any, isDrawerVisible: boolean }) => {
+// Header Component with Blue Background
+const Header = ({
+  onProfilePress,
+  onSearchPress,
+  isDrawerVisible,
+  storeInfo,
+  onHeaderAboveSearchLayout,
+  isPharmacyStore,
+}: {
+  onProfilePress: () => void;
+  onSearchPress: () => void;
+  isDrawerVisible: boolean;
+  storeInfo: StoreInfo;
+  onHeaderAboveSearchLayout?: (height: number) => void;
+  isPharmacyStore: boolean;
+}) => {
   const { theme } = useTheme();
   const navigation = useNavigation<NavigationProp>();
-  const { selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore, setSelectedStore } = useAppContext();
-  const { groceryItems, totalItems } = useCart();
-  const { wishlistCount } = useWishlist();
-  const { isAuthenticated } = useAuth();
+  const {
+    selectedStore,
+    lastVisitedStore,
+    lastVisitedGroceryStore,
+    lastVisitedPharmacyStore,
+  } = useAppContext();
+  const { totalItems } = useCart();
 
-  // Show last visited store name if user is logged in and no store is currently selected
-  const displayStore = selectedStore || lastVisitedStore || lastVisitedGroceryStore || lastVisitedPharmacyStore;
-  
-  // Debug logging for store display
-  console.log('🏪 Header - selectedStore:', selectedStore);
-  console.log('🏪 Header - lastVisitedStore:', lastVisitedStore);
-  console.log('🏪 Header - displayStore:', displayStore);
-  console.log('🏪 Header - displayStore.name:', displayStore?.name);
-
-  return (
-    <Animated.View style={[themedStyles.header]}>
-        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-          {/* Hamburger Menu Icon */}
-          <TouchableOpacity 
-            onPress={onProfilePress} 
-            style={{ 
-              marginRight: 12,
-              padding: 8,
-            }}
-            activeOpacity={0.7}
-          >
-            <MaterialCommunityIcons 
-              name="menu" 
-              size={24} 
-              color={theme.colors.text} 
-            />
-          </TouchableOpacity>
-        
-        {/* Center - Store name */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-          {displayStore && (
-  <Text
-    style={[
-      themedStyles.storeName,
-      {
-        color: theme.colors.text,
-        marginLeft: 0,
-        fontWeight: 'bold',
-        fontSize: 17,
-      },
-    ]}
-    numberOfLines={1}
-  >
-    {displayStore?.name
-      ? displayStore.name.length > 33
-        ? `${displayStore.name.slice(0, 33)}...`
-        : displayStore.name
-      : 'Unknown Store'}
-  </Text>
-)}
-
-        </View>
-        
-        {/* Right side - Wishlist and Cart */}
-        <View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: 8 }}>
-          {/* <TouchableOpacity 
-            style={[themedStyles.headerIcon, { marginRight: 12 }]}
-            onPress={() => navigation.navigate('MyWishlist' as any)}
-          >
-            <MaterialCommunityIcons 
-              name="heart-outline" 
-              size={24} 
-              color={theme.colors.text} 
-            />
-            {wishlistCount > 0 && (
-              <View style={[themedStyles.cartBadge, { backgroundColor: theme.colors.primary }]}> 
-                <Text style={themedStyles.cartBadgeText}>{wishlistCount}</Text>
-              </View>
-            )}
-          </TouchableOpacity> */}
-          {/* <TouchableOpacity 
-            style={[themedStyles.headerIcon, { marginRight: 8 }]}
-            onPress={() => navigation.navigate('Cart')}
-          >
-            <MaterialCommunityIcons 
-              name="cart" 
-              size={24} 
-              color={theme.colors.text} 
-            />
-            {totalItems > 0 && (
-              <View style={[themedStyles.cartBadge, { backgroundColor: theme.colors.primary }]}> 
-                <Text style={themedStyles.cartBadgeText}>{totalItems}</Text>
-              </View>
-            )}
-          </TouchableOpacity> */}
-        </View>
-      </View>
-    </Animated.View>
-  );
-});
-
-const SearchResults = ({ results, onProductPress, activeTab, themedStyles }: { results: Product[], onProductPress: (product: Product) => void, activeTab: string, themedStyles: any }) => {
-  const { theme } = useTheme();
-  const fadeAnim = React.useRef(new Animated.Value(0)).current;
-
-  React.useEffect(() => {
-    Animated.timing(fadeAnim, {
-      toValue: 1,
-      duration: 400,
-      useNativeDriver: true,
-    }).start();
-  }, [results]);
-
-  if (results.length === 0) {
-    return (
-      <View style={themedStyles.noResultsContainer}>
-        <MaterialIcons name="search-off" size={64} color={theme.colors.secondary} style={{ marginBottom: 12 }} />
-        <Text style={[themedStyles.noResultsText, { color: theme.colors.text }]}>No products found in {activeTab}</Text>
-      </View>
-    );
-  }
+  const displayStore =
+    selectedStore ||
+    lastVisitedStore ||
+    lastVisitedGroceryStore ||
+    lastVisitedPharmacyStore;
 
   return (
-    <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-      <Text style={themedStyles.searchResultsTitle}>Search Results</Text>
-      <FlatList
-        data={results}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <View style={themedStyles.searchResultCard}>
-            <ProductCard 
-              product={{...item, category: activeTab as 'grocery' | 'pharma'}} 
-              onPress={() => onProductPress(item)}
-              compact={true}
-              hideCartButton={true}
-            />
+    <View style={styles.headerContainer}>
+      <StatusBar barStyle="dark-content" />
+
+      {/* Main Header Section */}
+      <LinearGradient
+        colors={theme.gradient as any}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.headerMain}
+      >
+        {/* Top Row + Store Info - measure height for sticky threshold */}
+        <View
+          onLayout={
+            onHeaderAboveSearchLayout
+              ? (e) => onHeaderAboveSearchLayout(e.nativeEvent.layout.height)
+              : undefined
+          }
+        >
+          {/* Top Row - Menu, Title, Cart */}
+          <View style={styles.headerTopRow}>
+            {/* Menu Button */}
+            <TouchableOpacity
+              onPress={onProfilePress}
+              style={styles.headerIconButton}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <MaterialCommunityIcons
+                name="menu"
+                size={scale(26)}
+                color="#FFFFFF"
+              />
+            </TouchableOpacity>
+
+            {/* Center - Store Name */}
+            <View style={styles.headerTitleContainer}>
+              <Text style={styles.headerTitle} numberOfLines={1}>
+                {displayStore?.name
+                  ? displayStore.name.length > 25
+                    ? `${displayStore.name.slice(0, 25)}...`
+                    : displayStore.name
+                  : "Select Store"}
+              </Text>
+            </View>
+
+            {/* Cart Button */}
+            <TouchableOpacity
+              style={styles.headerIconButton}
+              onPress={() => navigation.navigate("Cart")}
+              activeOpacity={0.7}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <MaterialCommunityIcons
+                name="cart-outline"
+                size={scale(24)}
+                color="#FFFFFF"
+              />
+              {totalItems > 0 && (
+                <View style={styles.cartBadge}>
+                  <Text style={styles.cartBadgeText}>
+                    {totalItems > 99 ? "99+" : totalItems}
+                  </Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
-        )}
-        contentContainerStyle={themedStyles.searchResultsContainer}
-        showsVerticalScrollIndicator={false}
-      />
-    </Animated.View>
+
+          {/* Store Info Row - Open Status, Delivery Time, Certified */}
+          {displayStore && (
+            <View style={styles.storeInfoRow}>
+              {/* Open/Closed Status */}
+              <View style={styles.storeInfoItem}>
+                <View
+                  style={[
+                    styles.statusDot,
+                    {
+                      backgroundColor: storeInfo.isOpen ? "#4CAF50" : "#F44336",
+                    },
+                  ]}
+                />
+                <Text style={styles.storeInfoText}>
+                  {storeInfo.isOpen ? "Open Now" : "Closed"}
+                </Text>
+              </View>
+
+              {/* Divider */}
+              <View style={styles.infoDivider} />
+
+              {/* Delivery Time */}
+              <View style={styles.storeInfoItem}>
+                <Text style={styles.storeInfoText}>
+                  {storeInfo.deliveryTime}
+                </Text>
+              </View>
+
+              {/* Divider */}
+              <View style={styles.infoDivider} />
+
+              {/* Certified Badge */}
+              {storeInfo.isCertified && (
+                <View style={styles.storeInfoItem}>
+                  <MaterialIcons
+                    name="verified"
+                    size={scale(14)}
+                    color="#4CAF50"
+                  />
+                  <Text style={styles.storeInfoText}>Certified</Text>
+                </View>
+              )}
+            </View>
+          )}
+        </View>
+
+        {/* Search Bar */}
+        <TouchableOpacity
+          style={styles.searchBarContainer}
+          activeOpacity={0.9}
+          onPress={onSearchPress}
+        >
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={scale(24)} color="#9E9E9E" />
+            <Text style={styles.searchPlaceholder}>
+              {isPharmacyStore
+                ? "Search medicines, health products..."
+                : "Search groceries, daily essentials..."}
+            </Text>
+            <View style={styles.searchMicButton}>
+              <MaterialCommunityIcons
+                name="microphone"
+                size={scale(24)}
+                color={theme.colors.primary}
+              />
+            </View>
+          </View>
+        </TouchableOpacity>
+      </LinearGradient>
+    </View>
   );
 };
 
+// Sticky search bar shown when user scrolls past header (fixed at top)
+const StickySearchBar = ({
+  onSearchPress,
+  isPharmacyStore,
+}: {
+  onSearchPress: () => void;
+  isPharmacyStore: boolean;
+}) => {
+  const { theme } = useTheme();
+  return (
+    <View style={styles.stickySearchBarWrapper}>
+      <LinearGradient
+        colors={theme.gradient as any}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 0 }}
+        style={styles.stickySearchBarGradient}
+      >
+        <TouchableOpacity
+          style={styles.searchBarContainer}
+          activeOpacity={0.9}
+          onPress={onSearchPress}
+        >
+          <View style={styles.searchBar}>
+            <Ionicons name="search" size={scale(24)} color="#9E9E9E" />
+            <Text style={styles.searchPlaceholder}>
+              {isPharmacyStore
+                ? "Search medicines, health products..."
+                : "Search groceries, daily essentials..."}
+            </Text>
+            <View style={styles.searchMicButton}>
+              <MaterialCommunityIcons
+                name="microphone"
+                size={scale(24)}
+                color={isPharmacyStore ? "#5B7CFA" : "#1E88E5"}
+              />
+            </View>
+          </View>
+        </TouchableOpacity>
+      </LinearGradient>
+    </View>
+  );
+};
+
+// Main HomeScreen Component
 const HomeScreen = () => {
   const { theme, section, setSection } = useTheme();
+  const { user } = useAuth();
   const navigation = useNavigation<NavigationProp>();
-  const route = useRoute<HomeRouteProp>();
-  const { addToGroceryCart } = useCart();
-  const { selectedStore, setSelectedStore, saveLastVisitedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore } = useAppContext();
-  const { isAuthenticated } = useAuth();
+  const {
+    selectedStore,
+    setSelectedStore,
+    saveLastVisitedStore,
+    lastVisitedStore,
+    lastVisitedGroceryStore,
+    lastVisitedPharmacyStore,
+  } = useAppContext();
+
+  // State
   const [isDrawerVisible, setIsDrawerVisible] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Product[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [activeTab, setActiveTab] = useState('all');
-  const [loading, setLoading] = useState(false);
-  const [showSearchResults, setShowSearchResults] = useState(false);
-  const scrollY = new Animated.Value(0);
   const [homeProducts, setHomeProducts] = useState<any[]>([]);
-  const [homeProductsLoading, setHomeProductsLoading] = useState<boolean>(false);
+  const [homeProductsLoading, setHomeProductsLoading] =
+    useState<boolean>(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+  const [headerAboveSearchHeight, setHeaderAboveSearchHeight] = useState(
+    HEADER_ABOVE_SEARCH_ESTIMATE,
+  );
 
-  // Get the effective store to use (selectedStore or fallback to last visited stores)
-  // Prioritize pharmacy store in fallback to match AppContext startup logic
-  const effectiveStore = selectedStore || lastVisitedPharmacyStore || (lastVisitedStore?.type === 'pharma' ? lastVisitedStore : null) || lastVisitedStore || lastVisitedGroceryStore;
+  // Store info state (mock data - replace with actual API data)
+  const [storeInfo, setStoreInfo] = useState<StoreInfo>({
+    isOpen: true,
+    deliveryTime: "30-45 min",
+    isCertified: true,
+  });
 
-  // Determine if current store is pharmacy or grocery - default to pharma
-  const isPharmacyStore = effectiveStore?.type === 'pharma';
-  const currentSection = isPharmacyStore ? 'pharma' : (effectiveStore?.type === 'grocery' ? 'grocery' : 'pharma'); // Default to pharma
+  // Effective store calculation
+  const effectiveStore =
+    selectedStore ||
+    lastVisitedPharmacyStore ||
+    (lastVisitedStore?.type === "pharma" ? lastVisitedStore : null) ||
+    lastVisitedStore ||
+    lastVisitedGroceryStore;
 
-  // Set section based on store type - default to pharma if no store
+  const isPharmacyStore = effectiveStore?.type === "pharma";
+  const currentSection = isPharmacyStore
+    ? "pharma"
+    : effectiveStore?.type === "grocery"
+      ? "grocery"
+      : "pharma";
+
+  const showStickySearch =
+    !!effectiveStore && scrollY >= headerAboveSearchHeight;
+
   useEffect(() => {
     if (effectiveStore) {
       setSection(currentSection);
     } else {
-      // No store selected - default to pharma
-      setSection('pharma');
+      setSection("pharma");
     }
   }, [effectiveStore, currentSection, setSection]);
 
-  // Adopt last visited store on mount if no selectedStore - prioritize pharmacy
   useEffect(() => {
     if (!selectedStore) {
-      // Priority: pharmacy store first (default), then general store if pharmacy type
       if (lastVisitedPharmacyStore) {
-        console.log('🔄 Setting lastVisitedPharmacyStore as selectedStore (default):', lastVisitedPharmacyStore);
         setSelectedStore(lastVisitedPharmacyStore);
-      } else if (lastVisitedStore && lastVisitedStore.type === 'pharma') {
-        console.log('🔄 Setting lastVisitedStore (pharma) as selectedStore:', lastVisitedStore);
+      } else if (lastVisitedStore && lastVisitedStore.type === "pharma") {
         setSelectedStore(lastVisitedStore);
       } else if (lastVisitedStore) {
-        console.log('🔄 Setting lastVisitedStore as selectedStore:', lastVisitedStore);
         setSelectedStore(lastVisitedStore);
       } else if (lastVisitedGroceryStore) {
-        console.log('🔄 Setting lastVisitedGroceryStore as selectedStore (fallback):', lastVisitedGroceryStore);
         setSelectedStore(lastVisitedGroceryStore);
       }
     }
-  }, [selectedStore, lastVisitedStore, lastVisitedGroceryStore, lastVisitedPharmacyStore, setSelectedStore]);
+  }, [
+    selectedStore,
+    lastVisitedStore,
+    lastVisitedGroceryStore,
+    lastVisitedPharmacyStore,
+    setSelectedStore,
+  ]);
 
-  // Deep link handling is now done in DeepLinkHandler component
-  // HomeScreen just uses the selectedStore from AppContext
-
-  // Save store as last visited when selected (always, not just when authenticated)
   useEffect(() => {
     if (selectedStore) {
-      console.log('💾 Saving selected store as last visited:', selectedStore);
       saveLastVisitedStore(selectedStore);
     }
   }, [selectedStore, saveLastVisitedStore]);
 
-
-  // Fetch "Some products" based on current store type
-  const fetchHomeProducts = async (isRefresh = false) => {
-    const storeToUse = effectiveStore;
-    if (!storeToUse?.id) {
-      console.log('🏠 No store available, clearing home products');
-      setHomeProducts([]);
-      return;
-    }
-    
-    try {
-      if (!isRefresh) {
-        setHomeProductsLoading(true);
-      }
-      console.log(`🏠 Fetching ${isPharmacyStore ? 'pharma' : 'grocery'} products for store:`, storeToUse.id);
-      
-      const resp = isPharmacyStore
-        ? await storeProductService.getPharmaProducts(storeToUse.id)
-        : await storeProductService.getGroceryProducts(storeToUse.id);
-      
-      if (resp.success && Array.isArray(resp.data)) {
-        console.log(`🏠 Loaded ${resp.data.length} products for store`);
-        setHomeProducts(resp.data.slice(0, 8));
-      } else {
-        console.log('🏠 No products found for store');
+  // Fetch products
+  const fetchHomeProducts = useCallback(
+    async (isRefresh = false) => {
+      const storeToUse = effectiveStore;
+      if (!storeToUse?.id) {
         setHomeProducts([]);
+        return;
       }
-    } catch (e) {
-      console.log('🏠 Error fetching products for store:', e);
-      setHomeProducts([]);
-    } finally {
-      if (!isRefresh) {
-        setHomeProductsLoading(false);
+
+      try {
+        if (!isRefresh) {
+          setHomeProductsLoading(true);
+        }
+
+        const resp = isPharmacyStore
+          ? await storeProductService.getPharmaProducts(storeToUse.id)
+          : await storeProductService.getGroceryProducts(storeToUse.id);
+
+        if (resp.success && Array.isArray(resp.data)) {
+          setHomeProducts(resp.data.slice(0, 8));
+        } else {
+          setHomeProducts([]);
+        }
+      } catch (e) {
+        console.log("Error fetching products:", e);
+        setHomeProducts([]);
+      } finally {
+        if (!isRefresh) {
+          setHomeProductsLoading(false);
+        }
       }
-    }
-  };
+    },
+    [effectiveStore?.id, isPharmacyStore],
+  );
 
   useEffect(() => {
     fetchHomeProducts();
-  }, [effectiveStore?.id, isPharmacyStore]);
+  }, [fetchHomeProducts]);
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchHomeProducts(true);
     setRefreshing(false);
-  };
+  }, [fetchHomeProducts]);
 
-  const themedStyles = useMemo(() => StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: theme.colors.background,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 18,
-      paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-      paddingBottom: 14,
-      elevation: 2,
-      shadowColor: theme.colors.text,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.08,
-      shadowRadius: 4,
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
-      backgroundColor: theme.colors.surface,
-    },
-    storeName: {
-      marginLeft: 8,
-      fontWeight: 'bold',
-      fontSize: 17,
-      color: theme.colors.primary,
-    },
-    headerIcon: {
-      marginHorizontal: 4,
-      position: 'relative',
-      padding: 4,
-    },
-    cartBadge: {
-      position: 'absolute',
-      right: -8,
-      top: -8,
-      borderRadius: 12,
-      width: 22,
-      height: 22,
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: theme.colors.primary,
-    },
-    cartBadgeText: {
-      color: '#fff',
-      fontSize: 12,
-      fontWeight: 'bold',
-    },
-    searchBarWrapper: {
-      paddingHorizontal: 18,
-      paddingTop: 12,
-      paddingBottom: 8,
-      backgroundColor: theme.colors.background,
-    },
-    searchContainer: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 15,
-      paddingVertical: 8,
-      borderRadius: 24,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.06,
-      shadowRadius: 6,
-      elevation: 2,
-      marginBottom: 8,
-      borderBottomWidth: 0,
-    },
-    searchIcon: {
-      marginRight: 10,
-    },
-    searchInput: {
-      flex: 1,
-      fontSize: 16,
-      height: 40,
-      paddingHorizontal: 8,
-    },
-    searchRight:{
-      flexDirection: 'row',
-      alignItems: 'center',
-    },
-    searchButton: {
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 16,
-      backgroundColor: theme.colors.primary,
-      marginLeft: 8,
-    },
-    searchButtonText: {
-      color: theme.colors.surface,
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    contentContainer: {
-      flex: 1,
-    },
-    section: {
-      marginBottom: 24,
-      paddingHorizontal: 16,
-    },
-    sectionTitle: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      marginBottom: 16,
-    },
-    sectionHeaderRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      marginBottom: 16,
-    },
-    viewAll: {
-      fontSize: 14,
-      fontWeight: '600',
-    },
-    tabBar: {
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      height: 60,
-      borderTopWidth: 1,
-      borderTopColor: theme.colors.border,
-    },
-    tab: {
-      flex: 1,
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 8,
-    },
-    activeTab: {
-      borderBottomWidth: 2,
-      borderBottomColor: theme.colors.primary,
-    },
-    tabIcon: {
-      marginBottom: 4,
-    },
-    tabLabel: {
-      fontSize: 12,
-      fontWeight: '600',
-      marginBottom: 4,
-    },
-    searchResultCard: {
-      width: '100%',
-      marginBottom: 12,
-      borderRadius: 14,
-      backgroundColor: theme.colors.surface,
-      shadowColor: theme.colors.text,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.04,
-      shadowRadius: 4,
-      elevation: 1,
-    },
-    searchResultsTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      marginTop: 8,
-      marginBottom: 8,
-      marginLeft: 16,
-      color: theme.colors.text,
-    },
-    searchResultsContainerGrid: {
-      paddingHorizontal: 8,
-      paddingBottom: 24,
-    },
-    searchResultCardGrid: {
-      flex: 1,
-      margin: 8,
-      minWidth: 160,
-      maxWidth: '48%',
-    },
-    searchGridRow: {
-      justifyContent: 'space-between',
-    },
-    drawerOverlay: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      zIndex: 1000,
-      elevation: 1000,
-    },
-    searchPlaceholder: {
-      flex: 1,
-      fontSize: 16,
-      paddingHorizontal: 8,
-    },
-    prescriptionButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      paddingVertical: 16,
-      paddingHorizontal: 20,
-      borderRadius: 12,
-      marginHorizontal: 4,
-      shadowColor: theme.colors.primary,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.2,
-      shadowRadius: 4,
-      elevation: 3,
-    },
-    prescriptionButtonText: {
-      color: 'white',
-      fontSize: 16,
-      fontWeight: 'bold',
-      marginLeft: 12,
-      marginRight: 8,
-    },
-  }), [theme]);
-
-  useFocusEffect(
-    React.useCallback(() => {
-      // Don't set section here anymore, it's handled by the useEffect above
-    }, [])
-  );
-
-  // Handle back button press
+  // Handle back button
   useEffect(() => {
     const backAction = () => {
       if (isDrawerVisible) {
         setIsDrawerVisible(false);
-        return true; // Prevent default back action
+        return true;
       }
-      return false; // Allow default back action
+      return false;
     };
 
-    const backHandler = BackHandler.addEventListener('hardwareBackPress', backAction);
-
+    const backHandler = BackHandler.addEventListener(
+      "hardwareBackPress",
+      backAction,
+    );
     return () => backHandler.remove();
   }, [isDrawerVisible]);
 
-  const getAllProducts = () => {
-    const allProducts: Product[] = [];
-    // Remove mock data - products will be fetched from API
-    return allProducts;
-  };
-
-  const toggleDrawer = React.useCallback(() => {
-    setIsDrawerVisible(prev => !prev);
+  // Handlers
+  const toggleDrawer = useCallback(() => {
+    setIsDrawerVisible((prev) => !prev);
   }, []);
 
-  const handleOverlayPress = React.useCallback(() => {
+  const handleOverlayPress = useCallback(() => {
     setIsDrawerVisible(false);
   }, []);
 
-  const tabBarStyle = {
-    ...themedStyles.tabBar,
-    backgroundColor: theme.colors.surface,
-    transform: [{
-      translateY: scrollY.interpolate({
-        inputRange: [0, 100],
-        outputRange: [0, 100],
-        extrapolate: 'clamp',
+  const handleSearchPress = useCallback(() => {
+    navigation.navigate("SearchScreen", { autoFocus: true });
+  }, [navigation]);
+
+  const handleCategoryPress = useCallback(
+    (category: any) => {
+      navigation.navigate("CategoryProducts" as any, {
+        categoryId: category.id,
+        categoryName: category.name,
+      });
+    },
+    [navigation],
+  );
+
+  const handleViewAllCategories = useCallback(() => {
+    navigation.navigate("CategoriesScreen" as any);
+  }, [navigation]);
+
+  // Themed styles
+  const themedStyles = useMemo(
+    () =>
+      StyleSheet.create({
+        container: {
+          flex: 1,
+          backgroundColor: theme.colors.background,
+        },
+        contentContainer: {
+          flex: 1,
+        },
+        section: {
+          marginBottom: verticalScale(16),
+          paddingHorizontal: scale(16),
+        },
+        sectionHeader: {
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: verticalScale(12),
+          paddingHorizontal: scale(16),
+        },
+        sectionTitle: {
+          fontSize: moderateScale(18),
+          fontWeight: "700",
+          color: theme.colors.text,
+        },
+        viewAllButton: {
+          flexDirection: "row",
+          alignItems: "center",
+        },
+        viewAllText: {
+          fontSize: moderateScale(14),
+          fontWeight: "600",
+          color: theme.colors.primary,
+          marginRight: scale(4),
+        },
+        categoriesGrid: {
+          flexDirection: "row",
+          flexWrap: "wrap",
+          justifyContent: "space-between",
+          paddingHorizontal: scale(16),
+        },
+        drawerOverlay: {
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: "rgba(0, 0, 0, 0.5)",
+          zIndex: 1000,
+          elevation: 1000,
+        },
+        noStoreContainer: {
+          flex: 1,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: scale(20),
+        },
+        noStoreTitle: {
+          color: theme.colors.text,
+          fontSize: moderateScale(18),
+          fontWeight: "bold",
+          marginBottom: verticalScale(8),
+          textAlign: "center",
+        },
+        noStoreSubtitle: {
+          color: theme.colors.secondary,
+          fontSize: moderateScale(14),
+          textAlign: "center",
+          marginBottom: verticalScale(20),
+        },
+        browseStoresButton: {
+          backgroundColor: theme.colors.primary,
+          paddingHorizontal: scale(24),
+          paddingVertical: verticalScale(12),
+          borderRadius: scale(8),
+        },
+        browseStoresText: {
+          color: "#FFFFFF",
+          fontSize: moderateScale(16),
+          fontWeight: "600",
+        },
+
+        prescriptionCard: {
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "space-between",
+          paddingVertical: verticalScale(12),
+          paddingHorizontal: scale(12),
+          marginHorizontal: scale(16),
+          borderRadius: scale(12),
+          backgroundColor: "#E6ECFF",
+          borderWidth: 1,
+          borderColor: "#E3EAFF",
+        },
+
+        leftSection: {
+          flexDirection: "row",
+          alignItems: "center",
+          flex: 1,
+        },
+
+        title: {
+          fontSize: moderateScale(16),
+          fontWeight: "600",
+          color: "#1E2A4A",
+        },
+
+        subtitle: {
+          fontSize: moderateScale(12),
+          color: "#6C7A99",
+          marginTop: verticalScale(4),
+          lineHeight: 18,
+        },
+
+        loadingContainer: {
+          padding: scale(20),
+          alignItems: "center",
+        },
+        loadingText: {
+          color: theme.colors.secondary,
+          fontSize: moderateScale(14),
+        },
+        emptyProductsText: {
+          color: theme.colors.secondary,
+          fontSize: moderateScale(14),
+          textAlign: "center",
+          padding: scale(20),
+        },
+        bannerContainer: {
+          marginVertical: verticalScale(8),
+        },
       }),
-    }],
-  };
-
-  const handleSearch = (text: string) => {
-    setSearchQuery(text);
-    if (text.length === 0) {
-      setShowSearchResults(false);
-      return;
-    }
-
-    const allProducts = getAllProducts();
-    const filtered = allProducts.filter(product =>
-      product.name.toLowerCase().includes(text.toLowerCase())
-    );
-    setSearchResults(filtered);
-    setShowSearchResults(true);
-  };
-
-  const clearSearch = () => {
-    setSearchQuery('');
-    setShowSearchResults(false);
-  };
-
-  const handleProductPress = (product: Product) => {
-    navigation.navigate('ProductDetail', { product });
-  };
-
-
-
-  // If you need a loading delay, re-enable this. For now, render immediately to avoid stuck loading.
-  // useEffect(() => {
-  //   setTimeout(() => {
-  //     setLoading(false);
-  //   }, 500);
-  // }, []);
+    [theme],
+  );
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: theme.colors.background }}>
-        <Text style={{ color: theme.colors.text, fontSize: 16, marginBottom: 8 }}>
-          Loading...
-        </Text>
-        <Text style={{ color: theme.colors.secondary, fontSize: 14 }}>
-          Please wait
-        </Text>
+      <View
+        style={[
+          themedStyles.noStoreContainer,
+          { backgroundColor: theme.colors.background },
+        ]}
+      >
+        <Text style={themedStyles.loadingText}>Loading...</Text>
       </View>
     );
   }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView style={themedStyles.container} edges={['top']}>
-        <StatusBar barStyle={theme.dark ? 'light-content' : 'dark-content'} backgroundColor={theme.colors.surface} />
-        
-        <Header onProfilePress={toggleDrawer} themedStyles={themedStyles} isDrawerVisible={isDrawerVisible} />
-        <View>
-          <SearchBar
-            onSearch={() => {}}
-            placeholder={isPharmacyStore ? "Search medicines..." : "Search products..."}
-          />
-          <TouchableOpacity
-            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }}
-            activeOpacity={0.8}
-            onPress={() => navigation.navigate('SearchScreen')}
-          />
-        </View>
-        
-      
-      <View style={themedStyles.contentContainer}>
-        {searchQuery.length > 0 ? (
-          <SearchResults 
-            results={searchResults} 
-            onProductPress={handleProductPress} 
-            activeTab={activeTab}
-            themedStyles={themedStyles}
-          />
-        ) : !effectiveStore ? (
-          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-            <MaterialIcons name="store" size={64} color={theme.colors.secondary} style={{ marginBottom: 16 }} />
-            <Text style={{ color: theme.colors.text, fontSize: 18, fontWeight: 'bold', marginBottom: 8, textAlign: 'center' }}>
-              No Store Selected
-            </Text>
-            <Text style={{ color: theme.colors.secondary, fontSize: 14, textAlign: 'center', marginBottom: 20 }}>
-              Please select a store to view products and categories
-            </Text>
-            <TouchableOpacity 
-              style={{ 
-                backgroundColor: theme.colors.primary, 
-                paddingHorizontal: 20, 
-                paddingVertical: 12, 
-                borderRadius: 8 
-              }}
-              onPress={() => navigation.navigate('StoreList' as any, { storeType: section })}
+      <SafeAreaView style={themedStyles.container} edges={["top"]}>
+        {/* Main Content - single ScrollView so header scrolls with content */}
+        <View style={themedStyles.contentContainer}>
+          {!effectiveStore ? (
+            // No Store Selected View
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ flexGrow: 1 }}
             >
-              <Text style={{ color: 'white', fontSize: 16, fontWeight: '600' }}>
-                Browse Stores
-              </Text>
-            </TouchableOpacity>
-          </View>
-        ) : (
-          <ScrollView
-            refreshControl={
-              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-            }
-          >
-            <BannerSlider />
-
-            
-            
-            {/* Order with Prescription Button - Only for Pharmacy Stores */}
-            {isPharmacyStore && (
-              <View style={themedStyles.section}>
-                <TouchableOpacity 
-                  style={[themedStyles.prescriptionButton, { backgroundColor: theme.colors.primary }]}
-                  onPress={() => navigation.navigate('OrderSelection' as any)}
-                >
-                  <MaterialIcons name="upload-file" size={24} color="white" />
-                  <Text style={themedStyles.prescriptionButtonText}>Order with Prescription</Text>
-                  <MaterialIcons name="arrow-forward-ios" size={20} color="white" />
-                </TouchableOpacity>
-              </View>
-            )}
-            
-            {/* Removed previous grid version of Some products */}
-
-            <View style={themedStyles.section}>
-              <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>
-                {isPharmacyStore ? 'Medicine Categories' : 'Categories'}
-              </Text>
-              <CategoryGrid />
-            </View>
-            {/* Shop by Brands Section - HIDDEN */}
-            {/* <View style={themedStyles.section}>
-              <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>
-                {isPharmacyStore ? 'Pharmacy Brands' : 'Shop by Brands'}
-              </Text>
-              <BrandsGrid />
-              <View style={{ alignItems: 'center', marginTop: 8 }}>
-                <TouchableOpacity onPress={() => navigation.navigate('BrandsScreen' as any)}>
-                  <Text style={[themedStyles.viewAll, {color: theme.colors.primary}]}>View All</Text>
-                </TouchableOpacity>
-              </View>
-            </View> */}
-            {/* Some products below brands - same UI as Recently Bought */}
-            <View style={themedStyles.section}>
-              <View style={themedStyles.sectionHeaderRow}>
-                <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>Some products</Text>
-              </View>
-              {homeProductsLoading ? (
-                <View style={{ padding: 20, alignItems: 'center' }}>
-                  <Text style={{ color: theme.colors.secondary, fontSize: 14 }}>
-                    Loading products...
-                  </Text>
-                </View>
-              ) : homeProducts.length > 0 ? (
-                <HorizontallyScrollableSection 
-                  title={isPharmacyStore ? 'Recently Bought Medicines' : 'Recently Bought'}
-                  itemsOverride={homeProducts.map(p => ({...p, category: isPharmacyStore ? 'pharma' : 'grocery'}))}
-                  hidePercentOff
-                  hideWishlist
-                  showFullName
+              <Header
+                onProfilePress={toggleDrawer}
+                onSearchPress={handleSearchPress}
+                isDrawerVisible={isDrawerVisible}
+                storeInfo={storeInfo}
+                isPharmacyStore={isPharmacyStore}
+              />
+              <View style={themedStyles.noStoreContainer}>
+                <MaterialIcons
+                  name="store"
+                  size={scale(64)}
+                  color={theme.colors.secondary}
+                  style={{ marginBottom: verticalScale(16) }}
                 />
-              ) : (
-                <View style={{ padding: 20, alignItems: 'center' }}>
-                  <Text style={{ color: theme.colors.secondary, fontSize: 14 }}>
+                <Text style={themedStyles.noStoreTitle}>No Store Selected</Text>
+                <Text style={themedStyles.noStoreSubtitle}>
+                  Please select a store to view products and categories
+                </Text>
+                <TouchableOpacity
+                  style={themedStyles.browseStoresButton}
+                  onPress={() =>
+                    navigation.navigate("StoreList" as any, {
+                      storeType: section,
+                    })
+                  }
+                >
+                  <Text style={themedStyles.browseStoresText}>
+                    Browse Stores
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          ) : (
+            <ScrollView
+              showsVerticalScrollIndicator={false}
+              scrollEventThrottle={16}
+              onScroll={(e: NativeSyntheticEvent<NativeScrollEvent>) =>
+                setScrollY(e.nativeEvent.contentOffset.y)
+              }
+              refreshControl={
+                <RefreshControl
+                  refreshing={refreshing}
+                  onRefresh={onRefresh}
+                  colors={["#1E88E5"]}
+                  tintColor="#1E88E5"
+                />
+              }
+            >
+              {/* Header - scrolls with page; when search bar hits top, sticky bar shows */}
+              <Header
+                onProfilePress={toggleDrawer}
+                onSearchPress={handleSearchPress}
+                isDrawerVisible={isDrawerVisible}
+                storeInfo={storeInfo}
+                onHeaderAboveSearchLayout={setHeaderAboveSearchHeight}
+                isPharmacyStore={isPharmacyStore}
+              />
+              {/* Horizontal Banner */}
+              <View style={themedStyles.bannerContainer}>
+                <BannerSlider />
+              </View>
+
+              {/* Order with Prescription Button - Only for Pharmacy */}
+              {isPharmacyStore && (
+                <TouchableOpacity
+                  style={themedStyles.prescriptionCard}
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    if (user) {
+                      navigation.navigate("OrderSelection" as any);
+                    } else {
+                      navigation.navigate("PhoneAuth" as any, {
+                        cartType: "pharma",
+                      });
+                    }
+                  }}
+                >
+                  <View style={themedStyles.leftSection}>
+                    <Image
+                      source={require("../../assets/homePageUploadRXIcon.png")}
+                      style={{ width: scale(24), height: scale(24) }}
+                    />
+
+                    <View style={{ marginLeft: scale(12) }}>
+                      <Text style={themedStyles.title}>
+                        Upload Prescription
+                      </Text>
+                      <Text style={themedStyles.subtitle}>
+                        Quick verification & Securely pharmacist verified
+                      </Text>
+                    </View>
+                  </View>
+
+                  <MaterialIcons
+                    name="arrow-forward-ios"
+                    size={scale(18)}
+                    color={theme.colors.primary}
+                  />
+                </TouchableOpacity>
+              )}
+
+              {/* Medicine Categories Section */}
+              <View style={{ marginVertical: verticalScale(16) }}>
+                {/* Section Header with View All */}
+                <View style={themedStyles.sectionHeader}>
+                  <Text style={themedStyles.sectionTitle}>
+                    {isPharmacyStore ? "Medicine Categories" : "Categories"}
+                  </Text>
+                  <TouchableOpacity
+                    style={themedStyles.viewAllButton}
+                    onPress={handleViewAllCategories}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={themedStyles.viewAllText}>View All</Text>
+                    <MaterialIcons
+                      name="chevron-right"
+                      size={scale(20)}
+                      color={theme.colors.primary}
+                    />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Categories Grid - 8 Items (4x2) */}
+                <View style={themedStyles.categoriesGrid}>
+                  <CategoryGrid />
+                </View>
+              </View>
+
+              {/* Some Products Section */}
+              <View>
+                <View style={themedStyles.sectionHeader}>
+                  <Text style={themedStyles.sectionTitle}>Some Products</Text>
+                </View>
+
+                {homeProductsLoading ? (
+                  <View style={themedStyles.loadingContainer}>
+                    <Text style={themedStyles.loadingText}>
+                      Loading products...
+                    </Text>
+                  </View>
+                ) : homeProducts.length > 0 ? (
+                  <HorizontallyScrollableSection
+                    title=""
+                    itemsOverride={homeProducts.map((p) => ({
+                      ...p,
+                      category: isPharmacyStore ? "pharma" : "grocery",
+                    }))}
+                    hidePercentOff
+                    hideWishlist
+                    showFullName
+                  />
+                ) : (
+                  <Text style={themedStyles.emptyProductsText}>
                     No products available for this store
                   </Text>
-                </View>
-              )}
-            </View>
-            {/* Recently Bought Section - HIDDEN */}
-            {/* <View style={themedStyles.section}>
-              <View style={themedStyles.sectionHeaderRow}>
-                <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>
-                  {isPharmacyStore ? 'Recently Bought Medicines' : 'Recently Bought'}
-                </Text>
-                <TouchableOpacity onPress={() => navigation.navigate('RecentlyBoughtScreen' as any)}>
-                  <Text style={[themedStyles.viewAll, {color: theme.colors.primary}]}>View All</Text>
-                </TouchableOpacity>
+                )}
               </View>
-              <HorizontallyScrollableSection title={isPharmacyStore ? "Recently Bought Medicines" : "Recently Bought"} />
-            </View> */}
-            {/* Great Offers Section - HIDDEN */}
-            {/* <View style={themedStyles.section}>
-              <View style={themedStyles.sectionHeaderRow}>
-                <Text style={[themedStyles.sectionTitle, {color: theme.colors.text}]}>
-                  {isPharmacyStore ? 'Medicine Offers' : 'Great Offers'}
-                </Text>
-                <TouchableOpacity onPress={() => navigation.navigate('GreatOffersScreen' as any)}>
-                  <Text style={[themedStyles.viewAll, {color: theme.colors.primary}]}>View All</Text>
-                </TouchableOpacity>
-              </View>
-              <HorizontallyScrollableSection title={isPharmacyStore ? "Medicine Offers" : "Great Offers"} />
-            </View> */}
-          </ScrollView>
-        )}
-      </View>
 
+              {/* Bottom Spacing */}
+              <View style={{ height: verticalScale(20) }} />
+            </ScrollView>
+          )}
+
+          {/* Sticky search bar - fixed at top when scrolled past header */}
+          {showStickySearch && (
+            <StickySearchBar
+              onSearchPress={handleSearchPress}
+              isPharmacyStore={isPharmacyStore}
+            />
+          )}
+        </View>
+
+        {/* Drawer Overlay */}
         {isDrawerVisible && (
           <View style={themedStyles.drawerOverlay}>
-            <TouchableOpacity 
-              style={{ flex: 1 }} 
-              onPress={handleOverlayPress} 
+            <TouchableOpacity
+              style={{ flex: 1 }}
+              onPress={handleOverlayPress}
               activeOpacity={1}
             />
             <Drawer onClose={toggleDrawer} />
@@ -786,5 +792,166 @@ const HomeScreen = () => {
     </GestureHandlerRootView>
   );
 };
+
+// Static Styles
+const styles = StyleSheet.create({
+  // Header Styles
+  headerContainer: {
+    zIndex: 100,
+  },
+  headerMain: {
+    paddingTop: Platform.OS === "android" ? 5 : 0,
+    paddingBottom: verticalScale(16),
+    borderBottomLeftRadius: scale(20),
+    borderBottomRightRadius: scale(20),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  headerTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: scale(16),
+    paddingTop: verticalScale(8),
+    paddingBottom: verticalScale(4),
+  },
+  headerIconButton: {
+    padding: scale(8),
+    position: "relative",
+  },
+  headerTitleContainer: {
+    flex: 1,
+    alignItems: "center",
+    paddingHorizontal: scale(8),
+  },
+  headerTitle: {
+    fontSize: moderateScale(18),
+    fontWeight: "700",
+    color: "#FFFFFF",
+    textAlign: "center",
+  },
+  cartBadge: {
+    position: "absolute",
+    right: 0,
+    top: 0,
+    backgroundColor: "#FF5252",
+    borderRadius: scale(10),
+    minWidth: scale(18),
+    height: scale(18),
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: scale(4),
+  },
+  cartBadgeText: {
+    color: "#FFFFFF",
+    fontSize: moderateScale(10),
+    fontWeight: "bold",
+  },
+  // Store Info Row
+  storeInfoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: scale(16),
+    paddingVertical: verticalScale(8),
+  },
+  storeInfoItem: {
+    backgroundColor: "#DEEFFA",
+    flexDirection: "row",
+    alignItems: "center",
+    borderRadius: 50,
+    paddingHorizontal: scale(8),
+    paddingVertical: verticalScale(4),
+  },
+  statusDot: {
+    width: scale(8),
+    height: scale(8),
+    borderRadius: scale(4),
+    marginRight: scale(6),
+  },
+  storeInfoText: {
+    fontSize: moderateScale(12),
+    color: "#666666",
+    fontWeight: "500",
+    marginLeft: scale(4),
+  },
+  infoDivider: {
+    width: 1,
+    height: verticalScale(12),
+    backgroundColor: "rgba(255, 255, 255, 0.3)",
+    marginHorizontal: scale(12),
+  },
+  // Sticky search bar (fixed at top when scrolled)
+  stickySearchBarWrapper: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 200,
+    elevation: 200,
+  },
+  stickySearchBarGradient: {
+    paddingTop: Platform.OS === "android" ? 5 : 0,
+    paddingBottom: verticalScale(12),
+    borderBottomLeftRadius: scale(20),
+    borderBottomRightRadius: scale(20),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  // Search Bar
+  searchBarContainer: {
+    paddingHorizontal: scale(16),
+    paddingTop: verticalScale(8),
+  },
+  searchBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 50,
+    paddingHorizontal: scale(12),
+    paddingVertical: verticalScale(6),
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  searchPlaceholder: {
+    flex: 1,
+    fontSize: moderateScale(14),
+    color: "#9E9E9E",
+    marginLeft: scale(10),
+  },
+  searchMicButton: {
+    padding: scale(4),
+  },
+  // Category Item
+  categoryItem: {
+    width: (SCREEN_WIDTH - scale(48)) / 4,
+    alignItems: "center",
+    marginBottom: verticalScale(16),
+    paddingVertical: verticalScale(8),
+  },
+  categoryIconContainer: {
+    width: scale(56),
+    height: scale(56),
+    borderRadius: scale(28),
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: verticalScale(8),
+  },
+  categoryName: {
+    fontSize: moderateScale(11),
+    fontWeight: "500",
+    textAlign: "center",
+    lineHeight: moderateScale(14),
+  },
+});
 
 export default HomeScreen;

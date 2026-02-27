@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Paas Ki Dukaan",
-    "slug": "paas-ki-dukaan-app",
+    "slug": "pass-ki-dukan",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/paas-ki-dukaan-icon.png",
@@ -103,7 +103,7 @@
     "extra": {
       "googleMapsApiKey": "AIzaSyBulvdhv-w6y-tdPIvzaLJuo8RroDU0EBM",
       "eas": {
-        "projectId": "dfc327da-2ff2-4ab9-8d6f-5bb53ab1e6bd"
+        "projectId": "2f98829a-26b1-49b1-9b40-03e35392c87a"
       }
     },
     "plugins": [
@@ -153,6 +153,7 @@
       ],
       "expo-font",
       "./app.plugin.js"
-    ]
+    ],
+    "owner": "mayurnakum"
   }
 }

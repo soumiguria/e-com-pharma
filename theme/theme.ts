@@ -126,6 +126,11 @@ const shadows = {
 
 export const lightTheme = {
   ...DefaultTheme,
+  gradient: ['#5B7CFA', '#8FA2FF'],
+  gradientStart: '#5B7CFA',
+  gradientEnd: '#8FA2FF',
+  gredientSecondary: ['#A6B9FF', '#DEE5FF'],
+  gredientProduct: ['#DEE5FF', '#fff'],
   colors: {
     ...DefaultTheme.colors,
     primary: palette.primary_yellow,
@@ -160,6 +165,7 @@ export const lightTheme = {
 
 export const darkTheme = {
   ...DarkTheme,
+  gradient: ['#6A82FB', '#8998FF'],
   colors: {
     ...DarkTheme.colors,
     primary: palette.primary_yellow,

@@ -23,6 +23,8 @@ export type RootStackParamList = {
     orderId?: string;
     orderNo?: string;
     amount?: number;
+    storeId?: string;
+    storeName?: string;
     orderData?: {
       items: Array<{
         id: string;
@@ -38,6 +40,8 @@ export type RootStackParamList = {
       deliveryMethod: string;
       shippingAddress?: string;
       prescriptionRequired?: boolean;
+      storeId?: string;
+      storeName?: string;
     };
   };
   Profile: undefined;
@@ -110,7 +114,7 @@ export type RootStackParamList = {
   Notifications: undefined;
   GroceryHome: { storeId: string };
   PharmacyHome: { storeId: string };
-  SearchScreen: undefined;
+  SearchScreen: { autoFocus?: boolean };
   SearchResults: { query: string };
   SavedProducts: undefined;
   Under99Products: undefined;

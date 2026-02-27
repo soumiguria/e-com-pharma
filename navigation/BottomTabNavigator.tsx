@@ -44,10 +44,10 @@ const HomeStackNavigator = () => (
     <HomeStack.Screen name="CategoryDetail" component={CategoryDetailScreen} />
     <HomeStack.Screen name="GreatOffersScreen" component={GreatOffersScreen} />
     <HomeStack.Screen name="Cart" component={CartScreen} />
-    <HomeStack.Screen
+    {/* <HomeStack.Screen
       name="RecentlyBoughtScreen"
       component={RecentlyBoughtScreen}
-    />
+    /> */}
     <HomeStack.Screen name="BrandsScreen" component={BrandsScreen} />
     <HomeStack.Screen name="CategoriesScreen" component={CategoriesScreen} />
   </HomeStack.Navigator>
@@ -70,10 +70,10 @@ const PharmacyStackNavigator = () => (
       name="CategoryDetail"
       component={CategoryDetailScreen}
     />
-    <PharmacyStack.Screen
+    {/* <PharmacyStack.Screen
       name="GreatOffersScreen"
       component={GreatOffersScreen}
-    />
+    /> */}
     <PharmacyStack.Screen name="Cart" component={CartScreen} />
     <PharmacyStack.Screen
       name="RecentlyBoughtScreen"

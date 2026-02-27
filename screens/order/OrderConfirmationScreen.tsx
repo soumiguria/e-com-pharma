@@ -1,79 +1,145 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  Image,
-  Animated,
-  ScrollView,
+  Ionicons,
+  MaterialCommunityIcons,
+  MaterialIcons,
+} from "@expo/vector-icons";
+import {
+  RouteProp,
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useCallback, useEffect, useState } from "react";
+import {
   Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { MaterialIcons } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useNavigation, useRoute, RouteProp, useFocusEffect } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/types';
-import { useCart } from '../../contexts/CartContext';
-import storeService, { formatStoreAddress } from '../../services/api/storeService';
-import orderListService from '../../services/api/orderListService';
+  Linking,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import { useCart } from "../../contexts/CartContext";
+import { RootStackParamList } from "../../navigation/types";
+import orderListService from "../../services/api/orderListService";
+import storeService, {
+  formatStoreAddress,
+} from "../../services/api/storeService";
+import { Divider } from "native-base";
 
-type OrderConfirmationNavigationProp = NativeStackNavigationProp<RootStackParamList, 'OrderConfirmation'>;
-type OrderConfirmationRouteProp = RouteProp<RootStackParamList, 'OrderConfirmation'>;
+type OrderConfirmationRouteProp = RouteProp<
+  RootStackParamList,
+  "OrderConfirmation"
+>;
+
+// UI design tokens (responsive, works on Android & iOS)
+const UI = {
+  screenBg: "#F8F7FA",
+  cardBg: "#FFFFFF",
+  successGreen: "#36C47A",
+  successGreenBg: "#E3F6EE",
+  primaryBlue: "#007BFF",
+  textDark: "#343A40",
+  textMuted: "#6C757D",
+  cardRadius: 12,
+  cardShadow: Platform.select({
+    ios: {
+      shadowColor: "#000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.05,
+      shadowRadius: 8,
+    },
+    android: { elevation: 4 },
+  }),
+  gradientBlue: ["#6A97E4", "#4D7DD6"] as const,
+};
 
 const OrderConfirmationScreen = () => {
-  const { theme } = useTheme();
+  const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const route = useRoute<OrderConfirmationRouteProp>();
   const { clearCart } = useCart();
   const [buttonPressed, setButtonPressed] = useState<string | null>(null);
   const [storeDetails, setStoreDetails] = useState<any>(null);
-  const [formattedStoreAddress, setFormattedStoreAddress] = useState<string>('');
-  const logoScale = useRef(new Animated.Value(0)).current;
-  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const [formattedStoreAddress, setFormattedStoreAddress] =
+    useState<string>("");
 
   // Get order details from route params or use defaults
   const routeParams: any = route.params || {};
-  const { paymentData, orderId: routeOrderId, orderNo: routeOrderNo, amount: routeAmount, orderData: routeOrderData, prescriptionRequired: routePrescriptionRequired } = routeParams;
-  const routeStoreId = routeParams.storeId;
+  const {
+    paymentData,
+    orderId: routeOrderId,
+    orderNo: routeOrderNo,
+    amount: routeAmount,
+    orderData: routeOrderData,
+    prescriptionRequired: routePrescriptionRequired,
+    storeId: routeStoreId,
+    storeName: routeStoreName,
+  } = routeParams;
+  const routeStoreIdResolved = routeStoreId ?? (routeOrderData as any)?.storeId;
   const orderId = routeOrderId;
-  const orderNo = routeOrderNo ;
+  const orderNo = routeOrderNo;
   const totalAmount = routeAmount || 460;
-  
+
   // Check prescriptionRequired from route params or orderData
-  const prescriptionRequiredFromRoute = routePrescriptionRequired || (routeOrderData as any)?.prescriptionRequired || false;
-  
+  const prescriptionRequiredFromRoute =
+    routePrescriptionRequired ||
+    (routeOrderData as any)?.prescriptionRequired ||
+    false;
+
   // State to track prescriptionRequired (can be updated from API)
-  const [prescriptionRequired, setPrescriptionRequired] = useState<boolean>(prescriptionRequiredFromRoute);
+  const [prescriptionRequired, setPrescriptionRequired] = useState<boolean>(
+    prescriptionRequiredFromRoute,
+  );
 
   // Use real order data if available, otherwise fallback to mock data
-  const orderDetails = routeOrderData ? {
-    orderId,
-    orderNo,
-    totalAmount: routeOrderData.grandTotal || totalAmount,
-    items: routeOrderData.items || [],
-    shippingAddress: routeOrderData.shippingAddress || 'Address not available',
-    deliveryMethod: routeOrderData.deliveryMethod || 'Home Delivery',
-    deliveryFee: routeOrderData.deliveryFee || 0,
-    discount: routeOrderData.discount || 0,
-    itemTotal: routeOrderData.itemTotal || 0,
-    paymentData: paymentData,
-  } : {
-    // Fallback mock data
-    orderId,
-    totalAmount,
-    items: [
-      { id: '1', name: 'Sample Product 1', price: 200, quantity: 2, image: '' },
-      { id: '2', name: 'Sample Product 2', price: 150, quantity: 1, image: '' },
-    ],
-    shippingAddress: '123 Main St, City, State - 12345',
-    deliveryMethod: 'Home Delivery',
-    deliveryFee: 50,
-    discount: 20,
-    itemTotal: 400,
-    paymentData: paymentData,
-  };
+  const orderDetails = routeOrderData
+    ? {
+        orderId,
+        orderNo,
+        totalAmount: routeOrderData.grandTotal || totalAmount,
+        items: routeOrderData.items || [],
+        shippingAddress:
+          routeOrderData.shippingAddress || "Address not available",
+        deliveryMethod: routeOrderData.deliveryMethod || "Home Delivery",
+        deliveryFee: routeOrderData.deliveryFee || 0,
+        discount: routeOrderData.discount || 0,
+        itemTotal: routeOrderData.itemTotal || 0,
+        paymentData: paymentData,
+      }
+    : {
+        // Fallback mock data
+        orderId,
+        totalAmount,
+        items: [
+          {
+            id: "1",
+            name: "Sample Product 1",
+            price: 200,
+            quantity: 2,
+            image: "",
+          },
+          {
+            id: "2",
+            name: "Sample Product 2",
+            price: 150,
+            quantity: 1,
+            image: "",
+          },
+        ],
+        shippingAddress: "123 Main St, City, State - 12345",
+        deliveryMethod: "Home Delivery",
+        deliveryFee: 50,
+        discount: 20,
+        itemTotal: 400,
+        paymentData: paymentData,
+      };
 
   // Update prescriptionRequired when route params change
   useEffect(() => {
@@ -84,32 +150,27 @@ const OrderConfirmationScreen = () => {
   useEffect(() => {
     const fetchOrderDetails = async () => {
       // Always try to fetch from API if orderId exists and doesn't look like a mock ID
-      if (orderId && !orderId.startsWith('ORD')) {
+      if (orderId && !orderId.startsWith("ORD")) {
         try {
-          console.log('📋 Fetching order details for prescription check:', orderId);
-          console.log('📋 Current prescriptionRequired from route/orderData:', prescriptionRequiredFromRoute);
           const response = await orderListService.getOrderById(orderId);
           if (response.success && response.data) {
             const orderData = response.data;
             // Check prescriptionRequired field from API response
-            const prescriptionRequiredValue = orderData.prescriptionRequired === true;
-            console.log('📋 Order prescriptionRequired from API:', prescriptionRequiredValue);
-            console.log('📋 Full order data prescriptionRequired field:', orderData.prescriptionRequired);
+            const prescriptionRequiredValue =
+              orderData.prescriptionRequired === true;
+
             setPrescriptionRequired(prescriptionRequiredValue);
           } else {
             // If API fetch fails, use the value from route/orderData
-            console.log('📋 API fetch failed, using prescriptionRequired from route/orderData:', prescriptionRequiredFromRoute);
             setPrescriptionRequired(prescriptionRequiredFromRoute);
           }
         } catch (error) {
-          console.error('❌ Error fetching order details:', error);
+          console.error("❌ Error fetching order details:", error);
           // If API fetch fails, use the value from route/orderData
-          console.log('📋 API error, using prescriptionRequired from route/orderData:', prescriptionRequiredFromRoute);
           setPrescriptionRequired(prescriptionRequiredFromRoute);
         }
       } else {
         // For mock orders or when orderId starts with "ORD", use prescriptionRequired from route/orderData
-        console.log('📋 Using prescriptionRequired from route/orderData for mock order:', prescriptionRequiredFromRoute);
         setPrescriptionRequired(prescriptionRequiredFromRoute);
       }
     };
@@ -117,567 +178,456 @@ const OrderConfirmationScreen = () => {
     fetchOrderDetails();
   }, [orderId, prescriptionRequiredFromRoute]);
 
-  // Fetch store details for store address display
+  // Fetch store details for store name (header) and address (Store Pickup)
   useEffect(() => {
     const fetchStoreDetails = async () => {
-      // Try to get store ID from order data or route params
-      const storeId = (routeOrderData as any)?.storeId || routeStoreId;
-      if (storeId && !storeDetails && orderDetails.deliveryMethod === 'Store Pickup') {
-        console.log('🏪 Fetching store details for confirmation screen, store ID:', storeId);
-             try {
-               const response = await storeService.getStoreDetailsById(storeId);
-               if (response.success && response.data) {
-                 console.log('🏪 Store details fetched successfully for confirmation:', response.data);
-                 const storeData = (response.data as any).data || response.data;
-                 setStoreDetails(storeData);
-                 
-                 // Format the address with coordinates if available
-                 const coordinates = storeData.location?.coordinates;
-                 if (storeData.address || coordinates) {
-                   const formattedAddress = formatStoreAddress(storeData.address || {}, coordinates);
-                   setFormattedStoreAddress(formattedAddress);
-                 }
-               } else {
-            console.log('⚠️ Failed to fetch store details for confirmation:', response.error);
+      const storeId = routeStoreIdResolved;
+      if (storeId && !storeDetails) {
+        try {
+          const response = await storeService.getStoreDetailsById(storeId);
+          if (response.success && response.data) {
+            const storeData = (response.data as any).data || response.data;
+            setStoreDetails(storeData);
+
+            if (orderDetails.deliveryMethod === "Store Pickup") {
+              const coordinates = storeData.location?.coordinates;
+              if (storeData.address || coordinates) {
+                const formattedAddress = formatStoreAddress(
+                  storeData.address || {},
+                  coordinates,
+                );
+                setFormattedStoreAddress(formattedAddress);
+              }
+            }
           }
         } catch (error) {
-          console.error('❌ Error fetching store details for confirmation:', error);
+          console.error(
+            "❌ Error fetching store details for confirmation:",
+            error,
+          );
         }
       }
     };
 
     fetchStoreDetails();
-  }, [routeOrderData, routeStoreId, storeDetails, orderDetails.deliveryMethod]);
-
-  // Debug logging
-  console.log('🎉 OrderConfirmation route params:', { paymentData, routeOrderId, routeAmount, routeOrderData });
-  console.log('🎉 OrderConfirmation orderDetails:', orderDetails);
-  console.log('🎯 Current prescriptionRequired state:', prescriptionRequired);
-  console.log('🎯 prescriptionRequiredFromRoute:', prescriptionRequiredFromRoute);
+  }, [routeStoreIdResolved, storeDetails, orderDetails.deliveryMethod]);
 
   useEffect(() => {
-    // Clear cart on successful order
     const clearCartAsync = async () => {
       await clearCart();
     };
     clearCartAsync();
-    
-    // Animate logo on mount
-    Animated.parallel([
-      Animated.timing(logoScale, {
-        toValue: 1,
-        duration: 800,
-        useNativeDriver: true,
-      }),
-      Animated.timing(logoOpacity, {
-        toValue: 1,
-        duration: 600,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, []); // Remove clearCart from dependencies to prevent infinite loop
+  }, []);
 
   // Reset button state when screen comes into focus
   useFocusEffect(
     useCallback(() => {
       // Reset button pressed state when screen is focused
       setButtonPressed(null);
-    }, [])
+    }, []),
   );
 
   const handleContinueShopping = () => {
-    console.log('Continue Shopping pressed');
-    setButtonPressed('continue');
-    
+    setButtonPressed("continue");
+
     // Add a small delay for visual feedback
     setTimeout(() => {
       try {
         // Navigate to the main home screen
         navigation.reset({
           index: 0,
-          routes: [{ 
-            name: 'Main',
-            params: {
-              screen: 'Home',
+          routes: [
+            {
+              name: "Main",
               params: {
-                screen: 'HomeRoot'
-              }
-            }
-          }],
+                screen: "Home",
+                params: {
+                  screen: "HomeRoot",
+                },
+              },
+            },
+          ],
         });
         // Reset button state after navigation
         setTimeout(() => setButtonPressed(null), 300);
       } catch (error) {
-        console.error('Error navigating to Main:', error);
+        console.error("Error navigating to Main:", error);
         // Fallback navigation
-        navigation.navigate('Main' as any);
+        navigation.navigate("Main" as any);
         setButtonPressed(null);
       }
     }, 200);
   };
 
   const handleViewOrderDetails = () => {
-    console.log('View Order Details pressed');
-    setButtonPressed('details');
-    
+    setButtonPressed("details");
+
     // Add a small delay for visual feedback
     setTimeout(() => {
       try {
-        const orderData = { 
-          id: orderId, 
+        const orderData = {
+          id: orderId,
           ...orderDetails,
           orderNo: orderNo,
-          status: 'confirmed',
+          status: "confirmed",
           orderDate: new Date().toISOString(),
-          paymentStatus: paymentData ? 'paid' : 'pending'
+          paymentStatus: paymentData ? "paid" : "pending",
         };
-        navigation.navigate('OrderDetail', { order: orderData });
+        navigation.navigate("OrderDetail", { order: orderData });
         // Reset button state after navigation
         setTimeout(() => setButtonPressed(null), 300);
       } catch (error) {
-        console.error('Error navigating to OrderDetail:', error);
-        Alert.alert('Error', 'Unable to view order details. Please try again.');
+        console.error("Error navigating to OrderDetail:", error);
+        Alert.alert("Error", "Unable to view order details. Please try again.");
         setButtonPressed(null);
       }
     }, 200);
   };
 
-  const handleViewMyOrders = () => {
-    console.log('View My Orders pressed');
-    setButtonPressed('orders');
-    
-    // Add a small delay for visual feedback
-    setTimeout(() => {
-      try {
-        // Navigate to orders screen
-        navigation.navigate('Orders' as any);
-      } catch (error) {
-        console.error('Navigation error:', error);
-        Alert.alert('Error', 'Unable to navigate to orders');
-      } finally {
-        setButtonPressed(null);
-      }
-    }, 500);
-  };
-
   const handleClose = () => {
-    console.log('Close pressed');
     try {
-      // Navigate to the main home screen
       navigation.reset({
         index: 0,
-        routes: [{ 
-          name: 'Main',
-          params: {
-            screen: 'Home',
+        routes: [
+          {
+            name: "Main",
             params: {
-              screen: 'HomeRoot'
-            }
-          }
-        }],
+              screen: "Home",
+              params: { screen: "HomeRoot" },
+            },
+          },
+        ],
       });
     } catch (error) {
-      console.error('Error closing:', error);
-      // Fallback navigation
-      navigation.navigate('Main' as any);
+      console.error("Error closing:", error);
+      navigation.navigate("Main" as any);
     }
   };
+
+  const storeDisplayName =
+    routeStoreName ||
+    (routeOrderData as any)?.storeName ||
+    storeDetails?.name ||
+    "Our Store";
+  const isStorePickup = orderDetails.deliveryMethod === "Store Pickup";
+  const deliveryByDate = new Date(
+    Date.now() + (isStorePickup ? 25 : 45) * 60 * 1000,
+  );
+  const deliveryDateStr = deliveryByDate.toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "short",
+  });
+  const estimatedArrival = isStorePickup ? "20-25 mins" : "30-40 mins";
+  const storeCoordinates = storeDetails?.location?.coordinates as
+    | [number, number]
+    | undefined;
+  const hasStoreCoords =
+    isStorePickup && storeCoordinates && storeCoordinates.length === 2;
+  const deliveryAddress =
+    isStorePickup && formattedStoreAddress
+      ? formattedStoreAddress
+      : typeof orderDetails.shippingAddress === "string"
+        ? orderDetails.shippingAddress
+        : "Address not available";
+  const isCoordDisplay =
+    hasStoreCoords &&
+    (formattedStoreAddress?.startsWith("Store Location (") ?? false);
+  const openStoreMap = () => {
+    if (hasStoreCoords) {
+      const [lat, lng] = storeCoordinates!;
+      Linking.openURL(`https://www.google.com/maps?q=${lat},${lng}`).catch(() =>
+        Alert.alert("", "Unable to open maps."),
+      );
+    }
+  };
+  const itemCount = orderDetails.items?.length ?? 0;
 
   const styles = StyleSheet.create({
     container: {
       flex: 1,
-      backgroundColor: theme.colors.background,
+      backgroundColor: UI.screenBg,
     },
     header: {
-      flexDirection: 'row',
-      justifyContent: 'flex-end',
-      padding: 16,
-      paddingTop: 20, // Add more top padding to bring close icon down
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      paddingHorizontal: 16,
+      paddingTop: 8,
+      paddingBottom: 4,
     },
-    closeButton: {
-      padding: 8,
-      marginTop: 10, // Add margin to push button down further
-    },
-    content: {
-      flex: 1,
+    closeButton: { padding: 8 },
+    scrollContent: {
       paddingHorizontal: 20,
+      paddingBottom: 24 + insets.bottom,
     },
-    thanksSection: {
-      alignItems: 'center',
-      marginBottom: 30,
+    successIconCircle: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: UI.successGreenBg,
+      justifyContent: "center",
+      alignItems: "center",
+      marginBottom: 16,
     },
-    thanksText: {
-      fontSize: 24,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-      textAlign: 'center',
+    successTitle: {
+      fontSize: 22,
+      fontWeight: "700",
+      color: UI.successGreen,
+      textAlign: "center",
+      marginBottom: 6,
+    },
+    thankYouText: {
+      fontSize: 15,
+      color: UI.textMuted,
+      textAlign: "center",
+      marginBottom: 4,
+    },
+    storeNameText: {
+      fontSize: 17,
+      fontWeight: "600",
+      color: UI.textDark,
+      textAlign: "center",
+      marginBottom: 28,
+    },
+    card: {
+      backgroundColor: UI.cardBg,
+      borderRadius: UI.cardRadius,
+      padding: 18,
       marginBottom: 20,
+      ...UI.cardShadow,
     },
-    logoContainer: {
-      alignItems: 'center',
-      marginBottom: 20,
+    cardRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
     },
-    logo: {
-      width: 80,
-      height: 80,
-      borderRadius: 40,
-    },
-    orderIdSection: {
-      alignItems: 'center',
-      marginBottom: 30,
-    },
-    orderIdLabel: {
-      fontSize: 16,
-      color: theme.colors.secondary,
-      marginBottom: 8,
-    },
-    orderId: {
-      fontSize: 20,
-      fontWeight: 'bold',
-      color: theme.colors.primary,
-    },
-    prescriptionSection: {
-      alignItems: 'center',
-      marginBottom: 20,
-      paddingHorizontal: 20,
-    },
-    prescriptionButton: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: theme.colors.primary,
-      paddingHorizontal: 24,
-      paddingVertical: 12,
-      borderRadius: 8,
-      marginBottom: 8,
-    },
-    prescriptionButtonText: {
-      color: '#fff',
-      fontSize: 16,
-      fontWeight: '600',
-      marginLeft: 8,
-    },
-    prescriptionNote: {
-      fontSize: 14,
-      color: theme.colors.secondary,
-      textAlign: 'center',
-      fontStyle: 'italic',
-    },
-    divider: {
-      height: 1,
-      backgroundColor: theme.colors.border,
-      marginVertical: 20,
-    },
-    section: {
-      marginBottom: 25,
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-      marginBottom: 15,
-    },
-    billRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 8,
-    },
-    billLabel: {
-      fontSize: 16,
-      color: theme.colors.text,
-    },
-    billValue: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: theme.colors.text,
-    },
-    totalRow: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginTop: 10,
-      paddingTop: 10,
-      borderTopWidth: 1,
-      borderTopColor: theme.colors.border,
-    },
-    totalLabel: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-    },
-    totalValue: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.colors.primary,
-    },
-    addressSection: {
-      backgroundColor: theme.colors.surface,
-      padding: 15,
-      borderRadius: 8,
-      marginBottom: 20,
-    },
-    addressLabel: {
-      fontSize: 16,
-      fontWeight: '600',
-      color: theme.colors.text,
-      marginBottom: 8,
-    },
-    addressText: {
-      fontSize: 14,
-      color: theme.colors.text,
-      lineHeight: 20,
-    },
-    actionButtons: {
-      flexDirection: 'column',
-      gap: 12,
-      marginTop: 20,
-    },
-    actionButton: {
+    cardRowLast: { marginBottom: 0 },
+    cardIcon: { marginRight: 12, marginTop: 2 },
+    cardTitle: {
+      fontSize: 17,
+      fontWeight: "600",
+      color: UI.textDark,
       flex: 1,
-      paddingVertical: 15,
-      borderRadius: 8,
-      alignItems: 'center',
-      marginHorizontal: 8,
-      minHeight: 50,
-      justifyContent: 'center',
     },
-    primaryButton: {
-      backgroundColor: theme.colors.primary,
+    cardSubtext: {
+      fontSize: 13,
+      color: UI.textMuted,
+      marginTop: 4,
+      paddingLeft: 36,
     },
-    secondaryButton: {
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.primary,
+    cardLabel: {
+      fontSize: 13,
+      color: UI.textMuted,
+      marginBottom: 2,
     },
-    tertiaryButton: {
-      backgroundColor: theme.colors.secondary,
-      borderWidth: 1,
-      borderColor: theme.colors.secondary,
+    cardValue: {
+      fontSize: 15,
+      fontWeight: "600",
+      color: UI.textDark,
     },
-    primaryButtonText: {
-      color: '#fff',
+    orderSummaryId: {
+      fontSize: 17,
+      fontWeight: "600",
+      color: UI.textDark,
+      marginBottom: 6,
+    },
+    orderSummaryMeta: {
+      fontSize: 15,
+      color: UI.textMuted,
+      marginBottom: 8,
+    },
+    totalPaidRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    viewBillLink: {
+      fontSize: 14,
+      color: UI.primaryBlue,
+      fontWeight: "500",
+    },
+    trackOrderButton: {
+      marginTop: 28,
+      borderRadius: 10,
+      overflow: "hidden",
+      minHeight: 52,
+      justifyContent: "center",
+      alignItems: "center",
+    },
+    trackOrderButtonText: {
+      color: "#FFFFFF",
+      fontSize: 17,
+      fontWeight: "600",
+    },
+    continueShoppingLink: {
+      marginTop: 18,
+      alignSelf: "center",
+    },
+    continueShoppingText: {
       fontSize: 16,
-      fontWeight: '600',
-    },
-    secondaryButtonText: {
-      color: theme.colors.primary,
-      fontSize: 16,
-      fontWeight: '600',
-    },
-    tertiaryButtonText: {
-      color: '#fff',
-      fontSize: 16,
-      fontWeight: '600',
+      color: UI.primaryBlue,
+      fontWeight: "500",
     },
   });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
-      {/* Close Button */}
+    <SafeAreaView style={styles.container} edges={["top"]}>
       <View style={styles.header}>
         <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-          <MaterialIcons name="close" size={24} color={theme.colors.text} />
+          <MaterialIcons name="close" size={24} color={UI.textDark} />
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Thanks Section */}
-        <View style={styles.thanksSection}>
-          <Text style={styles.thanksText}>
-            {paymentData ? 'Thank You! 🎉' : 'Order Placed! 📦'}
-          </Text>
-          <Text style={[styles.thanksText, { fontSize: 16, marginTop: 10, opacity: 0.7 }]}>
-            {paymentData 
-              ? 'Your order has been placed and payment completed successfully' 
-              : 'Your order has been placed successfully (Payment pending)'
-            }
-          </Text>
-          {/* Removed auto-redirect text per requirement */}
-          
-          <View style={styles.logoContainer}>
-            <Animated.View
-              style={{
-                transform: [{ scale: logoScale }],
-                opacity: logoOpacity,
-              }}
-            >
-              <Image
-                source={require('../../assets/logo.jpeg')}
-                style={styles.logo}
-                resizeMode="contain"
-              />
-            </Animated.View>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* Success section */}
+        <View style={{ alignItems: "center" }}>
+          <View style={styles.successIconCircle}>
+            <Ionicons name="checkmark" size={36} color={UI.successGreen} />
           </View>
+          <Text style={styles.successTitle}>Order Placed Successfully</Text>
+          <Text style={styles.thankYouText}>Thank you for ordering from</Text>
+          <Text style={styles.storeNameText}>{storeDisplayName}</Text>
         </View>
 
-        {/* Order ID Section */}
-        <View style={styles.orderIdSection}>
-          <Text style={styles.orderIdLabel}>
-            {paymentData ? 'Order Number' : 'Order Number'}
-          </Text>
-          <Text style={styles.orderId}>{orderDetails.orderNo}</Text>
-        </View>
-
-        {/* Prescription Upload Section - Show only if prescriptionRequired is true */}
-        {/* {prescriptionRequired && (
-          <View style={styles.prescriptionSection}>
-            <TouchableOpacity
-              style={styles.prescriptionButton}
-              onPress={() => {
-                const storeId = (routeOrderData as any)?.storeId || routeStoreId || (routeOrderData as any)?.store?.storeId;
-                console.log('📤 Navigating to UploadPrescription with orderId:', orderDetails.orderId, 'storeId:', storeId);
-                navigation.navigate('UploadPrescription', { 
-                  orderId: orderDetails.orderId,
-                  storeId: storeId
-                });
-              }}
-            >
-              <MaterialIcons name="upload-file" size={24} color="#fff" />
-              <Text style={styles.prescriptionButtonText}>Upload Prescription</Text>
-            </TouchableOpacity>
-            <Text style={styles.prescriptionNote}>
-              Please upload your prescription to complete the order
+        {/* Card 1: Delivery Details */}
+        <View style={styles.card}>
+          <View style={styles.cardRow}>
+            <View style={styles.cardIcon}>
+              <MaterialCommunityIcons
+                name="calendar-outline"
+                size={24}
+                color={UI.primaryBlue}
+              />
+            </View>
+            <Text style={styles.cardTitle}>
+              {isStorePickup ? "Pickup by" : "Delivery by"} {deliveryDateStr}
             </Text>
           </View>
-        )} */}
-
-        <View style={styles.divider} />
-
-        {/* Bill Details Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Bill Details</Text>
-          
-          {/* Item Total */}
-          <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Item Total</Text>
-            <Text style={styles.billValue}>₹{orderDetails.itemTotal.toFixed(2)}</Text>
-          </View>
-          
-          {/* Individual Items */}
-          {orderDetails.items.map((item: any, index: number) => (
-            <View key={index} style={[styles.billRow, { marginLeft: 16, marginBottom: 4, alignItems: 'flex-start' }]}>
-              <View style={{ flex: 1, marginRight: 12, justifyContent: 'center' }}>
+          <Text style={styles.cardSubtext}>
+            Estimated arrival: {estimatedArrival}
+          </Text>
+          <View style={[styles.cardRow, { marginTop: 18 }]}>
+            <View style={styles.cardIcon}>
+              <Ionicons name="location" size={24} color={UI.primaryBlue} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={styles.cardTitle}>
+                {isStorePickup ? "Pickup at:" : "Delivering to:"}
+              </Text>
+              {isCoordDisplay ? (
+                <TouchableOpacity
+                  onPress={openStoreMap}
+                  activeOpacity={0.8}
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginTop: 6,
+                  }}
+                >
+                  <MaterialCommunityIcons
+                    name="map-marker"
+                    size={28}
+                    color="#E53935"
+                  />
+                  <Text style={[styles.cardLabel, { marginLeft: 8 }]}>
+                    Open in Maps
+                  </Text>
+                </TouchableOpacity>
+              ) : (
                 <Text
-                  style={[styles.billLabel, { fontSize: 14, color: theme.colors.secondary }]}
+                  style={styles.cardLabel}
                   numberOfLines={2}
                   ellipsizeMode="tail"
                 >
-                  {item.name} x{item.quantity}
+                  {deliveryAddress}
                 </Text>
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* Card 2: Prescription Received (only when prescription was required) */}
+        {prescriptionRequired && (
+          <View style={styles.card}>
+            <View style={styles.cardRow}>
+              <View style={styles.cardIcon}>
+                <Ionicons
+                  name="document-text"
+                  size={24}
+                  color={UI.primaryBlue}
+                />
               </View>
-              <Text style={[styles.billValue, { fontSize: 14, flexShrink: 0 }]}>
-                ₹{(item.price * item.quantity).toFixed(2)}
-              </Text>
+              <Text style={styles.cardTitle}>Prescription Received</Text>
             </View>
-          ))}
-          
-          {/* Delivery Charges */}
-          {orderDetails.deliveryFee > 0 && (
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Delivery Charges</Text>
-              <Text style={styles.billValue}>₹{orderDetails.deliveryFee.toFixed(2)}</Text>
-            </View>
-          )}
-          
-          {/* Discount */}
-          {orderDetails.discount > 0 && (
-            <View style={styles.billRow}>
-              <Text style={styles.billLabel}>Discount</Text>
-              <Text style={[styles.billValue, { color: '#4CAF50' }]}>
-                -₹{orderDetails.discount.toFixed(2)}
-              </Text>
-            </View>
-          )}
-          
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLabel}>Total Amount</Text>
-            <Text style={styles.totalValue}>₹{orderDetails.totalAmount.toFixed(2)}</Text>
+            <Text style={styles.cardSubtext}>
+              Your prescription has been submitted.
+            </Text>
+            <Text style={styles.cardSubtext}>
+              Our certified pharmacist will verify it shortly.
+            </Text>
           </View>
-        </View>
+        )}
 
-        <View style={styles.divider} />
-
-        {/* Delivery Information Section */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>
-            {orderDetails.deliveryMethod === 'Store Pickup' ? 'Pickup Information' : 'Delivery Information'}
+        {/* Card 3: Order Summary */}
+        <View style={styles.card}>
+          <Text style={styles.orderSummaryId}>
+            Order ID #{orderNo || orderId || "—"}
           </Text>
-          
-          <View style={styles.billRow}>
-            <Text style={styles.billLabel}>Delivery Method</Text>
-            <Text style={styles.billValue}>{orderDetails.deliveryMethod}</Text>
+          <Text style={styles.orderSummaryMeta}>
+            {itemCount} Item{itemCount !== 1 ? "s" : ""}
+          </Text>
+          <View style={styles.totalPaidRow}>
+            <Text style={[styles.cardLabel, { marginBottom: 0 }]}>
+              Total Paid
+            </Text>
+            <Text style={styles.cardValue}>
+              ₹{orderDetails.totalAmount.toFixed(2)}
+            </Text>
           </View>
-          
-          {orderDetails.deliveryMethod === 'Store Pickup' ? (
-            <View style={styles.addressSection}>
-              <Text style={styles.addressLabel}>Store Pickup</Text>
-            <Text style={styles.addressText}>
-              {formattedStoreAddress || 'Please visit the store to collect your order. '}
-            </Text>
-            </View>
-          ) : (
-            <View style={styles.addressSection}>
-              <Text style={styles.addressLabel}>Delivery Address</Text>
-              <Text style={styles.addressText}>
-                {typeof orderDetails.shippingAddress === 'string' 
-                  ? orderDetails.shippingAddress 
-                  : 'Address not available'}
-              </Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.divider} />
-
-        {/* Action Buttons */}
-        <View style={styles.actionButtons}>
+          <Divider style={{ marginVertical: 12, height: 1 }} />
           <TouchableOpacity
-            style={[
-              styles.actionButton, 
-              styles.secondaryButton,
-              buttonPressed === 'continue' && { opacity: 0.6 }
-            ]}
-            onPress={handleContinueShopping}
-            activeOpacity={0.7}
-            disabled={buttonPressed !== null}
-          >
-            <Text style={styles.secondaryButtonText}>
-              {buttonPressed === 'continue' ? 'Loading...' : 'Continue Shopping'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.actionButton, 
-              styles.tertiaryButton,
-              buttonPressed === 'orders' && { opacity: 0.6 }
-            ]}
-            onPress={handleViewMyOrders}
-            activeOpacity={0.7}
-            disabled={buttonPressed !== null}
-          >
-            <Text style={styles.tertiaryButtonText}>
-              {buttonPressed === 'orders' ? 'Loading...' : 'View My Orders'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[
-              styles.actionButton, 
-              styles.primaryButton,
-              buttonPressed === 'details' && { opacity: 0.6 }
-            ]}
             onPress={handleViewOrderDetails}
-            activeOpacity={0.7}
             disabled={buttonPressed !== null}
+            style={{ alignSelf: "flex-end" }}
           >
-            <Text style={styles.primaryButtonText}>
-              {buttonPressed === 'details' ? 'View Order Details' : 'View Order Details'}
-            </Text>
+            <Text style={styles.viewBillLink}>View Bill Details &gt;</Text>
           </TouchableOpacity>
         </View>
-        
-        {/* Bottom spacing */}
-        <View style={{ height: 56 }} />
+
+        {/* Track Order button */}
+        <TouchableOpacity
+          onPress={handleViewOrderDetails}
+          disabled={buttonPressed !== null}
+          style={buttonPressed === "details" ? { opacity: 0.6 } : undefined}
+          activeOpacity={0.8}
+        >
+          <LinearGradient
+            colors={UI.gradientBlue}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            style={styles.trackOrderButton}
+          >
+            <Text style={styles.trackOrderButtonText}>
+              {buttonPressed === "details" ? "Loading..." : "Track Order"}
+            </Text>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* Continue Shopping link */}
+        <TouchableOpacity
+          style={styles.continueShoppingLink}
+          onPress={handleContinueShopping}
+          disabled={buttonPressed !== null}
+        >
+          <Text style={styles.continueShoppingText}>
+            {buttonPressed === "continue" ? "Loading..." : "Continue Shopping"}
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
-export default OrderConfirmationScreen; 
+export default OrderConfirmationScreen;

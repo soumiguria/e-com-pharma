@@ -1,27 +1,24 @@
-import React, { useEffect } from 'react';
-import { NavigationContainer, LinkingOptions } from '@react-navigation/native';
-import { Linking } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinkingOptions, NavigationContainer, useNavigation, useNavigationState } from '@react-navigation/native';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { NativeBaseProvider } from 'native-base';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import AppNavigator from './navigation/AppNavigator';
-import { ThemeProvider, useTheme } from './contexts/ThemeContext';
-import { StorageProvider } from './contexts/StorageContext';
-import { CartProvider, useCart } from './contexts/CartContext';
-import { WishlistProvider } from './contexts/WishlistContext';
-import { AppProvider } from './contexts/AppContext';
-import { ToastProvider } from './contexts/ToastContext';
-import { AuthProvider } from './contexts/AuthContext';
-import { DeepLinkProvider } from './contexts/DeepLinkContext';
+import React from 'react';
+import { Text, TouchableOpacity } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import DeepLinkHandler from './components/deepLink/DeepLinkHandler';
 import CustomToast from './components/ui/CustomToast';
 import ErrorBoundary from './components/ui/ErrorBoundary';
-import DeepLinkHandler from './components/deepLink/DeepLinkHandler';
-import { useNavigation, useNavigationState } from '@react-navigation/native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { TouchableOpacity, Text } from 'react-native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { RootStackParamList } from './navigation/types';
 import { initializeMargBannerService } from './config/margBannerConfig';
+import { AppProvider } from './contexts/AppContext';
+import { AuthProvider } from './contexts/AuthContext';
+import { CartProvider, useCart } from './contexts/CartContext';
+import { DeepLinkProvider } from './contexts/DeepLinkContext';
+import { StorageProvider } from './contexts/StorageContext';
+import { ThemeProvider, useTheme } from './contexts/ThemeContext';
+import { ToastProvider } from './contexts/ToastContext';
+import { WishlistProvider } from './contexts/WishlistContext';
+import AppNavigator from './navigation/AppNavigator';
+import { RootStackParamList } from './navigation/types';
 
 const getDeepestRouteName = (navState: any) => {
   if (!navState || !navState.routes || navState.routes.length === 0) return null;
@@ -145,7 +142,7 @@ const AppContent = () => {
                     <ErrorBoundary>
                       <DeepLinkHandler>
                         <AppNavigator />
-                        <FloatingCartButton />
+                        {/* <FloatingCartButton /> */}
                       </DeepLinkHandler>
                     </ErrorBoundary>
                   </DeepLinkProvider>

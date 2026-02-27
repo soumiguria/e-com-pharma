@@ -1,12 +1,21 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, StyleProp, ViewStyle, ImageURISource } from 'react-native';
-import { useCart } from '../../contexts/CartContext';
-import { useWishlist } from '../../contexts/WishlistContext';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useToast } from '../../contexts/ToastContext';
-import PriceBlock from '../ui/PriceBlock';
-import PrescriptionRequiredTag from '../ui/PrescriptionRequiredTag';
+import React from "react";
+import {
+  View,
+  Text,
+  Image,
+  StyleSheet,
+  TouchableOpacity,
+  StyleProp,
+  ViewStyle,
+  ImageURISource,
+} from "react-native";
+import { useCart } from "../../contexts/CartContext";
+import { useWishlist } from "../../contexts/WishlistContext";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTheme } from "../../contexts/ThemeContext";
+import { useToast } from "../../contexts/ToastContext";
+import PriceBlock from "../ui/PriceBlock";
+import PrescriptionRequiredTag from "../ui/PrescriptionRequiredTag";
 
 interface Product {
   id: string;
@@ -17,7 +26,7 @@ interface Product {
   rating?: number;
   isNew?: boolean;
   isOnSale?: boolean;
-  category?: 'grocery' | 'pharma';
+  category?: "grocery" | "pharma";
   perUnit?: string;
   prescriptionRequired?: boolean;
 }
@@ -33,25 +42,39 @@ interface ProductCardProps {
   showFullName?: boolean;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, compact, hideCartButton, hidePercentOff, hideWishlist, showFullName }) => {
-  const { addToGroceryCart, addToPharmacyCart, groceryItems, pharmacyItems, updateQuantity } = useCart();
+const ProductCard: React.FC<ProductCardProps> = ({
+  product,
+  onPress,
+  style,
+  compact,
+  hideCartButton,
+  hidePercentOff,
+  hideWishlist,
+  showFullName,
+}) => {
+  const {
+    addToGroceryCart,
+    addToPharmacyCart,
+    groceryItems,
+    pharmacyItems,
+    updateQuantity,
+  } = useCart();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const { theme } = useTheme();
   const { showToast } = useToast();
   const inWishlist = isInWishlist(product.id);
 
-  const imageSource = typeof product.image === 'string' 
-    ? { uri: product.image } 
-    : product.image;
+  const imageSource =
+    typeof product.image === "string" ? { uri: product.image } : product.image;
 
   // Helper function to validate price
   const isValidPrice = (value: any): boolean => {
     if (value === null || value === undefined) return false;
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       const num = parseFloat(value);
       return !isNaN(num) && num > 0 && isFinite(num);
     }
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
       return value > 0 && isFinite(value);
     }
     return false;
@@ -59,13 +82,13 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
 
   // Helper function to validate quantity (stricter - must be a valid integer, not extracted from string)
   const isValidQuantity = (value: any): boolean => {
-    if (value === null || value === undefined || value === '') return false;
+    if (value === null || value === undefined || value === "") return false;
     // If it's a number, check if it's a valid positive integer
-    if (typeof value === 'number') {
+    if (typeof value === "number") {
       return Number.isInteger(value) && value > 0 && isFinite(value);
     }
     // If it's a string, check if it's a pure number (no letters or units)
-    if (typeof value === 'string') {
+    if (typeof value === "string") {
       // Remove whitespace and check if it's a pure number
       const trimmed = value.trim();
       // Check if string is a valid integer (no decimal, no letters, no units)
@@ -79,7 +102,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
   // Get valid price
   const getValidPrice = (): number => {
     const price = product.price || (product as any).sp || 0;
-    if (typeof price === 'string') {
+    if (typeof price === "string") {
       const num = parseFloat(price);
       return !isNaN(num) && num > 0 ? num : 0;
     }
@@ -88,13 +111,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
 
   // Get valid quantity/stock (stricter validation)
   const getValidQuantity = (): number => {
-    const qty = (product as any).availableQty || (product as any).quantity || (product as any).stock || 0;
+    const qty =
+      (product as any).availableQty ||
+      (product as any).quantity ||
+      (product as any).stock ||
+      0;
     // Use strict validation - only accept if it's a valid integer
     if (isValidQuantity(qty)) {
-      if (typeof qty === 'number') {
+      if (typeof qty === "number") {
         return qty;
       }
-      if (typeof qty === 'string') {
+      if (typeof qty === "string") {
         return parseInt(qty.trim(), 10);
       }
     }
@@ -108,14 +135,14 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
     return price > 0 && qty > 0;
   };
 
-  const getCategory = (): 'grocery' | 'pharma' => {
-    return product.category === 'pharma' ? 'pharma' : 'grocery';
+  const getCategory = (): "grocery" | "pharma" => {
+    return product.category === "pharma" ? "pharma" : "grocery";
   };
 
   const getCartQuantity = (): number => {
     const category = getCategory();
-    const items = category === 'pharma' ? pharmacyItems : groceryItems;
-    const existing = items.find(item => item.id === product.id);
+    const items = category === "pharma" ? pharmacyItems : groceryItems;
+    const existing = items.find((item) => item.id === product.id);
     return existing?.quantity || 0;
   };
 
@@ -126,8 +153,8 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
     if (!canAddToCart()) return;
 
     const category = getCategory();
-    const items = category === 'pharma' ? pharmacyItems : groceryItems;
-    const existing = items.find(item => item.id === product.id);
+    const items = category === "pharma" ? pharmacyItems : groceryItems;
+    const existing = items.find((item) => item.id === product.id);
 
     if (existing) {
       // If item already exists in cart, just increment its quantity
@@ -139,12 +166,15 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
       id: product.id,
       name: product.name,
       price: getValidPrice(),
-      image: typeof product.image === 'string' ? product.image : 'https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg',
+      image:
+        typeof product.image === "string"
+          ? product.image
+          : "https://i.ibb.co/vCkbyTDX/Whats-App-Image-2026-01-24-at-11-14-54-PM.jpg",
       originalPrice: product.originalPrice,
       productId: (product as any).productId || product.id,
       prescriptionRequired: product.prescriptionRequired || false,
     };
-    if (category === 'pharma') {
+    if (category === "pharma") {
       addToPharmacyCart(cartItem);
     } else {
       addToGroceryCart(cartItem);
@@ -167,13 +197,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
     updateQuantity(product.id, newQuantity, category);
   };
 
-  const percentOff = product.originalPrice && product.originalPrice > product.price
-    ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-    : null;
+  const percentOff =
+    product.originalPrice && product.originalPrice > product.price
+      ? Math.round(
+          ((product.originalPrice - product.price) / product.originalPrice) *
+            100,
+        )
+      : null;
 
   // In the ProductCard component, before rendering:
   // For demonstration, if product.id === '1', set originalPrice to 199
-  const displayOriginalPrice = product.id === '1' ? 199 : product.originalPrice;
+  const displayOriginalPrice = product.id === "1" ? 199 : product.originalPrice;
 
   return (
     <TouchableOpacity
@@ -181,25 +215,39 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
         styles.card,
         style,
         {
-          backgroundColor: theme.dark ? '#4B3F1D' : 'white',
+          backgroundColor: theme.dark ? "#4B3F1D" : "white",
           borderColor: theme.colors.border,
           borderWidth: 1,
           margin: 8,
           padding: 10,
           borderRadius: 12,
-          shadowColor: theme.dark ? '#000' : '#FFD700',
+          shadowColor: theme.gradientEnd,
           shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.08,
-          shadowRadius: 4,
+          shadowOpacity: 0.5,
+          shadowRadius: 10,
           elevation: 2,
         },
       ]}
       onPress={onPress}
       activeOpacity={0.8}
     >
-      <View style={[styles.imageContainer, compact && styles.compactImageContainer, { backgroundColor: theme.colors.background }]}> 
+      <View
+        style={[
+          styles.imageContainer,
+          compact && styles.compactImageContainer,
+          { backgroundColor: theme.colors.background },
+        ]}
+      >
         {product.image && (
-          <Image source={imageSource} style={[styles.image, compact && styles.compactImage, { borderRadius: 12 }]} resizeMode="cover" />
+          <Image
+            source={imageSource}
+            style={[
+              styles.image,
+              compact && styles.compactImage,
+              { borderRadius: 12 },
+            ]}
+            resizeMode="cover"
+          />
         )}
         <View style={styles.badgeContainer}>
           {product.isNew && (
@@ -213,73 +261,120 @@ const ProductCard: React.FC<ProductCardProps> = ({ product, onPress, style, comp
             </View>
           )}
           {!hidePercentOff && percentOff && (
-            <View style={[styles.badge, { backgroundColor: '#FF9800', marginLeft: 4 }]}> 
+            <View
+              style={[
+                styles.badge,
+                { backgroundColor: "#FF9800", marginLeft: 4 },
+              ]}
+            >
               <Text style={styles.badgeText}>{percentOff}% off</Text>
             </View>
           )}
         </View>
         {/* Wishlist heart - inside card, top-right, responsive */}
         {!hideWishlist && (
-        <TouchableOpacity
-          style={styles.wishlistIconBtn}
-          onPress={(e) => {
-            e.stopPropagation();
-            if (inWishlist) removeFromWishlist(product.id);
-            else addToWishlist({
-              id: product.id,
-              name: product.name,
-              price: getValidPrice(),
-              image: typeof product.image === 'string' ? product.image : undefined,
-              originalPrice: product.originalPrice,
-            });
-          }}
-          hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-        >
-          <MaterialCommunityIcons
-            name={inWishlist ? 'heart' : 'heart-outline'}
-            size={20}
-            color={inWishlist ? (theme.colors.primary || '#e91e63') : theme.colors.text}
-          />
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.wishlistIconBtn}
+            onPress={(e) => {
+              e.stopPropagation();
+              if (inWishlist) removeFromWishlist(product.id);
+              else
+                addToWishlist({
+                  id: product.id,
+                  name: product.name,
+                  price: getValidPrice(),
+                  image:
+                    typeof product.image === "string"
+                      ? product.image
+                      : undefined,
+                  originalPrice: product.originalPrice,
+                });
+            }}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <MaterialCommunityIcons
+              name={inWishlist ? "heart" : "heart-outline"}
+              size={20}
+              color={
+                inWishlist
+                  ? theme.colors.primary || "#e91e63"
+                  : theme.colors.text
+              }
+            />
+          </TouchableOpacity>
         )}
-        {!hideCartButton && (
-          currentQuantity === 0 ? (
-            <TouchableOpacity 
-              style={[styles.addButton, !canAddToCart() && { opacity: 1, borderColor: '#dc3545', backgroundColor: '#dc3545' }]}
+        {!hideCartButton &&
+          (currentQuantity === 0 ? (
+            <TouchableOpacity
+              style={[
+                styles.addButton,
+                !canAddToCart() && {
+                  opacity: 1,
+                  borderColor: "#dc3545",
+                  backgroundColor: "#dc3545",
+                },
+              ]}
               onPress={handleAddToCart}
               activeOpacity={0.85}
               disabled={!canAddToCart()}
             >
-              <Text style={[styles.addButtonText, !canAddToCart() && { color: '#fff' }]}>
-                {canAddToCart() ? 'ADD' : 'OUT OF STOCK'}
+              <Text
+                style={[
+                  styles.addButtonText,
+                  !canAddToCart() && { color: "#fff" },
+                ]}
+              >
+                {canAddToCart() ? "ADD" : "OUT OF STOCK"}
               </Text>
             </TouchableOpacity>
           ) : (
             <View style={styles.counterContainer}>
-              <TouchableOpacity onPress={handleDecrement} style={styles.counterBtn}>
+              <TouchableOpacity
+                onPress={handleDecrement}
+                style={styles.counterBtn}
+              >
                 <Text style={styles.counterBtnText}>-</Text>
               </TouchableOpacity>
               <Text style={styles.counterValue}>{currentQuantity}</Text>
-              <TouchableOpacity 
-                onPress={handleIncrement} 
+              <TouchableOpacity
+                onPress={handleIncrement}
                 style={[styles.counterBtn, !canAddToCart() && { opacity: 0.5 }]}
                 disabled={!canAddToCart()}
               >
                 <Text style={styles.counterBtnText}>+</Text>
               </TouchableOpacity>
             </View>
-          )
-        )}
+          ))}
       </View>
-      <View style={[styles.infoContainer, compact && styles.compactInfoContainer, showFullName && { paddingHorizontal: 4 }]}>
-        <Text style={[styles.name, compact && styles.compactName, showFullName && styles.nameFull, { color: theme.colors.text }]} numberOfLines={showFullName ? undefined : 2}>{product.name}</Text>
+      <View
+        style={[
+          styles.infoContainer,
+          compact && styles.compactInfoContainer,
+          showFullName && { paddingHorizontal: 4 },
+        ]}
+      >
+        <Text
+          style={[
+            styles.name,
+            compact && styles.compactName,
+            showFullName && styles.nameFull,
+            { color: theme.colors.text },
+          ]}
+          numberOfLines={showFullName ? undefined : 2}
+        >
+          {product.name}
+        </Text>
         {product.prescriptionRequired && (
           <View style={styles.prescriptionContainer}>
-          <PrescriptionRequiredTag compact={compact} />
+            <PrescriptionRequiredTag compact={compact} />
             <Text style={styles.prescriptionText}>Prescription Required</Text>
           </View>
         )}
-        <PriceBlock price={product.price} originalPrice={displayOriginalPrice} perUnit={product.perUnit || ''} />
+        <PriceBlock
+          price={product.price}
+          originalPrice={displayOriginalPrice}
+          perUnit={product.perUnit || ""}
+        />
       </View>
     </TouchableOpacity>
   );
@@ -289,8 +384,8 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 12,
     marginBottom: 16,
-    overflow: 'hidden',
-    shadowColor: '#000',
+    overflow: "hidden",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 6,
@@ -298,22 +393,22 @@ const styles = StyleSheet.create({
     minHeight: 220,
   },
   imageContainer: {
-    position: 'relative',
+    position: "relative",
     aspectRatio: 1,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   wishlistIconBtn: {
-    position: 'absolute',
+    position: "absolute",
     top: 6,
     right: 6,
     width: 32,
     height: 32,
     borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255,255,255,0.9)",
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.15,
     shadowRadius: 2,
@@ -324,13 +419,13 @@ const styles = StyleSheet.create({
     aspectRatio: undefined,
     borderRadius: 8,
     marginRight: 12,
-    overflow: 'hidden',
-    justifyContent: 'center',
-    alignItems: 'center',
+    overflow: "hidden",
+    justifyContent: "center",
+    alignItems: "center",
   },
   image: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
     borderRadius: 12,
   },
   compactImage: {
@@ -339,10 +434,10 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   badgeContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: 8,
     left: 8,
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 4,
   },
   badge: {
@@ -351,94 +446,94 @@ const styles = StyleSheet.create({
     paddingVertical: 2,
   },
   newBadge: {
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
   },
   saleBadge: {
-    backgroundColor: '#F44336',
+    backgroundColor: "#F44336",
   },
   badgeText: {
-    color: 'white',
+    color: "white",
     fontSize: 10,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   cartButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 8,
     right: 8,
     width: 36,
     height: 36,
     borderRadius: 18,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
   },
   addButton: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 8,
     left: 8,
     right: 8,
     minHeight: 30,
-    maxWidth: '80%',
+    maxWidth: "80%",
     borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: '#27ae60',
-    backgroundColor: '#fff',
-    justifyContent: 'center',
-    alignItems: 'center',
+    borderColor: "#27ae60",
+    backgroundColor: "#fff",
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
-    shadowColor: 'rgba(39, 174, 96, 0.08)',
+    shadowColor: "rgba(39, 174, 96, 0.08)",
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 2,
     elevation: 1,
-    alignSelf: 'center',
+    alignSelf: "center",
   },
   addButtonText: {
-    color: '#27ae60',
-    fontWeight: 'bold',
+    color: "#27ae60",
+    fontWeight: "bold",
     fontSize: 10,
     letterSpacing: 0.2,
-    textAlign: 'center',
+    textAlign: "center",
   },
   counterContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 8,
     left: 8,
     right: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#fff',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
     borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: '#27ae60',
+    borderColor: "#27ae60",
     height: 30,
     minWidth: 70,
     paddingHorizontal: 8,
-    maxWidth: '100%',
-    alignSelf: 'center',
+    maxWidth: "100%",
+    alignSelf: "center",
   },
   counterBtn: {
     width: 28,
     height: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   counterBtnText: {
-    color: '#27ae60',
-    fontWeight: 'bold',
+    color: "#27ae60",
+    fontWeight: "bold",
     fontSize: 18,
   },
   counterValue: {
     width: 24,
-    textAlign: 'center',
-    color: '#27ae60',
-    fontWeight: 'bold',
+    textAlign: "center",
+    color: "#27ae60",
+    fontWeight: "bold",
     fontSize: 16,
   },
   infoContainer: {
@@ -448,11 +543,11 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 0,
     marginLeft: 8,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   name: {
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: "500",
     marginBottom: 4,
     height: 36,
   },
@@ -472,37 +567,38 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   priceContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 8,
   },
   price: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   compactPrice: {
     fontSize: 14,
   },
   originalPrice: {
     fontSize: 14,
-    textDecorationLine: 'line-through',
+    textDecorationLine: "line-through",
   },
   compactOriginalPrice: {
     fontSize: 12,
   },
   prescriptionContainer: {
-    backgroundColor: '#ffe5e5',
+    display: "flex",
+    flexDirection: "row",
+    backgroundColor: "#ffe5e5",
     paddingVertical: 2,
     paddingHorizontal: 6,
     borderRadius: 4,
-    alignSelf: 'flex-start',
     marginBottom: 4,
     marginTop: 2,
   },
   prescriptionText: {
-    color: '#d9534f',
+    color: "#d9534f",
     fontSize: 10,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });
 export default ProductCard;

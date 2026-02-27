@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
+import React from "react";
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from "react-native";
+import Svg, { Path } from "react-native-svg";
 
 interface PrescriptionRequiredTagProps {
   style?: StyleProp<ViewStyle>;
@@ -18,14 +18,11 @@ const RxIcon = ({ size = 16 }: { size?: number }) => (
   </Svg>
 );
 
-const PrescriptionRequiredTag: React.FC<PrescriptionRequiredTagProps> = ({ style, compact }) => (
-  <View
-    style={[
-      styles.tag,
-      compact && styles.tagCompact,
-      style,
-    ]}
-  >
+const PrescriptionRequiredTag: React.FC<PrescriptionRequiredTagProps> = ({
+  style,
+  compact,
+}) => (
+  <View style={[styles.tag, compact && styles.tagCompact, style]}>
     <RxIcon size={compact ? 11 : 13} />
     {/* <Text style={[styles.text, compact && styles.textCompact]}>
       Prescription Required
@@ -35,10 +32,10 @@ const PrescriptionRequiredTag: React.FC<PrescriptionRequiredTagProps> = ({ style
 
 const styles = StyleSheet.create({
   tag: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    alignSelf: 'flex-start', // ensures width wraps content
-    backgroundColor: '#dc3545',
+    flexDirection: "row",
+    alignItems: "center",
+    alignSelf: "flex-start", // ensures width wraps content
+    backgroundColor: "#dc3545",
     paddingVertical: 3,
     paddingHorizontal: 4,
     borderRadius: 999, // pill shape
@@ -51,9 +48,9 @@ const styles = StyleSheet.create({
     gap: 0,
   },
   text: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 10,
-    fontWeight: '700',
+    fontWeight: "700",
     lineHeight: 12,
   },
   textCompact: {

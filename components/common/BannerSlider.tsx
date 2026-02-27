@@ -81,7 +81,7 @@
 // //       try {
 // //         setLoading(true);
 // //         console.log('🔄 Fetching banners from MargERP API');
-        
+
 // //         const response = await margBannerService.getBanners();
 // //         if (response.success && response.data && response.data.length > 0) {
 // //           console.log('✅ Banners loaded from MargERP API:', response.data.length);
@@ -281,8 +281,7 @@
 // //   },
 // // });
 
-// // export default BannerSlider; 
-
+// // export default BannerSlider;
 
 // // components/home/BannerSlider.tsx
 // import React, { useEffect, useRef, useState } from 'react';
@@ -333,7 +332,7 @@
 
 //         // Fetch all banners
 //         const allBanners = await margBannerService.getBanners();
-        
+
 //         console.log('\n📦 BANNERSLIDER: Received banners from service');
 //         console.log('   Total banners received:', allBanners.length);
 
@@ -397,7 +396,7 @@
 //         }
 
 //         setBanners(filteredBanners);
-        
+
 //         console.log('\n╔════════════════════════════════════════════════════════════╗');
 //         console.log('║  ✅ BANNERSLIDER: Load Complete                          ║');
 //         console.log('╚════════════════════════════════════════════════════════════╝');
@@ -412,7 +411,7 @@
 //         console.error('   Error message:', e.message);
 //         console.error('   Stack:', e.stack);
 //         console.error('   🔍 WHY BANNERS NOT DISPLAYED:', e.message);
-        
+
 //         setError(e.message || 'Failed to load banners');
 //         setBanners([]);
 //       } finally {
@@ -437,7 +436,7 @@
 
 //     const timer = setInterval(() => {
 //       const nextIndex = currentIndex === banners.length - 1 ? 0 : currentIndex + 1;
-      
+
 //       flatListRef.current?.scrollToIndex({
 //         index: nextIndex,
 //         animated: true,
@@ -649,255 +648,315 @@
 //   },
 // });
 
-
 // components/home/BannerSlider.tsx
-import React, { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
-  View,
-  Image,
-  StyleSheet,
-  FlatList,
-  Dimensions,
   ActivityIndicator,
+  Dimensions,
+  FlatList,
+  Image,
+  Platform,
+  StyleSheet,
   Text,
   TouchableOpacity,
-} from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/types';
-import { useAppContext } from '../../contexts/AppContext';
-import { margBannerService, MargBanner } from '../../services/api/margBannerService';
+  View,
+} from "react-native";
+import { useAppContext } from "../../contexts/AppContext";
+import { useTheme } from "../../contexts/ThemeContext";
+import {
+  MargBanner,
+  margBannerService,
+} from "../../services/api/margBannerService";
 
-const { width } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
+// Responsive scaling
+const scale = (size: number) => (SCREEN_WIDTH / 375) * size;
+const verticalScale = (size: number) => (SCREEN_HEIGHT / 812) * size;
 
+// Banner dimensions - SMALLER HEIGHT
+const BANNER_HEIGHT = verticalScale(140);
+const BANNER_HORIZONTAL_PADDING = scale(16);
+const BANNER_BORDER_RADIUS = scale(12);
+
+// Fallback banners with proper structure
+const fallbackPharmacyBanners: MargBanner[] = [
+  {
+    id: "fallback-1",
+    imageUrl:
+      "https://i.ibb.co/DHSpgQXh/file-00000000002471fa9e5bed97c53bd2ce.png",
+    title: "Healthcare Essentials",
+    description: "Up to 30% off on medicines",
+    storeType: "pharma",
+    isActive: true,
+  },
+  {
+    id: "fallback-2",
+    imageUrl:
+      "https://i.ibb.co/0RkqZyJq/file-000000007a9871faa17809e455b6bf0f.png",
+    title: "Wellness Products",
+    description: "Health supplements & vitamins",
+    storeType: "pharma",
+    isActive: true,
+  },
+  {
+    id: "fallback-3",
+    imageUrl:
+      "https://i.ibb.co/20JWjY0k/file-000000000df471fab228d900b1f3c2ae.png",
+    title: "Personal Care",
+    description: "Premium skincare products",
+    storeType: "pharma",
+    isActive: true,
+  },
+  {
+    id: "fallback-4",
+    imageUrl:
+      "https://i.ibb.co/LzyTrVH2/file-000000006b8c71faa38214040f9f9993.png",
+    title: "Baby Care",
+    description: "Safe products for your baby",
+    storeType: "pharma",
+    isActive: true,
+  },
+];
+
+const fallbackGroceryBanners: MargBanner[] = [
+  {
+    id: "grocery-1",
+    imageUrl: "https://images.unsplash.com/photo-1542838132-92c53300491e?w=800",
+    title: "Fresh Groceries",
+    description: "Farm fresh vegetables & fruits",
+    storeType: "grocery",
+    isActive: true,
+  },
+  {
+    id: "grocery-2",
+    imageUrl: "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800",
+    title: "Daily Essentials",
+    description: "Up to 25% off on daily needs",
+    storeType: "grocery",
+    isActive: true,
+  },
+  {
+    id: "grocery-3",
+    imageUrl:
+      "https://images.unsplash.com/photo-1604719312566-8912e9227c6a?w=800",
+    title: "Organic Products",
+    description: "100% organic & healthy",
+    storeType: "grocery",
+    isActive: true,
+  },
+];
+
+// Banner Item Component
+const BannerItem = ({ item }: { item: MargBanner }) => {
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+
+  return (
+    <TouchableOpacity style={styles.bannerWrapper} activeOpacity={0.95}>
+      <View style={styles.bannerImageContainer}>
+        {/* Loading placeholder */}
+        {imageLoading && !imageError && (
+          <View style={styles.imagePlaceholder}>
+            <ActivityIndicator size="small" color="#1E88E5" />
+          </View>
+        )}
+
+        {/* Error placeholder */}
+        {imageError && (
+          <View style={styles.imagePlaceholder}>
+            <Text style={styles.errorPlaceholderText}>Image not available</Text>
+          </View>
+        )}
+
+        {/* Actual Image */}
+        <Image
+          source={{ uri: item.imageUrl }}
+          style={[
+            styles.bannerImage,
+            (imageLoading || imageError) && styles.hiddenImage,
+          ]}
+          resizeMode="cover"
+          onLoadStart={() => setImageLoading(true)}
+          onLoadEnd={() => setImageLoading(false)}
+          onError={() => {
+            setImageLoading(false);
+            setImageError(true);
+          }}
+        />
+
+        {/* Gradient Overlay - Optional subtle overlay */}
+        <View style={styles.gradientOverlay} />
+      </View>
+    </TouchableOpacity>
+  );
+};
+
+// Main Component
 export default function BannerSlider() {
-  const navigation = useNavigation<NavigationProp>();
+  const { theme } = useTheme();
   const { selectedStore } = useAppContext();
   const flatListRef = useRef<FlatList>(null);
+  const autoScrollTimer = useRef<NodeJS.Timeout | null>(null);
 
   const [banners, setBanners] = useState<MargBanner[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  // Get fallback banners based on store type
+  const getFallbackBanners = useCallback(() => {
+    if (selectedStore?.type === "grocery") {
+      return fallbackGroceryBanners;
+    }
+    return fallbackPharmacyBanners;
+  }, [selectedStore?.type]);
 
   // Fetch banners from API
   useEffect(() => {
     const loadBanners = async () => {
       try {
         setLoading(true);
-        setError(null);
 
-        console.log('\n╔════════════════════════════════════════════════════════════╗');
-        console.log('║  🎬 BANNERSLIDER: Starting to load banners               ║');
-        console.log('╚════════════════════════════════════════════════════════════╝\n');
-        console.log('🏪 Selected Store Info:');
-        console.log('   Store object:', selectedStore);
-        console.log('   Store type:', selectedStore?.type);
-        console.log('   Store name:', selectedStore?.name || 'N/A');
-
-        // Fetch all banners
         const allBanners = await margBannerService.getBanners();
-        
-        console.log('\n📦 BANNERSLIDER: Received banners from service');
-        console.log('   Total banners received:', allBanners.length);
 
-        if (allBanners.length === 0) {
-          console.log('\n⚠️ BANNERSLIDER: No banners received from service');
-          console.log('   🔍 WHY BANNERS NOT DISPLAYED: Service returned 0 banners');
-          console.log('   Check the margBannerService logs above for details');
-          setBanners([]);
+        if (!allBanners || allBanners.length === 0) {
+          setBanners(getFallbackBanners());
           return;
         }
 
-        // Log all received banners
-        console.log('\n📋 BANNERSLIDER: All received banners:');
-        allBanners.forEach((banner, idx) => {
-          console.log(`   Banner ${idx + 1}:`);
-          console.log(`      ID: ${banner.id}`);
-          console.log(`      Store Type: ${banner.storeType}`);
-          console.log(`      Active: ${banner.isActive}`);
-          console.log(`      Image: ${banner.imageUrl?.substring(0, 60)}...`);
-        });
-
-        // Filter banners based on selected store type
-        console.log('\n🔍 BANNERSLIDER: Filtering banners...');
-        console.log('   Filter criteria:');
-        console.log('      - storeType must match:', selectedStore?.type);
-        console.log('      - isActive must not be false');
-
-        const filteredBanners = allBanners.filter((banner, index) => {
+        // Filter banners based on store type and active status
+        const filteredBanners = allBanners.filter((banner) => {
           const matchesStoreType = banner.storeType === selectedStore?.type;
           const isActive = banner.isActive !== false;
-          const passes = matchesStoreType && isActive;
-
-          console.log(`   Banner ${index + 1} (${banner.id}):`);
-          console.log(`      Store type match: ${matchesStoreType} (banner: ${banner.storeType}, needed: ${selectedStore?.type})`);
-          console.log(`      Is active: ${isActive}`);
-          console.log(`      ➜ ${passes ? '✓ PASSES filter' : '✗ FILTERED OUT'}`);
-
-          return passes;
+          return matchesStoreType && isActive;
         });
 
-        console.log('\n📊 BANNERSLIDER: Filter results:');
-        console.log('   Total banners before filter:', allBanners.length);
-        console.log('   Banners after filter:', filteredBanners.length);
-        console.log('   Banners filtered out:', allBanners.length - filteredBanners.length);
-
         if (filteredBanners.length === 0) {
-          console.log('\n⚠️ BANNERSLIDER: No banners match the filter criteria!');
-          console.log('   🔍 WHY BANNERS NOT DISPLAYED: All banners filtered out');
-          console.log('   Possible reasons:');
-          console.log('      1. No banners match store type:', selectedStore?.type);
-          console.log('      2. All matching banners have isActive = false');
-          console.log('   Solution:');
-          console.log('      - Check if backend is sending correct storeType values');
-          console.log('      - Verify selectedStore.type matches banner storeType values');
-          console.log('      - Check if isActive field is set correctly');
+          setBanners(getFallbackBanners());
         } else {
-          console.log('\n✅ BANNERSLIDER: Banners ready to display:');
-          filteredBanners.forEach((banner, idx) => {
-            console.log(`   ${idx + 1}. ${banner.title || banner.id} (${banner.storeType})`);
-          });
+          setBanners(filteredBanners);
         }
-
-        setBanners(filteredBanners);
-        
-        console.log('\n╔════════════════════════════════════════════════════════════╗');
-        console.log('║  ✅ BANNERSLIDER: Load Complete                          ║');
-        console.log('╚════════════════════════════════════════════════════════════╝');
-        console.log(`   ${filteredBanners.length} banner(s) will be displayed\n`);
-
       } catch (e: any) {
-        console.log('\n╔════════════════════════════════════════════════════════════╗');
-        console.log('║  ❌ BANNERSLIDER: Error Loading Banners                  ║');
-        console.log('╚════════════════════════════════════════════════════════════╝\n');
-        console.error('❌ BANNERSLIDER: Failed to load banners:', e);
-        console.error('   Error type:', e.name);
-        console.error('   Error message:', e.message);
-        console.error('   Stack:', e.stack);
-        console.error('   🔍 WHY BANNERS NOT DISPLAYED:', e.message);
-        
-        setError(e.message || 'Failed to load banners');
-        setBanners([]);
+        console.log("Banner fetch error:", e.message);
+        setBanners(getFallbackBanners());
       } finally {
         setLoading(false);
       }
     };
 
-    // Only load if we have a selected store
     if (selectedStore?.type) {
-      console.log('🎬 BANNERSLIDER: Store detected, starting load process...');
       loadBanners();
     } else {
-      console.log('⚠️ BANNERSLIDER: No selected store or store type');
-      console.log('   🔍 WHY BANNERS NOT DISPLAYED: selectedStore.type is missing');
-      console.log('   selectedStore:', selectedStore);
+      setBanners(fallbackPharmacyBanners);
+      setLoading(false);
     }
-  }, [selectedStore?.type]);
+  }, [selectedStore?.type, getFallbackBanners]);
 
-  // Auto-scroll banners
   useEffect(() => {
     if (banners.length <= 1) return;
 
-    const timer = setInterval(() => {
-      const nextIndex = currentIndex === banners.length - 1 ? 0 : currentIndex + 1;
-      
-      flatListRef.current?.scrollToIndex({
-        index: nextIndex,
-        animated: true,
+    if (autoScrollTimer.current) {
+      clearInterval(autoScrollTimer.current);
+    }
+
+    autoScrollTimer.current = setInterval(() => {
+      // Always work with a safe, in-range index
+      setCurrentIndex((prevIndex) => {
+        if (banners.length <= 1) {
+          return 0;
+        }
+
+        const safePrevIndex = Math.min(prevIndex, banners.length - 1);
+        const nextIndex =
+          safePrevIndex === banners.length - 1 ? 0 : safePrevIndex + 1;
+
+        if (flatListRef.current) {
+          try {
+            flatListRef.current.scrollToIndex({
+              index: nextIndex,
+              animated: true,
+            });
+          } catch {
+            // Ignore rare race-condition errors; onScrollToIndexFailed will also handle
+          }
+        }
+
+        return nextIndex;
       });
-    }, 3000); // Change banner every 3 seconds
+    }, 4000);
 
-    return () => clearInterval(timer);
-  }, [currentIndex, banners.length]);
+    return () => {
+      if (autoScrollTimer.current) {
+        clearInterval(autoScrollTimer.current);
+      }
+    };
+  }, [banners.length]);
 
-  // Handle scroll to update current index
-  const handleScroll = (event: any) => {
-    const contentOffsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(contentOffsetX / width);
-    setCurrentIndex(index);
-  };
+  // Keep currentIndex in range when banner list size changes
+  useEffect(() => {
+    if (banners.length === 0 && currentIndex !== 0) {
+      setCurrentIndex(0);
+    } else if (banners.length > 0 && currentIndex > banners.length - 1) {
+      setCurrentIndex(banners.length - 1);
+    }
+  }, [banners.length, currentIndex]);
 
-  // Handle banner press - navigate to detail screen
-  const handleBannerPress = (banner: MargBanner) => {
-    console.log('\n🖼️ BANNERSLIDER: Banner pressed');
-    console.log('   Banner ID:', banner.id);
-    console.log('   Banner title:', banner.title || '(no title)');
-    console.log('   Navigating to BannerDetail screen...');
-    navigation.navigate('BannerDetail', { bannerId: banner.id });
-  };
-
-  // Render individual banner item
-  const renderBannerItem = ({ item }: { item: MargBanner }) => (
-    <TouchableOpacity
-      style={styles.bannerWrapper}
-      onPress={() => handleBannerPress(item)}
-      activeOpacity={0.9}
-    >
-      <Image
-        source={{ uri: item.imageUrl }}
-        style={styles.bannerImage}
-        resizeMode="cover"
-        onError={(e) => {
-          console.error('\n❌ BANNERSLIDER: Image load error');
-          console.error('   Banner ID:', item.id);
-          console.error('   Image URL:', item.imageUrl);
-          console.error('   Error:', e.nativeEvent.error);
-          console.error('   🔍 WHY BANNER IMAGE NOT SHOWING: Image failed to load');
-          console.error('   Possible reasons:');
-          console.error('      1. Invalid or broken URL');
-          console.error('      2. Network/CORS issue');
-          console.error('      3. Image requires authentication');
-        }}
-        onLoad={() => {
-          console.log('✅ BANNERSLIDER: Image loaded successfully');
-          console.log('   Banner ID:', item.id);
-          console.log('   Image URL:', item.imageUrl?.substring(0, 80));
-        }}
-      />
-      {item.title && (
-        <View style={styles.titleOverlay}>
-          <Text style={styles.titleText} numberOfLines={1}>
-            {item.title}
-          </Text>
-        </View>
-      )}
-    </TouchableOpacity>
+  // Handle scroll event
+  const handleScroll = useCallback(
+    (event: any) => {
+      const contentOffsetX = event.nativeEvent.contentOffset.x;
+      const index = Math.round(contentOffsetX / SCREEN_WIDTH);
+      if (index !== currentIndex && index >= 0 && index < banners.length) {
+        setCurrentIndex(index);
+      }
+    },
+    [currentIndex, banners.length],
   );
 
-  // Loading state
+  // Render banner item
+  const renderBannerItem = ({ item }: { item: MargBanner }) => (
+    <BannerItem item={item} />
+  );
+
+  // Handle scroll to index failure
+  const handleScrollToIndexFailed = useCallback(
+    (info: any) => {
+      setTimeout(() => {
+        if (flatListRef.current && info.index < banners.length) {
+          flatListRef.current.scrollToIndex({
+            index: Math.min(info.index, banners.length - 1),
+            animated: false,
+          });
+        }
+      }, 100);
+    },
+    [banners.length],
+  );
+
+  // Key extractor
+  const keyExtractor = (item: MargBanner, index: number) =>
+    `banner-${item.id}-${index}`;
+
+  // Loading state - Skeleton loader
   if (loading) {
-    console.log('🔄 BANNERSLIDER: Rendering loading state...');
     return (
-      <View style={styles.loaderContainer}>
-        <ActivityIndicator size="large" color="#FF6B35" />
-        <Text style={styles.loadingText}>Loading banners...</Text>
+      <View style={styles.container}>
+        <View style={styles.skeletonContainer}>
+          <View
+            style={[styles.skeleton, { backgroundColor: theme.colors.border }]}
+          >
+            <ActivityIndicator size="small" color={theme.colors.primary} />
+          </View>
+        </View>
       </View>
     );
   }
 
-  // Error state
-  if (error) {
-    console.log('⚠️ BANNERSLIDER: Rendering error state');
-    console.log('   Error message:', error);
-    return (
-      <View style={styles.errorContainer}>
-        <Text style={styles.errorText}>⚠️ {error}</Text>
-      </View>
-    );
-  }
-
-  // No banners state
+  // No banners available
   if (banners.length === 0) {
-    console.log('📭 BANNERSLIDER: No banners to display - rendering nothing');
-    console.log('   🔍 Final check: banners array is empty after all processing');
-    return null; // Don't show anything if no banners
+    return null;
   }
 
-  // Render banners
-  console.log('🎨 BANNERSLIDER: Rendering', banners.length, 'banner(s)');
   return (
     <View style={styles.container}>
       <FlatList
@@ -906,111 +965,87 @@ export default function BannerSlider() {
         horizontal
         pagingEnabled
         showsHorizontalScrollIndicator={false}
-        keyExtractor={(item, index) => `${item.id}-${index}`}
+        keyExtractor={keyExtractor}
         renderItem={renderBannerItem}
         onScroll={handleScroll}
         scrollEventThrottle={16}
-        onScrollToIndexFailed={(info) => {
-          console.warn('Scroll to index failed:', info);
-          // Try to scroll to a valid index
-          setTimeout(() => {
-            if (info.index < banners.length) {
-              flatListRef.current?.scrollToIndex({
-                index: info.index,
-                animated: false,
-              });
-            }
-          }, 100);
-        }}
+        onScrollToIndexFailed={handleScrollToIndexFailed}
+        bounces={false}
+        decelerationRate="fast"
+        snapToInterval={SCREEN_WIDTH}
+        snapToAlignment="start"
+        getItemLayout={(_, index) => ({
+          length: SCREEN_WIDTH,
+          offset: SCREEN_WIDTH * index,
+          index,
+        })}
+        initialNumToRender={2}
+        maxToRenderPerBatch={4}
+        windowSize={4}
+        removeClippedSubviews={Platform.OS === "android"}
       />
-
-      {/* Pagination dots */}
-      {banners.length > 1 && (
-        <View style={styles.paginationContainer}>
-          {banners.map((_, index) => (
-            <View
-              key={index}
-              style={[
-                styles.paginationDot,
-                index === currentIndex && styles.paginationDotActive,
-              ]}
-            />
-          ))}
-        </View>
-      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    height: 220,
-    marginVertical: 16,
+    height: BANNER_HEIGHT,
+    marginVertical: verticalScale(8),
   },
-  loaderContainer: {
-    height: 220,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 16,
+  skeletonContainer: {
+    paddingHorizontal: BANNER_HORIZONTAL_PADDING,
   },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 14,
-    color: '#666',
-  },
-  errorContainer: {
-    height: 220,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginVertical: 16,
-    paddingHorizontal: 20,
-  },
-  errorText: {
-    fontSize: 14,
-    color: '#FF6B35',
-    textAlign: 'center',
+  skeleton: {
+    width: SCREEN_WIDTH - BANNER_HORIZONTAL_PADDING * 2,
+    height: BANNER_HEIGHT,
+    borderRadius: BANNER_BORDER_RADIUS,
+    justifyContent: "center",
+    alignItems: "center",
   },
   bannerWrapper: {
-    width: width,
-    paddingHorizontal: 16,
+    width: SCREEN_WIDTH,
+    paddingHorizontal: BANNER_HORIZONTAL_PADDING,
+  },
+  bannerImageContainer: {
+    width: "100%",
+    height: BANNER_HEIGHT,
+    borderRadius: BANNER_BORDER_RADIUS,
+    overflow: "hidden",
+    backgroundColor: "#F5F5F5",
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
   },
   bannerImage: {
-    width: '100%',
-    height: 220,
-    borderRadius: 12,
-    backgroundColor: '#f0f0f0',
+    width: "100%",
+    height: "100%",
   },
-  titleOverlay: {
-    position: 'absolute',
-    bottom: 0,
-    left: 16,
-    right: 16,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderBottomLeftRadius: 12,
-    borderBottomRightRadius: 12,
+  hiddenImage: {
+    opacity: 0,
+    position: "absolute",
   },
-  titleText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+  imagePlaceholder: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F0F0F0",
   },
-  paginationContainer: {
-    flexDirection: 'row',
-    position: 'absolute',
-    bottom: 10,
-    alignSelf: 'center',
+  errorPlaceholderText: {
+    fontSize: scale(12),
+    color: "#999",
+    textAlign: "center",
   },
-  paginationDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.5)',
-    marginHorizontal: 4,
-  },
-  paginationDotActive: {
-    backgroundColor: '#fff',
-    width: 20,
+  gradientOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "transparent",
   },
 });

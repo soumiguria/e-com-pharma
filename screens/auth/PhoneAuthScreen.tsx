@@ -1,45 +1,52 @@
-import React, { useState } from 'react';
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { RouteProp, useNavigation, useRoute } from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import { LinearGradient } from "expo-linear-gradient";
+import { Divider } from "native-base";
+import { useState } from "react";
 import {
-  View,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  Text,
+  Alert,
+  Image,
   KeyboardAvoidingView,
   Platform,
-  Alert,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, RouteProp } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/types';
-import { useTheme } from '../../contexts/ThemeContext';
-import { useAuth } from '../../contexts/AuthContext';
-import { Ionicons } from '@expo/vector-icons';
-import LoadingOverlay from '../../components/ui/LoadingOverlay';
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useAuth } from "../../contexts/AuthContext";
+import { RootStackParamList } from "../../navigation/types";
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'PhoneAuth'>;
-type PhoneAuthRouteProp = RouteProp<RootStackParamList, 'PhoneAuth'>;
+type NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "PhoneAuth"
+>;
+type PhoneAuthRouteProp = RouteProp<RootStackParamList, "PhoneAuth">;
 
 const PhoneAuthScreen = () => {
   const navigation = useNavigation<NavigationProp>();
   const route = useRoute<PhoneAuthRouteProp>();
   const { cartType } = route.params;
-  const { theme } = useTheme();
   const { sendOTP } = useAuth();
-  const [mobileNumber, setMobileNumber] = useState('');
+  const [mobileNumber, setMobileNumber] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   const handleContinue = async () => {
     // Clean mobile number - remove +91 if present
-    let cleanNumber = mobileNumber.replace(/^\+91/, '').replace(/\D/g, '');
-    
+    let cleanNumber = mobileNumber.replace(/^\+91/, "").replace(/\D/g, "");
+
     // Validate mobile number - allow 10 to 13 digits
     if (cleanNumber.length < 10 || cleanNumber.length > 13) {
-      Alert.alert('Invalid Mobile Number', 'Please enter a valid mobile number (10-13 digits)');
+      Alert.alert(
+        "Invalid Mobile Number",
+        "Please enter a valid mobile number (10-13 digits)",
+      );
       return;
     }
-    
+
     // Use the cleaned number
     const finalMobileNumber = cleanNumber;
 
@@ -48,168 +55,289 @@ const PhoneAuthScreen = () => {
     try {
       // First, try to send OTP to check if user exists
       const response = await sendOTP(finalMobileNumber);
-      
+
       if (response.success) {
-        // User exists, navigate to OTP verification screen
-        console.log('User exists, navigating to OTP verification');
         // Extract otpKey from response
-        const otpKey = response.data?.otpKey || '';
-        console.log('OTP Key received:', otpKey);
-        navigation.replace('OTPVerification', { 
+        const otpKey = response.data?.otpKey || "";
+        console.log("OTP Key received:", otpKey);
+        navigation.replace("OTPVerification", {
           phoneNumber: finalMobileNumber,
           cartType,
           isRegistration: false,
-          otpKey: otpKey // Pass otpKey to OTP verification screen
+          otpKey: otpKey, // Pass otpKey to OTP verification screen
         });
       } else {
         // Check if error indicates customer not found
-        if (response.error && (
-          response.error.toLowerCase().includes('customer not found') ||
-          response.error.toLowerCase().includes('user not found') ||
-          response.error.toLowerCase().includes('not registered')
-        )) {
-          console.log('Customer not found, redirecting to registration');
+        if (
+          response.error &&
+          (response.error.toLowerCase().includes("customer not found") ||
+            response.error.toLowerCase().includes("user not found") ||
+            response.error.toLowerCase().includes("not registered"))
+        ) {
           // Customer not found, redirect to registration
-          navigation.replace('Register', { 
+          navigation.push("Register", {
             phoneNumber: finalMobileNumber,
-            cartType
+            cartType,
           });
         } else {
-          Alert.alert('Error', response.error || 'Failed to send OTP. Please try again.');
+          Alert.alert(
+            "Error",
+            response.error || "Failed to send OTP. Please try again.",
+          );
         }
       }
     } catch (error) {
-      console.error('Error sending OTP:', error);
+      console.error("Error sending OTP:", error);
       // On any error, assume user doesn't exist and go to registration
-      navigation.replace('Register', { 
+      navigation.push("Register", {
         phoneNumber: mobileNumber,
-        cartType
+        cartType,
       });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const styles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: theme.colors.background,
-      padding: theme.spacing.lg,
-    },
-    header: {
-      marginTop: theme.spacing.xl,
-      marginBottom: theme.spacing.xl,
-    },
-    title: {
-      fontSize: 28,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-      marginBottom: theme.spacing.sm,
-    },
-    subtitle: {
-      fontSize: 16,
-      color: theme.colors.secondary,
-      marginBottom: theme.spacing.lg,
-    },
-    inputContainer: {
-      marginBottom: theme.spacing.xl,
-    },
-    phoneInput: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      borderWidth: 2,
-      // make the border color darker adn brighter shade of blue
-      borderColor: theme.colors.primary,
-      borderRadius: theme.borderRadius.md,
-      paddingHorizontal: theme.spacing.md,
-      backgroundColor: '#fff',
-    },
-    input: {
-      flex: 1,
-      fontSize: 16,
-      color: theme.colors.text,
-      paddingVertical: theme.spacing.md,
-    },
-    continueButton: {
-      backgroundColor: theme.colors.primary,
-      paddingVertical: theme.spacing.md,
-      borderRadius: theme.borderRadius.md,
-      alignItems: 'center',
-      marginBottom: theme.spacing.lg,
-    },
-    continueButtonText: {
-      color: '#fff',
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
-    disabledButton: {
-      backgroundColor: theme.colors.secondary,
-      opacity: 0.5,
-    },
-    termsText: {
-      fontSize: 14,
-      color: theme.colors.text + '80',
-      textAlign: 'center',
-      lineHeight: 20,
-    },
-  });
-
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
       >
-        <View style={styles.header}>
-          <Text style={styles.title}>Enter your mobile number</Text>
-          <Text style={styles.subtitle}>
-            We'll send you a verification code to verify your number
-          </Text>
-        </View>
-
-        <View style={styles.inputContainer}>
-          <View style={styles.phoneInput}>
-            <TextInput
-              style={styles.input}
-              placeholder="Mobile Number (with or without +91)"
-              keyboardType="phone-pad"
-              maxLength={15}
-              value={mobileNumber}
-              onChangeText={setMobileNumber}
-              placeholderTextColor={theme.colors.primary}
-              autoComplete="tel"
-              textContentType="telephoneNumber"
-              importantForAutofill="yes"
-              autoFocus={true}
-              returnKeyType="done"
-              dataDetectorTypes="phoneNumber"
-              enablesReturnKeyAutomatically={true}
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Top Illustration */}
+          <View style={styles.imageWrapper}>
+            <Image
+              source={require("../../assets/loginPageVector.png")}
+              style={styles.heroImage}
             />
           </View>
-        </View>
 
-        <TouchableOpacity
-          style={[
-            styles.continueButton,
-            (mobileNumber.replace(/^\+91/, '').replace(/\D/g, '').length < 10 || mobileNumber.replace(/^\+91/, '').replace(/\D/g, '').length > 13) && styles.disabledButton,
-          ]}
-          onPress={handleContinue}
-          disabled={(mobileNumber.replace(/^\+91/, '').replace(/\D/g, '').length < 10 || mobileNumber.replace(/^\+91/, '').replace(/\D/g, '').length > 13) || isLoading}
-        >
-          <Text style={styles.continueButtonText}>Continue</Text>
-        </TouchableOpacity>
+          {/* Welcome Text */}
+          <Text style={styles.welcomeTitle}>Welcome to Paas Ki Dukaan</Text>
+          <Text style={styles.welcomeSubtitle}>
+            Your trusted app for medicines and groceries.
+          </Text>
 
-        <Text style={styles.termsText}>
-          By continuing, you agree to our Terms of Service and Privacy Policy
-        </Text>
+          {/* Card */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Login / Sign Up</Text>
+            <Text style={styles.cardSubtitle}>
+              Enter your mobile number to continue{"\n"}
+              We’ll send you a secure OTP for verification.
+            </Text>
+
+            {/* Phone Input */}
+            <View style={styles.phoneInputContainer}>
+              <View style={styles.countryCode}>
+                <Text style={styles.countryText}>+91</Text>
+              </View>
+
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your mobile number"
+                placeholderTextColor="#999"
+                keyboardType="number-pad"
+                maxLength={10}
+                value={mobileNumber}
+                onChangeText={setMobileNumber}
+              />
+            </View>
+
+            {/* Gradient Button */}
+            <TouchableOpacity
+              disabled={mobileNumber.length !== 10 || isLoading}
+              onPress={handleContinue}
+              activeOpacity={0.8}
+            >
+              <LinearGradient
+                colors={["#79B8FF", "#4A90E2"]}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+                style={[
+                  styles.button,
+                  mobileNumber.length !== 10 || isLoading
+                    ? { opacity: 0.5 }
+                    : {},
+                ]}
+              >
+                <Text style={styles.buttonText}>
+                  {isLoading ? "Sending OTP..." : "Send OTP"}
+                </Text>
+              </LinearGradient>
+            </TouchableOpacity>
+
+            {/* Security Points */}
+            <View style={styles.securityWrapper}>
+              {[
+                "Secure Login",
+                "Your data is encrypted",
+                "Verified services only",
+              ].map((item, index) => (
+                <View key={index} style={styles.securityItem}>
+                  <MaterialCommunityIcons
+                    name="check"
+                    size={20}
+                    color="#2ECC71"
+                  />
+                  <Text style={styles.securityText}>{item}</Text>
+                </View>
+              ))}
+            </View>
+
+            <Divider style={{ marginTop: 10, backgroundColor: "#DDE3ED" }} />
+
+            <Text style={styles.termsText}>
+              By continuing, you agree to our{" "}
+              <Text style={styles.linkText}>Terms of Service</Text> and{" "}
+              <Text style={styles.linkText}>Privacy Policy</Text>
+            </Text>
+          </View>
+        </ScrollView>
       </KeyboardAvoidingView>
-
-      <LoadingOverlay 
-        visible={isLoading} 
-        message="Sending OTP..." 
-      />
     </SafeAreaView>
   );
 };
 
-export default PhoneAuthScreen; 
+export default PhoneAuthScreen;
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#F5F7FB",
+    paddingHorizontal: 20,
+  },
+
+  scrollContent: {
+    flexGrow: 1,
+    paddingVertical: 16,
+    justifyContent: "center",
+  },
+
+  imageWrapper: {
+    alignItems: "center",
+  },
+
+  heroImage: {
+    width: 350,
+    height: 220,
+    resizeMode: "cover",
+  },
+
+  welcomeTitle: {
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "600",
+    marginTop: 16,
+  },
+
+  welcomeSubtitle: {
+    textAlign: "center",
+    fontSize: 14,
+    color: "#666",
+    marginTop: 5,
+    marginBottom: 22,
+  },
+
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 18,
+    paddingHorizontal: 20,
+    paddingVertical: 36,
+    shadowColor: "#000",
+    shadowOpacity: 0.08,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+
+  cardTitle: {
+    fontSize: 18,
+    fontWeight: "600",
+    textAlign: "center",
+  },
+
+  cardSubtitle: {
+    textAlign: "center",
+    fontSize: 13,
+    color: "#777",
+    marginVertical: 10,
+    lineHeight: 18,
+  },
+
+  phoneInputContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#DDE3ED",
+    borderRadius: 16,
+    paddingHorizontal: 10,
+    marginTop: 15,
+    backgroundColor: "#F9FBFF",
+  },
+
+  countryCode: {
+    paddingRight: 10,
+    borderRightWidth: 1,
+    borderColor: "#E0E0E0",
+  },
+
+  countryText: {
+    fontSize: 16,
+    fontWeight: "500",
+  },
+
+  input: {
+    flex: 1,
+    paddingVertical: 12,
+    paddingHorizontal: 10,
+    fontSize: 16,
+    color: "#000",
+    backgroundColor: "#FFF",
+  },
+
+  button: {
+    paddingVertical: 14,
+    borderRadius: 16,
+    alignItems: "center",
+    marginTop: 18,
+  },
+
+  buttonText: {
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: 15,
+  },
+
+  securityWrapper: {
+    marginTop: 20,
+  },
+
+  securityItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+
+  securityText: {
+    marginLeft: 8,
+    fontSize: 13,
+    color: "#555",
+  },
+
+  termsText: {
+    marginTop: 10,
+    fontSize: 11,
+    color: "#999",
+    textAlign: "center",
+  },
+
+  linkText: {
+    color: "#4A90E2",
+  },
+});

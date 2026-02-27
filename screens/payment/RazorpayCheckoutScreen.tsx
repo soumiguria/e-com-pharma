@@ -922,6 +922,8 @@ const RazorpayCheckoutScreen = () => {
           grandTotal: totalAmount,
           deliveryMethod: isStoreDelivery ? 'Store Pickup' : 'Home Delivery',
           shippingAddress: isStoreDelivery ? undefined : getAddressString(addressToUse),
+          storeId: selectedStore?.id,
+          storeName: selectedStore?.name,
         });
       }
 

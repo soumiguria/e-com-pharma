@@ -1,1361 +1,57 @@
-// // import React, { useState, useCallback, useEffect } from 'react';
-// // import {
-// //   View,
-// //   Text,
-// //   StyleSheet,
-// //   TouchableOpacity,
-// //   ScrollView,
-// //   Alert,
-// //   Image,
-// //   Platform,
-// //   ActivityIndicator,
-// //   PermissionsAndroid,
-// // } from 'react-native';
-// // import { SafeAreaView } from 'react-native-safe-area-context';
-// // import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-// // import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-// // import { RootStackParamList } from '../../navigation/types';
-// // import { useTheme } from '../../contexts/ThemeContext';
-// // import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-// // import { launchCamera, CameraOptions } from 'react-native-image-picker';
-// // import * as DocumentPicker from 'expo-document-picker';
-// // import { LinearGradient } from 'expo-linear-gradient';
-// // import orderService from '../../services/api/orderService';
-
-// // type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'UploadPrescription'>;
-// // type RouteProp = { params: { orderId: string; storeId?: string } };
-
-// // const UploadPrescriptionScreen = () => {
-// //   const navigation = useNavigation<any>();
-// //   const route = useRoute() as unknown as RouteProp;
-// //   const orderId = route.params?.orderId;
-// //   const storeId = route.params?.storeId;
-// //   const { theme } = useTheme();
-// //   const [selectedFile, setSelectedFile] = useState<{
-// //     uri: string;
-// //     name?: string;
-// //     mimeType?: string | null;
-// //     isImage?: boolean;
-// //   } | null>(null);
-// //   const [isUploading, setIsUploading] = useState(false);
-// //   const [uploadingDots, setUploadingDots] = useState('');
-// //   const [imageLoading, setImageLoading] = useState(false);
-
-// //   // Animated dots for "Uploading..." (cycle . / .. / ...)
-// //   useEffect(() => {
-// //     if (!isUploading) {
-// //       setUploadingDots('');
-// //       return;
-// //     }
-// //     const frames = ['.', '..', '...'];
-// //     let i = 0;
-// //     const id = setInterval(() => {
-// //       setUploadingDots(frames[i % 3]);
-// //       i++;
-// //     }, 400);
-// //     return () => clearInterval(id);
-// //   }, [isUploading]);
-
-// //   useFocusEffect(
-// //     useCallback(() => {
-// //       console.log('📋 UploadPrescription screen focused');
-// //     }, [])
-// //   );
-
-// //   const requestPermissions = async () => {
-// //     if (Platform.OS === 'android') {
-// //       const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.CAMERA);
-// //       if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-// //         Alert.alert(
-// //           'Permissions Required',
-// //           'Camera permission is required to take prescription photos.',
-// //           [{ text: 'OK' }]
-// //         );
-// //         return false;
-// //       }
-// //     }
-// //     return true;
-// //   };
-
-// //   const handleTakePhoto = async () => {
-// //     const hasPermissions = await requestPermissions();
-// //     if (!hasPermissions) return;
-
-// //     try {
-// //       const options: CameraOptions = {
-// //         mediaType: 'photo',
-// //         quality: 0.8,
-// //         cameraType: 'back',
-// //         saveToPhotos: false,
-// //       };
-
-// //       const result: any = await new Promise(resolve => launchCamera(options, resolve));
-
-// //       if (result && !result.didCancel && result.assets && result.assets[0]) {
-// //         setImageLoading(true);
-// //         const asset = result.assets[0];
-        
-// //         // Extract filename from URI or use default
-// //         const uriParts = asset.uri.split('/');
-// //         const rawFileName = asset.fileName || uriParts[uriParts.length - 1] || `prescription_${Date.now()}`;
-        
-// //         // Detect mimeType from file extension (similar to documents feature)
-// //         let mimeType: string | null = null;
-// //         let finalFileName = rawFileName;
-        
-// //         // Check if filename has extension
-// //         if (/\.(jpg|jpeg)$/i.test(rawFileName)) {
-// //           mimeType = 'image/jpeg';
-// //         } else if (/\.(png)$/i.test(rawFileName)) {
-// //           mimeType = 'image/png';
-// //         } else if (/\.(gif)$/i.test(rawFileName)) {
-// //           mimeType = 'image/gif';
-// //         } else if (/\.(webp)$/i.test(rawFileName)) {
-// //           mimeType = 'image/webp';
-// //         } else {
-// //           // No extension found - add .jpg and set mimeType to image/jpeg (camera photos are usually JPEG)
-// //           finalFileName = `${rawFileName}.jpg`;
-// //           mimeType = 'image/jpeg';
-// //         }
-        
-// //         // Fallback: if mimeType is still null, default to image/jpeg
-// //         if (!mimeType) {
-// //           mimeType = 'image/jpeg';
-// //         }
-        
-// //         console.log('📸 Camera photo selected:', { uri: asset.uri, fileName: finalFileName, mimeType });
-        
-// //         setSelectedFile({
-// //           uri: asset.uri,
-// //           name: finalFileName,
-// //           mimeType: mimeType,
-// //           isImage: true,
-// //         });
-// //         // Keep imageLoading true until Image onLoad fires (see Image below)
-// //       }
-// //     } catch (error) {
-// //       setImageLoading(false);
-// //       console.error('Error taking photo:', error);
-// //       Alert.alert('Error', 'Failed to take photo. Please try again.');
-// //     }
-// //   };
-
-// //   const handleChooseFromDocuments = async () => {
-// //     try {
-// //       const result = await DocumentPicker.getDocumentAsync({
-// //         type: ['image/*', 'application/pdf'], // Allow both images and PDFs
-// //         copyToCacheDirectory: true,
-// //         multiple: false,
-// //       });
-
-// //       if (result.canceled) {
-// //         return;
-// //       }
-
-// //       // New API shape: result.assets
-// //       const asset = (result as any).assets?.[0] || (result as any);
-// //       if (asset && asset.uri) {
-// //         setImageLoading(true);
-// //         const mimeType: string | null =
-// //           asset.mimeType || asset.type || null;
-
-// //         const isImage =
-// //           mimeType?.startsWith('image/') ||
-// //           /\.(jpg|jpeg|png|gif|webp)$/i.test(asset.name || asset.uri);
-
-// //         setSelectedFile({
-// //           uri: asset.uri,
-// //           name: asset.name || (isImage ? 'Prescription image' : 'Prescription document'),
-// //           mimeType,
-// //           isImage,
-// //         });
-// //         if (!isImage) setImageLoading(false);
-// //       }
-// //     } catch (error) {
-// //       setImageLoading(false);
-// //       console.error('Error choosing from documents:', error);
-// //       Alert.alert('Error', 'Failed to select file from documents. Please try again.');
-// //     }
-// //   };
-
-
-// //   // No voice handlers here
-
-// //   const handleUpload = async () => {
-// //     if (!selectedFile?.uri) {
-// //       Alert.alert('No File', 'Please select a prescription file or image before uploading');
-// //       return;
-// //     }
-// //     if (!orderId) {
-// //       Alert.alert('Missing Order', 'Order ID is missing. Open this screen from an order context.');
-// //       return;
-// //     }
-    
-// //     setIsUploading(true);
-    
-// //     try {
-// //       console.log('📄 Uploading prescription for order:', orderId, 'file:', selectedFile);
-// //       // Pass the mimeType from selected file to ensure correct type detection
-// //       const res = await orderService.uploadPrescription(orderId, selectedFile.uri, selectedFile.mimeType);
-// //       console.log('📄 Upload response:', res);
-      
-// //       if (!res.success) {
-// //         throw new Error(res.error || 'Upload failed');
-// //       }
-
-// //       // Handle both possible field names from API response
-// //       const signedUrl = (res.data as any)?.signedPresciptionUrl || (res.data as any)?.signedPrescriptionUrl;
-// //       console.log('📄 Prescription uploaded successfully, signed URL:', signedUrl);
-
-// //       Alert.alert('Upload Successful', 'Prescription uploaded successfully.', [
-// //         { text: 'View Order', onPress: () => navigation.navigate('OrderDetail', { orderId }) },
-// //         // { text: 'OK', onPress: () => navigation.goBack() },
-// //       ]);
-// //     } catch (error: any) {
-// //       const message = (error?.message as string) || 'Failed to upload prescription. Please try again.';
-// //       console.error('📄 Upload error:', message, error);
-// //       Alert.alert('Upload Failed', message);
-// //     } finally {
-// //       setIsUploading(false);
-// //     }
-// //   };
-
-// //   const themedStyles = StyleSheet.create({
-// //     container: {
-// //       flex: 1,
-// //       backgroundColor: theme.colors.background,
-// //     },
-// //     header: {
-// //       flexDirection: 'row',
-// //       alignItems: 'center',
-// //       paddingHorizontal: 16,
-// //       paddingVertical: 12,
-// //       paddingTop: 20, // Add more top padding to bring header down
-// //       borderBottomWidth: 1,
-// //       borderBottomColor: theme.colors.border,
-// //       backgroundColor: theme.colors.surface,
-// //     },
-// //     backButton: {
-// //       padding: 8,
-// //       marginRight: 8,
-// //     },
-// //     headerTitle: {
-// //       flex: 1,
-// //       fontSize: 18,
-// //       fontWeight: 'bold',
-// //       color: theme.colors.text,
-// //       textAlign: 'center',
-// //     },
-// //     reloadButton: {
-// //       padding: 8,
-// //       marginLeft: 8,
-// //     },
-// //     content: {
-// //       flex: 1,
-// //     },
-// //     scrollContent: {
-// //       padding: 16,
-// //       paddingBottom: 100, // Extra padding to ensure upload button is visible
-// //     },
-// //     actionButtonsContainer: {
-// //       flexDirection: 'row',
-// //       justifyContent: 'space-between',
-// //       marginBottom: 24,
-// //     },
-// //     actionButton: {
-// //       flex: 1,
-// //       marginHorizontal: 4,
-// //       paddingVertical: 16,
-// //       paddingHorizontal: 12,
-// //       borderRadius: 12,
-// //       alignItems: 'center',
-// //       backgroundColor: theme.colors.surface,
-// //       borderWidth: 1,
-// //       borderColor: theme.colors.border,
-// //       shadowColor: theme.colors.text,
-// //       shadowOffset: { width: 0, height: 2 },
-// //       shadowOpacity: 0.1,
-// //       shadowRadius: 4,
-// //       elevation: 2,
-// //     },
-// //     actionButtonText: {
-// //       fontSize: 12,
-// //       fontWeight: '600',
-// //       color: theme.colors.text,
-// //       marginTop: 8,
-// //       textAlign: 'center',
-// //     },
-// //     selectedImageContainer: {
-// //       marginBottom: 24,
-// //       borderRadius: 12,
-// //       overflow: 'hidden',
-// //       backgroundColor: theme.colors.surface,
-// //       borderWidth: 1,
-// //       borderColor: theme.colors.border,
-// //     },
-// //     selectedImage: {
-// //       width: '100%',
-// //       height: 200,
-// //       resizeMode: 'cover',
-// //     },
-// //     removeImageButton: {
-// //       position: 'absolute',
-// //       top: 8,
-// //       right: 8,
-// //       backgroundColor: 'rgba(0,0,0,0.6)',
-// //       borderRadius: 15,
-// //       padding: 8,
-// //     },
-// //     section: {
-// //       marginBottom: 24,
-// //     },
-// //     sectionTitle: {
-// //       fontSize: 18,
-// //       fontWeight: 'bold',
-// //       color: theme.colors.text,
-// //       marginBottom: 12,
-// //     },
-// //     guidelineItem: {
-// //       flexDirection: 'row',
-// //       marginBottom: 8,
-// //       paddingLeft: 8,
-// //     },
-// //     guidelineNumber: {
-// //       fontSize: 16,
-// //       fontWeight: 'bold',
-// //       color: theme.colors.primary,
-// //       marginRight: 12,
-// //       minWidth: 20,
-// //     },
-// //     guidelineText: {
-// //       flex: 1,
-// //       fontSize: 14,
-// //       color: theme.colors.text,
-// //       lineHeight: 20,
-// //     },
-// //     dosDontsContainer: {
-// //       flexDirection: 'row',
-// //       marginBottom: 16,
-// //     },
-// //     dosColumn: {
-// //       flex: 1,
-// //       marginRight: 8,
-// //     },
-// //     dontsColumn: {
-// //       flex: 1,
-// //       marginLeft: 8,
-// //     },
-// //     dosDontsTitle: {
-// //       fontSize: 16,
-// //       fontWeight: 'bold',
-// //       color: theme.colors.primary,
-// //       marginBottom: 8,
-// //     },
-// //     dosDontsItem: {
-// //       flexDirection: 'row',
-// //       marginBottom: 6,
-// //     },
-// //     dosDontsNumber: {
-// //       fontSize: 14,
-// //       fontWeight: 'bold',
-// //       color: theme.colors.primary,
-// //       marginRight: 8,
-// //       minWidth: 16,
-// //     },
-// //     dosDontsText: {
-// //       flex: 1,
-// //       fontSize: 13,
-// //       color: theme.colors.text,
-// //       lineHeight: 18,
-// //     },
-// //     processStepsContainer: {
-// //       backgroundColor: theme.colors.surface,
-// //       borderRadius: 12,
-// //       padding: 16,
-// //       borderWidth: 1,
-// //       borderColor: theme.colors.border,
-// //     },
-// //     processStep: {
-// //       flexDirection: 'row',
-// //       marginBottom: 12,
-// //       alignItems: 'flex-start',
-// //     },
-// //     processStepNumber: {
-// //       fontSize: 14,
-// //       fontWeight: 'bold',
-// //       color: theme.colors.primary,
-// //       marginRight: 12,
-// //       minWidth: 20,
-// //     },
-// //     processStepText: {
-// //       flex: 1,
-// //       fontSize: 14,
-// //       color: theme.colors.text,
-// //       lineHeight: 20,
-// //     },
-// //     uploadButton: {
-// //       backgroundColor: '#4285F4',
-// //       paddingVertical: 16,
-// //       borderRadius: 12,
-// //       alignItems: 'center',
-// //       marginTop: 16,
-// //     },
-// //     uploadButtonDisabled: {
-// //       backgroundColor: theme.colors.border,
-// //       opacity: 0.6,
-// //     },
-// //     uploadButtonText: {
-// //       color: theme.colors.surface,
-// //       fontSize: 16,
-// //       fontWeight: 'bold',
-// //     },
-// //     // voice-related styles removed from this screen
-// //     divider: {
-// //       height: 1,
-// //       backgroundColor: theme.colors.border,
-// //       marginVertical: 16,
-// //     },
-// //   });
-
-// //   const prescriptionGuidelines = [
-// //     'Ensure the prescription is clearly visible and readable',
-// //     'Make sure all text and numbers are not blurred or cut off',
-// //     'Include both sides if the prescription is double-sided',
-// //     'Ensure good lighting when taking the photo'
-// //   ];
-
-// //   const dos = [
-// //     'Use good lighting',
-// //     'Keep prescription flat',
-// //     'Include all text',
-// //     'Check image clarity'
-// //   ];
-
-// //   const donts = [
-// //     'Avoid shadows',
-// //     'Don\'t fold prescription',
-// //     'Don\'t cut off text',
-// //     'Avoid blurry images'
-// //   ];
-
-// //   const processSteps = [
-// //     'Upload your prescription image using camera or documents',
-// //     'Our pharmacist will review your prescription within 2-4 hours',
-// //     'You will receive a call or SMS with medicine availability and pricing',
-// //     'Confirm your order and make payment to complete the process'
-// //   ];
-
-// //   return (
-// //     <SafeAreaView style={themedStyles.container} edges={['top']}>
-// //       <View style={themedStyles.header}>
-// //         <TouchableOpacity 
-// //           style={themedStyles.backButton}
-// //           onPress={() => navigation.goBack()}
-// //         >
-// //           <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-// //         </TouchableOpacity>
-// //         <Text style={themedStyles.headerTitle}>Upload Prescription</Text>
-// //         <View style={{ width: 40, marginLeft: 8 }} />
-// //       </View>
-
-// //       <ScrollView 
-// //         style={themedStyles.content} 
-// //         showsVerticalScrollIndicator={false}
-// //         contentContainerStyle={themedStyles.scrollContent}
-// //       >
-// //         {/* Action Buttons */}
-// //         <View style={themedStyles.actionButtonsContainer}>
-// //           <TouchableOpacity style={themedStyles.actionButton} onPress={handleTakePhoto}>
-// //             <MaterialIcons name="camera-alt" size={32} color={theme.colors.primary} />
-// //             <Text style={themedStyles.actionButtonText}>Take Photo</Text>
-// //           </TouchableOpacity>
-          
-// //           <TouchableOpacity style={themedStyles.actionButton} onPress={handleChooseFromDocuments}>
-// //             <MaterialIcons name="insert-drive-file" size={32} color={theme.colors.primary} />
-// //             <Text style={themedStyles.actionButtonText}>Documents (PDF/Image)</Text>
-// //           </TouchableOpacity>
-// //         </View>
-
-// //         {/* Voice input is only on Search screen */}
-// //         {/* Loader placeholder while image preview is being prepared */}
-// // {imageLoading && !selectedFile && (
-// //   <View
-// //     style={{
-// //       height: 200,
-// //       borderRadius: 12,
-// //       backgroundColor: theme.colors.surface,
-// //       borderWidth: 1,
-// //       borderColor: theme.colors.border,
-// //       justifyContent: 'center',
-// //       alignItems: 'center',
-// //       marginBottom: 24,
-// //     }}
-// //   >
-// //     <ActivityIndicator size="large" color={theme.colors.primary} />
-// //     <Text style={{ marginTop: 12, fontSize: 14, color: theme.colors.secondary }}>
-// //       Loading...
-// //     </Text>
-// //   </View>
-// // )}
-
-
-// //         {/* Selected File Preview - render Image when we have image so onLoad can fire */}
-// //         {/* {selectedFile && selectedFile.isImage && (
-// //           <View style={themedStyles.selectedImageContainer}>
-// //             <Image
-// //               source={{ uri: selectedFile.uri }}
-// //               style={themedStyles.selectedImage}
-// //               onLoad={() => setImageLoading(false)}
-// //               onError={() => setImageLoading(false)}
-// //             />
-// //             {imageLoading && (
-// //               <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: theme.colors.background, justifyContent: 'center', alignItems: 'center' }}>
-// //                 <ActivityIndicator size="large" color={theme.colors.primary} />
-// //                 <Text style={{ marginTop: 12, fontSize: 14, color: theme.colors.secondary }}>Loading...</Text>
-// //               </View>
-// //             )}
-// //             <TouchableOpacity
-// //               style={themedStyles.removeImageButton}
-// //               onPress={() => { setSelectedFile(null); setImageLoading(false); }}
-// //             >
-// //               <MaterialIcons name="close" size={20} color="white" />
-// //             </TouchableOpacity>
-// //           </View>
-// //         )} */}
-
-// //           {/* Selected File Preview - Image */}
-// // {(imageLoading || (selectedFile && selectedFile.isImage)) && (
-// //   <View style={themedStyles.selectedImageContainer}>
-
-// //     {selectedFile && (
-// //       <Image
-// //         source={{ uri: selectedFile.uri }}
-// //         style={themedStyles.selectedImage}
-// //         onLoad={() => setImageLoading(false)}
-// //         onError={() => setImageLoading(false)}
-// //       />
-// //     )}
-
-// //     {imageLoading && (
-// //       <View
-// //         style={{
-// //           position: 'absolute',
-// //           top: 0,
-// //           left: 0,
-// //           right: 0,
-// //           bottom: 0,
-// //           backgroundColor: theme.colors.background,
-// //           justifyContent: 'center',
-// //           alignItems: 'center',
-// //         }}
-// //       >
-// //         <ActivityIndicator size="large" color={theme.colors.primary} />
-// //         <Text style={{ marginTop: 12, fontSize: 14, color: theme.colors.secondary }}>
-// //           Loading...
-// //         </Text>
-// //       </View>
-// //     )}
-
-// //     {selectedFile && (
-// //       <TouchableOpacity
-// //         style={themedStyles.removeImageButton}
-// //         onPress={() => {
-// //           setSelectedFile(null);
-// //           setImageLoading(false);
-// //         }}
-// //       >
-// //         <MaterialIcons name="close" size={20} color="white" />
-// //       </TouchableOpacity>
-// //     )}
-
-// //   </View>
-// // )}
-
-
-// //         {selectedFile && !selectedFile.isImage && (
-// //           <View style={themedStyles.selectedImageContainer}>
-// //             <View
-// //               style={{
-// //                 height: 200,
-// //                 alignItems: 'center',
-// //                 justifyContent: 'center',
-// //                 padding: 16,
-// //               }}
-// //             >
-// //               <MaterialIcons name="picture-as-pdf" size={48} color={theme.colors.primary} />
-// //               <Text
-// //                 style={{
-// //                   marginTop: 8,
-// //                   color: theme.colors.text,
-// //                   fontSize: 14,
-// //                   textAlign: 'center',
-// //                 }}
-// //                 numberOfLines={2}
-// //               >
-// //                 {selectedFile.name || 'Selected document'}
-// //               </Text>
-// //             </View>
-// //             <TouchableOpacity
-// //               style={themedStyles.removeImageButton}
-// //               onPress={() => setSelectedFile(null)}
-// //             >
-// //               <MaterialIcons name="close" size={20} color="white" />
-// //             </TouchableOpacity>
-// //           </View>
-// //         )}
-
-// //         {/* Prescription Guidelines */}
-// //         <View style={themedStyles.section}>
-// //           <Text style={themedStyles.sectionTitle}>Prescription Guidelines</Text>
-// //           {prescriptionGuidelines.map((guideline, index) => (
-// //             <View key={index} style={themedStyles.guidelineItem}>
-// //               <Text style={themedStyles.guidelineNumber}>{index + 1}.</Text>
-// //               <Text style={themedStyles.guidelineText}>{guideline}</Text>
-// //             </View>
-// //           ))}
-// //         </View>
-
-// //         <View style={themedStyles.divider} />
-
-// //         {/* Do's & Don'ts */}
-// //         <View style={themedStyles.section}>
-// //           <Text style={themedStyles.sectionTitle}>Do's & Don'ts</Text>
-// //           <View style={themedStyles.dosDontsContainer}>
-// //             <View style={themedStyles.dosColumn}>
-// //               <Text style={themedStyles.dosDontsTitle}>Do's</Text>
-// //               {dos.map((item, index) => (
-// //                 <View key={index} style={themedStyles.dosDontsItem}>
-// //                   <Text style={themedStyles.dosDontsNumber}>{index + 1}.</Text>
-// //                   <Text style={themedStyles.dosDontsText}>{item}</Text>
-// //                 </View>
-// //               ))}
-// //             </View>
-// //             <View style={themedStyles.dontsColumn}>
-// //               <Text style={themedStyles.dosDontsTitle}>Don'ts</Text>
-// //               {donts.map((item, index) => (
-// //                 <View key={index} style={themedStyles.dosDontsItem}>
-// //                   <Text style={themedStyles.dosDontsNumber}>{index + 1}.</Text>
-// //                   <Text style={themedStyles.dosDontsText}>{item}</Text>
-// //                 </View>
-// //               ))}
-// //             </View>
-// //           </View>
-// //         </View>
-
-// //         <View style={themedStyles.divider} />
-
-// //         {/* What happens after upload */}
-// //         <View style={themedStyles.section}>
-// //           <Text style={themedStyles.sectionTitle}>What happens after you upload Prescription</Text>
-// //           <View style={themedStyles.processStepsContainer}>
-// //             {processSteps.map((step, index) => (
-// //               <View key={index} style={themedStyles.processStep}>
-// //                 <Text style={themedStyles.processStepNumber}>{index + 1}.</Text>
-// //                 <Text style={themedStyles.processStepText}>{step}</Text>
-// //               </View>
-// //             ))}
-// //           </View>
-// //         </View>
-
-// //         {/* Upload Button */}
-// //         {selectedFile && (
-// //           <TouchableOpacity 
-// //             style={[themedStyles.uploadButton, isUploading && themedStyles.uploadButton]} 
-// //             onPress={handleUpload}
-// //             disabled={isUploading}
-// //           >
-// //             {isUploading ? (
-// //               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-// //                 <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
-// //                 <Text style={themedStyles.uploadButtonText}>Uploading{uploadingDots}</Text>
-// //               </View>
-// //             ) : (
-// //               <Text style={themedStyles.uploadButtonText}>Upload Prescription</Text>
-// //             )}
-// //           </TouchableOpacity>
-// //         )}
-// //       </ScrollView>
-// //     </SafeAreaView>
-// //   );
-// // };
-
-// // export default UploadPrescriptionScreen;
-
-
-// import React, { useState, useCallback, useEffect } from 'react';
-// import {
-//   View,
-//   Text,
-//   StyleSheet,
-//   TouchableOpacity,
-//   ScrollView,
-//   Alert,
-//   Image,
-//   Platform,
-//   ActivityIndicator,
-//   PermissionsAndroid,
-// } from 'react-native';
-// import { SafeAreaView } from 'react-native-safe-area-context';
-// import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-// import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-// import { RootStackParamList } from '../../navigation/types';
-// import { useTheme } from '../../contexts/ThemeContext';
-// import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-// import { launchCamera, CameraOptions } from 'react-native-image-picker';
-// import * as DocumentPicker from 'expo-document-picker';
-// import { LinearGradient } from 'expo-linear-gradient';
-// import orderService from '../../services/api/orderService';
-
-// type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'UploadPrescription'>;
-// type RouteProp = { params: { orderId: string; storeId?: string } };
-
-// const UploadPrescriptionScreen = () => {
-//   const navigation = useNavigation<any>();
-//   const route = useRoute() as unknown as RouteProp;
-//   const orderId = route.params?.orderId;
-//   const storeId = route.params?.storeId;
-//   const { theme } = useTheme();
-//   const [selectedFile, setSelectedFile] = useState<{
-//     uri: string;
-//     name?: string;
-//     mimeType?: string | null;
-//     isImage?: boolean;
-//   } | null>(null);
-//   const [isUploading, setIsUploading] = useState(false);
-//   const [uploadingDots, setUploadingDots] = useState('');
-//   const [imageLoading, setImageLoading] = useState(false);
-
-//   // Animated dots for "Uploading..." (cycle . / .. / ...)
-//   useEffect(() => {
-//     if (!isUploading) {
-//       setUploadingDots('');
-//       return;
-//     }
-//     const frames = ['.', '..', '...'];
-//     let i = 0;
-//     const id = setInterval(() => {
-//       setUploadingDots(frames[i % 3]);
-//       i++;
-//     }, 400);
-//     return () => clearInterval(id);
-//   }, [isUploading]);
-
-//   useFocusEffect(
-//     useCallback(() => {
-//       console.log('📋 UploadPrescription screen focused');
-//     }, [])
-//   );
-
-//   const requestPermissions = async () => {
-//     if (Platform.OS === 'android') {
-//       const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.CAMERA);
-//       if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
-//         Alert.alert(
-//           'Permissions Required',
-//           'Camera permission is required to take prescription photos.',
-//           [{ text: 'OK' }]
-//         );
-//         return false;
-//       }
-//     }
-//     return true;
-//   };
-
-//   const handleTakePhoto = async () => {
-//     const hasPermissions = await requestPermissions();
-//     if (!hasPermissions) return;
-
-//     try {
-//       const options: CameraOptions = {
-//         mediaType: 'photo',
-//         quality: 0.8,
-//         cameraType: 'back',
-//         saveToPhotos: false,
-//       };
-
-//       const result: any = await new Promise(resolve => launchCamera(options, resolve));
-
-//       if (result && !result.didCancel && result.assets && result.assets[0]) {
-//         setImageLoading(true);
-//         const asset = result.assets[0];
-        
-//         // Extract filename from URI or use default
-//         const uriParts = asset.uri.split('/');
-//         const rawFileName = asset.fileName || uriParts[uriParts.length - 1] || `prescription_${Date.now()}`;
-        
-//         // Detect mimeType from file extension (similar to documents feature)
-//         let mimeType: string | null = null;
-//         let finalFileName = rawFileName;
-        
-//         // Check if filename has extension
-//         if (/\.(jpg|jpeg)$/i.test(rawFileName)) {
-//           mimeType = 'image/jpeg';
-//         } else if (/\.(png)$/i.test(rawFileName)) {
-//           mimeType = 'image/png';
-//         } else if (/\.(gif)$/i.test(rawFileName)) {
-//           mimeType = 'image/gif';
-//         } else if (/\.(webp)$/i.test(rawFileName)) {
-//           mimeType = 'image/webp';
-//         } else {
-//           // No extension found - add .jpg and set mimeType to image/jpeg (camera photos are usually JPEG)
-//           finalFileName = `${rawFileName}.jpg`;
-//           mimeType = 'image/jpeg';
-//         }
-        
-//         // Fallback: if mimeType is still null, default to image/jpeg
-//         if (!mimeType) {
-//           mimeType = 'image/jpeg';
-//         }
-        
-//         console.log('📸 Camera photo selected:', { uri: asset.uri, fileName: finalFileName, mimeType });
-        
-//         setSelectedFile({
-//           uri: asset.uri,
-//           name: finalFileName,
-//           mimeType: mimeType,
-//           isImage: true,
-//         });
-//       }
-//     } catch (error) {
-//       setImageLoading(false);
-//       console.error('Error taking photo:', error);
-//       Alert.alert('Error', 'Failed to take photo. Please try again.');
-//     }
-//   };
-
-//   const handleChooseFromDocuments = async () => {
-//     try {
-//       const result = await DocumentPicker.getDocumentAsync({
-//         type: ['image/*', 'application/pdf'], // Allow both images and PDFs
-//         copyToCacheDirectory: true,
-//         multiple: false,
-//       });
-
-//       if (result.canceled) {
-//         return;
-//       }
-
-//       // New API shape: result.assets
-//       const asset = (result as any).assets?.[0] || (result as any);
-//       if (asset && asset.uri) {
-//         const mimeType: string | null =
-//           asset.mimeType || asset.type || null;
-
-//         const isImage =
-//           mimeType?.startsWith('image/') ||
-//           /\.(jpg|jpeg|png|gif|webp)$/i.test(asset.name || asset.uri);
-
-//         // Only show loader for images (not PDFs)
-//         if (isImage) {
-//           setImageLoading(true);
-//         }
-        
-//         setSelectedFile({
-//           uri: asset.uri,
-//           name: asset.name || (isImage ? 'Prescription image' : 'Prescription document'),
-//           mimeType,
-//           isImage,
-//         });
-//       }
-//     } catch (error) {
-//       setImageLoading(false);
-//       console.error('Error choosing from documents:', error);
-//       Alert.alert('Error', 'Failed to select file from documents. Please try again.');
-//     }
-//   };
-
-//   const handleImageLoad = () => {
-//     console.log('Image loaded successfully');
-//     setImageLoading(false);
-//   };
-
-//   const handleImageError = () => {
-//     console.log('Failed to load image');
-//     setImageLoading(false);
-//   };
-
-//   const handleRemoveFile = () => {
-//     setSelectedFile(null);
-//     setImageLoading(false);
-//   };
-
-//   const handleUpload = async () => {
-//     if (!selectedFile?.uri) {
-//       Alert.alert('No File', 'Please select a prescription file or image before uploading');
-//       return;
-//     }
-//     if (!orderId) {
-//       Alert.alert('Missing Order', 'Order ID is missing. Open this screen from an order context.');
-//       return;
-//     }
-    
-//     setIsUploading(true);
-    
-//     try {
-//       console.log('📄 Uploading prescription for order:', orderId, 'file:', selectedFile);
-//       // Pass the mimeType from selected file to ensure correct type detection
-//       const res = await orderService.uploadPrescription(orderId, selectedFile.uri, selectedFile.mimeType);
-//       console.log('📄 Upload response:', res);
-      
-//       if (!res.success) {
-//         throw new Error(res.error || 'Upload failed');
-//       }
-
-//       // Handle both possible field names from API response
-//       const signedUrl = (res.data as any)?.signedPresciptionUrl || (res.data as any)?.signedPrescriptionUrl;
-//       console.log('📄 Prescription uploaded successfully, signed URL:', signedUrl);
-
-//       Alert.alert('Upload Successful', 'Prescription uploaded successfully.', [
-//         { text: 'View Order', onPress: () => navigation.navigate('OrderDetail', { orderId }) },
-//         // { text: 'OK', onPress: () => navigation.goBack() },
-//       ]);
-//     } catch (error: any) {
-//       const message = (error?.message as string) || 'Failed to upload prescription. Please try again.';
-//       console.error('📄 Upload error:', message, error);
-//       Alert.alert('Upload Failed', message);
-//     } finally {
-//       setIsUploading(false);
-//     }
-//   };
-
-//   const themedStyles = StyleSheet.create({
-//     container: {
-//       flex: 1,
-//       backgroundColor: theme.colors.background,
-//     },
-//     header: {
-//       flexDirection: 'row',
-//       alignItems: 'center',
-//       paddingHorizontal: 16,
-//       paddingVertical: 12,
-//       paddingTop: 20, // Add more top padding to bring header down
-//       borderBottomWidth: 1,
-//       borderBottomColor: theme.colors.border,
-//       backgroundColor: theme.colors.surface,
-//     },
-//     backButton: {
-//       padding: 8,
-//       marginRight: 8,
-//     },
-//     headerTitle: {
-//       flex: 1,
-//       fontSize: 18,
-//       fontWeight: 'bold',
-//       color: theme.colors.text,
-//       textAlign: 'center',
-//     },
-//     reloadButton: {
-//       padding: 8,
-//       marginLeft: 8,
-//     },
-//     content: {
-//       flex: 1,
-//     },
-//     scrollContent: {
-//       padding: 16,
-//       paddingBottom: 100, // Extra padding to ensure upload button is visible
-//     },
-//     actionButtonsContainer: {
-//       flexDirection: 'row',
-//       justifyContent: 'space-between',
-//       marginBottom: 24,
-//     },
-//     actionButton: {
-//       flex: 1,
-//       marginHorizontal: 4,
-//       paddingVertical: 16,
-//       paddingHorizontal: 12,
-//       borderRadius: 12,
-//       alignItems: 'center',
-//       backgroundColor: theme.colors.surface,
-//       borderWidth: 1,
-//       borderColor: theme.colors.border,
-//       shadowColor: theme.colors.text,
-//       shadowOffset: { width: 0, height: 2 },
-//       shadowOpacity: 0.1,
-//       shadowRadius: 4,
-//       elevation: 2,
-//     },
-//     actionButtonText: {
-//       fontSize: 12,
-//       fontWeight: '600',
-//       color: theme.colors.text,
-//       marginTop: 8,
-//       textAlign: 'center',
-//     },
-//     selectedImageContainer: {
-//       marginBottom: 24,
-//       borderRadius: 12,
-//       overflow: 'hidden',
-//       backgroundColor: theme.colors.surface,
-//       borderWidth: 1,
-//       borderColor: theme.colors.border,
-//       minHeight: 200,
-//       position: 'relative',
-//     },
-//     selectedImage: {
-//       width: '100%',
-//       height: 200,
-//       resizeMode: 'cover',
-//     },
-//     removeImageButton: {
-//       position: 'absolute',
-//       top: 8,
-//       right: 8,
-//       backgroundColor: 'rgba(0,0,0,0.6)',
-//       borderRadius: 15,
-//       padding: 8,
-//       zIndex: 2,
-//     },
-//     loaderContainer: {
-//       position: 'absolute',
-//       top: 0,
-//       left: 0,
-//       right: 0,
-//       bottom: 0,
-//       backgroundColor: theme.colors.surface,
-//       justifyContent: 'center',
-//       alignItems: 'center',
-//       zIndex: 1,
-//     },
-//     section: {
-//       marginBottom: 24,
-//     },
-//     sectionTitle: {
-//       fontSize: 18,
-//       fontWeight: 'bold',
-//       color: theme.colors.text,
-//       marginBottom: 12,
-//     },
-//     guidelineItem: {
-//       flexDirection: 'row',
-//       marginBottom: 8,
-//       paddingLeft: 8,
-//     },
-//     guidelineNumber: {
-//       fontSize: 16,
-//       fontWeight: 'bold',
-//       color: theme.colors.primary,
-//       marginRight: 12,
-//       minWidth: 20,
-//     },
-//     guidelineText: {
-//       flex: 1,
-//       fontSize: 14,
-//       color: theme.colors.text,
-//       lineHeight: 20,
-//     },
-//     dosDontsContainer: {
-//       flexDirection: 'row',
-//       marginBottom: 16,
-//     },
-//     dosColumn: {
-//       flex: 1,
-//       marginRight: 8,
-//     },
-//     dontsColumn: {
-//       flex: 1,
-//       marginLeft: 8,
-//     },
-//     dosDontsTitle: {
-//       fontSize: 16,
-//       fontWeight: 'bold',
-//       color: theme.colors.primary,
-//       marginBottom: 8,
-//     },
-//     dosDontsItem: {
-//       flexDirection: 'row',
-//       marginBottom: 6,
-//     },
-//     dosDontsNumber: {
-//       fontSize: 14,
-//       fontWeight: 'bold',
-//       color: theme.colors.primary,
-//       marginRight: 8,
-//       minWidth: 16,
-//     },
-//     dosDontsText: {
-//       flex: 1,
-//       fontSize: 13,
-//       color: theme.colors.text,
-//       lineHeight: 18,
-//     },
-//     processStepsContainer: {
-//       backgroundColor: theme.colors.surface,
-//       borderRadius: 12,
-//       padding: 16,
-//       borderWidth: 1,
-//       borderColor: theme.colors.border,
-//     },
-//     processStep: {
-//       flexDirection: 'row',
-//       marginBottom: 12,
-//       alignItems: 'flex-start',
-//     },
-//     processStepNumber: {
-//       fontSize: 14,
-//       fontWeight: 'bold',
-//       color: theme.colors.primary,
-//       marginRight: 12,
-//       minWidth: 20,
-//     },
-//     processStepText: {
-//       flex: 1,
-//       fontSize: 14,
-//       color: theme.colors.text,
-//       lineHeight: 20,
-//     },
-//     uploadButton: {
-//       backgroundColor: '#4285F4',
-//       paddingVertical: 16,
-//       borderRadius: 12,
-//       alignItems: 'center',
-//       marginTop: 16,
-//     },
-//     uploadButtonDisabled: {
-//       backgroundColor: theme.colors.border,
-//       opacity: 0.6,
-//     },
-//     uploadButtonText: {
-//       color: theme.colors.surface,
-//       fontSize: 16,
-//       fontWeight: 'bold',
-//     },
-//     divider: {
-//       height: 1,
-//       backgroundColor: theme.colors.border,
-//       marginVertical: 16,
-//     },
-//   });
-
-//   const prescriptionGuidelines = [
-//     'Ensure the prescription is clearly visible and readable',
-//     'Make sure all text and numbers are not blurred or cut off',
-//     'Include both sides if the prescription is double-sided',
-//     'Ensure good lighting when taking the photo'
-//   ];
-
-//   const dos = [
-//     'Use good lighting',
-//     'Keep prescription flat',
-//     'Include all text',
-//     'Check image clarity'
-//   ];
-
-//   const donts = [
-//     'Avoid shadows',
-//     'Don\'t fold prescription',
-//     'Don\'t cut off text',
-//     'Avoid blurry images'
-//   ];
-
-//   const processSteps = [
-//     'Upload your prescription image using camera or documents',
-//     'Our pharmacist will review your prescription within 2-4 hours',
-//     'You will receive a call or SMS with medicine availability and pricing',
-//     'Confirm your order and make payment to complete the process'
-//   ];
-
-//   return (
-//     <SafeAreaView style={themedStyles.container} edges={['top']}>
-//       <View style={themedStyles.header}>
-//         <TouchableOpacity 
-//           style={themedStyles.backButton}
-//           onPress={() => navigation.goBack()}
-//         >
-//           <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
-//         </TouchableOpacity>
-//         <Text style={themedStyles.headerTitle}>Upload Prescription</Text>
-//         <View style={{ width: 40, marginLeft: 8 }} />
-//       </View>
-
-//       <ScrollView 
-//         style={themedStyles.content} 
-//         showsVerticalScrollIndicator={false}
-//         contentContainerStyle={themedStyles.scrollContent}
-//       >
-//         {/* Action Buttons */}
-//         <View style={themedStyles.actionButtonsContainer}>
-//           <TouchableOpacity style={themedStyles.actionButton} onPress={handleTakePhoto}>
-//             <MaterialIcons name="camera-alt" size={32} color={theme.colors.primary} />
-//             <Text style={themedStyles.actionButtonText}>Take Photo</Text>
-//           </TouchableOpacity>
-          
-//           <TouchableOpacity style={themedStyles.actionButton} onPress={handleChooseFromDocuments}>
-//             <MaterialIcons name="insert-drive-file" size={32} color={theme.colors.primary} />
-//             <Text style={themedStyles.actionButtonText}>Documents (PDF/Image)</Text>
-//           </TouchableOpacity>
-//         </View>
-
-//         {/* Selected File Preview */}
-//         {selectedFile && (
-//           <View style={themedStyles.selectedImageContainer}>
-//             {/* Show loader on top while image is loading */}
-//             {imageLoading && selectedFile.isImage && (
-//               <View style={themedStyles.loaderContainer}>
-//                 <ActivityIndicator size="large" color={theme.colors.primary} />
-//                 <Text style={{ marginTop: 12, fontSize: 14, color: theme.colors.secondary }}>
-//                   Loading preview...
-//                 </Text>
-//               </View>
-//             )}
-            
-//             {/* Show PDF/document preview */}
-//             {!selectedFile.isImage && (
-//               <View
-//                 style={{
-//                   height: 200,
-//                   alignItems: 'center',
-//                   justifyContent: 'center',
-//                   padding: 16,
-//                 }}
-//               >
-//                 <MaterialIcons name="picture-as-pdf" size={48} color={theme.colors.primary} />
-//                 <Text
-//                   style={{
-//                     marginTop: 8,
-//                     color: theme.colors.text,
-//                     fontSize: 14,
-//                     textAlign: 'center',
-//                   }}
-//                   numberOfLines={2}
-//                 >
-//                   {selectedFile.name || 'Selected document'}
-//                 </Text>
-//               </View>
-//             )}
-            
-//             {/* Show image preview (still renders but may be behind loader) */}
-//             {selectedFile.isImage && (
-//               <Image
-//                 source={{ uri: selectedFile.uri }}
-//                 style={themedStyles.selectedImage}
-//                 onLoad={handleImageLoad}
-//                 onError={handleImageError}
-//               />
-//             )}
-            
-//             {/* Remove button (always on top) */}
-//             <TouchableOpacity
-//               style={themedStyles.removeImageButton}
-//               onPress={handleRemoveFile}
-//             >
-//               <MaterialIcons name="close" size={20} color="white" />
-//             </TouchableOpacity>
-//           </View>
-//         )}
-
-//         {/* Prescription Guidelines */}
-//         <View style={themedStyles.section}>
-//           <Text style={themedStyles.sectionTitle}>Prescription Guidelines</Text>
-//           {prescriptionGuidelines.map((guideline, index) => (
-//             <View key={index} style={themedStyles.guidelineItem}>
-//               <Text style={themedStyles.guidelineNumber}>{index + 1}.</Text>
-//               <Text style={themedStyles.guidelineText}>{guideline}</Text>
-//             </View>
-//           ))}
-//         </View>
-
-//         <View style={themedStyles.divider} />
-
-//         {/* Do's & Don'ts */}
-//         <View style={themedStyles.section}>
-//           <Text style={themedStyles.sectionTitle}>Do's & Don'ts</Text>
-//           <View style={themedStyles.dosDontsContainer}>
-//             <View style={themedStyles.dosColumn}>
-//               <Text style={themedStyles.dosDontsTitle}>Do's</Text>
-//               {dos.map((item, index) => (
-//                 <View key={index} style={themedStyles.dosDontsItem}>
-//                   <Text style={themedStyles.dosDontsNumber}>{index + 1}.</Text>
-//                   <Text style={themedStyles.dosDontsText}>{item}</Text>
-//                 </View>
-//               ))}
-//             </View>
-//             <View style={themedStyles.dontsColumn}>
-//               <Text style={themedStyles.dosDontsTitle}>Don'ts</Text>
-//               {donts.map((item, index) => (
-//                 <View key={index} style={themedStyles.dosDontsItem}>
-//                   <Text style={themedStyles.dosDontsNumber}>{index + 1}.</Text>
-//                   <Text style={themedStyles.dosDontsText}>{item}</Text>
-//                 </View>
-//               ))}
-//             </View>
-//           </View>
-//         </View>
-
-//         <View style={themedStyles.divider} />
-
-//         {/* What happens after upload */}
-//         <View style={themedStyles.section}>
-//           <Text style={themedStyles.sectionTitle}>What happens after you upload Prescription</Text>
-//           <View style={themedStyles.processStepsContainer}>
-//             {processSteps.map((step, index) => (
-//               <View key={index} style={themedStyles.processStep}>
-//                 <Text style={themedStyles.processStepNumber}>{index + 1}.</Text>
-//                 <Text style={themedStyles.processStepText}>{step}</Text>
-//               </View>
-//             ))}
-//           </View>
-//         </View>
-
-//         {/* Upload Button */}
-//         {selectedFile && (
-//           <TouchableOpacity 
-//             style={[themedStyles.uploadButton, isUploading && themedStyles.uploadButton]} 
-//             onPress={handleUpload}
-//             disabled={isUploading}
-//           >
-//             {isUploading ? (
-//               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-//                 <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
-//                 <Text style={themedStyles.uploadButtonText}>Uploading{uploadingDots}</Text>
-//               </View>
-//             ) : (
-//               <Text style={themedStyles.uploadButtonText}>Upload Prescription</Text>
-//             )}
-//           </TouchableOpacity>
-//         )}
-//       </ScrollView>
-//     </SafeAreaView>
-//   );
-// };
-
-// export default UploadPrescriptionScreen;
-
-
-import React, { useState, useCallback, useEffect } from 'react';
+import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
+import { NativeStackNavigationProp } from "@react-navigation/native-stack";
+import * as DocumentPicker from "expo-document-picker";
+import { LinearGradient } from "expo-linear-gradient";
+import { useCallback, useEffect, useState } from "react";
+import {
+  ActivityIndicator,
   Alert,
   Image,
-  Platform,
-  ActivityIndicator,
   PermissionsAndroid,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../../navigation/types';
-import { useTheme } from '../../contexts/ThemeContext';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { launchCamera, CameraOptions } from 'react-native-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
-import { LinearGradient } from 'expo-linear-gradient';
-import orderService from '../../services/api/orderService';
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  useWindowDimensions,
+} from "react-native";
+import { CameraOptions, launchCamera } from "react-native-image-picker";
+import {
+  SafeAreaView,
+  useSafeAreaInsets,
+} from "react-native-safe-area-context";
+import { RootStackParamList } from "../../navigation/types";
+import orderService from "../../services/api/orderService";
 
-type NavigationProp = NativeStackNavigationProp<RootStackParamList, 'UploadPrescription'>;
+// UI colors matching the design (light gray bg, white card, green gradient, blue accent)
+const UPLOAD_UI = {
+  background: "#F8F8F8",
+  card: "#FFFFFF",
+  textPrimary: "#333333",
+  textSecondary: "#666666",
+  textMuted: "#999999",
+  greenStart: "#4CAF50",
+  greenEnd: "#6BCB77",
+  blueAccent: "#2196F3",
+  borderLight: "#EEEEEE",
+};
+
+type NavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "UploadPrescription"
+>;
 type RouteProp = { params: { orderId: string; storeId?: string } };
 
 const UploadPrescriptionScreen = () => {
   const navigation = useNavigation<any>();
   const route = useRoute() as unknown as RouteProp;
   const orderId = route.params?.orderId;
-  const storeId = route.params?.storeId;
-  const { theme } = useTheme();
   const [selectedFile, setSelectedFile] = useState<{
     uri: string;
     name?: string;
@@ -1363,17 +59,25 @@ const UploadPrescriptionScreen = () => {
     isImage?: boolean;
   } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadingDots, setUploadingDots] = useState('');
+  const [uploadingDots, setUploadingDots] = useState("");
   const [imageLoading, setImageLoading] = useState(false);
-  const [processingImage, setProcessingImage] = useState(false); // NEW: for processing state
+  const [processingImage, setProcessingImage] = useState(false);
+  const [instructionsExpanded, setInstructionsExpanded] = useState(true);
 
-  // Animated dots for "Uploading..." (cycle . / .. / ...)
+  const { width: screenWidth } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
+  const isSmallScreen = screenWidth < 375;
+  const horizontalPadding = Math.max(20, Math.min(24, screenWidth * 0.06));
+  const cardRadius = 24;
+  const scale = Math.min(1, screenWidth / 400);
+  const bottomInset = Math.max(insets.bottom, 16);
+
   useEffect(() => {
     if (!isUploading) {
-      setUploadingDots('');
+      setUploadingDots("");
       return;
     }
-    const frames = ['.', '..', '...'];
+    const frames = [".", "..", "..."];
     let i = 0;
     const id = setInterval(() => {
       setUploadingDots(frames[i % 3]);
@@ -1384,18 +88,20 @@ const UploadPrescriptionScreen = () => {
 
   useFocusEffect(
     useCallback(() => {
-      console.log('📋 UploadPrescription screen focused');
-    }, [])
+      console.log("📋 UploadPrescription screen focused");
+    }, []),
   );
 
   const requestPermissions = async () => {
-    if (Platform.OS === 'android') {
-      const granted = await PermissionsAndroid.request(PermissionsAndroid.PERMISSIONS.CAMERA);
+    if (Platform.OS === "android") {
+      const granted = await PermissionsAndroid.request(
+        PermissionsAndroid.PERMISSIONS.CAMERA,
+      );
       if (granted !== PermissionsAndroid.RESULTS.GRANTED) {
         Alert.alert(
-          'Permissions Required',
-          'Camera permission is required to take prescription photos.',
-          [{ text: 'OK' }]
+          "Permissions Required",
+          "Camera permission is required to take prescription photos.",
+          [{ text: "OK" }],
         );
         return false;
       }
@@ -1409,110 +115,93 @@ const UploadPrescriptionScreen = () => {
 
     try {
       const options: CameraOptions = {
-        mediaType: 'photo',
+        mediaType: "photo",
         quality: 0.8,
-        cameraType: 'back',
+        cameraType: "back",
         saveToPhotos: false,
       };
 
-      const result: any = await new Promise(resolve => launchCamera(options, resolve));
+      const result: any = await new Promise((resolve) =>
+        launchCamera(options, resolve),
+      );
 
       if (result && !result.didCancel && result.assets && result.assets[0]) {
-        // Show processing loader immediately
         setProcessingImage(true);
-        setSelectedFile(null); // Clear any previous file
-        
+        setSelectedFile(null);
+
         const asset = result.assets[0];
-        
-        // Extract filename from URI or use default
-        const uriParts = asset.uri.split('/');
-        const rawFileName = asset.fileName || uriParts[uriParts.length - 1] || `prescription_${Date.now()}`;
-        
-        // Detect mimeType from file extension (similar to documents feature)
+        const uriParts = asset.uri.split("/");
+        const rawFileName =
+          asset.fileName ||
+          uriParts[uriParts.length - 1] ||
+          `prescription_${Date.now()}`;
+
         let mimeType: string | null = null;
         let finalFileName = rawFileName;
-        
-        // Check if filename has extension
+
         if (/\.(jpg|jpeg)$/i.test(rawFileName)) {
-          mimeType = 'image/jpeg';
+          mimeType = "image/jpeg";
         } else if (/\.(png)$/i.test(rawFileName)) {
-          mimeType = 'image/png';
+          mimeType = "image/png";
         } else if (/\.(gif)$/i.test(rawFileName)) {
-          mimeType = 'image/gif';
+          mimeType = "image/gif";
         } else if (/\.(webp)$/i.test(rawFileName)) {
-          mimeType = 'image/webp';
+          mimeType = "image/webp";
         } else {
-          // No extension found - add .jpg and set mimeType to image/jpeg (camera photos are usually JPEG)
           finalFileName = `${rawFileName}.jpg`;
-          mimeType = 'image/jpeg';
+          mimeType = "image/jpeg";
         }
-        
-        // Fallback: if mimeType is still null, default to image/jpeg
-        if (!mimeType) {
-          mimeType = 'image/jpeg';
-        }
-        
-        console.log('📸 Camera photo selected:', { uri: asset.uri, fileName: finalFileName, mimeType });
-        
-        // Set the file immediately to show the preview box with loader
+
+        if (!mimeType) mimeType = "image/jpeg";
+
         const newFile = {
           uri: asset.uri,
           name: finalFileName,
           mimeType: mimeType,
           isImage: true,
         };
-        
         setSelectedFile(newFile);
-        
-        // Also set imageLoading for when the Image component loads
         setImageLoading(true);
-        
-        // We'll keep processingImage true until the image actually appears in the preview
       }
     } catch (error) {
       setProcessingImage(false);
       setImageLoading(false);
-      console.error('Error taking photo:', error);
-      Alert.alert('Error', 'Failed to take photo. Please try again.');
+      console.error("Error taking photo:", error);
+      Alert.alert("Error", "Failed to take photo. Please try again.");
     }
   };
 
   const handleChooseFromDocuments = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['image/*', 'application/pdf'], // Allow both images and PDFs
+        type: ["image/*", "application/pdf"],
         copyToCacheDirectory: true,
         multiple: false,
       });
 
-      if (result.canceled) {
-        return;
-      }
+      if (result.canceled) return;
 
-      // New API shape: result.assets
       const asset = (result as any).assets?.[0] || (result as any);
       if (asset && asset.uri) {
-        const mimeType: string | null =
-          asset.mimeType || asset.type || null;
-
+        const mimeType: string | null = asset.mimeType || asset.type || null;
         const isImage =
-          mimeType?.startsWith('image/') ||
+          mimeType?.startsWith("image/") ||
           /\.(jpg|jpeg|png|gif|webp)$/i.test(asset.name || asset.uri);
 
-        // Show processing loader for images only
         if (isImage) {
           setProcessingImage(true);
           setImageLoading(true);
         }
-        
+
         setSelectedFile({
           uri: asset.uri,
-          name: asset.name || (isImage ? 'Prescription image' : 'Prescription document'),
+          name:
+            asset.name ||
+            (isImage ? "Prescription image" : "Prescription document"),
           mimeType,
           isImage,
         });
-        
-        // For PDFs, hide processing immediately
+
         if (!isImage) {
           setProcessingImage(false);
           setImageLoading(false);
@@ -1521,19 +210,20 @@ const UploadPrescriptionScreen = () => {
     } catch (error) {
       setProcessingImage(false);
       setImageLoading(false);
-      console.error('Error choosing from documents:', error);
-      Alert.alert('Error', 'Failed to select file from documents. Please try again.');
+      console.error("Error choosing from documents:", error);
+      Alert.alert(
+        "Error",
+        "Failed to select file from documents. Please try again.",
+      );
     }
   };
 
   const handleImageLoad = () => {
-    console.log('Image loaded successfully');
     setImageLoading(false);
-    setProcessingImage(false); // Hide processing loader too
+    setProcessingImage(false);
   };
 
   const handleImageError = () => {
-    console.log('Failed to load image');
     setImageLoading(false);
     setProcessingImage(false);
   };
@@ -1546,479 +236,676 @@ const UploadPrescriptionScreen = () => {
 
   const handleUpload = async () => {
     if (!selectedFile?.uri) {
-      Alert.alert('No File', 'Please select a prescription file or image before uploading');
+      Alert.alert(
+        "No File",
+        "Please select a prescription file or image before uploading",
+      );
       return;
     }
     if (!orderId) {
-      Alert.alert('Missing Order', 'Order ID is missing. Open this screen from an order context.');
+      Alert.alert(
+        "Missing Order",
+        "Order ID is missing. Open this screen from an order context.",
+      );
       return;
     }
-    
+
     setIsUploading(true);
-    
     try {
-      console.log('📄 Uploading prescription for order:', orderId, 'file:', selectedFile);
-      // Pass the mimeType from selected file to ensure correct type detection
-      const res = await orderService.uploadPrescription(orderId, selectedFile.uri, selectedFile.mimeType);
-      console.log('📄 Upload response:', res);
-      
+      const res = await orderService.uploadPrescription(
+        orderId,
+        selectedFile.uri,
+        selectedFile.mimeType,
+      );
+
       if (!res.success) {
-        throw new Error(res.error || 'Upload failed');
+        throw new Error(res.error || "Upload failed");
       }
 
-      // Handle both possible field names from API response
-      const signedUrl = (res.data as any)?.signedPresciptionUrl || (res.data as any)?.signedPrescriptionUrl;
-      console.log('📄 Prescription uploaded successfully, signed URL:', signedUrl);
+      const signedUrl =
+        (res.data as any)?.signedPresciptionUrl ||
+        (res.data as any)?.signedPrescriptionUrl;
 
-      Alert.alert('Upload Successful', 'Prescription uploaded successfully.', [
-        { text: 'View Order', onPress: () => navigation.navigate('OrderDetail', { orderId }) },
-        // { text: 'OK', onPress: () => navigation.goBack() },
+      Alert.alert("Upload Successful", "Prescription uploaded successfully.", [
+        {
+          text: "View Order",
+          onPress: () => navigation.navigate("OrderDetail", { orderId }),
+        },
       ]);
     } catch (error: any) {
-      const message = (error?.message as string) || 'Failed to upload prescription. Please try again.';
-      console.error('📄 Upload error:', message, error);
-      Alert.alert('Upload Failed', message);
+      const message =
+        (error?.message as string) ||
+        "Failed to upload prescription. Please try again.";
+      console.error("📄 Upload error:", message, error);
+      Alert.alert("Upload Failed", message);
     } finally {
       setIsUploading(false);
     }
   };
 
-  const themedStyles = StyleSheet.create({
-    container: {
-      flex: 1,
-      backgroundColor: theme.colors.background,
-    },
-    header: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      paddingHorizontal: 16,
-      paddingVertical: 12,
-      paddingTop: 20, // Add more top padding to bring header down
-      borderBottomWidth: 1,
-      borderBottomColor: theme.colors.border,
-      backgroundColor: theme.colors.surface,
-    },
-    backButton: {
-      padding: 8,
-      marginRight: 8,
-    },
-    headerTitle: {
-      flex: 1,
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-      textAlign: 'center',
-    },
-    reloadButton: {
-      padding: 8,
-      marginLeft: 8,
-    },
-    content: {
-      flex: 1,
-    },
-    scrollContent: {
-      padding: 16,
-      paddingBottom: 100, // Extra padding to ensure upload button is visible
-    },
-    actionButtonsContainer: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginBottom: 24,
-    },
-    actionButton: {
-      flex: 1,
-      marginHorizontal: 4,
-      paddingVertical: 16,
-      paddingHorizontal: 12,
-      borderRadius: 12,
-      alignItems: 'center',
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      shadowColor: theme.colors.text,
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
-    },
-    actionButtonText: {
-      fontSize: 12,
-      fontWeight: '600',
-      color: theme.colors.text,
-      marginTop: 8,
-      textAlign: 'center',
-    },
-    selectedImageContainer: {
-      marginBottom: 24,
-      borderRadius: 12,
-      overflow: 'hidden',
-      backgroundColor: theme.colors.surface,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-      minHeight: 200,
-      position: 'relative',
-    },
-    selectedImage: {
-      width: '100%',
-      height: 200,
-      resizeMode: 'cover',
-    },
-    removeImageButton: {
-      position: 'absolute',
-      top: 8,
-      right: 8,
-      backgroundColor: 'rgba(0,0,0,0.6)',
-      borderRadius: 15,
-      padding: 8,
-      zIndex: 10, // Make sure it's above everything
-    },
-    // Processing loader (shown when image is being processed)
-    processingLoaderContainer: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: theme.colors.surface,
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 5, // Above the container background but below remove button
-    },
-    // Image loading spinner (shown while image loads in Image component)
-    imageLoadingContainer: {
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: 'rgba(255,255,255,0.8)',
-      justifyContent: 'center',
-      alignItems: 'center',
-      zIndex: 2, // Above image but below processing loader
-    },
-    section: {
-      marginBottom: 24,
-    },
-    sectionTitle: {
-      fontSize: 18,
-      fontWeight: 'bold',
-      color: theme.colors.text,
-      marginBottom: 12,
-    },
-    guidelineItem: {
-      flexDirection: 'row',
-      marginBottom: 8,
-      paddingLeft: 8,
-    },
-    guidelineNumber: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: theme.colors.primary,
-      marginRight: 12,
-      minWidth: 20,
-    },
-    guidelineText: {
-      flex: 1,
-      fontSize: 14,
-      color: theme.colors.text,
-      lineHeight: 20,
-    },
-    dosDontsContainer: {
-      flexDirection: 'row',
-      marginBottom: 16,
-    },
-    dosColumn: {
-      flex: 1,
-      marginRight: 8,
-    },
-    dontsColumn: {
-      flex: 1,
-      marginLeft: 8,
-    },
-    dosDontsTitle: {
-      fontSize: 16,
-      fontWeight: 'bold',
-      color: theme.colors.primary,
-      marginBottom: 8,
-    },
-    dosDontsItem: {
-      flexDirection: 'row',
-      marginBottom: 6,
-    },
-    dosDontsNumber: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: theme.colors.primary,
-      marginRight: 8,
-      minWidth: 16,
-    },
-    dosDontsText: {
-      flex: 1,
-      fontSize: 13,
-      color: theme.colors.text,
-      lineHeight: 18,
-    },
-    processStepsContainer: {
-      backgroundColor: theme.colors.surface,
-      borderRadius: 12,
-      padding: 16,
-      borderWidth: 1,
-      borderColor: theme.colors.border,
-    },
-    processStep: {
-      flexDirection: 'row',
-      marginBottom: 12,
-      alignItems: 'flex-start',
-    },
-    processStepNumber: {
-      fontSize: 14,
-      fontWeight: 'bold',
-      color: theme.colors.primary,
-      marginRight: 12,
-      minWidth: 20,
-    },
-    processStepText: {
-      flex: 1,
-      fontSize: 14,
-      color: theme.colors.text,
-      lineHeight: 20,
-    },
-    uploadButton: {
-      backgroundColor: '#4285F4',
-      paddingVertical: 16,
-      borderRadius: 12,
-      alignItems: 'center',
-      marginTop: 16,
-    },
-    uploadButtonDisabled: {
-      backgroundColor: theme.colors.border,
-      opacity: 0.6,
-    },
-    uploadButtonText: {
-      color: theme.colors.surface,
-      fontSize: 16,
-      fontWeight: 'bold',
-    },
-    divider: {
-      height: 1,
-      backgroundColor: theme.colors.border,
-      marginVertical: 16,
-    },
-  });
-
-  const prescriptionGuidelines = [
-    'Ensure the prescription is clearly visible and readable',
-    'Make sure all text and numbers are not blurred or cut off',
-    'Include both sides if the prescription is double-sided',
-    'Ensure good lighting when taking the photo'
+  const instructionItems = [
+    "Ensure it is clear and readable",
+    "Doctor's signature must be visible",
+    "Include patient name",
+    "Do not crop important details",
   ];
 
-  const dos = [
-    'Use good lighting',
-    'Keep prescription flat',
-    'Include all text',
-    'Check image clarity'
-  ];
-
-  const donts = [
-    'Avoid shadows',
-    'Don\'t fold prescription',
-    'Don\'t cut off text',
-    'Avoid blurry images'
-  ];
-
-  const processSteps = [
-    'Upload your prescription image using camera or documents',
-    'Our pharmacist will review your prescription within 2-4 hours',
-    'You will receive a call or SMS with medicine availability and pricing',
-    'Confirm your order and make payment to complete the process'
-  ];
+  const cardShadow =
+    Platform.OS === "ios"
+      ? {
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+        }
+      : { elevation: 4 };
 
   return (
-    <SafeAreaView style={themedStyles.container} edges={['top']}>
-      <View style={themedStyles.header}>
-        <TouchableOpacity 
-          style={themedStyles.backButton}
+    <SafeAreaView
+      style={[styles.safeArea, { backgroundColor: UPLOAD_UI.background }]}
+      edges={["top"]}
+    >
+      {/* Header: back + centered title & subtitle */}
+      <View style={[styles.header, { paddingHorizontal: horizontalPadding }]}>
+        <TouchableOpacity
+          style={styles.backButton}
           onPress={() => navigation.goBack()}
+          hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         >
-          <Ionicons name="arrow-back" size={24} color={theme.colors.text} />
+          <Ionicons name="arrow-back" size={26} color={UPLOAD_UI.textPrimary} />
         </TouchableOpacity>
-        <Text style={themedStyles.headerTitle}>Upload Prescription</Text>
-        <View style={{ width: 40, marginLeft: 8 }} />
+        <View style={styles.headerCenter}>
+          <Text
+            style={[
+              styles.headerTitle,
+              {
+                fontSize: isSmallScreen ? 20 : 22,
+                color: UPLOAD_UI.textPrimary,
+              },
+            ]}
+          >
+            Upload Prescription
+          </Text>
+          <Text
+            style={[
+              styles.headerSubtitle,
+              {
+                fontSize: isSmallScreen ? 13 : 14,
+                color: UPLOAD_UI.textSecondary,
+                marginTop: 4,
+              },
+            ]}
+          >
+            Upload a valid doctor prescription to order medicines.
+          </Text>
+        </View>
+        <View style={styles.headerSpacer} />
       </View>
 
-      <ScrollView 
-        style={themedStyles.content} 
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[
+          styles.scrollContent,
+          {
+            paddingHorizontal: horizontalPadding,
+            paddingBottom: 80 + bottomInset,
+          },
+        ]}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={themedStyles.scrollContent}
       >
-        {/* Action Buttons */}
-        <View style={themedStyles.actionButtonsContainer}>
-          <TouchableOpacity style={themedStyles.actionButton} onPress={handleTakePhoto}>
-            <MaterialIcons name="camera-alt" size={32} color={theme.colors.primary} />
-            <Text style={themedStyles.actionButtonText}>Take Photo</Text>
+        {/* Main card */}
+        <View
+          style={[
+            styles.card,
+            {
+              borderRadius: cardRadius,
+              paddingHorizontal: horizontalPadding * 1.2,
+              paddingVertical: 24 * scale,
+              ...cardShadow,
+            },
+          ]}
+        >
+          <Image
+            source={require("../../assets/prescriptionPageVector.png")}
+            style={styles.cardImage}
+          />
+          <Text
+            style={[
+              styles.cardHeading,
+              {
+                fontSize: 17,
+                color: UPLOAD_UI.textPrimary,
+                marginBottom: 8,
+              },
+            ]}
+          >
+            Upload your doctor's prescription
+          </Text>
+          <Text
+            style={[
+              styles.cardDescription,
+              {
+                fontSize: isSmallScreen ? 13 : 14,
+                color: UPLOAD_UI.textSecondary,
+                marginBottom: 20,
+              },
+            ]}
+          >
+            Our certified pharmacist will review it securely.
+          </Text>
+
+          {/* Take Photo - green gradient */}
+          <TouchableOpacity
+            style={[styles.primaryButtonWrap, { marginBottom: 12 }]}
+            onPress={handleTakePhoto}
+            activeOpacity={1}
+          >
+            <LinearGradient
+              colors={[UPLOAD_UI.greenStart, UPLOAD_UI.greenEnd]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[
+                styles.primaryButton,
+                {
+                  borderRadius: 12,
+                  paddingVertical: 14,
+                  ...(Platform.OS === "ios"
+                    ? {
+                        shadowColor: UPLOAD_UI.greenStart,
+                        shadowOffset: { width: 0, height: 2 },
+                        shadowOpacity: 0.3,
+                        shadowRadius: 4,
+                      }
+                    : { elevation: 3 }),
+                },
+              ]}
+            >
+              <MaterialIcons name="camera-alt" size={22} color="#FFFFFF" />
+              <Text style={styles.primaryButtonText}>Take Photo</Text>
+            </LinearGradient>
           </TouchableOpacity>
-          
-          <TouchableOpacity style={themedStyles.actionButton} onPress={handleChooseFromDocuments}>
-            <MaterialIcons name="insert-drive-file" size={32} color={theme.colors.primary} />
-            <Text style={themedStyles.actionButtonText}>Documents (PDF/Image)</Text>
+
+          {/* Choose from Gallery - outlined */}
+          <TouchableOpacity
+            style={[
+              styles.secondaryButton,
+              {
+                borderRadius: 12,
+                paddingVertical: 14,
+                borderWidth: 1,
+                borderColor: UPLOAD_UI.borderLight,
+              },
+            ]}
+            onPress={handleChooseFromDocuments}
+            activeOpacity={0.7}
+          >
+            <MaterialIcons
+              name="photo-library"
+              size={22}
+              color={UPLOAD_UI.blueAccent}
+            />
+            <Text
+              style={[
+                styles.secondaryButtonText,
+                {
+                  fontSize: isSmallScreen ? 14 : 15,
+                  color: UPLOAD_UI.textPrimary,
+                },
+              ]}
+            >
+              Choose from Gallery
+            </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Selected File Preview */}
+        {/* Selected file preview */}
         {selectedFile ? (
-          <View style={themedStyles.selectedImageContainer}>
-            
-            {/* PROCESSING LOADER - Shows immediately after taking photo */}
+          <View
+            style={[
+              styles.previewCard,
+              {
+                borderRadius: 12,
+                marginTop: 20,
+                overflow: "hidden",
+                backgroundColor: UPLOAD_UI.card,
+                borderWidth: 1,
+                borderColor: UPLOAD_UI.borderLight,
+                minHeight: 200,
+                ...cardShadow,
+              },
+            ]}
+          >
             {processingImage && (
-              <View style={themedStyles.processingLoaderContainer}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
-                <Text style={{ marginTop: 12, fontSize: 14, color: theme.colors.secondary }}>
-                  Processing image...
-                </Text>
+              <View style={styles.loaderOverlay}>
+                <ActivityIndicator size="large" color={UPLOAD_UI.greenStart} />
+                <Text style={styles.loaderText}>Processing image...</Text>
               </View>
             )}
-            
-            {/* IMAGE LOADING SPINNER - Shows while Image component loads */}
             {imageLoading && !processingImage && selectedFile.isImage && (
-              <View style={themedStyles.imageLoadingContainer}>
-                <ActivityIndicator size="large" color={theme.colors.primary} />
-                <Text style={{ marginTop: 12, fontSize: 14, color: theme.colors.secondary }}>
-                  Loading preview...
-                </Text>
+              <View style={styles.loaderOverlay}>
+                <ActivityIndicator size="large" color={UPLOAD_UI.greenStart} />
+                <Text style={styles.loaderText}>Loading preview...</Text>
               </View>
             )}
-            
-            {/* PDF/DOCUMENT PREVIEW */}
             {!selectedFile.isImage && (
-              <View
-                style={{
-                  height: 200,
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: 16,
-                }}
-              >
-                <MaterialIcons name="picture-as-pdf" size={48} color={theme.colors.primary} />
+              <View style={styles.pdfPreview}>
+                <MaterialIcons
+                  name="picture-as-pdf"
+                  size={48}
+                  color={UPLOAD_UI.blueAccent}
+                />
                 <Text
-                  style={{
-                    marginTop: 8,
-                    color: theme.colors.text,
-                    fontSize: 14,
-                    textAlign: 'center',
-                  }}
+                  style={[
+                    styles.pdfPreviewText,
+                    { color: UPLOAD_UI.textSecondary },
+                  ]}
                   numberOfLines={2}
                 >
-                  {selectedFile.name || 'Selected document'}
+                  {selectedFile.name || "Selected document"}
                 </Text>
               </View>
             )}
-            
-            {/* IMAGE PREVIEW */}
             {selectedFile.isImage && (
               <Image
                 source={{ uri: selectedFile.uri }}
-                style={themedStyles.selectedImage}
+                style={styles.previewImage}
                 onLoad={handleImageLoad}
                 onError={handleImageError}
               />
             )}
-            
-            {/* REMOVE BUTTON */}
             <TouchableOpacity
-              style={themedStyles.removeImageButton}
+              style={styles.removeBtn}
               onPress={handleRemoveFile}
             >
-              <MaterialIcons name="close" size={20} color="white" />
+              <MaterialIcons name="close" size={20} color="#FFFFFF" />
             </TouchableOpacity>
-            
           </View>
-        ) : (
-          // Show a placeholder when no file is selected
-          <View style={[themedStyles.selectedImageContainer, { justifyContent: 'center', alignItems: 'center' }]}>
-            {/* <MaterialIcons name="add-a-photo" size={48} color={theme.colors.border} />
-            <Text style={{ marginTop: 12, fontSize: 14, color: theme.colors.secondary, textAlign: 'center' }}>
-              Take a photo or select from documents
-            </Text> */}
-            <Text style={{ fontSize: 12, color: theme.colors.border, textAlign: 'center', marginTop: 4 }}>
-              Your prescription preview will appear here
+        ) : null}
+
+        {/* Collapsible: How to upload a valid prescription? */}
+        <View style={[styles.instructionsSection, { marginTop: 24 }]}>
+          <TouchableOpacity
+            style={styles.instructionsHeader}
+            onPress={() => setInstructionsExpanded(!instructionsExpanded)}
+            activeOpacity={0.7}
+          >
+            <Text
+              style={[
+                styles.instructionsTitle,
+                {
+                  fontSize: isSmallScreen ? 15 : 16,
+                  color: UPLOAD_UI.textPrimary,
+                },
+              ]}
+            >
+              How to upload a valid prescription?
             </Text>
-          </View>
-        )}
-
-        {/* Prescription Guidelines */}
-        <View style={themedStyles.section}>
-          <Text style={themedStyles.sectionTitle}>Prescription Guidelines</Text>
-          {prescriptionGuidelines.map((guideline, index) => (
-            <View key={index} style={themedStyles.guidelineItem}>
-              <Text style={themedStyles.guidelineNumber}>{index + 1}.</Text>
-              <Text style={themedStyles.guidelineText}>{guideline}</Text>
-            </View>
-          ))}
-        </View>
-
-        <View style={themedStyles.divider} />
-
-        {/* Do's & Don'ts */}
-        <View style={themedStyles.section}>
-          <Text style={themedStyles.sectionTitle}>Do's & Don'ts</Text>
-          <View style={themedStyles.dosDontsContainer}>
-            <View style={themedStyles.dosColumn}>
-              <Text style={themedStyles.dosDontsTitle}>Do's</Text>
-              {dos.map((item, index) => (
-                <View key={index} style={themedStyles.dosDontsItem}>
-                  <Text style={themedStyles.dosDontsNumber}>{index + 1}.</Text>
-                  <Text style={themedStyles.dosDontsText}>{item}</Text>
+            <Ionicons
+              name={instructionsExpanded ? "chevron-up" : "chevron-down"}
+              size={22}
+              color={UPLOAD_UI.textSecondary}
+            />
+          </TouchableOpacity>
+          {instructionsExpanded && (
+            <View style={styles.bulletList}>
+              {instructionItems.map((item, index) => (
+                <View key={index} style={styles.bulletRow}>
+                  <View
+                    style={[
+                      styles.bullet,
+                      { backgroundColor: UPLOAD_UI.textPrimary },
+                    ]}
+                  />
+                  <Text
+                    style={[
+                      styles.bulletText,
+                      {
+                        fontSize: isSmallScreen ? 13 : 14,
+                        color: UPLOAD_UI.textSecondary,
+                      },
+                    ]}
+                  >
+                    {item}
+                  </Text>
                 </View>
               ))}
             </View>
-            <View style={themedStyles.dontsColumn}>
-              <Text style={themedStyles.dosDontsTitle}>Don'ts</Text>
-              {donts.map((item, index) => (
-                <View key={index} style={themedStyles.dosDontsItem}>
-                  <Text style={themedStyles.dosDontsNumber}>{index + 1}.</Text>
-                  <Text style={themedStyles.dosDontsText}>{item}</Text>
-                </View>
-              ))}
-            </View>
-          </View>
+          )}
         </View>
 
-        <View style={themedStyles.divider} />
-
-        {/* What happens after upload */}
-        <View style={themedStyles.section}>
-          <Text style={themedStyles.sectionTitle}>What happens after you upload Prescription</Text>
-          <View style={themedStyles.processStepsContainer}>
-            {processSteps.map((step, index) => (
-              <View key={index} style={themedStyles.processStep}>
-                <Text style={themedStyles.processStepNumber}>{index + 1}.</Text>
-                <Text style={themedStyles.processStepText}>{step}</Text>
-              </View>
-            ))}
-          </View>
-        </View>
-
-        {/* Upload Button */}
+        {/* Upload button when file selected */}
         {selectedFile && (
-          <TouchableOpacity 
-            style={[themedStyles.uploadButton, isUploading && themedStyles.uploadButton]} 
+          <TouchableOpacity
+            style={[
+              styles.uploadButtonWrap,
+              {
+                marginTop: 24,
+                borderRadius: 12,
+                overflow: "hidden",
+              },
+            ]}
             onPress={handleUpload}
             disabled={isUploading || processingImage || imageLoading}
+            activeOpacity={0.9}
           >
-            {isUploading ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center' }}>
-                <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
-                <Text style={themedStyles.uploadButtonText}>Uploading{uploadingDots}</Text>
-              </View>
-            ) : (
-              <Text style={themedStyles.uploadButtonText}>Upload Prescription</Text>
-            )}
+            <LinearGradient
+              colors={[UPLOAD_UI.greenStart, UPLOAD_UI.greenEnd]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+              style={[
+                styles.uploadButton,
+                {
+                  paddingVertical: 16,
+                  opacity:
+                    isUploading || processingImage || imageLoading ? 0.8 : 1,
+                },
+              ]}
+            >
+              {isUploading ? (
+                <View style={styles.uploadingRow}>
+                  <ActivityIndicator size="small" color="#FFFFFF" />
+                  <Text style={styles.uploadButtonText}>
+                    Uploading{uploadingDots}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={styles.uploadButtonText}>Upload Prescription</Text>
+              )}
+            </LinearGradient>
           </TouchableOpacity>
         )}
       </ScrollView>
+
+      {/* Security footer */}
+      <View
+        style={[
+          styles.securityFooter,
+          {
+            paddingHorizontal: horizontalPadding,
+            paddingBottom: bottomInset,
+          },
+        ]}
+      >
+        <Ionicons
+          name="lock-closed"
+          size={18}
+          color={UPLOAD_UI.greenStart}
+          style={{ marginRight: 8 }}
+        />
+        <Text
+          style={[
+            styles.securityText,
+            {
+              fontSize: isSmallScreen ? 12 : 13,
+              color: UPLOAD_UI.textMuted,
+            },
+          ]}
+        >
+          Your prescription is encrypted and securely stored.
+        </Text>
+      </View>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  cardImage: {
+    width: 200,
+    height: 200,
+    marginBottom: 20,
+    resizeMode: "cover",
+  },
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingTop: 8,
+    paddingBottom: 16,
+  },
+  backButton: {
+    padding: 8,
+    marginRight: 4,
+  },
+  headerCenter: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  headerSpacer: {
+    width: 42,
+  },
+  headerTitle: {
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  headerSubtitle: {
+    textAlign: "center",
+    paddingHorizontal: 8,
+  },
+  scroll: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  card: {
+    backgroundColor: UPLOAD_UI.card,
+    alignItems: "center",
+  },
+  illustrationWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  prescriptionPaper: {
+    position: "absolute",
+    width: "75%",
+    height: "85%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: UPLOAD_UI.borderLight,
+    left: 0,
+    top: 0,
+    padding: 10,
+  },
+  prescriptionPaperInner: {
+    flex: 1,
+  },
+  rxRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 8,
+  },
+  greenCross: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "rgba(76, 175, 80, 0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  crossIcon: {
+    position: "absolute",
+  },
+  rxText: {
+    fontSize: 14,
+    fontWeight: "700",
+    color: UPLOAD_UI.textPrimary,
+  },
+  paperLines: {
+    height: 2,
+    backgroundColor: UPLOAD_UI.borderLight,
+    marginBottom: 6,
+  },
+  medicalIconsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+  pillGroup: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  pill: {
+    borderRadius: 4,
+  },
+  bottleWrap: {
+    position: "absolute",
+    right: 0,
+    bottom: 0,
+    width: 28,
+    height: 36,
+    alignItems: "center",
+  },
+  bottle: {
+    position: "absolute",
+    bottom: 6,
+    width: 20,
+    height: 24,
+    backgroundColor: "#C8E6C9",
+    borderRadius: 2,
+  },
+  bottleCap: {
+    position: "absolute",
+    top: 0,
+    width: 14,
+    height: 8,
+    backgroundColor: "#9E9E9E",
+    borderRadius: 2,
+  },
+  cardHeading: {
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  cardDescription: {
+    textAlign: "center",
+  },
+  primaryButtonWrap: {
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  primaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+  },
+  primaryButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  secondaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    backgroundColor: UPLOAD_UI.card,
+    width: "100%",
+    alignSelf: "stretch",
+  },
+  secondaryButtonText: {
+    fontWeight: "600",
+  },
+  previewCard: {
+    position: "relative",
+  },
+  loaderOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 2,
+  },
+  loaderText: {
+    marginTop: 12,
+    fontSize: 14,
+    color: UPLOAD_UI.textSecondary,
+  },
+  pdfPreview: {
+    height: 200,
+    alignItems: "center",
+    justifyContent: "center",
+    padding: 16,
+  },
+  pdfPreviewText: {
+    marginTop: 8,
+    fontSize: 14,
+    textAlign: "center",
+  },
+  previewImage: {
+    width: "100%",
+    height: 200,
+    resizeMode: "cover",
+  },
+  removeBtn: {
+    position: "absolute",
+    top: 12,
+    right: 12,
+    backgroundColor: "rgba(0,0,0,0.55)",
+    borderRadius: 20,
+    padding: 8,
+    zIndex: 10,
+  },
+  instructionsSection: {},
+  instructionsHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  instructionsTitle: {
+    fontWeight: "600",
+    flex: 1,
+  },
+  bulletList: {
+    marginTop: 12,
+    paddingLeft: 4,
+  },
+  bulletRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  bullet: {
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
+    marginRight: 10,
+  },
+  bulletText: {
+    flex: 1,
+  },
+  uploadButtonWrap: {
+    width: "100%",
+  },
+  uploadButton: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  uploadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  uploadButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  securityFooter: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingTop: 16,
+    backgroundColor: UPLOAD_UI.background,
+  },
+  securityText: {
+    flex: 1,
+  },
+});
 
 export default UploadPrescriptionScreen;
